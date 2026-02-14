@@ -1,28 +1,36 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import 'react-native-gesture-handler';
+import React from 'react';
+import { StatusBar, useColorScheme } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from './src/hooks/useAuth';
+import { ThemeProvider } from './src/hooks/useTheme';
+import { TransactionsProvider } from './src/hooks/useTransactions';
+import { ChitFundsProvider } from './src/hooks/useChitFunds';
+import { TabBarScrollProvider } from './src/context/TabBarScrollContext';
+import { RootNavigator } from './src/navigation';
+import './src/config/firebase'; // Initialize Firebase
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <NewAppScreen templateFileName="App.tsx" />
-    </View>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <TransactionsProvider>
+            <ChitFundsProvider>
+              <TabBarScrollProvider>
+                <StatusBar
+                  barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+                />
+                <RootNavigator />
+              </TabBarScrollProvider>
+            </ChitFundsProvider>
+          </TransactionsProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;

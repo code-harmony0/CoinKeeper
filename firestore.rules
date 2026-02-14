@@ -1,0 +1,165 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Groups
+    match /groups/{groupId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+
+    // Group members
+    match /group_members/{memberId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Group transactions
+    match /group_transactions/{transactionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Group contributions
+    match /group_contributions/{contributionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Group draws
+    match /group_draws/{drawId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Contributions
+    match /contributions/{contributionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Contribution audit log
+    match /contributionAuditLog/{logId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+
+    // Draws
+    match /draws/{drawId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Draw bids
+    match /draw_bids/{bidId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Draw winners
+    match /draw_winners/{winnerId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Draw settlements
+    match /draw_settlements/{settlementId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Payments & Collections
+    match /upcoming_payments/{paymentId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /payment_history/{paymentId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /auto_debit_schedules/{scheduleId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /scheduledPayments/{paymentId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /payments/{paymentId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /paymentReconciliations/{reconciliationId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Wallets
+    match /wallets/{walletId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /wallet_transactions/{transactionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /settlement_rules/{ruleId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Transactions
+    match /transactions/{transactionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Reminders & Notifications
+    match /reminderTemplates/{templateId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /notificationLogs/{logId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+
+    match /escalationRules/{ruleId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Auto-debit
+    match /autoDebitJobs/{jobId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /autoDebitConsent/{consentId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Audit logs
+    match /auditLogs/{logId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+  }
+}

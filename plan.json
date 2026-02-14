@@ -1,0 +1,27 @@
+{
+  "task": "Create persistent multi-agent workflow configuration",
+  "agents": {
+    "qwen": {
+      "subtasks": [
+        {
+          "id": "qwen-1",
+          "description": "Generate .claude-config.json with workflow rules",
+          "output_file": ".claude-config.json",
+          "prompt": "Create a JSON configuration file for Claude Code that enforces this workflow: 1) Understand task 2) Assign to Gemini (analysis) or Qwen (generation) based on specialty 3) Collect answers 4) Validate 5) Output final result. Include agent specialties, delegation rules, and validation criteria."
+        },
+        {
+          "id": "qwen-2",
+          "description": "Generate .ai-workflow-system.md with persistent instructions",
+          "output_file": ".ai-workflow-system.md",
+          "prompt": "Create a markdown file with system instructions for Claude Code to always follow multi-agent delegation workflow. Include: agent roles (Gemini=analysis, Qwen=generation, Claude=orchestration), decision tree for task assignment, validation checklist, and examples of proper delegation."
+        },
+        {
+          "id": "qwen-3",
+          "description": "Generate ai_delegate.sh automation script",
+          "output_file": "ai_delegate.sh",
+          "prompt": "Create a bash script that automates the delegation workflow: 1) Accept task description 2) Determine if it needs Gemini analysis or Qwen generation 3) Execute appropriate command 4) Collect output 5) Format for Claude validation. Include error handling and logging."
+        }
+      ]
+    }
+  }
+}

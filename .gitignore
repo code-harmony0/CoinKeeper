@@ -73,3 +73,11 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# AI Tools (now using global setup in /Users/codeaura/Projects/.ai-tools)
+ai_delegate.sh
+.ai-*
+qwen
+qwen-outputs.txt
+gemini-analysis.txt
+*.ai-output

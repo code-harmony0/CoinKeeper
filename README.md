@@ -1,97 +1,235 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 💰 CoinKeeper
 
-# Getting Started
+**A Premium Expense Tracker + Chit Fund Manager**
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+[![React Native](https://img.shields.io/badge/React%20Native-0.80.2-blue.svg)](https://reactnative.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0.4-blue.svg)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Step 1: Start Metro
+> World-class UI with Dribbble-level design quality, powered by advanced animations and premium pastel aesthetics.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+---
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## ✨ Features
 
-```sh
-# Using npm
+### 💸 Expense Tracking
+- **Manual Entry**: Add income and expenses with beautiful UI
+- **SMS Auto-Extraction**: Automatically parse bank SMS messages
+- **Categories**: Pre-defined categories with custom icons
+- **Budget Tracking**: Set monthly budgets with visual progress
+
+### 🤝 Chit Fund Management
+- **Create Groups**: Organize chit funds with members
+- **Track Contributions**: Monitor payments and dues
+- **Manual Draw System**: Conduct fair draws with biometric security
+- **Member Management**: Add, remove, approve participants
+
+### 🎨 Premium Design
+- **Pastel Color Palette**: Soft, calming colors (Baby Blue, Peach, Mint, Lavender)
+- **Glassmorphism**: Blur effects and translucent surfaces
+- **Spring Animations**: Physics-based micro-interactions
+- **Liquid Transitions**: Smooth, delightful page transitions
+- **Haptic Feedback**: Tactile responses for every interaction
+- **Lucide Icons**: Modern, crisp iconography
+
+### 📊 Analytics & Reports
+- Spending breakdown by category
+- Monthly income vs expense trends
+- Chit fund contribution analytics
+- Export to CSV/PDF
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js >= 18
+- React Native CLI
+- Xcode (for iOS)
+- Android Studio (for Android)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/coinkeeper.git
+cd coinkeeper
+
+# Install dependencies
+npm install
+
+# iOS setup
+cd ios && pod install && cd ..
+
+# Start Metro bundler
 npm start
 
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+# Run on Android
 npm run android
 
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# Run on iOS
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## 📱 Screens
 
-## Step 3: Modify your app
+### Onboarding Flow
+- ✅ Splash Screen
+- ✅ Onboarding Carousel (4 slides)
+- ✅ Login Screen (Phone + Demo)
 
-Now that you have successfully run the app, let's make changes!
+### User Mode
+- ✅ **Dashboard**: Balance overview, quick actions, budget, transactions
+- 🚧 **Transactions**: Filterable list with search
+- 🚧 **Chit Groups**: Active groups with next draw info
+- 🚧 **Reports**: Visual analytics and insights
+- 🚧 **Settings**: Profile, preferences, security
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+### Admin Mode
+- 🚧 **Admin Dashboard**: Alerts, metrics, approvals
+- 🚧 **Group Management**: Create, edit, manage groups
+- 🚧 **Approvals**: Member requests, contributions
+- 🚧 **Manual Draw**: Conduct secure draws
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+Legend: ✅ Complete | 🚧 In Progress | ⏳ Planned
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+---
 
-## Congratulations! :tada:
+## 🎨 Design System
 
-You've successfully run and modified your React Native App. :partying_face:
+### Color Palette
+```typescript
+{
+  babyBlue: '#BDE0FE',
+  softPeach: '#FFDAB9',
+  mintGreen: '#A8E6CF',
+  lavender: '#E6DFFD',
+  offWhite: '#FAFAF8',
+  navyText: '#1E2A33',
+}
+```
 
-### Now what?
+### Typography
+- **Font Family**: Plus Jakarta Sans
+- **Sizes**: 12px - 56px scale
+- **Weights**: Regular, Medium, SemiBold, Bold
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+### Spacing
+- **8px grid system**: xs(8), sm(12), md(16), lg(20), xl(24), xxl(32)
 
-# Troubleshooting
+### Shadows
+- Soft, airy shadows with 5-20% opacity
+- Premium elevation system
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+---
 
-# Learn More
+## 🛠️ Tech Stack
 
-To learn more about React Native, take a look at the following resources:
+### Core
+- **React Native**: 0.80.2
+- **TypeScript**: 5.0.4
+- **React Navigation**: Latest
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+### Animations
+- **Reanimated 3**: Advanced spring physics
+- **Linear Gradient**: Smooth color transitions
+- **Blur View**: Glassmorphism effects
+- **Haptic Feedback**: Tactile interactions
+
+### Icons & UI
+- **Lucide React Native**: Premium icons
+- **React Native SVG**: Vector graphics
+- **Chart Kit**: Analytics visualizations
+
+### Backend
+- **Firebase**: Authentication, Firestore
+- **SMS Permissions**: Android SMS reading
+
+---
+
+## 📂 Project Structure
+
+```
+src/
+├── components/
+│   ├── animated/     # Premium animated components
+│   ├── core/         # UI primitives
+│   ├── transaction/  # Transaction-specific
+│   └── modals/       # Bottom sheets
+├── screens/          # Screen components
+├── navigation/       # Navigation config
+├── theme/            # Design tokens
+├── hooks/            # Custom hooks
+├── services/         # API & business logic
+└── utils/            # Helper functions
+```
+
+See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed documentation.
+
+---
+
+## 🎯 Roadmap
+
+### Phase 1: Core Features (Current)
+- [x] Design system & theme
+- [x] Onboarding flow
+- [x] User dashboard
+- [x] Premium animations
+- [ ] Transaction management
+- [ ] Chit fund basics
+
+### Phase 2: Advanced Features
+- [ ] SMS auto-extraction
+- [ ] Biometric authentication
+- [ ] Push notifications
+- [ ] Data export
+- [ ] Admin panel
+
+### Phase 3: Polish
+- [ ] Dark mode
+- [ ] Offline support
+- [ ] Performance optimization
+- [ ] Analytics integration
+- [ ] A/B testing
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these guidelines:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Design inspiration from Dribbble's premium mobile designs
+- Icons by [Lucide](https://lucide.dev/)
+- Animations powered by [Reanimated](https://docs.swmansion.com/react-native-reanimated/)
+
+---
+
+## 📧 Contact
+
+**Developer**: Your Name
+**Email**: your.email@example.com
+**Project Link**: [https://github.com/yourusername/coinkeeper](https://github.com/yourusername/coinkeeper)
+
+---
+
+<div align="center">
+  <strong>Made with ❤️ and premium design principles</strong>
+</div>

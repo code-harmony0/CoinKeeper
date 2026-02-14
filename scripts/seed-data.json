@@ -1,0 +1,117 @@
+{
+  "__collections__": {
+    "users": {
+      "admin001": {
+        "uid": "admin001",
+        "email": "admin@coinkeeper.app",
+        "name": "Admin User",
+        "phoneNumber": "+919876543210",
+        "isAdmin": true,
+        "onboardingCompleted": true
+      },
+      "user001": {
+        "uid": "user001",
+        "email": "sarah@example.com",
+        "name": "Sarah Johnson",
+        "phoneNumber": "+919876543211",
+        "isAdmin": false,
+        "onboardingCompleted": true
+      },
+      "user002": {
+        "uid": "user002",
+        "email": "priya@example.com",
+        "name": "Priya Sharma",
+        "phoneNumber": "+919876543212",
+        "isAdmin": false,
+        "onboardingCompleted": true
+      },
+      "user003": {
+        "uid": "user003",
+        "email": "amit@example.com",
+        "name": "Amit Patel",
+        "phoneNumber": "+919876543213",
+        "isAdmin": false,
+        "onboardingCompleted": true
+      },
+      "user004": {
+        "uid": "user004",
+        "email": "neha@example.com",
+        "name": "Neha Gupta",
+        "phoneNumber": "+919876543214",
+        "isAdmin": false,
+        "onboardingCompleted": true
+      },
+      "user005": {
+        "uid": "user005",
+        "email": "raj@example.com",
+        "name": "Raj Kumar",
+        "phoneNumber": "+919876543215",
+        "isAdmin": false,
+        "onboardingCompleted": true
+      }
+    },
+    "groups": {
+      "group001": {
+        "name": "Family Savings Circle",
+        "contributionAmount": 5000,
+        "cycleTime": 30,
+        "maxMembers": 12,
+        "activeMembers": 5,
+        "totalPooled": 75000,
+        "autoDebit": false,
+        "status": "active",
+        "startDate": {"__datatype__": "timestamp", "value": {"_seconds": 1704067200, "_nanoseconds": 0}},
+        "createdAt": {"__datatype__": "timestamp", "value": {"_seconds": 1704067200, "_nanoseconds": 0}},
+        "updatedAt": {"__datatype__": "timestamp", "value": {"_seconds": 1704067200, "_nanoseconds": 0}},
+        "createdBy": "admin001",
+        "archived": false,
+        "closed": false
+      },
+      "group002": {
+        "name": "Office Colleagues Fund",
+        "contributionAmount": 10000,
+        "cycleTime": 30,
+        "maxMembers": 20,
+        "activeMembers": 4,
+        "totalPooled": 120000,
+        "autoDebit": true,
+        "status": "active",
+        "startDate": {"__datatype__": "timestamp", "value": {"_seconds": 1710460800, "_nanoseconds": 0}},
+        "createdAt": {"__datatype__": "timestamp", "value": {"_seconds": 1710460800, "_nanoseconds": 0}},
+        "updatedAt": {"__datatype__": "timestamp", "value": {"_seconds": 1710460800, "_nanoseconds": 0}},
+        "createdBy": "admin001",
+        "archived": false,
+        "closed": false
+      },
+      "group003": {
+        "name": "Neighborhood Chit",
+        "contributionAmount": 2000,
+        "cycleTime": 30,
+        "maxMembers": 10,
+        "activeMembers": 3,
+        "totalPooled": 18000,
+        "autoDebit": false,
+        "status": "pending",
+        "startDate": {"__datatype__": "timestamp", "value": {"_seconds": 1735689600, "_nanoseconds": 0}},
+        "createdAt": {"__datatype__": "timestamp", "value": {"_seconds": 1735689600, "_nanoseconds": 0}},
+        "updatedAt": {"__datatype__": "timestamp", "value": {"_seconds": 1735689600, "_nanoseconds": 0}},
+        "createdBy": "admin001",
+        "archived": false,
+        "closed": false
+      }
+    },
+    "wallets": {
+      "wallet001": {
+        "adminId": "admin001",
+        "balance": 195000,
+        "lockedBalance": 50000,
+        "availableBalance": 145000,
+        "totalDeposits": 250000,
+        "totalWithdrawals": 55000,
+        "currency": "INR",
+        "lastUpdated": {"__datatype__": "timestamp", "value": {"_seconds": 1739400000, "_nanoseconds": 0}},
+        "createdAt": {"__datatype__": "timestamp", "value": {"_seconds": 1704067200, "_nanoseconds": 0}}
+      }
+    }
+  }
+}

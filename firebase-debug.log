@@ -1,0 +1,272 @@
+[debug] [2026-02-14T06:09:10.322Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:10.324Z] > authorizing via signed-in user (hermonycode@gmail.com)
+[debug] [2026-02-14T06:09:10.325Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.325Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.325Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:10.325Z] > authorizing via signed-in user (hermonycode@gmail.com)
+[debug] [2026-02-14T06:09:10.325Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.325Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.326Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo [none]
+[debug] [2026-02-14T06:09:10.339Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo [none]
+[debug] [2026-02-14T06:09:10.798Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo 200
+[debug] [2026-02-14T06:09:10.798Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo {"name":"projects/coinkeeper-c53e7/billingInfo","projectId":"coinkeeper-c53e7","billingAccountName":"","billingEnabled":false}
+[debug] [2026-02-14T06:09:10.805Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.805Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.806Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.806Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.806Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.806Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.806Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.806Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.811Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.812Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.812Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.812Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.812Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com [none]
+[debug] [2026-02-14T06:09:10.812Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:10.813Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com [none]
+[debug] [2026-02-14T06:09:10.813Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:10.813Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com [none]
+[debug] [2026-02-14T06:09:10.813Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:10.814Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com [none]
+[debug] [2026-02-14T06:09:10.814Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:10.814Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com [none]
+[debug] [2026-02-14T06:09:10.814Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:10.815Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com [none]
+[debug] [2026-02-14T06:09:10.815Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:10.845Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.845Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.845Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com [none]
+[debug] [2026-02-14T06:09:10.845Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:10.862Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:10.864Z] > authorizing via signed-in user (hermonycode@gmail.com)
+[debug] [2026-02-14T06:09:10.864Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:10.864Z] > authorizing via signed-in user (hermonycode@gmail.com)
+[debug] [2026-02-14T06:09:10.865Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.865Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.865Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.865Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.865Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:10.865Z] > authorizing via signed-in user (hermonycode@gmail.com)
+[debug] [2026-02-14T06:09:10.866Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.866Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:10.866Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo [none]
+[debug] [2026-02-14T06:09:10.880Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo [none]
+[debug] [2026-02-14T06:09:10.881Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo [none]
+[debug] [2026-02-14T06:09:11.279Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo 200
+[debug] [2026-02-14T06:09:11.279Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo {"name":"projects/coinkeeper-c53e7/billingInfo","projectId":"coinkeeper-c53e7","billingAccountName":"","billingEnabled":false}
+[debug] [2026-02-14T06:09:11.282Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.283Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.283Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.283Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.283Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.283Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.283Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.283Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.288Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.289Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.289Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.289Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.289Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com [none]
+[debug] [2026-02-14T06:09:11.289Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:11.290Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com [none]
+[debug] [2026-02-14T06:09:11.290Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:11.290Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com [none]
+[debug] [2026-02-14T06:09:11.290Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:11.291Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com [none]
+[debug] [2026-02-14T06:09:11.291Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:11.291Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com [none]
+[debug] [2026-02-14T06:09:11.291Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:11.292Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com [none]
+[debug] [2026-02-14T06:09:11.292Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:11.326Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.326Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:11.326Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com [none]
+[debug] [2026-02-14T06:09:11.326Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.052Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo 200
+[debug] [2026-02-14T06:09:12.052Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo {"name":"projects/coinkeeper-c53e7/billingInfo","projectId":"coinkeeper-c53e7","billingAccountName":"","billingEnabled":false}
+[debug] [2026-02-14T06:09:12.053Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.053Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.053Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.053Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.053Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.053Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.053Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.053Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.055Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.055Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.055Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.055Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.055Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.055Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.056Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.056Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.057Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.057Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.057Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.057Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.057Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.057Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.058Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com [none]
+[debug] [2026-02-14T06:09:12.058Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.078Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.078Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.079Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.079Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.243Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo 200
+[debug] [2026-02-14T06:09:12.243Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo {"name":"projects/coinkeeper-c53e7/billingInfo","projectId":"coinkeeper-c53e7","billingAccountName":"","billingEnabled":false}
+[debug] [2026-02-14T06:09:12.244Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.244Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.244Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.244Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.244Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.244Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.244Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.244Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.246Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.246Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.246Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.246Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.246Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.246Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.247Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.247Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.247Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.247Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.248Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.248Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.248Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.248Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.248Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com [none]
+[debug] [2026-02-14T06:09:12.249Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.269Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo 200
+[debug] [2026-02-14T06:09:12.269Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo {"name":"projects/coinkeeper-c53e7/billingInfo","projectId":"coinkeeper-c53e7","billingAccountName":"","billingEnabled":false}
+[debug] [2026-02-14T06:09:12.269Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.269Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.269Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.270Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.270Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.270Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.270Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.270Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.271Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.271Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.271Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.271Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.272Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.272Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.272Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.272Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.273Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.273Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.273Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.273Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.273Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.273Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.274Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com [none]
+[debug] [2026-02-14T06:09:12.274Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.275Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.275Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.275Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.275Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.301Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.301Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:12.301Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com [none]
+[debug] [2026-02-14T06:09:12.301Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com  x-goog-user-project=coinkeeper-c53e7
+[debug] [2026-02-14T06:09:12.447Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com 403
+[debug] [2026-02-14T06:09:12.447Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com [omitted]
+[debug] [2026-02-14T06:09:12.476Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com 200
+[debug] [2026-02-14T06:09:12.476Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:12.486Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com 200
+[debug] [2026-02-14T06:09:12.486Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:12.486Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com 200
+[debug] [2026-02-14T06:09:12.486Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:12.493Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com 200
+[debug] [2026-02-14T06:09:12.493Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:12.504Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com 200
+[debug] [2026-02-14T06:09:12.505Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:12.511Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com 200
+[debug] [2026-02-14T06:09:12.511Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:12.902Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com 200
+[debug] [2026-02-14T06:09:12.902Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:12.910Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com 403
+[debug] [2026-02-14T06:09:12.910Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com [omitted]
+[debug] [2026-02-14T06:09:12.937Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com 200
+[debug] [2026-02-14T06:09:12.937Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:12.944Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com 200
+[debug] [2026-02-14T06:09:12.944Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:12.955Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com 200
+[debug] [2026-02-14T06:09:12.955Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:12.963Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com 200
+[debug] [2026-02-14T06:09:12.963Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:13.712Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com 200
+[debug] [2026-02-14T06:09:13.712Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.081Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com 200
+[debug] [2026-02-14T06:09:14.081Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com 200
+[debug] [2026-02-14T06:09:14.081Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.082Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com 200
+[debug] [2026-02-14T06:09:14.082Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.093Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com 200
+[debug] [2026-02-14T06:09:14.093Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.081Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.093Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com 200
+[debug] [2026-02-14T06:09:14.093Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.105Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com 200
+[debug] [2026-02-14T06:09:14.105Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.107Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com 200
+[debug] [2026-02-14T06:09:14.107Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.113Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com 200
+[debug] [2026-02-14T06:09:14.113Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/fcm.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.119Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com 200
+[debug] [2026-02-14T06:09:14.119Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.129Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:14.129Z] > authorizing via signed-in user (hermonycode@gmail.com)
+[debug] [2026-02-14T06:09:14.129Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:14.129Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:14.129Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo [none]
+[debug] [2026-02-14T06:09:14.130Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com 200
+[debug] [2026-02-14T06:09:14.130Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.135Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com 200
+[debug] [2026-02-14T06:09:14.135Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.362Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com 403
+[debug] [2026-02-14T06:09:14.362Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com [omitted]
+[debug] [2026-02-14T06:09:14.386Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com 403
+[debug] [2026-02-14T06:09:14.386Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com [omitted]
+[debug] [2026-02-14T06:09:14.399Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com 403
+[debug] [2026-02-14T06:09:14.400Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseio.com [omitted]
+[debug] [2026-02-14T06:09:14.417Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com 200
+[debug] [2026-02-14T06:09:14.418Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.443Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo 200
+[debug] [2026-02-14T06:09:14.443Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo {"name":"projects/coinkeeper-c53e7/billingInfo","projectId":"coinkeeper-c53e7","billingAccountName":"","billingEnabled":false}
+[debug] [2026-02-14T06:09:14.446Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:14.447Z] > authorizing via signed-in user (hermonycode@gmail.com)
+[debug] [2026-02-14T06:09:14.456Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com 200
+[debug] [2026-02-14T06:09:14.458Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com 200
+[debug] [2026-02-14T06:09:14.458Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseremoteconfig.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.469Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com 200
+[debug] [2026-02-14T06:09:14.469Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.470Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com 200
+[debug] [2026-02-14T06:09:14.456Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.475Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:14.475Z] > authorizing via signed-in user (hermonycode@gmail.com)
+[debug] [2026-02-14T06:09:14.476Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:14.476Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:14.476Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo [none]
+[debug] [2026-02-14T06:09:14.470Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/identitytoolkit.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.525Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com 200
+[debug] [2026-02-14T06:09:14.525Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/firebaseappdistribution.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:14.537Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:14.537Z] > authorizing via signed-in user (hermonycode@gmail.com)
+[debug] [2026-02-14T06:09:14.537Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:14.537Z] Checked if tokens are valid: true, expires at: 1771052717368
+[debug] [2026-02-14T06:09:14.537Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo [none]
+[debug] [2026-02-14T06:09:15.251Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com 200
+[debug] [2026-02-14T06:09:15.251Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/coinkeeper-c53e7/services/storage.googleapis.com [omitted]
+[debug] [2026-02-14T06:09:15.759Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo 200
+[debug] [2026-02-14T06:09:15.759Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo {"name":"projects/coinkeeper-c53e7/billingInfo","projectId":"coinkeeper-c53e7","billingAccountName":"","billingEnabled":false}
+[debug] [2026-02-14T06:09:15.762Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:15.762Z] > authorizing via signed-in user (hermonycode@gmail.com)
+[debug] [2026-02-14T06:09:15.809Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo 200
+[debug] [2026-02-14T06:09:15.809Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/coinkeeper-c53e7/billingInfo {"name":"projects/coinkeeper-c53e7/billingInfo","projectId":"coinkeeper-c53e7","billingAccountName":"","billingEnabled":false}
+[debug] [2026-02-14T06:09:15.810Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-14T06:09:15.810Z] > authorizing via signed-in user (hermonycode@gmail.com)
