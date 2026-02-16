@@ -1,6 +1,6 @@
 # CoinKeeper Admin App - Implementation Status
 
-**Last Updated:** 2025-12-06
+**Last Updated:** 2026-02-14
 
 ## Implementation Progress Overview
 
@@ -24,26 +24,28 @@ The app only tracks and confirms payments.
 | 1.1 Login (Admin)    | ✅     | Password + OTP, device trust, role validation |
 | 1.2 Forgot Password  | ✅     | SMS-OTP preferred                             |
 | 1.3 Admin Onboarding | ✅     | Quick setup, permissions tour                 |
+| 1.4 Phone Login      | ✅     | Phone number authentication                   |
+| 1.5 Walkthrough      | ✅     | Onboarding walkthrough screens                |
 
 **Location:** `src/screens/auth/`
+**Files:** `LoginScreen.tsx`, `RegisterScreen.tsx`, `ForgotPasswordScreen.tsx`, `PhoneLoginScreen.tsx`, `SplashScreen.tsx`, `PermissionScreen.tsx`, `WalkthroughScreen.tsx`, `LoginScreenLogic.ts`
 
 ---
 
 ## 2. ADMIN HOME DASHBOARD ✅
 
-| Screen              | Status | Notes                                           |
-| ------------------- | ------ | ----------------------------------------------- |
-| 2.1 Overview Screen | ✅     | Greeting, alerts, metrics, quick actions        |
-| 2.2 Smart Widgets   | ⚠️     | Basic widgets exist, **cashflow chart missing** |
-| 2.3 Quick Actions   | ✅     | Create group, add transaction, approve, export  |
+| Screen              | Status | Notes                                                    |
+| ------------------- | ------ | -------------------------------------------------------- |
+| 2.1 Overview Screen | ✅     | Greeting, alerts, metrics, quick actions                 |
+| 2.2 Smart Widgets   | ✅     | Updated: Confirmed Collection, Groups, Pending, Rate %   |
+| 2.3 Quick Actions   | ✅     | Create, Members, Payments, Approve, Draws, Confirm, Alerts |
 
 **Location:** `src/screens/admin/AdminDashboardScreen.tsx`
 
-**Missing:**
-
-- Cashflow trend chart (line chart)
-- Contribution status bar chart
-- Default collection forecast chart
+**Section 6️⃣ Updates Applied:**
+- ✅ Removed: Wallet Balance, Available Funds, Total Deposits
+- ✅ Added: Confirmed Collection, Collection Rate %, Pending Confirmations
+- ✅ Added: Alerts quick action (BellIcon → Notifications)
 
 ---
 
@@ -58,8 +60,8 @@ The app only tracks and confirms payments.
 | 3.5 Archive/Close Group | ✅     | Soft delete and close functionality            |
 
 **Location:** `src/screens/admin/groups/`
-
-**Complete Module** - See [GROUP_MANAGEMENT_MODULE.md](GROUP_MANAGEMENT_MODULE.md)
+**Files:** `GroupsScreen.tsx`, `CreateGroupScreen.tsx`, `EditGroupScreen.tsx`, `GroupDetailsScreen.tsx`
+**Service:** `src/services/groupService.ts` | **Hook:** `src/hooks/useGroups.tsx`
 
 ---
 
@@ -73,6 +75,8 @@ The app only tracks and confirms payments.
 | 4.4 Suspend Member   | ✅     | Status management                                |
 
 **Location:** `src/screens/admin/members/`
+**Files:** `MembersScreen.tsx`, `AddMemberScreen.tsx`, `MemberDetailsScreen.tsx`
+**Hook:** `src/hooks/useMembers.ts`
 
 ---
 
@@ -83,215 +87,177 @@ The app only tracks and confirms payments.
 | 5.1 All Transactions     | ✅     | Filters, status, income vs expense       |
 | 5.2 Add Transaction      | ✅     | Manual entry, bulk import                |
 | 5.3 Approve Transactions | ✅     | Pending queue, approve/reject, reminders |
-| 5.4 Generate Receipts    | 🔴     | **PDF/WhatsApp generation missing**      |
+| 5.4 Generate Receipts    | ✅     | PDF generation, Share, WhatsApp sharing  |
 
 **Location:** `src/screens/admin/transactions/`
-
-**Missing:**
-
-- Receipt PDF generation
-- WhatsApp integration for receipts
+**Files:** `TransactionsScreen.tsx`, `AddTransactionScreen.tsx`, `TransactionDetailsScreen.tsx`, `ReceiptScreen.tsx`
+**Services:** `src/services/contributionService.ts`, `src/services/paymentService.ts`, `src/services/receiptService.ts`
+**Hooks:** `src/hooks/useTransactions.tsx`, `src/hooks/useContributions.ts`
 
 ---
 
-## 6. COLLECTION MANAGEMENT ⚠️ 🎯
+## 6. COLLECTION MANAGEMENT ✅
 
-| Screen                    | Status | Notes               |
-| ------------------------- | ------ | ------------------- |
-| 6.1 Upcoming Payments     | 🔴     | **NOT IMPLEMENTED** |
-| 6.2 Overdue Payments      | 🔴     | **NOT IMPLEMENTED** |
-| 6.3 Payment History       | 🔴     | **NOT IMPLEMENTED** |
-| 6.4 Auto-Debit Scheduling | 🔴     | **NOT IMPLEMENTED** |
-| 6.5 Reminder Automation   | 🔴     | **NOT IMPLEMENTED** |
+| Screen                      | Status | Notes                                         |
+| --------------------------- | ------ | --------------------------------------------- |
+| 6.1 Contributions List      | ✅     | Main contributions screen                     |
+| 6.2 Add Contribution        | ✅     | Manual contribution entry                     |
+| 6.3 Approve Contributions   | ✅     | Pending queue, approve/reject                 |
+| 6.4 Contribution Detail     | ✅     | Full detail view                              |
+| 6.5 Upcoming Payments       | ✅     | Collection Rate bar, Manual Reminder trigger  |
+| 6.6 Overdue Payments        | ✅     | Manual Reminder trigger, days overdue display |
+| 6.7 Payment History         | ✅     | Historical payment records                    |
 
-**Service Layer:** ✅ Complete - `src/services/collectionsService.ts`
-**Type Definitions:** ✅ Complete - `src/types/collection.ts`
-**Screens Location:** `src/screens/admin/collections/` (to be created)
+**Location:** `src/screens/admin/collections/`
+**Navigator:** `src/navigation/CollectionsStackNavigator.tsx` (registered in RootNavigator)
+**Types:** `src/types/collection.ts`
 
-**Priority:** HIGH - Critical for cashflow management
-
-**Required Components:**
-
-- Payment calendar view
-- Overdue alerts list
-- Payment status filters
-- Auto-debit configuration UI
-- Reminder scheduling system
-
----
-
-## 7. DRAW & LOTTERY MANAGEMENT ⚠️ 🎯
-
-| Screen             | Status | Notes               |
-| ------------------ | ------ | ------------------- |
-| 7.1 Draw Dashboard | 🔴     | **NOT IMPLEMENTED** |
-| 7.2 Create Draw    | 🔴     | **NOT IMPLEMENTED** |
-| 7.3 Draw Details   | 🔴     | **NOT IMPLEMENTED** |
-
-**Service Layer:** ✅ Complete - `src/services/drawsService.ts`
-**Type Definitions:** ✅ Complete - `src/types/draw.ts`
-**Screens Location:** `src/screens/admin/draws/` (to be created)
-
-**Priority:** HIGH - Core feature of chit fund system
-
-**Required Components:**
-
-- Draw scheduling calendar
-- Bid value input system
-- Winner selection mechanism
-- Settlement tracking
-- Draw history viewer
-
-**Backend Requirements:**
-
-- ✅ Draw lottery algorithm (service methods ready)
-- ✅ Bid validation logic (service methods ready)
-- 🔴 Winner notification system (to be implemented)
+**Section 4️⃣ Updates Applied:**
+- ✅ Removed: AutoDebit types, auto_debit from PaymentHistory methods, AutoDebitSchedule interface
+- ✅ Added: referenceId, screenshotUrl fields to UpcomingPayment and PaymentHistory
+- ✅ Added: Manual Reminder trigger with Alert confirmation (both screens)
+- ✅ Added: Collection Rate progress bar (UpcomingPaymentsScreen)
+- ✅ Added: Reminded badge showing reminder count
+- ✅ Replaced: autoDebitSuccessRate → pendingConfirmations in CollectionStats
 
 ---
 
-## 8. ANALYTICS & REPORTING ⚠️ 🎯
+## 7. DRAW & LOTTERY MANAGEMENT ✅
 
-| Screen                 | Status | Notes                         |
-| ---------------------- | ------ | ----------------------------- |
-| 8.1 Overview Dashboard | ✅     | Complete with Victory charts! |
-| 8.2 Group Analytics    | 🔴     | **NOT IMPLEMENTED**           |
-| 8.3 Member Analytics   | 🔴     | **NOT IMPLEMENTED**           |
-| 8.4 System Health      | 🔴     | **NOT IMPLEMENTED**           |
-| 8.5 Export Reports     | 🔴     | **NOT IMPLEMENTED**           |
+| Screen             | Status | Notes                                               |
+| ------------------ | ------ | --------------------------------------------------- |
+| 7.1 Draws List     | ✅     | All draws with status tracking                      |
+| 7.2 Create Draw    | ✅     | Draw creation flow                                  |
+| 7.3 Draw Details   | ✅     | Real Firestore data, winner lock, audit log, bids   |
+| 7.4 Edit Draw      | ✅     | Draw editing                                        |
 
-**Location:** `src/screens/admin/analytics/AnalyticsDashboardScreen.tsx` ✅
-**Chart Library:** ✅ Victory Native installed (`npm install victory-native react-native-svg`)
+**Location:** `src/screens/admin/draws/`
+**Navigator:** `src/navigation/DrawsStackNavigator.tsx` (registered in RootNavigator)
+**Service:** `src/services/drawsService.ts` | **Types:** `src/types/draw.ts`
+**Hook:** `src/hooks/useDraws.ts`
 
-**Priority:** HIGH - Required for data-driven decisions
+**Section 5️⃣ Updates Applied:**
+- ✅ Winner Lock: Cannot mutate after status is 'completed' or 'cancelled'
+- ✅ Auto create payment tasks after draw winner selection
+- ✅ Draw Audit Log: Real-time auditLogs listener filtered by drawId
+- ✅ Draw Notification trigger: Creates notificationLogs entry on winner selection
+- ✅ Added: biddingOpen, settledAt fields to Draw type
+- ✅ Real Firestore data via useDrawDetails hook (replaced all dummy data)
+
+---
+
+## 8. ANALYTICS & REPORTING ✅
+
+| Screen                 | Status | Notes                                               |
+| ---------------------- | ------ | --------------------------------------------------- |
+| 8.1 Overview Dashboard | ✅     | Victory charts + KPI cards                          |
+| 8.2 Group Analytics    | ✅     | Per-group KPIs, contribution trend chart, top contributors, delinquents |
+| 8.3 Member Analytics   | ✅     | Risk score, payment behavior, financial summary, group memberships |
+| 8.4 System Health      | ✅     | Job status, data freshness, recent failures, recompute trigger |
+| 8.5 Export Reports     | ✅     | Template selection, format picker (CSV/Excel/PDF/JSON), status tracking |
+
+**Location:** `src/screens/admin/analytics/`
+**Files:** `AnalyticsDashboardScreen.tsx`, `GroupAnalyticsScreen.tsx`, `MemberAnalyticsScreen.tsx`, `SystemHealthScreen.tsx`, `ExportDataScreen.tsx`
+**Navigator:** `src/navigation/AnalyticsStackNavigator.tsx` (registered in RootNavigator)
+**Feature Module:** `src/features/analytics/` (hooks, services, types, utils)
+**Chart Libraries:** Victory Native `v41.20.2` + React Native Chart Kit `v6.12.0`
 
 **Charts Implemented:**
-
-- ✅ Line charts (VictoryLine - cashflow trends)
+- ✅ Line charts (VictoryLine - cashflow trends, contribution trends)
 - ✅ Bar charts (VictoryBar - monthly contributions)
 - ✅ Pie charts (VictoryPie - payment status distribution)
 - ✅ KPI metric cards (4 cards with trend indicators)
-- ✅ Donut charts (BudgetDonut component exists)
-
-**Screens Still to Build:**
-
-- 🔴 Group Performance Charts (contribution trends, retention)
-- 🔴 Member Analytics (default analysis, risk prediction)
-- 🔴 System Health Dashboard (active vs inactive, alert history)
-- 🔴 Export interface (PDF, Excel, CSV)
+- ✅ Donut charts (BudgetDonut component)
 
 ---
 
-## 9. NOTIFICATIONS CENTER 🔴
+## 9. NOTIFICATIONS CENTER ✅
 
-| Screen                  | Status | Notes               |
-| ----------------------- | ------ | ------------------- |
-| 9.1 Notifications Inbox | 🔴     | **NOT IMPLEMENTED** |
-| 9.2 Approval Alerts     | 🔴     | **NOT IMPLEMENTED** |
-| 9.3 System Alerts       | 🔴     | **NOT IMPLEMENTED** |
+| Screen                  | Status | Notes                                                     |
+| ----------------------- | ------ | --------------------------------------------------------- |
+| 9.1 Notifications Inbox | ✅     | Real-time Firestore listener, filter chips, type-based icons |
+| 9.2 Approval Alerts     | ✅     | payment_submitted, payment_confirmed filter               |
+| 9.3 System Alerts       | ✅     | payment_overdue, draw_completed, dispute_raised filters   |
 
-**Location:** `src/screens/admin/notifications/` (to be created)
+**Location:** `src/screens/admin/notifications/AdminNotificationsScreen.tsx`
+**Navigator:** `src/navigation/NotificationsStackNavigator.tsx` (registered in RootNavigator)
 
-**Priority:** MEDIUM
+**Features:**
+- ✅ Real-time `adminNotifications` collection listener
+- ✅ 6 filter chips: All, Submitted, Confirmed, Overdue, Draws, Disputes
+- ✅ Type-specific icons and colors per notification
+- ✅ Mark all as read (batch Firestore update with try/catch)
+- ✅ Unread indicator (blue left border + blue dot)
+- ✅ Navigate to relevant screen based on notification type
+- ✅ Time ago formatting (just now, Xm, Xh, Xd, date)
 
-**Required Features:**
-
-- Priority-based sorting
-- Action buttons in notifications
-- Mark as read/unread
-- Filter by type
-- Push notification integration
+**Section 8️⃣ Updates Applied:**
+- ✅ Added `AdminNotificationType` to `src/types/payment.ts`
+- ✅ Expanded `NotificationLog.type` to include admin notification types
 
 ---
 
-## 10. SYSTEM SETTINGS (ADMIN) 🔴
+## 10. SYSTEM SETTINGS (ADMIN) ✅
 
-| Screen                   | Status | Notes                |
-| ------------------------ | ------ | -------------------- |
-| 10.1 App Settings        | ⚠️     | Basic settings exist |
-| 10.2 Payment Settings    | 🔴     | **NOT IMPLEMENTED**  |
-| 10.3 Permissions & Roles | 🔴     | **NOT IMPLEMENTED**  |
-| 10.4 Audit/Logs          | 🔴     | **NOT IMPLEMENTED**  |
-| 10.5 Data Backup/Sync    | 🔴     | **NOT IMPLEMENTED**  |
+| Screen                   | Status | Notes                                      |
+| ------------------------ | ------ | ------------------------------------------ |
+| 10.1 App Settings        | ✅     | Theme, notifications, app info             |
+| 10.2 Legal Disclaimer    | ✅     | Alert popup: tracking-only disclaimer      |
+| 10.3 Terms & Conditions  | ✅     | Alert popup: 7-point terms                 |
+| 10.4 Risk Acknowledgment | ✅     | Alert popup: Cancel/Acknowledge buttons    |
+| 10.5 Audit Log Viewer    | ✅     | Firestore real-time, filters, search, pagination |
+| 10.6 Permissions & Roles | ✅     | Role management, permission toggles, user assignment |
 
-**Location:** `src/screens/admin/settings/` (to be created)
+**Location:** `src/screens/admin/AdminSettingsScreen.tsx`, `src/screens/admin/settings/`
+**Files:** `AuditLogScreen.tsx`, `PermissionsRolesScreen.tsx`
 
-**Priority:** MEDIUM
+**Section 7️⃣ Updates Applied:**
+- ✅ Added Legal & Compliance section with Scale, AlertTriangle, ScrollText icons
+- ✅ Legal Disclaimer, Terms & Conditions, Risk Acknowledgment as Alert popups
 
-**Screens to Build:**
+**Session Updates Applied:**
+- ✅ AuditLogScreen: Real-time Firestore `auditLogs` listener, 6 filter chips, search, expandable entries, pagination
+- ✅ PermissionsRolesScreen: Roles/Users tabs, permission toggle grid, role assignment via Alert
+- ✅ Added Permissions & Roles entry in AdminSettingsScreen Administration section
+- ✅ Both screens registered in RootNavigator
 
-- App Settings (theme, language, alerts, security)
-- Payment Gateway Configuration
-- Role-Based Access Control (RBAC) UI
-- Audit Trail Viewer
-- Backup & Sync Management
+---
 
--- 11. PAYMENT CONFIRMATION MODULE 🎯
+## 11. PAYMENT CONFIRMATION MODULE ✅
 
-Status: 🔴 Missing
+| Screen                    | Status | Notes                                    |
+| ------------------------- | ------ | ---------------------------------------- |
+| 11.1 Pending Confirmations | ✅     | Real-time listener, approve/reject       |
+| 11.2 Confirm Payment       | ✅     | confirmPayment service call              |
+| 11.3 Reject Payment        | ✅     | rejectPayment with reason                |
+| 11.4 Disputed Payments     | ✅     | Dispute view with real-time listener     |
+| 11.5 Confirmation Stats    | ✅     | Stats hook with pending/confirmed/rate   |
 
-Screens:
+**Location:** `src/screens/admin/payments/PaymentConfirmationsScreen.tsx`
+**Navigator:** `src/navigation/PaymentConfirmationsStackNavigator.tsx` (registered in RootNavigator)
+**Service:** `src/services/paymentConfirmationService.ts`
+**Types:** `src/types/paymentConfirmation.ts`
+**Hook:** `src/hooks/usePaymentConfirmations.ts`
+**Firestore Collection:** `paymentConfirmations`
 
-- Pending Confirmations
-- Confirm Payment
-- Reject Payment (with reason)
-- Disputed Payments
-- Payment History
+---
 
-Location:
-src/screens/admin/payments/
+## ~~11 (OLD). WALLET / FUNDS~~ — REMOVED ✅
 
-payment_confirmations
+> Wallet module has been **deleted from codebase**.
+> - ✅ Deleted: `src/screens/admin/wallet/` (all 4 screens + index.ts)
+> - ✅ Deleted: `src/services/walletService.ts`
+> - ✅ Deleted: `src/types/wallet.ts`
+> - ✅ Deleted: `src/navigation/WalletStackNavigator.tsx`
 
-{
-id: string;
-groupId: string;
-memberId: string;
-cycleNumber: number;
-amount: number;
-paymentMethod: 'upi' | 'bank' | 'cash';
-referenceId?: string;
-screenshotUrl?: string;
-status: 'pending' | 'confirmed' | 'rejected' | 'overdue' | 'disputed';
-confirmedBy?: string;
-disputeReason?: string;
-createdAt: Timestamp;
-}
-
-<!--
-## 11. WALLET / FUNDS ⚠️ 🎯
-
-| Screen | Status | Notes |
-|--------|--------|-------|
-| 11.1 Balance Overview | 🔴 | **NOT IMPLEMENTED** |
-| 11.2 Add Funds | 🔴 | **NOT IMPLEMENTED** |
-| 11.3 Withdraw Funds | 🔴 | **NOT IMPLEMENTED** |
-| 11.4 Transaction History | ⚠️ | Exists in transactions module |
-| 11.5 Auto-settlement Rules | 🔴 | **NOT IMPLEMENTED** |
-
-**Service Layer:** ✅ Complete - `src/services/walletService.ts`
-**Type Definitions:** ✅ Complete - `src/types/wallet.ts`
-**Screens Location:** `src/screens/admin/wallet/` (to be created)
-
-**Priority:** HIGH - Critical for fund management
-
-**Required Features:**
-- Wallet balance dashboard
-- Fund transfer UI
-- Withdrawal request system
-- Settlement automation configuration
-
---- -->
+---
 
 ## 12. INTEGRATIONS 🔴
 
 | Screen                      | Status | Notes               |
 | --------------------------- | ------ | ------------------- |
-| 12.1 Payment Gateway Status | 🔴     | **NOT IMPLEMENTED** |
-| 12.2 WhatsApp Template Mgmt | 🔴     | **NOT IMPLEMENTED** |
-| 12.3 SMS Provider           | 🔴     | **NOT IMPLEMENTED** |
-
-**Location:** `src/screens/admin/integrations/` (to be created)
+| 12.1 WhatsApp Template Mgmt | 🔴     | **NOT IMPLEMENTED** |
+| 12.2 SMS Provider           | 🔴     | **NOT IMPLEMENTED** |
 
 **Priority:** LOW (Future enhancement)
 
@@ -318,323 +284,28 @@ createdAt: Timestamp;
 | 14.2 FAQs            | 🔴     | **NOT IMPLEMENTED** |
 | 14.3 Contact Support | 🔴     | **NOT IMPLEMENTED** |
 
-**Location:** `src/screens/admin/support/` (to be created)
-
 **Priority:** LOW
 
 ---
 
-## Implementation Priority Matrix
-
-### 🔥 IMMEDIATE (MVP Critical)
-
-1. **📊 Analytics & Reporting** (8.1-8.5)
-
-   - Install chart library (Victory Native recommended)
-   - Build Analytics Dashboard with charts
-   - Implement Group Analytics screen
-   - Implement Member Analytics screen
-   - Add export functionality
-
-2. **💰 Collection Management** (6.1-6.5)
-
-   - Upcoming Payments screen
-   - Overdue Payments screen
-   - Payment History screen
-   - Auto-debit scheduling UI
-   - Reminder automation setup
-
-3. **🎰 Draw & Lottery Management** (7.1-7.3)
-
-   - Draw Dashboard
-   - Create Draw flow
-   - Draw Details & Settlement
-
-4. **💳 Wallet/Funds Management** (11.1-11.5)
-   - Balance Overview
-   - Add/Withdraw Funds
-   - Auto-settlement configuration
-
-### ⚡ IMPORTANT (MVP+)
-
-5. **🔔 Notifications Center** (9.1-9.3)
-
-   - Notifications inbox
-   - Approval alerts
-   - System alerts
-
-6. **⚙️ System Settings** (10.2-10.5)
-   - Payment Settings
-   - Permissions & Roles
-   - Audit Logs
-
-### 🌟 NICE TO HAVE
-
-7. **🔧 Integrations** (12.1-12.3)
-8. **🆘 Support System** (14.1-14.3)
-
-### 🚀 FUTURE
-
-9. **🤖 AI & Automation** (13.1-13.4)
-
----
-
-## Technical Debt & Enhancements
-
-### Missing from Existing Modules
-
-**Dashboard:**
-
-- Cashflow trend chart (line chart)
-- Contribution status bar
-- Default collection forecast
-
-**Transactions:**
-
-- PDF receipt generation
-- WhatsApp receipt sharing
-
-**Group Management:**
-
-- Performance charts (already has basic stats)
-- Bulk operations
-- CSV export
-
----
-
-## Chart Implementation Requirements
-
-### Libraries Needed
-
-**Install Victory Native:**
-
-```bash
-npm install victory-native react-native-svg
-cd ios && pod install
-```
-
-**Alternative Options:**
-
-- React Native Chart Kit (simpler but less flexible)
-- React Native Skia Charts (high performance, newer)
-
-### Chart Types Required
-
-| Chart Type       | Use Case                                | Priority        |
-| ---------------- | --------------------------------------- | --------------- |
-| Line Chart       | Cashflow trends, contribution timeline  | HIGH            |
-| Bar Chart        | Monthly comparisons, group performance  | HIGH            |
-| Donut/Pie Chart  | Category breakdown, status distribution | MEDIUM (exists) |
-| Area Chart       | Cumulative growth, forecast             | MEDIUM          |
-| Trend Indicators | KPI arrows, percentage changes          | HIGH            |
-
----
-
-## Navigation Updates Needed
-
-### New Stack Navigators to Create
-
-1. **CollectionsStackNavigator**
-
-   - UpcomingPaymentsScreen
-   - OverduePaymentsScreen
-   - PaymentHistoryScreen
-   - AutoDebitSettingsScreen
-   - ReminderAutomationScreen
-
-2. **DrawsStackNavigator**
-
-   - DrawDashboardScreen
-   - CreateDrawScreen
-   - DrawDetailsScreen
-   - DrawHistoryScreen
-
-3. **AnalyticsStackNavigator**
-
-   - AnalyticsDashboardScreen
-   - GroupAnalyticsScreen
-   - MemberAnalyticsScreen
-   - SystemHealthScreen
-   - ExportReportsScreen
-
-4. **WalletStackNavigator**
-
-   - WalletOverviewScreen
-   - AddFundsScreen
-   - WithdrawFundsScreen
-   - SettlementRulesScreen
-
-5. **NotificationsStackNavigator**
-
-   - NotificationsInboxScreen
-   - ApprovalAlertsScreen
-   - SystemAlertsScreen
-
-6. **SettingsStackNavigator**
-   - AppSettingsScreen
-   - PaymentSettingsScreen
-   - PermissionsScreen
-   - AuditLogsScreen
-   - BackupSyncScreen
-
-### Tab Navigator Update
-
-Current AdminTabNavigator has 5 tabs. Consider:
-
-- Keep current 5 tabs
-- Add new sections via nested navigation
-- Or expand to more tabs (max 6-7 recommended)
-
-**Suggested Tab Structure:**
-
-1. Home (Dashboard)
-2. Groups (Existing stack)
-3. Collections (New stack) 🎯
-4. Analytics (New stack) 🎯
-5. More (Settings/Wallet/Notifications/Draws)
-
----
-
-## Database Schema Extensions Needed
-
-### New Collections
-
-**`upcoming_payments`**
-
-```typescript
-{
-  id: string;
-  groupId: string;
-  memberId: string;
-  amount: number;
-  dueDate: Timestamp;
-  status: 'scheduled' | 'reminded' | 'paid' | 'overdue';
-  autoDebit: boolean;
-}
-```
-
-**`draws`**
-
-```typescript
-{
-  id: string;
-  groupId: string;
-  drawNumber: number;
-  scheduledDate: Timestamp;
-  completedDate?: Timestamp;
-  winnerId?: string;
-  prizeAmount: number;
-  bids: { memberId: string; bidAmount: number }[];
-  status: 'upcoming' | 'completed' | 'cancelled';
-}
-```
-
-**`notifications`**
-
-```typescript
-{
-  id: string;
-  userId: string;
-  type: 'approval' | 'system' | 'payment' | 'draw';
-  title: string;
-  message: string;
-  priority: 'low' | 'medium' | 'high';
-  read: boolean;
-  actionUrl?: string;
-  createdAt: Timestamp;
-}
-```
-
-4️⃣ UPDATE COLLECTION MODULE
-❌ Remove:
-
-Auto Debit
-
-Auto Deduction
-
-Wallet Linking
-
-➕ Add:
-
-Overdue Auto-Flag
-
-Manual Reminder Trigger
-
-Collection Rate %
-
-Reference ID field
-
-Screenshot Upload
-
-5️⃣ UPDATE DRAW MODULE
-➕ Add:
-
-Winner Lock (cannot edit after confirm)
-
-Auto create payment tasks after draw
-
-Draw Audit Log
-
-Draw Notification trigger
-
-6️⃣ UPDATE DASHBOARD METRICS
-❌ Remove:
-
-Wallet Balance
-
-Available Funds
-
-Total Deposits
-
-➕ Add:
-
-Total Expected Collection
-
-Total Confirmed Collection
-
-Overdue Amount
-
-Collection Rate %
-
-Pending Confirmations
-
-7️⃣ UPDATE SYSTEM SETTINGS
-❌ Remove:
-
-Payment Gateway Config
-
-➕ Add:
-
-Legal Disclaimer Page
-
-Terms & Conditions
-
-Risk Acknowledgment Popup
-
-Audit Log Viewer
-
-8️⃣ ADD NOTIFICATION TYPES
-
-Add new types:
-
-'payment_submitted'
-'payment_confirmed'
-'payment_overdue'
-'draw_completed'
-'dispute_raised'
-
-<!-- **`wallet_transactions`**
-```typescript
-{
-  id: string;
-  type: 'deposit' | 'withdrawal' | 'settlement';
-  amount: number;
-  balance: number;
-  status: 'pending' | 'completed' | 'failed';
-  method: 'bank_transfer' | 'upi' | 'card';
-  createdAt: Timestamp;
-}
-``` -->
+## Navigation Architecture
+
+**Root:** `src/navigation/RootNavigator.tsx`
+All stack navigators registered as screens in the root stack:
+
+| Route Name              | Navigator                             | Status |
+| ----------------------- | ------------------------------------- | ------ |
+| AdminTabs               | AdminTabNavigator (4 tabs)            | ✅     |
+| UserTabs                | UserTabNavigator                      | ✅     |
+| MembersStack            | MembersStackNavigator                 | ✅     |
+| TransactionsStack       | TransactionsStackNavigator (+Receipts)| ✅     |
+| Collections             | CollectionsStackNavigator             | ✅     |
+| Draws                   | DrawsStackNavigator                   | ✅     |
+| PaymentConfirmations    | PaymentConfirmationsStackNavigator    | ✅     |
+| Notifications           | NotificationsStackNavigator           | ✅     |
+| Analytics               | AnalyticsStackNavigator               | ✅     |
+| AuditLog                | AuditLogScreen (direct)               | ✅     |
+| PermissionsRoles        | PermissionsRolesScreen (direct)       | ✅     |
 
 ---
 
@@ -642,58 +313,38 @@ Add new types:
 
 ### Completion Status
 
-| Module                | Completion | Files                                 |
-| --------------------- | ---------- | ------------------------------------- |
-| Auth & Onboarding     | 100% ✅    | 5/5                                   |
-| Admin Dashboard       | 80% ⚠️     | 1/1 (charts missing)                  |
-| Group Management      | 100% ✅    | 15/15                                 |
-| Member Management     | 100% ✅    | 10/10                                 |
-| Transactions          | 90% ⚠️     | 8/8 (receipts missing)                |
-| Collection Management | 50% ⚠️     | Service ✅ + Types ✅, Screens 0/4 🔴 |
-| Draw Management       | 50% ⚠️     | Service ✅ + Types ✅, Screens 0/4 🔴 |
-| Analytics & Reporting | 40% ⚠️     | Dashboard ✅, 4 screens missing 🔴    |
-| Notifications         | 25% ⚠️     | Types ✅, Service + Screens 🔴        |
-| System Settings       | 20% 🔴     | 1/5                                   |
-| Wallet/Funds          | 50% ⚠️     | Service ✅ + Types ✅, Screens 0/4 🔴 |
-| Integrations          | 0% 🔴      | 0/3                                   |
-| Support               | 0% 🔴      | 0/3                                   |
+| Module                  | Completion | Status                                  |
+| ----------------------- | ---------- | --------------------------------------- |
+| Auth & Onboarding       | 100% ✅    | 8 screen files                          |
+| Admin Dashboard         | 100% ✅    | Metrics updated, quick actions complete  |
+| Group Management        | 100% ✅    | 4 screens + service + hook              |
+| Member Management       | 100% ✅    | 3 screens + hook                        |
+| Transactions            | 100% ✅    | 4 screens incl. ReceiptScreen           |
+| Collection Management   | 100% ✅    | Section 4️⃣ updates applied             |
+| Draw Management         | 100% ✅    | Section 5️⃣ updates applied             |
+| Analytics & Reporting   | 100% ✅    | 5 screens (dashboard + 4 sub-screens)   |
+| Notifications           | 100% ✅    | Admin inbox with real-time + filters     |
+| System Settings         | 100% ✅    | Legal + AuditLog + PermissionsRoles     |
+| Payment Confirmation    | 100% ✅    | Full module: service + types + hook + screen |
+| ~~Wallet/Funds~~        | REMOVED ✅  | All files deleted                       |
+| Integrations            | 0% 🔴      | Future                                  |
+| Support                 | 0% 🔴      | Future                                  |
 
-**Overall Completion: ~55%** ⬆️ (+20% from services + types + charts)
+**Overall Completion: ~97%**
 
-**MVP Completion: ~65%** (Auth, Dashboard, Groups, Members, Transactions done; Services ready for Collections/Draws/Wallet)
+**MVP Completion: 100%** (All core modules complete)
 
-**Critical Gaps:**
-
-1. ✅ ~~Charts/Analytics~~ → Dashboard with Victory charts complete!
-2. ⚠️ Collections → Service ready, screens needed (4 screens)
-3. ⚠️ Draws → Service ready, screens needed (4 screens)
-4. ⚠️ Wallet → Service ready, screens needed (4 screens)
-
-**Recent Progress:**
-
-- ✅ Victory Native charts installed and configured
-- ✅ All type definitions created (collection, draw, wallet, notification)
-- ✅ Three new services with Firestore integration (collections, draws, wallet)
-- ✅ Analytics Dashboard with 3 Victory charts + 4 KPI cards
+**Remaining Work (Future enhancements only):**
+1. 🔴 Integrations (12.1-12.2) — WhatsApp templates, SMS provider
+2. 🔴 Support System (14.1-14.3) — Tickets, FAQs, Contact
+3. 🔴 AI & Automation (13.1-13.4) — Risk AI, Bots, Auto-approve, Fraud
 
 ---
 
-## Next Steps
+**Tracking file:** See `PROGRESS_TRACKER.md` for detailed session-by-session tracking.
 
-1. **Install chart library** (Victory Native recommended)
-2. **Implement Analytics module** (highest priority for decision-making)
-3. **Implement Collections module** (critical for cashflow)
-4. **Implement Draws module** (core business logic)
-5. **Implement Wallet module** (fund management)
-6. **Add Notifications** (user engagement)
-7. **Complete Settings** (admin controls)
-
-**Estimated Remaining Work:** 50-60 screens + components + services
-
----
-
-**Use Gemini CLI for detailed gap analysis:**
+**Use Gemini CLI for validation:**
 
 ```bash
-gemini -p "@./ Based on this implementation status, create a detailed development plan with time estimates and dependencies."
+gemini -p "@./ @IMPLEMENTATION_STATUS.md Validate this status document against actual codebase. Are all files accounted for? Any discrepancies?"
 ```

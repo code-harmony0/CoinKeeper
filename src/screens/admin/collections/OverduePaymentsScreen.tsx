@@ -9,11 +9,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import { AlertCircle, Calendar, Clock, Search } from 'lucide-react-native';
+import { AlertCircle, Calendar, Clock, Search, Bell } from 'lucide-react-native';
 import type { ScheduledPayment } from '../../../types/payment';
 import { useOverduePayments } from '../../../hooks/useScheduledPayments';
 import { COLORS } from '../../../theme/colors';
@@ -52,7 +53,8 @@ const OverdueCard: React.FC<{
   payment: ScheduledPayment;
   index: number;
   onPress: () => void;
-}> = ({ payment, index, onPress }) => {
+  onRemind: () => void;
+}> = ({ payment, index, onPress, onRemind }) => {
   const dueDate = payment.dueDate?.toDate?.() ?? new Date();
   const formattedDate = dueDate.toLocaleDateString('en-IN', {
     day: '2-digit',
@@ -105,14 +107,26 @@ const OverdueCard: React.FC<{
         </View>
 
         <View style={styles.cardFooter}>
-          <View style={styles.footerItem}>
-            <Calendar size={14} color={COLORS.textSecondary} />
-            <Text style={styles.footerText}>Due: {formattedDate}</Text>
+          <View style={styles.footerLeft}>
+            <View style={styles.footerItem}>
+              <Calendar size={14} color={COLORS.textSecondary} />
+              <Text style={styles.footerText}>Due: {formattedDate}</Text>
+            </View>
+            <View style={styles.footerItem}>
+              <Clock size={14} color={COLORS.textSecondary} />
+              <Text style={styles.footerText}>{payment.remindersSent ?? 0} sent</Text>
+            </View>
           </View>
-          <View style={styles.footerItem}>
-            <Clock size={14} color={COLORS.textSecondary} />
-            <Text style={styles.footerText}>{payment.remindersSent ?? 0} reminders sent</Text>
-          </View>
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation?.();
+              ReactNativeHapticFeedback.trigger('impactMedium');
+              onRemind();
+            }}
+            style={styles.remindButton}>
+            <Bell size={16} color="#FFFFFF" />
+            <Text style={styles.remindButtonText}>Remind</Text>
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -160,6 +174,25 @@ export const OverduePaymentsScreen: React.FC<Props> = ({ navigation, route }) =>
   const handlePaymentPress = useCallback((payment: ScheduledPayment) => {
     navigation.navigate('ContributionDetail', { paymentId: payment.id, payment });
   }, [navigation]);
+
+  const handleSendReminder = useCallback((payment: ScheduledPayment) => {
+    const daysOverdue = payment.daysOverdue ?? 0;
+    Alert.alert(
+      'Send Overdue Reminder',
+      `Send overdue reminder to ${payment.memberName}?\n\nAmount: ₹${payment.amount.toLocaleString('en-IN')}\nOverdue: ${daysOverdue} days`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send Reminder',
+          style: 'destructive',
+          onPress: () => {
+            ReactNativeHapticFeedback.trigger('notificationSuccess');
+            Alert.alert('Sent', `Overdue reminder sent to ${payment.memberName}`);
+          },
+        },
+      ],
+    );
+  }, []);
 
   // Loading state
   if (isLoading && payments.length === 0) {
@@ -236,6 +269,7 @@ export const OverduePaymentsScreen: React.FC<Props> = ({ navigation, route }) =>
             payment={item}
             index={index}
             onPress={() => handlePaymentPress(item)}
+            onRemind={() => handleSendReminder(item)}
           />
         )}
         keyExtractor={item => item.id}
@@ -392,9 +426,27 @@ const styles = StyleSheet.create({
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
+  },
+  footerLeft: {
+    gap: 6,
+  },
+  remindButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: COLORS.errorCoral,
+    gap: 6,
+  },
+  remindButtonText: {
+    fontSize: 12,
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    color: '#FFFFFF',
   },
   footerItem: {
     flexDirection: 'row',

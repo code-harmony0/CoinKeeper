@@ -174,9 +174,16 @@ export interface PaymentReconciliation {
  * Notification Log - Reminder/alert delivery record
  * Stored in `notificationLogs/` collection
  */
+export type AdminNotificationType =
+  | 'payment_submitted'
+  | 'payment_confirmed'
+  | 'payment_overdue'
+  | 'draw_completed'
+  | 'dispute_raised';
+
 export interface NotificationLog {
   id: string;
-  type: 'reminder' | 'alert' | 'confirmation' | 'escalation';
+  type: 'reminder' | 'alert' | 'confirmation' | 'escalation' | AdminNotificationType;
   channel: NotificationChannel;
   recipientId: string;
   recipientPhone?: string;

@@ -14,7 +14,7 @@ const Tab = createBottomTabNavigator();
 const USER_TABS = [
   { name: 'Home', label: 'Home', icon: 'home' as const },
   { name: 'Transactions', label: 'Wallet', icon: 'wallet' as const },
-  { name: 'Add', label: 'Add', icon: 'plus' as const },
+  { name: 'Add', label: 'Add', icon: 'add' as const },
   { name: 'Groups', label: 'Groups', icon: 'users' as const },
   { name: 'Settings', label: 'Settings', icon: 'settings' as const },
 ];

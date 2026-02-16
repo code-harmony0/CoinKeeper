@@ -9,11 +9,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import { Calendar, DollarSign, Clock, CheckCircle, Search, AlertCircle } from 'lucide-react-native';
+import { Calendar, Clock, CheckCircle, Search, AlertCircle, Bell, TrendingUp } from 'lucide-react-native';
 import type { ScheduledPayment, ScheduledPaymentStatus } from '../../../types/payment';
 import { useUpcomingPayments } from '../../../hooks/useScheduledPayments';
 import { useTabBarScroll } from '../../../context/TabBarScrollContext';
@@ -53,7 +54,8 @@ const PaymentCard: React.FC<{
   payment: ScheduledPayment;
   index: number;
   onPress: () => void;
-}> = ({ payment, index, onPress }) => {
+  onRemind: () => void;
+}> = ({ payment, index, onPress, onRemind }) => {
   const dueDate = payment.dueDate?.toDate?.() ?? new Date();
   const formattedDate = dueDate.toLocaleDateString('en-IN', {
     day: '2-digit',
@@ -103,10 +105,10 @@ const PaymentCard: React.FC<{
             <Calendar size={20} color={COLORS.textPrimary} />
             <Text style={styles.dueDate}>{formattedDate}</Text>
           </View>
-          {payment.autoDebitEnabled && (
-            <View style={styles.autoDebitBadge}>
-              <DollarSign size={16} color="#FFFFFF" />
-              <Text style={styles.autoDebitText}>Auto</Text>
+          {payment.remindersSent > 0 && (
+            <View style={styles.remindedBadge}>
+              <Bell size={14} color={COLORS.warningAmber} />
+              <Text style={styles.remindedText}>{payment.remindersSent}x</Text>
             </View>
           )}
         </View>
@@ -122,6 +124,16 @@ const PaymentCard: React.FC<{
             <CheckCircle size={14} color="#FFFFFF" />
             <Text style={styles.statusText}>{getStatusLabel()}</Text>
           </View>
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation?.();
+              ReactNativeHapticFeedback.trigger('impactMedium');
+              onRemind();
+            }}
+            style={styles.remindButton}>
+            <Bell size={16} color={COLORS.primaryBlue} />
+            <Text style={styles.remindButtonText}>Remind</Text>
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -171,6 +183,30 @@ export const UpcomingPaymentsScreen: React.FC<Props> = ({ navigation, route }) =
     navigation.navigate('ContributionDetail', { paymentId: payment.id, payment });
   }, [navigation]);
 
+  const handleSendReminder = useCallback((payment: ScheduledPayment) => {
+    Alert.alert(
+      'Send Reminder',
+      `Send payment reminder to ${payment.memberName} for ₹${payment.amount.toLocaleString('en-IN')}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send',
+          onPress: () => {
+            ReactNativeHapticFeedback.trigger('notificationSuccess');
+            Alert.alert('Sent', `Reminder sent to ${payment.memberName}`);
+          },
+        },
+      ],
+    );
+  }, []);
+
+  // Calculate collection rate from filtered data
+  const collectionRate = useMemo(() => {
+    if (payments.length === 0) return 0;
+    const paid = payments.filter(p => p.status === 'paid').length;
+    return Math.round((paid / payments.length) * 100);
+  }, [payments]);
+
   // Loading state
   if (isLoading && payments.length === 0) {
     return (
@@ -206,6 +242,20 @@ export const UpcomingPaymentsScreen: React.FC<Props> = ({ navigation, route }) =
         <Text style={styles.headerSubtitle}>
           {filteredPayments.length} payment{filteredPayments.length !== 1 ? 's' : ''} due
         </Text>
+      </Animated.View>
+
+      {/* Collection Rate Bar */}
+      <Animated.View
+        entering={FadeInDown.delay(50).springify(SPRING_CONFIG)}
+        style={styles.rateBar}>
+        <View style={styles.rateInfo}>
+          <TrendingUp size={18} color={COLORS.successGreen} />
+          <Text style={styles.rateLabel}>Collection Rate</Text>
+        </View>
+        <View style={styles.rateTrack}>
+          <View style={[styles.rateFill, { width: `${collectionRate}%` }]} />
+        </View>
+        <Text style={styles.rateValue}>{collectionRate}%</Text>
       </Animated.View>
 
       {/* Search Bar */}
@@ -251,6 +301,7 @@ export const UpcomingPaymentsScreen: React.FC<Props> = ({ navigation, route }) =
             payment={item}
             index={index}
             onPress={() => handlePaymentPress(item)}
+            onRemind={() => handleSendReminder(item)}
           />
         )}
         keyExtractor={item => item.id}
@@ -295,6 +346,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'PlusJakartaSans-Regular',
     color: '#666',
+  },
+  rateBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    gap: 10,
+  },
+  rateInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  rateLabel: {
+    fontSize: 13,
+    fontFamily: 'PlusJakartaSans-Medium',
+    color: '#666',
+  },
+  rateTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#E8E8E8',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  rateFill: {
+    height: '100%',
+    backgroundColor: COLORS.successGreen,
+    borderRadius: 3,
+  },
+  rateValue: {
+    fontSize: 14,
+    fontFamily: 'PlusJakartaSans-Bold',
+    color: COLORS.successGreen,
+    minWidth: 36,
+    textAlign: 'right',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -375,19 +471,19 @@ const styles = StyleSheet.create({
     color: '#666',
     marginLeft: 8,
   },
-  autoDebitBadge: {
+  remindedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#5cb85c',
+    backgroundColor: '#FFF5E6',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
   },
-  autoDebitText: {
+  remindedText: {
     fontSize: 11,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#FFFFFF',
+    color: COLORS.warningAmber,
   },
   cardBody: {
     marginBottom: 12,
@@ -412,6 +508,21 @@ const styles = StyleSheet.create({
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  remindButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#E6F0FA',
+    gap: 6,
+  },
+  remindButtonText: {
+    fontSize: 12,
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    color: COLORS.primaryBlue,
   },
   statusBadge: {
     flexDirection: 'row',

@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, memo } from 'react';
-import { View, StyleSheet, Dimensions, Pressable, Text, Platform } from 'react-native';
+import { View, StyleSheet, Dimensions, Pressable, Text } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -17,29 +17,32 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from '@react-native-community/blur';
-import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
+import { THEME_COLORS } from '../../theme/blobTheme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BAR_WIDTH = SCREEN_WIDTH * 0.80; // Reduced for 4 tabs
-const BAR_HEIGHT = 70;
-const CORNER_RADIUS = 35;
+const BAR_WIDTH = SCREEN_WIDTH * 0.88; // Narrower width
+const BAR_HEIGHT = 56; // Reduced height
+const CORNER_RADIUS = BAR_HEIGHT / 2;
 
 const COLORS = {
   accents: ['#D8E2FA', '#E2B6CF', '#98E4C1', '#FFD4B8', '#B8E6F5'],
   // Vibrant colors for the FILLS - High visibility
   vibrantFills: ['#1565C0', '#AD1457', '#2E7D32', '#E65100', '#00838F'],
-  activeIcon: '#121723', // Dark stroke
-  inactiveIcon: 'rgba(18, 23, 35, 0.5)',
+  activeIcon: THEME_COLORS.accent, // Use theme color
+  inactiveIcon: THEME_COLORS.textMuted,
   inactiveBg: 'rgba(255,255,255,0.2)',
   barBg: 'rgba(255,255,255,0.15)', // Clean glass background
   barBorder: 'rgba(255,255,255,0.3)',
 };
 
-const ICON_SIZE = 50;
-const EXPANDED_WIDTH = 135;
-const TAB_HEIGHT = 50;
+const ICON_SIZE = 22; // Compact icon size
+const EXPANDED_WIDTH = 68; // Tight expanded width
+const TAB_HEIGHT = 40; // Compact height
+const FAB_SIZE = 62; // Larger FAB that grows out
+const FAB_SPACER_WIDTH = 74; // Extra space around FAB for better separation
 
 interface TabConfig {
   name: string;
@@ -105,53 +108,79 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
     };
   });
 
+  // Calculate effective padding bottom for bar positioning
+  const effectivePaddingBottom = Math.max(insets.bottom, 18);
+
+  // Animated style for FAB
+  const animatedFabStyle = useAnimatedStyle(() => {
+    'worklet';
+    const translateY = interpolate(barVisible.value, [0, 1], [150, 0]);
+    const opacity = barVisible.value;
+    // FAB sits more on the bar (moved down 15px from previous position)
+    const bottomValue = effectivePaddingBottom + 10;
+
+    return {
+      bottom: bottomValue,
+      transform: [{ translateY }],
+      opacity: opacity,
+    };
+  });
+
+  const renderTab = (tab: TabConfig, index: number, isFabPosition: boolean = false) => {
+    // Render invisible spacer for FAB position
+    if (isFabPosition && hasFab) {
+      return <View key="fab-spacer" style={styles.fabSlot} />;
+    }
+
+    const isActive = activeIndex === index;
+    const vibrantFill = COLORS.vibrantFills[index % COLORS.vibrantFills.length];
+
+    return (
+      <View key={tab.name} style={styles.tabSlot}>
+        <ExpandingTab
+          icon={tab.icon}
+          label={tab.label}
+          isActive={isActive}
+          accentColor={COLORS.accents[index % COLORS.accents.length]}
+          vibrantFill={vibrantFill}
+          onPress={() => {
+            ReactNativeHapticFeedback.trigger('impactLight', {
+              enableVibrateFallback: true,
+            });
+            navigation.navigate(tab.name);
+          }}
+        />
+      </View>
+    );
+  };
+
   return (
-    <Animated.View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 18) }, animatedWrapperStyle]}>
+    <Animated.View style={[styles.wrapper, { paddingBottom: effectivePaddingBottom }, animatedWrapperStyle]}>
       <View style={styles.barContainer}>
         <BlurView
           blurType="light"
-          blurAmount={80} // Good blur, not excessive
+          blurAmount={80}
           style={styles.blur}
           reducedTransparencyFallbackColor="#FFFFFF"
         />
         <View style={styles.bar}>
-          {tabs.map((tab, index) => {
-            if (hasFab && index === fabIndex) {
-              return (
-                <FabButton
-                  key={tab.name}
-                  onPress={() => {
-                    ReactNativeHapticFeedback.trigger('impactMedium', {
-                      enableVibrateFallback: true,
-                    });
-                    navigation.navigate(tab.name);
-                  }}
-                />
-              );
-            }
-
-            const isActive = activeIndex === index;
-            const vibrantFill = COLORS.vibrantFills[index % COLORS.vibrantFills.length];
-            
-            return (
-              <ExpandingTab
-                key={tab.name}
-                icon={tab.icon}
-                label={tab.label}
-                isActive={isActive}
-                accentColor={COLORS.accents[index % COLORS.accents.length]}
-                vibrantFill={vibrantFill}
-                onPress={() => {
-                  ReactNativeHapticFeedback.trigger('impactLight', {
-                    enableVibrateFallback: true,
-                  });
-                  navigation.navigate(tab.name);
-                }}
-              />
-            );
-          })}
+          {tabs.map((tab, index) => renderTab(tab, index, hasFab && index === fabIndex))}
         </View>
       </View>
+
+      {/* Absolutely positioned FAB - sibling to barContainer for overflow */}
+      {hasFab && (
+        <Animated.View style={[styles.fabContainer, animatedFabStyle]}>
+          <FabButton
+            onPress={() => {
+              ReactNativeHapticFeedback.trigger('impactMedium', {
+                enableVibrateFallback: true,
+              });
+              navigation.navigate(tabs[fabIndex].name);
+            }}
+          />
+        </Animated.View>
+      )}
     </Animated.View>
   );
 };
@@ -379,54 +408,69 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-    gap: 7,
+    justifyContent: 'space-evenly',
+    paddingHorizontal: 0,
     backgroundColor: COLORS.barBg,
+  },
+  tabSlot: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabSlot: {
+    width: FAB_SPACER_WIDTH,
+    height: TAB_HEIGHT,
+  },
+  fabContainer: {
+    position: 'absolute',
+    left: '50%',
+    marginLeft: -(FAB_SIZE / 2),
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   tab: {
     height: TAB_HEIGHT,
     borderRadius: TAB_HEIGHT / 2,
     justifyContent: 'center',
-    paddingLeft: 13,
-    paddingRight: 15,
+    alignItems: 'center',
+    paddingHorizontal: 2,
     overflow: 'hidden',
   },
   tabContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
+    gap: 3,
   },
   iconWrapper: {
-    width: 26,
-    height: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#121723',
-    letterSpacing: 0.2,
-  },
-  fabWrapper: {
     width: ICON_SIZE,
     height: ICON_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: THEME_COLORS.textPrimary,
+    letterSpacing: 0,
+  },
+  fabWrapper: {
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   fab: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: '#121723',
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: FAB_SIZE / 2,
+    backgroundColor: THEME_COLORS.accent,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 14,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 12,
   },
 });
 

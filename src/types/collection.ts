@@ -2,8 +2,6 @@ import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 export type PaymentStatus = 'scheduled' | 'reminded' | 'paid' | 'overdue' | 'failed';
 export type ReminderChannel = 'sms' | 'email' | 'push' | 'whatsapp';
-export type AutoDebitStatus = 'active' | 'paused' | 'failed' | 'cancelled';
-
 export interface UpcomingPayment {
   id: string;
   groupId: string;
@@ -14,7 +12,8 @@ export interface UpcomingPayment {
   amount: number;
   dueDate: FirebaseFirestoreTypes.Timestamp;
   status: PaymentStatus;
-  autoDebit: boolean;
+  referenceId?: string;
+  screenshotUrl?: string;
   reminderSent: boolean;
   reminderSentDate?: FirebaseFirestoreTypes.Timestamp;
   createdAt: FirebaseFirestoreTypes.Timestamp;
@@ -38,35 +37,14 @@ export interface PaymentHistory {
   amount: number;
   paidDate: FirebaseFirestoreTypes.Timestamp;
   dueDate: FirebaseFirestoreTypes.Timestamp;
-  method: 'cash' | 'bank_transfer' | 'upi' | 'card' | 'auto_debit';
+  method: 'cash' | 'bank_transfer' | 'upi' | 'card';
   transactionId?: string;
+  referenceId?: string;
+  screenshotUrl?: string;
   status: 'completed' | 'pending' | 'failed' | 'refunded';
   notes?: string;
   receiptUrl?: string;
   createdAt: FirebaseFirestoreTypes.Timestamp;
-}
-
-export interface AutoDebitSchedule {
-  id: string;
-  groupId: string;
-  memberId: string;
-  memberName: string;
-  amount: number;
-  frequency: 'weekly' | 'biweekly' | 'monthly';
-  nextRunDate: FirebaseFirestoreTypes.Timestamp;
-  lastRunDate?: FirebaseFirestoreTypes.Timestamp;
-  status: AutoDebitStatus;
-  enabled: boolean;
-  bankDetails: {
-    accountNumber: string;
-    ifscCode: string;
-    accountHolderName: string;
-    bankName: string;
-  };
-  failureCount: number;
-  lastFailureReason?: string;
-  createdAt: FirebaseFirestoreTypes.Timestamp;
-  updatedAt: FirebaseFirestoreTypes.Timestamp;
 }
 
 export interface ReminderAutomation {
@@ -91,6 +69,6 @@ export interface CollectionStats {
   totalPending: number;
   overdueAmount: number;
   collectionRate: number;
-  autoDebitSuccessRate: number;
+  pendingConfirmations: number;
   averageDelayDays: number;
 }

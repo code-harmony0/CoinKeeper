@@ -28,6 +28,9 @@ import {
   Save,
   LogOut,
   Shield,
+  Scale,
+  AlertTriangle,
+  ScrollText,
 } from 'lucide-react-native';
 import firestore from '@react-native-firebase/firestore';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
@@ -290,6 +293,23 @@ export const AdminSettingsScreen: React.FC<{ navigation?: any }> = ({ navigation
 
             <View style={styles.divider} />
 
+            {/* Permissions & Roles */}
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => navigation?.navigate?.('PermissionsRoles')}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#E0F2F1' }]}>
+                <Shield size={20} color="#00796B" strokeWidth={2.5} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Permissions & Roles</Text>
+                <Text style={styles.settingDescription}>Manage user access control</Text>
+              </View>
+              <ChevronRight size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
             {/* Security */}
             <TouchableOpacity style={styles.settingRow}>
               <View style={[styles.iconContainer, { backgroundColor: '#E8F5E9' }]}>
@@ -304,8 +324,87 @@ export const AdminSettingsScreen: React.FC<{ navigation?: any }> = ({ navigation
           </View>
         </Animated.View>
 
+        {/* Legal & Compliance Section */}
+        <Animated.View entering={FadeInDown.delay(250).springify()} style={styles.section}>
+          <Text style={styles.sectionTitle}>Legal & Compliance</Text>
+          <View style={styles.card}>
+            {/* Legal Disclaimer */}
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => {
+                ReactNativeHapticFeedback.trigger('impactLight');
+                Alert.alert(
+                  'Legal Disclaimer',
+                  'CoinKeeper is a payment tracking tool only. It does NOT collect, hold, process, or transfer any funds. All payments happen directly between members outside the app. The app only records and confirms payment activity.\n\nCoinKeeper is not a financial institution, payment processor, or money transmitter. Use at your own discretion.',
+                  [{ text: 'I Understand' }],
+                );
+              }}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#FFF3E0' }]}>
+                <Scale size={20} color="#E65100" strokeWidth={2.5} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Legal Disclaimer</Text>
+                <Text style={styles.settingDescription}>View app disclaimer</Text>
+              </View>
+              <ChevronRight size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            {/* Terms & Conditions */}
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => {
+                ReactNativeHapticFeedback.trigger('impactLight');
+                Alert.alert(
+                  'Terms & Conditions',
+                  '1. CoinKeeper tracks payments only — no money is held.\n2. All chit fund activities are governed by local laws.\n3. Admins are responsible for compliance with applicable regulations.\n4. CoinKeeper is not liable for disputes between members.\n5. Data is stored securely on Firebase servers.\n6. Users may request data deletion at any time.\n7. Draw results are final once confirmed by admin.',
+                  [{ text: 'Close' }],
+                );
+              }}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#E3F2FD' }]}>
+                <ScrollText size={20} color="#1565C0" strokeWidth={2.5} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Terms & Conditions</Text>
+                <Text style={styles.settingDescription}>Usage terms and policies</Text>
+              </View>
+              <ChevronRight size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            {/* Risk Acknowledgment */}
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => {
+                ReactNativeHapticFeedback.trigger('impactLight');
+                Alert.alert(
+                  'Risk Acknowledgment',
+                  'By using CoinKeeper, you acknowledge:\n\n• Chit fund participation carries financial risk\n• CoinKeeper does not guarantee payments or returns\n• Members may default on payments\n• Draw outcomes are based on bidding and cannot be reversed\n• Admin is solely responsible for group management\n• Local regulations on chit funds must be followed',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'I Acknowledge', style: 'destructive' },
+                  ],
+                );
+              }}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#FFF8E1' }]}>
+                <AlertTriangle size={20} color="#F9A825" strokeWidth={2.5} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Risk Acknowledgment</Text>
+                <Text style={styles.settingDescription}>Financial risk disclosure</Text>
+              </View>
+              <ChevronRight size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
         {/* Actions */}
-        <Animated.View entering={FadeInDown.delay(250).springify()} style={styles.actionsContainer}>
+        <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.actionsContainer}>
           <TouchableOpacity
             style={styles.saveButton}
             onPress={saveSettings}

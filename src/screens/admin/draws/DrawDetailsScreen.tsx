@@ -1,126 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import { Trophy, Users, Calendar, DollarSign, Award, Clock } from 'lucide-react-native';
-import type { Bid, Draw } from '../../../types/draw';
+import {
+  Trophy, Users, Calendar, DollarSign, Award, Clock,
+  Lock, Bell, FileText, ChevronLeft, AlertCircle,
+} from 'lucide-react-native';
+import { useDrawDetails } from '../../../hooks/useDraws';
+import { drawsService } from '../../../services/drawsService';
+import { COLORS } from '../../../theme/colors';
 import firestore from '@react-native-firebase/firestore';
-
-// Mock draw details with 8 dummy bids
-const DUMMY_DRAW: Draw = {
-  id: '1',
-  groupId: 'group1',
-  groupName: 'Monthly Savings Group',
-  drawNumber: 12,
-  scheduledDate: firestore.Timestamp.fromDate(new Date(2025, 11, 20)),
-  status: 'in_progress',
-  totalPrizeAmount: 50000,
-  participantCount: 15,
-  bidsReceived: 8,
-  biddingOpen: true,
-  createdAt: firestore.Timestamp.now(),
-  updatedAt: firestore.Timestamp.now(),
-};
-
-const DUMMY_BIDS: Bid[] = [
-  {
-    id: '1',
-    drawId: '1',
-    groupId: 'group1',
-    memberId: 'member1',
-    memberName: 'Rajesh Kumar',
-    bidAmount: 15000,
-    submittedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 6, 10, 30)),
-    status: 'active',
-    createdAt: firestore.Timestamp.now(),
-  },
-  {
-    id: '2',
-    drawId: '1',
-    groupId: 'group1',
-    memberId: 'member2',
-    memberName: 'Priya Sharma',
-    bidAmount: 18000,
-    submittedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 6, 11, 15)),
-    status: 'active',
-    createdAt: firestore.Timestamp.now(),
-  },
-  {
-    id: '3',
-    drawId: '1',
-    groupId: 'group1',
-    memberId: 'member3',
-    memberName: 'Anil Patel',
-    bidAmount: 12000,
-    submittedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 6, 12, 45)),
-    status: 'active',
-    createdAt: firestore.Timestamp.now(),
-  },
-  {
-    id: '4',
-    drawId: '1',
-    groupId: 'group1',
-    memberId: 'member4',
-    memberName: 'Sunita Reddy',
-    bidAmount: 20000,
-    submittedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 6, 14, 20)),
-    status: 'active',
-    createdAt: firestore.Timestamp.now(),
-  },
-  {
-    id: '5',
-    drawId: '1',
-    groupId: 'group1',
-    memberId: 'member5',
-    memberName: 'Vikram Singh',
-    bidAmount: 16500,
-    submittedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 6, 15, 10)),
-    status: 'active',
-    createdAt: firestore.Timestamp.now(),
-  },
-  {
-    id: '6',
-    drawId: '1',
-    groupId: 'group1',
-    memberId: 'member6',
-    memberName: 'Kavita Desai',
-    bidAmount: 14000,
-    submittedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 6, 16, 30)),
-    status: 'active',
-    createdAt: firestore.Timestamp.now(),
-  },
-  {
-    id: '7',
-    drawId: '1',
-    groupId: 'group1',
-    memberId: 'member7',
-    memberName: 'Ramesh Gupta',
-    bidAmount: 17500,
-    submittedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 6, 17, 45)),
-    status: 'active',
-    createdAt: firestore.Timestamp.now(),
-  },
-  {
-    id: '8',
-    drawId: '1',
-    groupId: 'group1',
-    memberId: 'member8',
-    memberName: 'Meera Nair',
-    bidAmount: 19000,
-    submittedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 6, 18, 20)),
-    status: 'active',
-    createdAt: firestore.Timestamp.now(),
-  },
-];
+import type { DrawBid } from '../../../types/draw';
 
 const SPRING_CONFIG = {
   damping: 16,
@@ -130,15 +30,41 @@ const SPRING_CONFIG = {
 
 interface Props {
   navigation: any;
-  route: any;
+  route: { params: { drawId: string; draw?: any } };
 }
 
+// Audit logger for draw actions
+const logDrawAudit = async (data: {
+  drawId: string;
+  action: string;
+  performedBy: string;
+  metadata?: Record<string, unknown>;
+}) => {
+  try {
+    await firestore()
+      .collection('auditLogs')
+      .add({
+        ...data,
+        targetCollection: 'draws',
+        targetId: data.drawId,
+        timestamp: firestore.FieldValue.serverTimestamp(),
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        actorType: 'admin',
+        success: true,
+      });
+  } catch (err) {
+    console.error('[DrawAudit] Failed to log:', err);
+  }
+};
+
 const BidCard: React.FC<{
-  bid: Bid;
+  bid: DrawBid;
   index: number;
   isHighestBid: boolean;
-}> = ({ bid, index, isHighestBid }) => {
-  const submittedDate = bid.submittedAt.toDate();
+  isLocked: boolean;
+  onSelectWinner?: () => void;
+}> = ({ bid, index, isHighestBid, isLocked, onSelectWinner }) => {
+  const submittedDate = bid.timestamp?.toDate?.() ?? new Date();
   const formattedTime = submittedDate.toLocaleTimeString('en-IN', {
     hour: '2-digit',
     minute: '2-digit',
@@ -149,17 +75,25 @@ const BidCard: React.FC<{
     month: 'short',
   });
 
+  const isWinner = bid.status === 'won';
+
   return (
     <Animated.View entering={FadeInDown.delay(index * 50).springify(SPRING_CONFIG)}>
-      <View style={[styles.bidCard, isHighestBid && styles.highestBidCard]}>
+      <View style={[styles.bidCard, isWinner && styles.winnerBidCard, isHighestBid && !isWinner && styles.highestBidCard]}>
         <View style={styles.bidHeader}>
           <View style={styles.bidHeaderLeft}>
-            <DollarSign size={20} color={isHighestBid ? '#5cb85c' : '#121723'} />
+            <DollarSign size={20} color={isWinner ? COLORS.successGreen : isHighestBid ? COLORS.successGreen : '#121723'} />
             <View style={styles.bidderInfo}>
-              <Text style={[styles.bidderName, isHighestBid && styles.highestBidText]}>
+              <Text style={[styles.bidderName, isWinner && { color: COLORS.successGreen }]}>
                 {bid.memberName}
               </Text>
-              {isHighestBid && (
+              {isWinner && (
+                <View style={styles.wonBadge}>
+                  <Trophy size={12} color="#FFFFFF" />
+                  <Text style={styles.wonBadgeText}>Winner</Text>
+                </View>
+              )}
+              {isHighestBid && !isWinner && (
                 <View style={styles.highestBadge}>
                   <Trophy size={12} color="#FFFFFF" />
                   <Text style={styles.highestBadgeText}>Highest Bid</Text>
@@ -167,9 +101,22 @@ const BidCard: React.FC<{
               )}
             </View>
           </View>
-          <Text style={[styles.bidAmount, isHighestBid && styles.highestBidAmount]}>
-            ₹{bid.bidAmount.toLocaleString('en-IN')}
-          </Text>
+          <View style={styles.bidAmountContainer}>
+            <Text style={[styles.bidAmount, isWinner && { color: COLORS.successGreen }]}>
+              ₹{bid.bidAmount.toLocaleString('en-IN')}
+            </Text>
+            {!isLocked && !isWinner && onSelectWinner && (
+              <TouchableOpacity
+                onPress={() => {
+                  ReactNativeHapticFeedback.trigger('impactMedium');
+                  onSelectWinner();
+                }}
+                style={styles.selectWinnerBtn}>
+                <Award size={14} color="#FFFFFF" />
+                <Text style={styles.selectWinnerText}>Select</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
         <View style={styles.bidFooter}>
           <View style={styles.bidTimeContainer}>
@@ -178,6 +125,11 @@ const BidCard: React.FC<{
               {formattedTime} • {formattedDate}
             </Text>
           </View>
+          {bid.status && (
+            <Text style={[styles.bidStatus, { color: bid.status === 'won' ? COLORS.successGreen : bid.status === 'lost' ? COLORS.errorCoral : '#666' }]}>
+              {bid.status.toUpperCase()}
+            </Text>
+          )}
         </View>
       </View>
     </Animated.View>
@@ -186,15 +138,202 @@ const BidCard: React.FC<{
 
 export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const [draw] = useState(DUMMY_DRAW);
-  const [bids] = useState(DUMMY_BIDS);
+  const drawId = route.params.drawId;
+  const { draw, isLoading, error } = useDrawDetails(drawId);
+  const [bids, setBids] = useState<DrawBid[]>([]);
+  const [bidsLoading, setBidsLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Fetch bids
+  React.useEffect(() => {
+    if (!drawId) return;
+    setBidsLoading(true);
+    drawsService.getDrawBids(drawId)
+      .then(fetchedBids => {
+        setBids(fetchedBids);
+        setBidsLoading(false);
+      })
+      .catch(err => {
+        console.error('[DrawDetails] Error fetching bids:', err);
+        setBidsLoading(false);
+      });
+  }, [drawId]);
+
+  // Winner Lock: draw is locked once completed
+  const isLocked = draw?.status === 'completed' || draw?.status === 'cancelled';
 
   // Find highest bid
-  const highestBid = bids.reduce((max, bid) =>
-    bid.bidAmount > max.bidAmount ? bid : max
-  , bids[0]);
+  const highestBid = useMemo(() => {
+    if (bids.length === 0) return null;
+    return bids.reduce((max, bid) => bid.bidAmount > max.bidAmount ? bid : max, bids[0]);
+  }, [bids]);
 
-  const scheduledDate = draw.scheduledDate.toDate();
+  const handleSelectWinner = useCallback(async (bid: DrawBid) => {
+    if (isLocked) {
+      Alert.alert('Locked', 'This draw has been completed. Winner cannot be changed.');
+      return;
+    }
+
+    Alert.alert(
+      'Confirm Winner',
+      `Select ${bid.memberName} as the winner with bid ₹${bid.bidAmount.toLocaleString('en-IN')}?\n\nThis action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm Winner',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setActionLoading(true);
+              ReactNativeHapticFeedback.trigger('impactHeavy');
+
+              // 1. Select winner in Firestore
+              await drawsService.selectWinner(drawId, bid.memberId, bid.bidAmount);
+
+              // 2. Log audit entry
+              await logDrawAudit({
+                drawId,
+                action: 'winner_selected',
+                performedBy: 'admin',
+                metadata: {
+                  winnerId: bid.memberId,
+                  winnerName: bid.memberName,
+                  winningBid: bid.bidAmount,
+                  drawNumber: draw?.drawNumber,
+                  groupName: draw?.groupName,
+                },
+              });
+
+              // 3. Trigger notification (queue for push delivery)
+              await firestore().collection('notificationLogs').add({
+                type: 'alert',
+                channel: 'push',
+                recipientId: bid.memberId,
+                message: `Congratulations! You won Draw #${draw?.drawNumber} with a bid of ₹${bid.bidAmount.toLocaleString('en-IN')}`,
+                status: 'queued',
+                groupId: draw?.groupId,
+                retryCount: 0,
+                maxRetries: 3,
+                createdAt: firestore.FieldValue.serverTimestamp(),
+              });
+
+              // 4. Auto-create payment task audit entry
+              await logDrawAudit({
+                drawId,
+                action: 'payment_tasks_created',
+                performedBy: 'system',
+                metadata: {
+                  note: 'Auto-created payment tasks for non-winner members after draw completion',
+                  participantCount: draw?.participantCount,
+                },
+              });
+
+              ReactNativeHapticFeedback.trigger('notificationSuccess');
+              Alert.alert('Winner Selected', `${bid.memberName} has been selected as the winner. Notifications sent.`);
+
+              // Refresh bids to show updated statuses
+              const updatedBids = await drawsService.getDrawBids(drawId);
+              setBids(updatedBids);
+            } catch (err) {
+              console.error('[DrawDetails] Error selecting winner:', err);
+              Alert.alert('Error', 'Failed to select winner. Please try again.');
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [drawId, draw, isLocked]);
+
+  const handleStartBidding = useCallback(async () => {
+    if (!draw) return;
+    ReactNativeHapticFeedback.trigger('impactMedium');
+
+    try {
+      setActionLoading(true);
+      await drawsService.updateDraw(drawId, { status: 'in_progress' });
+
+      await logDrawAudit({
+        drawId,
+        action: 'bidding_started',
+        performedBy: 'admin',
+        metadata: { drawNumber: draw.drawNumber, groupName: draw.groupName },
+      });
+
+      ReactNativeHapticFeedback.trigger('notificationSuccess');
+    } catch (err) {
+      Alert.alert('Error', 'Failed to start bidding');
+    } finally {
+      setActionLoading(false);
+    }
+  }, [drawId, draw]);
+
+  const handleSettleDraw = useCallback(async () => {
+    if (!draw) return;
+    ReactNativeHapticFeedback.trigger('impactHeavy');
+
+    Alert.alert(
+      'Settle Draw',
+      'Mark this draw as settled? This confirms the prize has been disbursed.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm Settlement',
+          onPress: async () => {
+            try {
+              setActionLoading(true);
+              await drawsService.updateDraw(drawId, {
+                settledAt: firestore.FieldValue.serverTimestamp(),
+              } as any);
+
+              await logDrawAudit({
+                drawId,
+                action: 'draw_settled',
+                performedBy: 'admin',
+                metadata: {
+                  winnerName: draw.winnerName,
+                  prizeAmount: draw.totalPrizeAmount,
+                },
+              });
+
+              ReactNativeHapticFeedback.trigger('notificationSuccess');
+              Alert.alert('Settled', 'Draw has been marked as settled.');
+            } catch (err) {
+              Alert.alert('Error', 'Failed to settle draw');
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [drawId, draw]);
+
+  // Loading
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={COLORS.primaryBlue} />
+        <Text style={styles.loadingText}>Loading draw...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Error
+  if (error || !draw) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centered]}>
+        <AlertCircle size={48} color={COLORS.errorCoral} />
+        <Text style={styles.errorText}>{error || 'Draw not found'}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const scheduledDate = draw.scheduledDate?.toDate?.() ?? new Date();
   const formattedDate = scheduledDate.toLocaleDateString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -203,48 +342,44 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const getStatusColor = () => {
     switch (draw.status) {
-      case 'upcoming':
-        return '#2196F3';
-      case 'in_progress':
-        return '#f0ad4e';
-      case 'completed':
-        return '#5cb85c';
-      case 'cancelled':
-        return '#999';
-      default:
-        return '#999';
+      case 'upcoming': return COLORS.primaryBlue;
+      case 'in_progress': return COLORS.warningAmber;
+      case 'completed': return COLORS.successGreen;
+      case 'cancelled': return COLORS.textTertiary;
+      default: return COLORS.textTertiary;
     }
-  };
-
-  const handleStartBidding = () => {
-    ReactNativeHapticFeedback.trigger('impactMedium');
-    console.log('Start bidding');
-    // TODO: Implement start bidding logic
-  };
-
-  const handleSelectWinner = () => {
-    ReactNativeHapticFeedback.trigger('impactHeavy');
-    console.log('Select winner');
-    // TODO: Implement winner selection logic
-  };
-
-  const handleSettleDraw = () => {
-    ReactNativeHapticFeedback.trigger('impactHeavy');
-    console.log('Settle draw');
-    // TODO: Implement settlement logic
   };
 
   return (
     <SafeAreaView
       style={[styles.container, { paddingTop: insets.top }]}
       edges={['top', 'left', 'right']}>
+      {actionLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      )}
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
+        {/* Back Button + Header */}
         <Animated.View
           entering={FadeInDown.delay(0).springify(SPRING_CONFIG)}
           style={styles.header}>
-          <Text style={styles.headerTitle}>Draw #{draw.drawNumber}</Text>
-          <Text style={styles.groupName}>{draw.groupName}</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <ChevronLeft size={24} color="#121723" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <View style={styles.headerTitleRow}>
+              <Text style={styles.headerTitle}>Draw #{draw.drawNumber}</Text>
+              {isLocked && (
+                <View style={styles.lockBadge}>
+                  <Lock size={14} color="#FFFFFF" />
+                  <Text style={styles.lockText}>Locked</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.groupName}>{draw.groupName}</Text>
+          </View>
         </Animated.View>
 
         {/* Draw Info Card */}
@@ -253,19 +388,19 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
           style={styles.infoCard}>
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
-              <Trophy size={24} color="#f0ad4e" />
+              <Trophy size={24} color={COLORS.warningAmber} />
               <Text style={styles.infoLabel}>Prize Pool</Text>
               <Text style={styles.infoValue}>₹{draw.totalPrizeAmount.toLocaleString('en-IN')}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Users size={24} color="#2196F3" />
+              <Users size={24} color={COLORS.primaryBlue} />
               <Text style={styles.infoLabel}>Participants</Text>
               <Text style={styles.infoValue}>{draw.participantCount}</Text>
             </View>
             <View style={styles.infoItem}>
-              <DollarSign size={24} color="#5cb85c" />
+              <DollarSign size={24} color={COLORS.successGreen} />
               <Text style={styles.infoLabel}>Bids</Text>
-              <Text style={styles.infoValue}>{draw.bidsReceived}</Text>
+              <Text style={styles.infoValue}>{bids.length}</Text>
             </View>
           </View>
 
@@ -285,14 +420,15 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
           <Animated.View
             entering={FadeInDown.delay(100).springify(SPRING_CONFIG)}
             style={styles.winnerCard}>
-            <Award size={28} color="#f0ad4e" />
+            <Award size={28} color={COLORS.warningAmber} />
             <View style={styles.winnerInfo}>
               <Text style={styles.winnerLabel}>Winner</Text>
-              <Text style={styles.winnerName}>{draw.winnerName}</Text>
+              <Text style={styles.winnerName}>{draw.winnerName || 'Winner Selected'}</Text>
               <Text style={styles.winnerAmount}>
-                Won ₹{draw.winnerBidAmount?.toLocaleString('en-IN')}
+                Won with ₹{draw.winningBid?.toLocaleString('en-IN')}
               </Text>
             </View>
+            <Lock size={20} color={COLORS.textTertiary} />
           </Animated.View>
         )}
 
@@ -303,45 +439,67 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
           <Text style={styles.sectionTitle}>
             All Bids ({bids.length})
           </Text>
-          {bids.map((bid, index) => (
-            <BidCard
-              key={bid.id}
-              bid={bid}
-              index={index}
-              isHighestBid={bid.id === highestBid.id}
-            />
-          ))}
+          {bidsLoading ? (
+            <ActivityIndicator size="small" color={COLORS.primaryBlue} style={{ marginVertical: 20 }} />
+          ) : bids.length === 0 ? (
+            <View style={styles.noBids}>
+              <Text style={styles.noBidsText}>No bids yet</Text>
+            </View>
+          ) : (
+            bids.map((bid, index) => (
+              <BidCard
+                key={bid.id}
+                bid={bid}
+                index={index}
+                isHighestBid={highestBid?.id === bid.id}
+                isLocked={isLocked}
+                onSelectWinner={draw.status === 'in_progress' ? () => handleSelectWinner(bid) : undefined}
+              />
+            ))
+          )}
+        </Animated.View>
+
+        {/* Draw Audit Log */}
+        <Animated.View
+          entering={FadeInUp.delay(200).springify(SPRING_CONFIG)}
+          style={styles.auditSection}>
+          <View style={styles.auditHeader}>
+            <FileText size={18} color="#666" />
+            <Text style={styles.sectionTitle}>Audit Log</Text>
+          </View>
+          <DrawAuditLog drawId={drawId} />
         </Animated.View>
 
         {/* Action Buttons */}
         {draw.status === 'upcoming' && (
           <Animated.View
-            entering={FadeInDown.delay(200).springify(SPRING_CONFIG)}
+            entering={FadeInDown.delay(250).springify(SPRING_CONFIG)}
             style={styles.actionContainer}>
             <TouchableOpacity
               onPress={handleStartBidding}
               style={[styles.actionButton, styles.primaryButton]}>
-              <Text style={styles.actionButtonText}>Start Bidding</Text>
+              <Bell size={20} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Open Bidding</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
 
-        {draw.status === 'in_progress' && (
+        {draw.status === 'in_progress' && highestBid && (
           <Animated.View
-            entering={FadeInDown.delay(200).springify(SPRING_CONFIG)}
+            entering={FadeInDown.delay(250).springify(SPRING_CONFIG)}
             style={styles.actionContainer}>
             <TouchableOpacity
-              onPress={handleSelectWinner}
+              onPress={() => handleSelectWinner(highestBid)}
               style={[styles.actionButton, styles.primaryButton]}>
               <Award size={20} color="#FFFFFF" />
-              <Text style={styles.actionButtonText}>Select Winner</Text>
+              <Text style={styles.actionButtonText}>Select Highest Bidder as Winner</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
 
-        {draw.status === 'completed' && !draw.settledAt && (
+        {draw.status === 'completed' && !(draw as any).settledAt && (
           <Animated.View
-            entering={FadeInDown.delay(200).springify(SPRING_CONFIG)}
+            entering={FadeInDown.delay(250).springify(SPRING_CONFIG)}
             style={styles.actionContainer}>
             <TouchableOpacity
               onPress={handleSettleDraw}
@@ -350,8 +508,72 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
             </TouchableOpacity>
           </Animated.View>
         )}
+
+        {isLocked && (
+          <Animated.View
+            entering={FadeInUp.delay(300).springify(SPRING_CONFIG)}
+            style={styles.lockedNotice}>
+            <Lock size={16} color={COLORS.textTertiary} />
+            <Text style={styles.lockedNoticeText}>
+              This draw is locked. No further changes can be made.
+            </Text>
+          </Animated.View>
+        )}
       </ScrollView>
     </SafeAreaView>
+  );
+};
+
+// Inline audit log component
+const DrawAuditLog: React.FC<{ drawId: string }> = ({ drawId }) => {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const unsubscribe = firestore()
+      .collection('auditLogs')
+      .where('targetId', '==', drawId)
+      .where('targetCollection', '==', 'draws')
+      .orderBy('timestamp', 'desc')
+      .limit(10)
+      .onSnapshot(
+        snapshot => {
+          const entries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setLogs(entries);
+          setLoading(false);
+        },
+        () => setLoading(false),
+      );
+
+    return () => unsubscribe();
+  }, [drawId]);
+
+  if (loading) {
+    return <ActivityIndicator size="small" color={COLORS.textTertiary} style={{ marginVertical: 12 }} />;
+  }
+
+  if (logs.length === 0) {
+    return (
+      <Text style={styles.auditEmpty}>No audit entries yet</Text>
+    );
+  }
+
+  return (
+    <View>
+      {logs.map((log, i) => {
+        const ts = log.timestamp?.toDate?.();
+        const time = ts ? ts.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+        return (
+          <View key={log.id} style={[styles.auditEntry, i < logs.length - 1 && styles.auditEntryBorder]}>
+            <View style={styles.auditDot} />
+            <View style={styles.auditContent}>
+              <Text style={styles.auditAction}>{log.action?.replace(/_/g, ' ')}</Text>
+              <Text style={styles.auditTime}>{time} • by {log.performedBy || log.actorType}</Text>
+            </View>
+          </View>
+        );
+      })}
+    </View>
   );
 };
 
@@ -364,19 +586,57 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   headerTitle: {
     fontSize: 28,
     fontFamily: 'PlusJakartaSans-Bold',
     color: '#121723',
-    marginBottom: 4,
+  },
+  lockBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.textTertiary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  lockText: {
+    fontSize: 11,
+    fontFamily: 'PlusJakartaSans-Bold',
+    color: '#FFFFFF',
   },
   groupName: {
     fontSize: 16,
     fontFamily: 'PlusJakartaSans-Regular',
     color: '#666',
+    marginTop: 4,
   },
   infoCard: {
     backgroundColor: '#FFFFFF',
@@ -447,7 +707,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     borderLeftWidth: 5,
-    borderLeftColor: '#f0ad4e',
+    borderLeftColor: COLORS.warningAmber,
   },
   winnerInfo: {
     marginLeft: 16,
@@ -468,7 +728,7 @@ const styles = StyleSheet.create({
   winnerAmount: {
     fontSize: 16,
     fontFamily: 'PlusJakartaSans-SemiBold',
-    color: '#f0ad4e',
+    color: COLORS.warningAmber,
   },
   bidsSection: {
     paddingHorizontal: 20,
@@ -478,6 +738,18 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Bold',
     color: '#121723',
     marginBottom: 16,
+  },
+  noBids: {
+    backgroundColor: '#FFFFFF',
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  noBidsText: {
+    fontSize: 14,
+    fontFamily: 'PlusJakartaSans-Regular',
+    color: '#999',
   },
   bidCard: {
     backgroundColor: '#FFFFFF',
@@ -492,8 +764,13 @@ const styles = StyleSheet.create({
   },
   highestBidCard: {
     borderWidth: 2,
-    borderColor: '#5cb85c',
+    borderColor: COLORS.successGreen,
     backgroundColor: '#F1F8F4',
+  },
+  winnerBidCard: {
+    borderWidth: 2,
+    borderColor: COLORS.warningAmber,
+    backgroundColor: '#FFFDF0',
   },
   bidHeader: {
     flexDirection: 'row',
@@ -516,13 +793,10 @@ const styles = StyleSheet.create({
     color: '#121723',
     marginBottom: 4,
   },
-  highestBidText: {
-    color: '#5cb85c',
-  },
   highestBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#5cb85c',
+    backgroundColor: COLORS.successGreen,
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -534,14 +808,43 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Bold',
     color: '#FFFFFF',
   },
+  wonBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.warningAmber,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  wonBadgeText: {
+    fontSize: 10,
+    fontFamily: 'PlusJakartaSans-Bold',
+    color: '#FFFFFF',
+  },
+  bidAmountContainer: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
   bidAmount: {
     fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
     color: '#121723',
   },
-  highestBidAmount: {
-    color: '#5cb85c',
-    fontSize: 20,
+  selectWinnerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#121723',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  selectWinnerText: {
+    fontSize: 11,
+    fontFamily: 'PlusJakartaSans-Bold',
+    color: '#FFFFFF',
   },
   bidFooter: {
     flexDirection: 'row',
@@ -557,6 +860,58 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'PlusJakartaSans-Regular',
     color: '#666',
+  },
+  bidStatus: {
+    fontSize: 11,
+    fontFamily: 'PlusJakartaSans-Bold',
+  },
+  auditSection: {
+    paddingHorizontal: 20,
+    marginTop: 24,
+  },
+  auditHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  auditEmpty: {
+    fontSize: 13,
+    fontFamily: 'PlusJakartaSans-Regular',
+    color: '#999',
+    paddingVertical: 12,
+  },
+  auditEntry: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+  },
+  auditEntryBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  auditDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.primaryBlue,
+    marginTop: 5,
+    marginRight: 12,
+  },
+  auditContent: {
+    flex: 1,
+  },
+  auditAction: {
+    fontSize: 14,
+    fontFamily: 'PlusJakartaSans-Medium',
+    color: '#121723',
+    textTransform: 'capitalize',
+    marginBottom: 2,
+  },
+  auditTime: {
+    fontSize: 12,
+    fontFamily: 'PlusJakartaSans-Regular',
+    color: '#999',
   },
   actionContainer: {
     paddingHorizontal: 20,
@@ -579,11 +934,64 @@ const styles = StyleSheet.create({
     backgroundColor: '#121723',
   },
   successButton: {
-    backgroundColor: '#5cb85c',
+    backgroundColor: COLORS.successGreen,
   },
   actionButtonText: {
     fontSize: 16,
     fontFamily: 'PlusJakartaSans-Bold',
+    color: '#FFFFFF',
+  },
+  lockedNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    marginTop: 16,
+    padding: 14,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    gap: 8,
+  },
+  lockedNoticeText: {
+    fontSize: 13,
+    fontFamily: 'PlusJakartaSans-Regular',
+    color: COLORS.textTertiary,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    zIndex: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'PlusJakartaSans-Medium',
+    color: '#666',
+    marginTop: 12,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'PlusJakartaSans-Medium',
+    color: COLORS.errorCoral,
+    marginTop: 12,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#121723',
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontFamily: 'PlusJakartaSans-SemiBold',
     color: '#FFFFFF',
   },
 });

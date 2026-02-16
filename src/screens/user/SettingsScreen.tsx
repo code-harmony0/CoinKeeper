@@ -67,7 +67,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={[THEME_COLORS.background, THEME_COLORS.backgroundGradientEnd]}
+        colors={[THEME_COLORS.background, THEME_COLORS.backgroundGradient3]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: THEME_COLORS.backgroundGradientEnd,
+    backgroundColor: THEME_COLORS.backgroundGradient3,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: THEME_SPACING.md,

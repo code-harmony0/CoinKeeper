@@ -22,6 +22,8 @@ export interface Draw {
   minBidAmount?: number;
   maxBidAmount?: number;
   bidsReceived: number;
+  biddingOpen?: boolean;
+  settledAt?: FirebaseFirestoreTypes.Timestamp;
   createdAt: FirebaseFirestoreTypes.Timestamp;
   updatedAt: FirebaseFirestoreTypes.Timestamp;
   createdBy: string;
@@ -99,3 +101,6 @@ export interface DrawStats {
   participationRate: number;
   settlementRate: number;
 }
+
+// Legacy alias
+export type Bid = DrawBid;

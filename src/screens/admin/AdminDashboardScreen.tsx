@@ -30,10 +30,13 @@ const SPRING_CONFIG = { damping: 16, stiffness: 140, mass: 1 };
 const ADMIN_DATA = {
   name: 'Rajesh Kumar',
   metrics: {
-    totalContributions: 4500000,
+    expectedCollection: 5400000,
+    confirmedCollection: 4500000,
+    overdueAmount: 320000,
+    collectionRate: 83,
+    pendingConfirmations: 5,
     groups: 12,
     members: 120,
-    pending: 5,
     draws: 3,
   },
   alerts: [
@@ -126,20 +129,20 @@ export const AdminDashboardScreen: React.FC<any> = ({ navigation }) => {
             METRICS BENTO GRID (Patterned)
         ═══════════════════════════════════════════════════════════ */}
         <View style={styles.bentoGrid}>
-          {/* Large Card: Total Contributions */}
+          {/* Large Card: Confirmed Collection */}
           <Animated.View entering={FadeInDown.delay(300).springify()} style={[styles.bentoLarge, { backgroundColor: colors.card }]}>
-            {/* Subtle Background Pattern */}
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
               <Svg width="100%" height="100%">
                 <Circle cx="100%" cy="0" r="120" fill={colors.accent1} opacity={isDark ? 0.5 : 0.3} />
                 <Circle cx="100%" cy="0" r="90" fill={colors.accent1} opacity={isDark ? 0.6 : 0.4} />
               </Svg>
             </View>
-            
-            <View style={[styles.bentoIconLarge, { backgroundColor: colors.accent1 }]}><WalletIcon /></View>
+
+            <View style={[styles.bentoIconLarge, { backgroundColor: colors.accent1 }]}><CoinIcon /></View>
             <View>
-              <Text style={[styles.bentoLabel, themeStyles.textSecondary]}>Total Pooled</Text>
-              <Text style={[styles.bentoValueLarge, themeStyles.text]}>₹{(ADMIN_DATA.metrics.totalContributions / 100000).toFixed(1)}L</Text>
+              <Text style={[styles.bentoLabel, themeStyles.textSecondary]}>Confirmed</Text>
+              <Text style={[styles.bentoValueLarge, themeStyles.text]}>₹{(ADMIN_DATA.metrics.confirmedCollection / 100000).toFixed(1)}L</Text>
+              <Text style={[styles.bentoLabel, themeStyles.textSecondary]}>{ADMIN_DATA.metrics.collectionRate}% rate</Text>
             </View>
           </Animated.View>
 
@@ -153,10 +156,10 @@ export const AdminDashboardScreen: React.FC<any> = ({ navigation }) => {
               </View>
             </Animated.View>
             <Animated.View entering={FadeInDown.delay(500).springify()} style={[styles.bentoSmall, { backgroundColor: colors.card }]}>
-              <View style={[styles.bentoIconSmall, { backgroundColor: colors.accent4 }]}><UsersIcon /></View>
+              <View style={[styles.bentoIconSmall, { backgroundColor: THEME.colors.error }]}><AlertIcon /></View>
               <View>
-                <Text style={[styles.bentoValueSmall, themeStyles.text]}>{ADMIN_DATA.metrics.members}</Text>
-                <Text style={[styles.bentoLabelSmall, themeStyles.textSecondary]}>Members</Text>
+                <Text style={[styles.bentoValueSmall, themeStyles.text]}>{ADMIN_DATA.metrics.pendingConfirmations}</Text>
+                <Text style={[styles.bentoLabelSmall, themeStyles.textSecondary]}>Pending</Text>
               </View>
             </Animated.View>
           </View>
@@ -173,7 +176,8 @@ export const AdminDashboardScreen: React.FC<any> = ({ navigation }) => {
             <ActionSquircle icon={<CoinIcon />} label="Payments" color={colors.accent3} delay={100} onPress={() => navigation.navigate('Collections')} />
             <ActionSquircle icon={<CheckIcon />} label="Approve" color={colors.accent4} badge={5} delay={200} onPress={() => navigation.navigate('Approvals')} />
             <ActionSquircle icon={<ShuffleIcon />} label="Draws" color={colors.accent1} delay={300} onPress={() => navigation.navigate('Draws')} />
-            <ActionSquircle icon={<WalletIcon />} label="Wallet" color={colors.card} delay={400} onPress={() => navigation.navigate('Wallet')} />
+            <ActionSquircle icon={<CheckIcon />} label="Confirm" color={colors.accent4} delay={400} onPress={() => navigation.navigate('PaymentConfirmations')} />
+            <ActionSquircle icon={<BellIcon />} label="Alerts" color={colors.accent3} delay={500} onPress={() => navigation.navigate('Notifications')} />
           </ScrollView>
         </Animated.View>
 
@@ -269,6 +273,7 @@ const CoinIcon = () => <Svg width={24} height={24} viewBox="0 0 24 24" fill="non
 const CheckIcon = ({ size = 24 }) => <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M20 6L9 17l-5-5" stroke={ICON} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
 const ShuffleIcon = () => <Svg width={24} height={24} viewBox="0 0 24 24" fill="none"><Path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke={ICON} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
 const DownloadIcon = () => <Svg width={24} height={24} viewBox="0 0 24 24" fill="none"><Path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke={ICON} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
+const BellIcon = () => <Svg width={24} height={24} viewBox="0 0 24 24" fill="none"><Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke={ICON} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
 
 // ============================================
 // STYLES
