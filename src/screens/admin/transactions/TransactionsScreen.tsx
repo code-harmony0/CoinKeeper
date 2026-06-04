@@ -17,7 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Search, Plus, Filter } from 'lucide-react-native';
 import { theme } from '../../../theme';
-import { useTransactions, TransactionStatus } from '../../../hooks/useTransactions';
+import { useAllContributions } from '../../../hooks/useContributions';
+import { ContributionStatus } from '../../../types/transaction';
 import { TransactionCard } from '../../../components/transaction/TransactionCard';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
@@ -27,15 +28,15 @@ interface TransactionsScreenProps {
 
 export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { transactions, isLoading } = useTransactions();
+  const { contributions: transactions, isLoading } = useAllContributions();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<TransactionStatus | 'all'>('all');
+  const [activeFilter, setActiveFilter] = useState<ContributionStatus | 'all'>('all');
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((txn) => {
       const matchesSearch =
-        txn.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        txn.groupName.toLowerCase().includes(searchQuery.toLowerCase());
+        (txn.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (txn.groupName?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
       const matchesFilter = activeFilter === 'all' || txn.status === activeFilter;
       return matchesSearch && matchesFilter;
     });
@@ -68,7 +69,7 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({ navigati
         </View>
         <FlatList
           horizontal
-          data={['all', 'pending', 'approved', 'rejected'] as const}
+          data={['all', 'pending', 'approved', 'failed'] as const}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterList}
           keyExtractor={(item) => item}

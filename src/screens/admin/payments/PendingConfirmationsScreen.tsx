@@ -31,7 +31,7 @@ import {
 } from 'lucide-react-native';
 import { useAllPaymentConfirmations } from '../../../hooks/usePaymentConfirmations';
 import { useTabBarScroll } from '../../../context/TabBarScrollContext';
-import { COLORS, SPACING, TYPOGRAPHY, RADII, SHADOWS } from '../../../theme/designTokens';
+import { colors, spacing, typography, radii, shadows } from '../../../theme/designTokens';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { PaymentConfirmation } from '../../../types/paymentConfirmation';
 
@@ -120,28 +120,28 @@ export const PendingConfirmationsScreen: React.FC<PendingConfirmationsScreenProp
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'confirmed': return <CheckCircle size={16} color={COLORS.success} />;
-      case 'rejected': return <XCircle size={16} color={COLORS.error} />;
-      case 'disputed': return <AlertTriangle size={16} color={COLORS.warning} />;
-      default: return <Clock size={16} color={COLORS.accent} />;
+      case 'confirmed': return <CheckCircle size={16} color={colors.success} />;
+      case 'rejected': return <XCircle size={16} color={colors.error} />;
+      case 'disputed': return <AlertTriangle size={16} color={colors.warning} />;
+      default: return <Clock size={16} color={colors.accent} />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmed': return COLORS.successMuted;
-      case 'rejected': return COLORS.errorMuted;
-      case 'disputed': return COLORS.warningMuted;
-      default: return COLORS.accentMuted;
+      case 'confirmed': return colors.successMuted;
+      case 'rejected': return colors.errorMuted;
+      case 'disputed': return colors.warningMuted;
+      default: return colors.accentMuted;
     }
   };
 
   const getStatusTextColor = (status: string) => {
     switch (status) {
-      case 'confirmed': return COLORS.success;
-      case 'rejected': return COLORS.error;
-      case 'disputed': return COLORS.warning;
-      default: return COLORS.accent;
+      case 'confirmed': return colors.success;
+      case 'rejected': return colors.error;
+      case 'disputed': return colors.warning;
+      default: return colors.accent;
     }
   };
 
@@ -203,11 +203,11 @@ export const PendingConfirmationsScreen: React.FC<PendingConfirmationsScreenProp
 
       <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.searchContainer}>
         <View style={styles.searchInputWrapper}>
-          <Search size={20} color={COLORS.textTertiary} />
+          <Search size={20} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search by member, group or ref ID..."
-            placeholderTextColor={COLORS.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -216,7 +216,7 @@ export const PendingConfirmationsScreen: React.FC<PendingConfirmationsScreenProp
           style={({ pressed }) => [styles.sortButton, pressed && styles.buttonPressed]}
           onPress={handleSortPress}
         >
-          <ArrowUpDown size={20} color={COLORS.textPrimary} />
+          <ArrowUpDown size={20} color={colors.textPrimary} />
         </Pressable>
       </Animated.View>
 
@@ -250,7 +250,7 @@ export const PendingConfirmationsScreen: React.FC<PendingConfirmationsScreenProp
 
       {isLoading && !isRefreshing ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
@@ -275,7 +275,7 @@ export const PendingConfirmationsScreen: React.FC<PendingConfirmationsScreenProp
           onScroll={scrollHandler}
           scrollEventThrottle={16}
           refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
           }
         />
       )}
@@ -284,43 +284,43 @@ export const PendingConfirmationsScreen: React.FC<PendingConfirmationsScreenProp
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
-  headerTitle: { fontSize: TYPOGRAPHY.sizes.xxl, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4 },
-  headerSubtitle: { fontSize: TYPOGRAPHY.sizes.md, color: COLORS.textSecondary },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingHorizontal: SPACING.lg, marginBottom: SPACING.md },
-  searchInputWrapper: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceLight, borderRadius: RADII.md, paddingHorizontal: SPACING.md, height: 48, gap: SPACING.sm, ...SHADOWS.soft },
-  searchInput: { flex: 1, fontSize: TYPOGRAPHY.sizes.md, color: COLORS.textPrimary, height: '100%' },
-  sortButton: { width: 48, height: 48, borderRadius: RADII.md, backgroundColor: COLORS.surfaceLight, justifyContent: 'center', alignItems: 'center', ...SHADOWS.soft },
-  filtersContainer: { marginBottom: SPACING.md },
-  filtersContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
-  filterChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADII.full, backgroundColor: COLORS.surfaceLight, gap: SPACING.xs },
-  filterChipActive: { backgroundColor: COLORS.primary },
-  filterChipText: { fontSize: TYPOGRAPHY.sizes.sm, fontWeight: '600', color: COLORS.textSecondary },
+  container: { flex: 1, backgroundColor: colors.background },
+  header: { paddingHorizontal: spacing.l, paddingVertical: spacing.m },
+  headerTitle: { fontSize: typography.sizes.xxl, fontWeight: '800', color: colors.textPrimary, marginBottom: 4 },
+  headerSubtitle: { fontSize: typography.sizes.m, color: colors.textSecondary },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', gap: spacing.s, paddingHorizontal: spacing.l, marginBottom: spacing.m },
+  searchInputWrapper: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.backgroundLight, borderRadius: radii.m, paddingHorizontal: spacing.m, height: 48, gap: spacing.s, ...shadows.card },
+  searchInput: { flex: 1, fontSize: typography.sizes.m, color: colors.textPrimary, height: '100%' },
+  sortButton: { width: 48, height: 48, borderRadius: radii.m, backgroundColor: colors.backgroundLight, justifyContent: 'center', alignItems: 'center', ...shadows.card },
+  filtersContainer: { marginBottom: spacing.m },
+  filtersContent: { paddingHorizontal: spacing.l, gap: spacing.s },
+  filterChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.m, paddingVertical: spacing.s, borderRadius: radii.round, backgroundColor: colors.backgroundLight, gap: spacing.xs },
+  filterChipActive: { backgroundColor: colors.primary },
+  filterChipText: { fontSize: typography.sizes.s, fontWeight: '600', color: colors.textSecondary },
   filterChipTextActive: { color: '#FFFFFF' },
-  countBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: RADII.sm, backgroundColor: COLORS.border },
+  countBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: radii.s, backgroundColor: colors.pillBorder },
   countBadgeActive: { backgroundColor: 'rgba(255, 255, 255, 0.3)' },
-  countBadgeText: { fontSize: TYPOGRAPHY.sizes.xs, fontWeight: '700', color: COLORS.textSecondary },
+  countBadgeText: { fontSize: typography.sizes.xs, fontWeight: '700', color: colors.textSecondary },
   countBadgeTextActive: { color: '#FFFFFF' },
-  listContent: { paddingHorizontal: SPACING.lg },
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.xl },
-  emptyText: { fontSize: TYPOGRAPHY.sizes.lg, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.xs, textAlign: 'center' },
-  emptySubtext: { fontSize: TYPOGRAPHY.sizes.md, color: COLORS.textSecondary, textAlign: 'center' },
-  errorText: { fontSize: TYPOGRAPHY.sizes.md, color: '#EF4444', textAlign: 'center' },
+  listContent: { paddingHorizontal: spacing.l },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: spacing.xl },
+  emptyText: { fontSize: typography.sizes.l, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs, textAlign: 'center' },
+  emptySubtext: { fontSize: typography.sizes.m, color: colors.textSecondary, textAlign: 'center' },
+  errorText: { fontSize: typography.sizes.m, color: '#EF4444', textAlign: 'center' },
   buttonPressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
-  card: { backgroundColor: COLORS.card, borderRadius: RADII.lg, padding: SPACING.md, marginBottom: SPACING.md, ...SHADOWS.soft },
+  card: { backgroundColor: colors.card, borderRadius: radii.l, padding: spacing.m, marginBottom: spacing.m, ...shadows.card },
   cardPressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: SPACING.sm },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.s },
   cardHeaderLeft: { flex: 1 },
-  memberName: { fontSize: TYPOGRAPHY.sizes.md, fontWeight: '700', color: COLORS.textPrimary },
-  groupName: { fontSize: TYPOGRAPHY.sizes.sm, color: COLORS.textSecondary, marginTop: 2 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADII.full, gap: 4 },
-  statusText: { fontSize: TYPOGRAPHY.sizes.xs, fontWeight: '600' },
-  cardBody: { gap: SPACING.xs },
+  memberName: { fontSize: typography.sizes.m, fontWeight: '700', color: colors.textPrimary },
+  groupName: { fontSize: typography.sizes.s, color: colors.textSecondary, marginTop: 2 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.s, paddingVertical: 4, borderRadius: radii.round, gap: 4 },
+  statusText: { fontSize: typography.sizes.xs, fontWeight: '600' },
+  cardBody: { gap: spacing.xs },
   amountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  amountLabel: { fontSize: TYPOGRAPHY.sizes.sm, color: COLORS.textSecondary },
-  amountValue: { fontSize: TYPOGRAPHY.sizes.lg, fontWeight: '800', color: COLORS.textPrimary },
+  amountLabel: { fontSize: typography.sizes.s, color: colors.textSecondary },
+  amountValue: { fontSize: typography.sizes.l, fontWeight: '800', color: colors.textPrimary },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  detailLabel: { fontSize: TYPOGRAPHY.sizes.sm, color: COLORS.textTertiary },
-  detailValue: { fontSize: TYPOGRAPHY.sizes.sm, fontWeight: '600', color: COLORS.textSecondary },
+  detailLabel: { fontSize: typography.sizes.s, color: colors.textTertiary },
+  detailValue: { fontSize: typography.sizes.s, fontWeight: '600', color: colors.textSecondary },
 });

@@ -68,7 +68,7 @@ export const SystemHealthScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <Animated.View entering={FadeInDown.springify(SPRING_CONFIG)} style={styles.header}>
+        <Animated.View entering={FadeInDown.springify().damping(16).stiffness(140).mass(1)} style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <ArrowLeft size={22} color="#121723" />
           </TouchableOpacity>
@@ -82,7 +82,7 @@ export const SystemHealthScreen: React.FC<Props> = ({ navigation }) => {
         </Animated.View>
 
         {/* Overall Status */}
-        <Animated.View entering={FadeInDown.delay(50).springify(SPRING_CONFIG)} style={styles.statusCard}>
+        <Animated.View entering={FadeInDown.delay(50).springify().damping(16).stiffness(140).mass(1)} style={styles.statusCard}>
           <View style={[styles.statusIndicator, { backgroundColor: freshnessColor }]}>
             <Activity size={28} color="#FFFFFF" />
           </View>
@@ -97,7 +97,7 @@ export const SystemHealthScreen: React.FC<Props> = ({ navigation }) => {
         </Animated.View>
 
         {/* Job Stats */}
-        <Animated.View entering={FadeInDown.delay(100).springify(SPRING_CONFIG)} style={styles.section}>
+        <Animated.View entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
           <Text style={styles.sectionTitle}>Job Status</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
@@ -119,7 +119,7 @@ export const SystemHealthScreen: React.FC<Props> = ({ navigation }) => {
         </Animated.View>
 
         {/* Data Health */}
-        <Animated.View entering={FadeInDown.delay(150).springify(SPRING_CONFIG)} style={styles.section}>
+        <Animated.View entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
           <Text style={styles.sectionTitle}>Data Health</Text>
           <View style={styles.dataCard}>
             <View style={styles.dataRow}>
@@ -148,7 +148,7 @@ export const SystemHealthScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Recent Failures */}
         {health?.recentFailures && health.recentFailures.length > 0 && (
-          <Animated.View entering={FadeInDown.delay(200).springify(SPRING_CONFIG)} style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(200).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
             <Text style={[styles.sectionTitle, { color: COLORS.errorCoral }]}>Recent Failures</Text>
             {health.recentFailures.map((failure, i) => (
               <View key={failure.jobId || i} style={styles.failureCard}>

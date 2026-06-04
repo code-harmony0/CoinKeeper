@@ -25,7 +25,7 @@ import {
 import { COLORS } from '../../../theme/colors';
 import type { AuditLogEntry, AuditAction, AuditActorType } from '../../../types/payment';
 
-const SPRING_CONFIG = { damping: 16, stiffness: 140, mass: 1 };
+// SPRING_CONFIG replaced with chained methods
 const PAGE_SIZE = 20;
 
 type FilterChip = 'all' | 'admin' | 'system' | 'scheduler' | 'success' | 'failed';
@@ -198,7 +198,7 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
     const isExpanded = expandedId === item.id;
 
     return (
-      <Animated.View entering={FadeInDown.delay(Math.min(index * 30, 300)).springify(SPRING_CONFIG)}>
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 30, 300)).springify().damping(16).stiffness(140).mass(1)}>
         <TouchableOpacity
           style={[styles.logCard, !item.success && styles.failedCard]}
           onPress={() => {
@@ -298,7 +298,7 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <Animated.View entering={FadeInDown.springify(SPRING_CONFIG)} style={styles.header}>
+      <Animated.View entering={FadeInDown.springify().damping(16).stiffness(140).mass(1)} style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <ArrowLeft size={22} color="#121723" />
         </TouchableOpacity>
@@ -312,7 +312,7 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
       </Animated.View>
 
       {/* Search */}
-      <Animated.View entering={FadeInDown.delay(30).springify(SPRING_CONFIG)} style={styles.searchContainer}>
+      <Animated.View entering={FadeInDown.delay(30).springify().damping(16).stiffness(140).mass(1)} style={styles.searchContainer}>
         <Search size={18} color="#999" />
         <TextInput
           style={styles.searchInput}
@@ -325,7 +325,7 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
       </Animated.View>
 
       {/* Filter Chips */}
-      <Animated.View entering={FadeInDown.delay(60).springify(SPRING_CONFIG)} style={styles.filterRow}>
+      <Animated.View entering={FadeInDown.delay(60).springify().damping(16).stiffness(140).mass(1)} style={styles.filterRow}>
         <FlatList
           horizontal
           data={FILTER_CHIPS}

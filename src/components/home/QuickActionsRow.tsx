@@ -47,6 +47,6 @@ const styles = StyleSheet.create({
     ...shadows.card,
   },
   label: { 
-    ...typography.bodySmall,
+    ...(typography.bodySmall as any),
   },
 });

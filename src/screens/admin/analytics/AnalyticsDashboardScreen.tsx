@@ -135,7 +135,7 @@ export const AnalyticsDashboardScreen: React.FC<AnalyticsDashboardScreenProps> =
                 {overview ? `₹${(overview.totalPooled / 1000).toFixed(0)}K` : '₹0'}
               </Text>
               <Text style={styles.kpiTrend}>
-                {overview?.pooledChange >= 0 ? '↑' : '↓'} {Math.abs(overview?.pooledChange || 0).toFixed(1)}%
+                {overview?.pooledChange !== undefined && overview.pooledChange >= 0 ? '↑' : '↓'} {Math.abs(overview?.pooledChange || 0).toFixed(1)}%
               </Text>
             </View>
           </Animated.View>
@@ -151,7 +151,7 @@ export const AnalyticsDashboardScreen: React.FC<AnalyticsDashboardScreenProps> =
               <Text style={styles.kpiLabel}>Active Groups</Text>
               <Text style={styles.kpiValue}>{overview?.activeGroups || 0}</Text>
               <Text style={styles.kpiTrend}>
-                {overview?.groupsChange >= 0 ? '↑' : '↓'} {Math.abs(overview?.groupsChange || 0)}
+                {overview?.groupsChange !== undefined && overview.groupsChange >= 0 ? '↑' : '↓'} {Math.abs(overview?.groupsChange || 0)}
               </Text>
             </View>
           </Animated.View>
@@ -166,7 +166,7 @@ export const AnalyticsDashboardScreen: React.FC<AnalyticsDashboardScreenProps> =
             <View style={styles.kpiContent}>
               <Text style={styles.kpiLabel}>Collection Rate</Text>
               <Text style={styles.kpiValue}>
-                {overview ? `${(overview.collectionRate * 100).toFixed(1)}%` : '0%'}
+                {overview ? `${((overview?.collectionRate ?? 0) * 100).toFixed(1)}%` : '0%'}
               </Text>
               <Text style={styles.kpiTrend}>↑ 3.1%</Text>
             </View>
@@ -181,9 +181,9 @@ export const AnalyticsDashboardScreen: React.FC<AnalyticsDashboardScreenProps> =
             </View>
             <View style={styles.kpiContent}>
               <Text style={styles.kpiLabel}>Pending/Overdue</Text>
-              <Text style={styles.kpiValue}>{overview ? overview.pendingPayments + overview.overduePayments : 0}</Text>
-              <Text style={[styles.kpiTrend, { color: overview?.overduePayments > 0 ? '#D32F2F' : '#2E7D32' }]}>
-                {overview?.overduePayments > 0 ? `${overview.overduePayments} overdue` : 'On track'}
+              <Text style={styles.kpiValue}>{overview ? overview.pendingPayments + (overview?.overduePayments ?? 0) : 0}</Text>
+              <Text style={[styles.kpiTrend, { color: overview?.overduePayments !== undefined && overview.overduePayments > 0 ? '#D32F2F' : '#2E7D32' }]}>
+                {overview?.overduePayments !== undefined && overview.overduePayments > 0 ? `${overview.overduePayments} overdue` : 'On track'}
               </Text>
             </View>
           </Animated.View>

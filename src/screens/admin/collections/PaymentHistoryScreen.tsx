@@ -1,145 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   TextInput,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { CheckCircle, XCircle, Calendar, Search, Filter } from 'lucide-react-native';
-import type { PaymentHistory, PaymentMethod } from '../../../types/collection';
-import firestore from '@react-native-firebase/firestore';
+import { paymentService } from '../../../services/paymentService';
+import type { Payment, PaymentStatus } from '../../../types/payment';
+import { COLORS } from '../../../theme/colors';
 
-// Mock payment history data (mix of successful and failed payments)
-const DUMMY_HISTORY: PaymentHistory[] = [
-  {
-    id: '1',
-    groupId: 'group1',
-    groupName: 'Monthly Savings Group',
-    memberId: 'member1',
-    memberName: 'Sanjay Kumar',
-    memberPhone: '+919876543230',
-    amount: 5000,
-    paymentDate: firestore.Timestamp.fromDate(new Date(2025, 11, 5)),
-    paymentMethod: 'upi' as PaymentMethod,
-    transactionId: 'TXN1234567890',
-    status: 'paid',
-    receiptUrl: '',
-    notes: 'Payment via UPI',
-    recordedBy: 'admin1',
-    recordedDate: firestore.Timestamp.fromDate(new Date(2025, 11, 5)),
-    createdAt: firestore.Timestamp.fromDate(new Date(2025, 11, 5)),
-    updatedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 5)),
-  },
-  {
-    id: '2',
-    groupId: 'group2',
-    groupName: 'Family Chit Fund',
-    memberId: 'member2',
-    memberName: 'Meera Iyer',
-    memberPhone: '+919876543231',
-    amount: 7500,
-    paymentDate: firestore.Timestamp.fromDate(new Date(2025, 11, 3)),
-    paymentMethod: 'cash' as PaymentMethod,
-    status: 'paid',
-    receiptUrl: '',
-    notes: 'Cash payment collected',
-    recordedBy: 'admin1',
-    recordedDate: firestore.Timestamp.fromDate(new Date(2025, 11, 3)),
-    createdAt: firestore.Timestamp.fromDate(new Date(2025, 11, 3)),
-    updatedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 3)),
-  },
-  {
-    id: '3',
-    groupId: 'group3',
-    groupName: 'Office Colleagues Fund',
-    memberId: 'member3',
-    memberName: 'Rajesh Nair',
-    memberPhone: '+919876543232',
-    amount: 3000,
-    paymentDate: firestore.Timestamp.fromDate(new Date(2025, 11, 1)),
-    paymentMethod: 'bank_transfer' as PaymentMethod,
-    transactionId: 'TXN0987654321',
-    status: 'paid',
-    receiptUrl: '',
-    notes: 'Bank transfer completed',
-    recordedBy: 'admin1',
-    recordedDate: firestore.Timestamp.fromDate(new Date(2025, 11, 1)),
-    createdAt: firestore.Timestamp.fromDate(new Date(2025, 11, 1)),
-    updatedAt: firestore.Timestamp.fromDate(new Date(2025, 11, 1)),
-  },
-  {
-    id: '4',
-    groupId: 'group1',
-    groupName: 'Monthly Savings Group',
-    memberId: 'member4',
-    memberName: 'Pooja Desai',
-    memberPhone: '+919876543233',
-    amount: 5000,
-    paymentDate: firestore.Timestamp.fromDate(new Date(2025, 10, 28)),
-    paymentMethod: 'upi' as PaymentMethod,
-    transactionId: 'TXN1122334455',
-    status: 'failed',
-    failureReason: 'Insufficient funds',
-    receiptUrl: '',
-    notes: 'Payment failed - UPI transaction declined',
-    recordedBy: 'admin1',
-    recordedDate: firestore.Timestamp.fromDate(new Date(2025, 10, 28)),
-    createdAt: firestore.Timestamp.fromDate(new Date(2025, 10, 28)),
-    updatedAt: firestore.Timestamp.fromDate(new Date(2025, 10, 28)),
-  },
-  {
-    id: '5',
-    groupId: 'group2',
-    groupName: 'Family Chit Fund',
-    memberId: 'member5',
-    memberName: 'Anil Reddy',
-    memberPhone: '+919876543234',
-    amount: 7500,
-    paymentDate: firestore.Timestamp.fromDate(new Date(2025, 10, 25)),
-    paymentMethod: 'cheque' as PaymentMethod,
-    transactionId: 'CHQ123456',
-    status: 'pending',
-    receiptUrl: '',
-    notes: 'Cheque submitted - pending clearance',
-    recordedBy: 'admin1',
-    recordedDate: firestore.Timestamp.fromDate(new Date(2025, 10, 25)),
-    createdAt: firestore.Timestamp.fromDate(new Date(2025, 10, 25)),
-    updatedAt: firestore.Timestamp.fromDate(new Date(2025, 10, 25)),
-  },
-  {
-    id: '6',
-    groupId: 'group3',
-    groupName: 'Office Colleagues Fund',
-    memberId: 'member6',
-    memberName: 'Divya Pillai',
-    memberPhone: '+919876543235',
-    amount: 3000,
-    paymentDate: firestore.Timestamp.fromDate(new Date(2025, 10, 20)),
-    paymentMethod: 'cash' as PaymentMethod,
-    status: 'paid',
-    receiptUrl: '',
-    notes: 'Cash payment received',
-    recordedBy: 'admin1',
-    recordedDate: firestore.Timestamp.fromDate(new Date(2025, 10, 20)),
-    createdAt: firestore.Timestamp.fromDate(new Date(2025, 10, 20)),
-    updatedAt: firestore.Timestamp.fromDate(new Date(2025, 10, 20)),
-  },
-];
+// SPRING_CONFIG removed for chained methods
 
-const SPRING_CONFIG = {
-  damping: 16,
-  stiffness: 140,
-  mass: 1,
-};
-
-type FilterStatus = 'all' | 'paid' | 'failed' | 'pending';
+type FilterStatus = 'all' | 'success' | 'failed' | 'initiated';
 
 interface Props {
   navigation: any;
@@ -163,11 +43,11 @@ const StatusChip: React.FC<{
 );
 
 const HistoryCard: React.FC<{
-  payment: PaymentHistory;
+  payment: Payment;
   index: number;
   onPress: () => void;
 }> = ({ payment, index, onPress }) => {
-  const paymentDate = payment.paymentDate.toDate();
+  const paymentDate = payment.createdAt ? payment.createdAt.toDate() : new Date();
   const formattedDate = paymentDate.toLocaleDateString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -176,40 +56,48 @@ const HistoryCard: React.FC<{
 
   const getStatusIcon = () => {
     switch (payment.status) {
-      case 'paid':
-        return <CheckCircle size={20} color="#5cb85c" />;
+      case 'success':
+        return <CheckCircle size={20} color={COLORS.successGreen} />;
       case 'failed':
-        return <XCircle size={20} color="#D32F2F" />;
+        return <XCircle size={20} color={COLORS.errorCoral} />;
       default:
-        return <Calendar size={20} color="#f0ad4e" />;
+        return <Calendar size={20} color={COLORS.warningAmber} />;
     }
   };
 
   const getStatusColor = () => {
     switch (payment.status) {
-      case 'paid':
-        return '#5cb85c';
+      case 'success':
+        return COLORS.successGreen;
       case 'failed':
-        return '#D32F2F';
+        return COLORS.errorCoral;
       default:
-        return '#f0ad4e';
+        return COLORS.warningAmber;
     }
   };
 
   const getMethodLabel = () => {
-    const labels: Record<PaymentMethod, string> = {
+    const labels: Record<string, string> = {
       cash: 'Cash',
       upi: 'UPI',
       bank_transfer: 'Bank Transfer',
       cheque: 'Cheque',
       card: 'Card',
       auto_debit: 'Auto Debit',
+      gateway: 'Gateway',
+      manual: 'Manual',
     };
-    return labels[payment.paymentMethod] || payment.paymentMethod;
+    return labels[payment.method] || payment.method;
+  };
+
+  const displayStatus = () => {
+    if (payment.status === 'success') return 'Paid';
+    if (payment.status === 'initiated') return 'Pending';
+    return payment.status.charAt(0).toUpperCase() + payment.status.slice(1);
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 50).springify(SPRING_CONFIG)}>
+    <Animated.View entering={FadeInDown.delay(index * 50).springify().damping(16).stiffness(140).mass(1)}>
       <TouchableOpacity
         onPress={() => {
           ReactNativeHapticFeedback.trigger('impactLight');
@@ -220,7 +108,7 @@ const HistoryCard: React.FC<{
           <View style={styles.headerLeft}>
             {getStatusIcon()}
             <Text style={[styles.statusText, { color: getStatusColor() }]}>
-              {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+              {displayStatus()}
             </Text>
           </View>
           <Text style={styles.dateText}>{formattedDate}</Text>
@@ -241,9 +129,9 @@ const HistoryCard: React.FC<{
           )}
         </View>
 
-        {payment.notes && (
+        {!!payment.metadata?.notes && (
           <Text style={styles.notes} numberOfLines={2}>
-            {payment.notes}
+            {String(payment.metadata.notes)}
           </Text>
         )}
       </TouchableOpacity>
@@ -256,48 +144,58 @@ export const PaymentHistoryScreen: React.FC<Props> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPayments = useCallback(async () => {
+    try {
+      const result = await paymentService.getPaymentHistory({
+        status: filterStatus !== 'all' ? [filterStatus as PaymentStatus] : undefined,
+      }, { limit: 50, orderBy: 'createdAt', orderDirection: 'desc' });
+      setPayments(result.data);
+    } catch (error) {
+      console.error('Failed to fetch payments:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [filterStatus]);
+
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
 
   const filteredPayments = useMemo(() => {
-    return DUMMY_HISTORY.filter(payment => {
-      // Filter by status
-      if (filterStatus !== 'all' && payment.status !== filterStatus) {
-        return false;
-      }
-
-      // Filter by search query
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
-          payment.memberName.toLowerCase().includes(query) ||
-          payment.groupName.toLowerCase().includes(query) ||
-          payment.transactionId?.toLowerCase().includes(query)
-        );
-      }
-
-      return true;
+    if (!searchQuery) return payments;
+    
+    const query = searchQuery.toLowerCase();
+    return payments.filter(payment => {
+      return (
+        payment.memberName.toLowerCase().includes(query) ||
+        payment.groupName.toLowerCase().includes(query) ||
+        payment.transactionId?.toLowerCase().includes(query)
+      );
     });
-  }, [filterStatus, searchQuery]);
+  }, [payments, searchQuery]);
 
   const stats = useMemo(() => {
-    const paid = DUMMY_HISTORY.filter(p => p.status === 'paid').reduce(
+    const paid = payments.filter(p => p.status === 'success').reduce(
       (sum, p) => sum + p.amount,
       0
     );
-    const failed = DUMMY_HISTORY.filter(p => p.status === 'failed').length;
-    const pending = DUMMY_HISTORY.filter(p => p.status === 'pending').length;
+    const failed = payments.filter(p => p.status === 'failed').length;
+    const pending = payments.filter(p => p.status === 'initiated').length;
     return { paid, failed, pending };
-  }, []);
+  }, [payments]);
 
-  const onRefresh = async () => {
+  const onRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    fetchPayments();
   };
 
-  const handlePaymentPress = (payment: PaymentHistory) => {
+  const handlePaymentPress = (payment: Payment) => {
     console.log('Payment history pressed:', payment.id);
-    // TODO: Navigate to payment receipt/details
+    // Navigate to details if needed
   };
 
   return (
@@ -305,7 +203,7 @@ export const PaymentHistoryScreen: React.FC<Props> = ({ navigation }) => {
       style={[styles.container, { paddingTop: insets.top }]}
       edges={['top', 'left', 'right']}>
       {/* Header */}
-      <Animated.View entering={FadeInDown.delay(0).springify(SPRING_CONFIG)} style={styles.header}>
+      <Animated.View entering={FadeInDown.delay(0).springify().damping(16).stiffness(140).mass(1)} style={styles.header}>
         <Text style={styles.headerTitle}>Payment History</Text>
         <Text style={styles.headerSubtitle}>
           ₹{stats.paid.toLocaleString('en-IN')} collected • {stats.failed} failed • {stats.pending}{' '}
@@ -315,12 +213,12 @@ export const PaymentHistoryScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Search Bar */}
       <Animated.View
-        entering={FadeInDown.delay(100).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)}
         style={styles.searchContainer}>
-        <Search size={20} color="#666" />
+        <Search size={20} color={COLORS.iconSecondary} />
         <TextInput
           placeholder="Search by name, group or transaction ID..."
-          placeholderTextColor="#999"
+          placeholderTextColor={COLORS.textTertiary}
           value={searchQuery}
           onChangeText={setSearchQuery}
           style={styles.searchInput}
@@ -329,36 +227,42 @@ export const PaymentHistoryScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Status Filter Chips */}
       <Animated.View
-        entering={FadeInDown.delay(150).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)}
         style={styles.filterContainer}>
-        <Filter size={18} color="#666" />
+        <Filter size={18} color={COLORS.iconSecondary} />
         <StatusChip label="All" isActive={filterStatus === 'all'} onPress={() => setFilterStatus('all')} />
-        <StatusChip label="Paid" isActive={filterStatus === 'paid'} onPress={() => setFilterStatus('paid')} />
+        <StatusChip label="Paid" isActive={filterStatus === 'success'} onPress={() => setFilterStatus('success')} />
         <StatusChip label="Failed" isActive={filterStatus === 'failed'} onPress={() => setFilterStatus('failed')} />
-        <StatusChip label="Pending" isActive={filterStatus === 'pending'} onPress={() => setFilterStatus('pending')} />
+        <StatusChip label="Pending" isActive={filterStatus === 'initiated'} onPress={() => setFilterStatus('initiated')} />
       </Animated.View>
 
       {/* History List */}
-      <FlatList
-        data={filteredPayments}
-        renderItem={({ item, index }) => (
-          <HistoryCard payment={item} index={index} onPress={() => handlePaymentPress(item)} />
-        )}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#121723" />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <CheckCircle size={64} color="#CCC" />
-            <Text style={styles.emptyText}>No payment history</Text>
-            <Text style={styles.emptySubtext}>
-              {searchQuery ? 'Try adjusting your search' : 'No payments recorded yet'}
-            </Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primaryBlue} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredPayments}
+          renderItem={({ item, index }) => (
+            <HistoryCard payment={item} index={index} onPress={() => handlePaymentPress(item)} />
+          )}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primaryBlue} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <CheckCircle size={64} color={COLORS.borderGray} />
+              <Text style={styles.emptyText}>No payment history</Text>
+              <Text style={styles.emptySubtext}>
+                {searchQuery ? 'Try adjusting your search' : 'No payments recorded yet'}
+              </Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -366,7 +270,7 @@ export const PaymentHistoryScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#C2DFF7',
+    backgroundColor: COLORS.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -375,24 +279,24 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#121723',
+    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     marginHorizontal: 20,
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: COLORS.neumorphic.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -403,7 +307,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 15,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#121723',
+    color: COLORS.textPrimary,
   },
   filterContainer: {
     flexDirection: 'row',
@@ -417,31 +321,31 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#CCCCCC',
-    backgroundColor: '#FFFFFF',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
   },
   activeStatusChip: {
-    backgroundColor: '#121723',
-    borderColor: '#121723',
+    backgroundColor: COLORS.primaryBlue,
+    borderColor: COLORS.primaryBlue,
   },
   statusChipText: {
     fontSize: 12,
     fontFamily: 'PlusJakartaSans-Medium',
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   activeStatusChipText: {
-    color: '#FFFFFF',
+    color: COLORS.textOnPrimary,
   },
   listContent: {
     paddingBottom: 20,
   },
   historyCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     marginHorizontal: 20,
     marginBottom: 16,
     padding: 20,
     borderRadius: 20,
-    shadowColor: '#000',
+    shadowColor: COLORS.neumorphic.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -465,7 +369,7 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 12,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#999',
+    color: COLORS.textTertiary,
   },
   cardBody: {
     marginBottom: 12,
@@ -473,19 +377,19 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#121723',
+    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   groupName: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#666',
+    color: COLORS.textSecondary,
     marginBottom: 8,
   },
   amount: {
     fontSize: 22,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#121723',
+    color: COLORS.textPrimary,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -493,7 +397,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   methodBadge: {
-    backgroundColor: '#F0F0F0',
+    backgroundColor: COLORS.surfaceSecondary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -501,21 +405,21 @@ const styles = StyleSheet.create({
   methodText: {
     fontSize: 11,
     fontFamily: 'PlusJakartaSans-SemiBold',
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   transactionId: {
     fontSize: 10,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#999',
+    color: COLORS.textTertiary,
   },
   notes: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: COLORS.borderLight,
     fontSize: 12,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#666',
+    color: COLORS.textSecondary,
     fontStyle: 'italic',
   },
   emptyState: {
@@ -527,15 +431,21 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#999',
+    color: COLORS.textTertiary,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#BBB',
+    color: COLORS.textTertiary,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40,
   },
 });
 

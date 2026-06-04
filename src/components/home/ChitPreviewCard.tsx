@@ -64,7 +64,7 @@ export const ChitPreviewCard: React.FC<ChitPreviewCardProps> = ({
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      android_ripple={{ color: `${colors.primaryMuted}20` }}
+      android_ripple={{ color: `${colors.surfaceLight}20` }}
       style={animatedStyle}
     >
       <View style={styles.shadowContainer}>
@@ -138,13 +138,13 @@ const styles = StyleSheet.create({
     borderRadius: radii.m,
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.soft,
+    ...shadows.sm,
   },
   info: {
     flex: 1,
   },
   title: {
-    ...typography.section,
+    ...(typography.h2 as any),
     marginBottom: 4,
   },
   meta: {
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   metaText: {
-    ...typography.bodySmall,
+    ...(typography.bodySmall as any),
     color: colors.textMuted,
   },
   metaHighlight: {
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: colors.textTitle,
+    color: colors.textPrimary,
     fontWeight: '600',
   },
 });

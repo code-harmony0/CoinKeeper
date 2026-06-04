@@ -151,7 +151,7 @@ export const createContribution = async (
     await logAudit({
       contributionId: docRef.id,
       action: 'created',
-      performedBy: data.userId,
+      performedBy: data.userId || data.memberId || 'system',
       timestamp: now.toDate(),
       metadata: { groupId: data.groupId, amount: data.amount },
     });

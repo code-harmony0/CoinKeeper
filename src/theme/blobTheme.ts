@@ -12,6 +12,7 @@ export const THEME_COLORS = {
   backgroundGradient1: '#D8E2FA',  // Lavender tint
   backgroundGradient2: '#D7F3F4',  // Mint tint
   backgroundGradient3: '#CFD9F1',  // Periwinkle tint
+  backgroundGradientEnd: '#DDEEFF', // Gradient end color
   
   // SURFACES
   surface: '#FFFFFF',

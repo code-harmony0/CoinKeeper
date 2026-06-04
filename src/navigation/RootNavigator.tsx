@@ -7,6 +7,7 @@ import { View, ActivityIndicator } from 'react-native';
 // Screens
 import { SplashScreen, OnboardingScreen } from '../screens/onboarding';
 import { LoginScreen } from '../screens/auth';
+import { GroupsScreen } from '../screens/user';
 import { UserTabNavigator } from './UserTabNavigator';
 import { AdminTabNavigator } from './AdminTabNavigator';
 import { MembersStackNavigator } from './MembersStackNavigator';
@@ -72,6 +73,7 @@ export const RootNavigator = () => {
         )}
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="UserTabs" component={UserTabNavigator} />
+        <Stack.Screen name="Groups" component={GroupsScreen} />
         <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
         <Stack.Screen name="MembersStack" component={MembersStackNavigator} />
         <Stack.Screen name="TransactionsStack" component={TransactionsStackNavigator} />

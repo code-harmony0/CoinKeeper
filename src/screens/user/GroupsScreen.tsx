@@ -7,7 +7,7 @@ import { View, StyleSheet, ScrollView, Pressable, Text } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useChitFunds } from '../../hooks/useChitFunds';
+import { useGroups } from '../../hooks/useGroups';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { THEME_COLORS, THEME_SHADOWS, THEME_RADIUS, THEME_SPACING, THEME_TYPOGRAPHY, THEME_ANIMATION } from '../../theme/blobTheme';
@@ -18,7 +18,7 @@ type Props = NativeStackScreenProps<any, 'Groups'>;
 
 export const GroupsScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { groups, createGroup } = useChitFunds();
+  const { groups, createGroup } = useGroups();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
 
   return (
@@ -43,7 +43,7 @@ export const GroupsScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.statLabel}>Active Groups</Text>
         </View>
         <View style={styles.statBlob}>
-          <Text style={styles.statValue}>₹{groups.reduce((s, g) => s + g.monthlyAmount, 0).toLocaleString('en-IN')}</Text>
+          <Text style={styles.statValue}>₹{groups.reduce((s, g) => s + (g.contributionAmount || 0), 0).toLocaleString('en-IN')}</Text>
           <Text style={styles.statLabel}>Monthly Total</Text>
         </View>
       </Animated.View>
@@ -58,9 +58,9 @@ export const GroupsScreen: React.FC<Props> = ({ navigation }) => {
             <Animated.View key={group.id} entering={FadeInDown.delay(100 + index * 50)}>
               <GroupCard
                 name={group.name}
-                members={group.totalMembers}
-                amount={group.amount}
-                duration={group.duration}
+                members={group.maxMembers}
+                amount={group.contributionAmount}
+                duration={group.maxMembers} // using maxMembers as proxy for duration in cycles
                 color={getGroupColor(index)}
               />
             </Animated.View>
@@ -82,7 +82,17 @@ export const GroupsScreen: React.FC<Props> = ({ navigation }) => {
       <CreateGroupSheet
         visible={showCreateSheet}
         onClose={() => setShowCreateSheet(false)}
-        onSubmit={(name, amount, members, duration) => { createGroup(name, amount, members, duration); setShowCreateSheet(false); }}
+        onSubmit={async (name, amount, members, duration) => { 
+          await createGroup({
+            name,
+            contributionAmount: amount,
+            maxMembers: members,
+            cycleTime: 'monthly',
+            autoDebit: false,
+            startDate: new Date()
+          }); 
+          setShowCreateSheet(false); 
+        }}
       />
     </View>
   );

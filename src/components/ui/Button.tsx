@@ -80,28 +80,28 @@ export const Button: React.FC<ButtonProps> = ({
           paddingVertical: 8,
           paddingHorizontal: 16,
           minHeight: 36,
-          borderRadius: theme.radius.full,
+          borderRadius: theme.radius.round,
         };
       case 'medium':
         return {
           paddingVertical: 12,
           paddingHorizontal: 24,
           minHeight: 48,
-          borderRadius: theme.radius.full,
+          borderRadius: theme.radius.round,
         };
       case 'large':
         return {
           paddingVertical: 16,
           paddingHorizontal: 32,
           minHeight: 56,
-          borderRadius: theme.radius.full,
+          borderRadius: theme.radius.round,
         };
       default:
         return {
           paddingVertical: 12,
           paddingHorizontal: 24,
           minHeight: 48,
-          borderRadius: theme.radius.full,
+          borderRadius: theme.radius.round,
         };
     }
   };

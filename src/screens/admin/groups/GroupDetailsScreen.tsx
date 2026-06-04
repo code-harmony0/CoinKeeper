@@ -111,7 +111,6 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
     error,
     removeMember,
     addMember,
-    refetch,
   } = useGroupDetails(groupId);
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -151,7 +150,7 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await refetch?.();
+    await new Promise(resolve => setTimeout(resolve, 500));
     setRefreshing(false);
   };
 
@@ -227,11 +226,10 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
     try {
       await addMember({
         groupId,
-        name: newMemberName,
-        phone: newMemberPhone,
-        role: 'member',
-        status: 'active',
-        joinedAt: new Date(),
+        userName: newMemberName,
+        userPhone: newMemberPhone,
+        userEmail: '',
+        userId: '',
       });
       setIsAddMemberVisible(false);
       setNewMemberName('');
@@ -319,7 +317,7 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
           <View style={styles.heroInfo}>
             <Text style={styles.heroLabel}>Group Created</Text>
             <Text style={styles.heroValue}>
-              {group.startDate ? formatDate(group.startDate) : 'N/A'}
+              {group.startDate ? formatDate((group.startDate as any).toDate?.() || new Date(group.startDate as any)) : 'N/A'}
             </Text>
           </View>
         </View>
@@ -433,7 +431,7 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
       </Animated.View>
 
       <View style={styles.listContainer}>
-        {displayMembers.map((member, index) => (
+        {displayMembers.map((member: any, index) => (
           <Animated.View
             key={member.id}
             entering={FadeInDown.delay(index * 50).springify()}
@@ -441,15 +439,15 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
           >
             <View style={[styles.memberAvatar, { backgroundColor: member.avatarColor || '#E3F2FD' }]}>
               <Text style={[styles.memberInitials, { color: member.avatarText || '#1976D2' }]}>
-                {(member.name ?? '').substring(0, 2).toUpperCase()}
+                {((member.name || member.userName) ?? '').substring(0, 2).toUpperCase()}
               </Text>
             </View>
             <View style={styles.memberInfo}>
-              <Text style={styles.memberName}>{member.name}</Text>
+              <Text style={styles.memberName}>{member.name || member.userName}</Text>
               <View style={styles.memberMeta}>
-                <Text style={styles.memberRole}>{member.role}</Text>
+                <Text style={styles.memberRole}>{member.role || 'Member'}</Text>
                 <Text style={styles.memberDot}>•</Text>
-                <Text style={styles.memberJoined}>Joined {formatDate(new Date(member.joinedAt))}</Text>
+                <Text style={styles.memberJoined}>Joined {formatDate((member.joinedAt || member.joinedDate)?.toDate?.() || new Date(member.joinedAt || member.joinedDate))}</Text>
               </View>
             </View>
             <View style={styles.memberActions}>
@@ -479,7 +477,7 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
       </Animated.View>
 
       <View style={styles.listContainer}>
-        {displayTransactions.map((transaction, index) => (
+        {displayTransactions.map((transaction: any, index) => (
           <Animated.View
             key={transaction.id}
             entering={FadeInDown.delay(index * 50).springify()}
@@ -490,7 +488,7 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
             </View>
             <View style={styles.txnInfo}>
               <Text style={styles.txnName}>{transaction.memberName}</Text>
-              <Text style={styles.txnDate}>{formatDate(new Date(transaction.date))}</Text>
+              <Text style={styles.txnDate}>{formatDate((transaction.date as any).toDate?.() || new Date(transaction.date as any))}</Text>
             </View>
             <View style={styles.txnRight}>
               <Text style={styles.txnAmount}>+{formatCurrency(transaction.amount)}</Text>
@@ -519,7 +517,7 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
       </Animated.View>
 
       <View style={styles.listContainer}>
-        {displayDraws.map((draw, index) => (
+        {displayDraws.map((draw: any, index) => (
           <Animated.View
             key={draw.id}
             entering={FadeInDown.delay(index * 50).springify()}
@@ -532,7 +530,7 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
                 </View>
                 <View>
                   <Text style={styles.drawLabel}>Draw Amount</Text>
-                  <Text style={styles.drawAmount}>{formatCurrency(draw.amount || 0)}</Text>
+                  <Text style={styles.drawAmount}>{formatCurrency(draw.prizeAmount || 0)}</Text>
                 </View>
               </View>
               <StatusChip status={draw.status === 'completed' ? 'active' : 'pending'} size="small" />
@@ -544,12 +542,12 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
               <View style={styles.drawFooterItem}>
                 <Calendar size={14} color={theme.colors.textSecondary} />
                 <Text style={styles.drawFooterText}>
-                  {draw.scheduledDate ? formatDate(new Date(draw.scheduledDate)) : 'TBD'}
+                  {draw.scheduledDate ? formatDate((draw.scheduledDate as any).toDate?.() || new Date(draw.scheduledDate as any)) : 'TBD'}
                 </Text>
               </View>
-              {draw.winner && (
+              {draw.winnerName && (
                 <View style={styles.drawWinnerTag}>
-                  <Text style={styles.drawWinnerText}>🏆 {draw.winner.name}</Text>
+                  <Text style={styles.drawWinnerText}>🏆 {draw.winnerName}</Text>
                 </View>
               )}
             </View>
@@ -1152,7 +1150,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 28, // Bento Squircle Radius
     padding: 24,
-    ...theme.shadows.elevated,
+    ...theme.shadows.medium,
   },
   modalHeader: {
     flexDirection: 'row',

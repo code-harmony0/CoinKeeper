@@ -34,6 +34,7 @@ interface AddTransactionSheetProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (data: any) => void;
+  initialType?: 'expense' | 'income';
 }
 
 // Category data with SVG icons
@@ -52,13 +53,14 @@ export const AddTransactionSheet: React.FC<AddTransactionSheetProps> = ({
   visible,
   onClose,
   onSubmit,
+  initialType = 'expense',
 }) => {
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const opacity = useSharedValue(0);
 
   const [amount, setAmount] = useState('');
-  const [type, setType] = useState<'expense' | 'income'>('expense');
+  const [type, setType] = useState<'expense' | 'income'>(initialType);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [description, setDescription] = useState('');
 
@@ -72,6 +74,12 @@ export const AddTransactionSheet: React.FC<AddTransactionSheetProps> = ({
       translateY.value = withSpring(SCREEN_HEIGHT, { damping: 20, stiffness: 150 });
     }
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (visible) {
+      setType(initialType);
+    }
+  }, [visible, initialType]);
 
   const overlayStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
@@ -97,7 +105,7 @@ export const AddTransactionSheet: React.FC<AddTransactionSheetProps> = ({
 
     // Reset
     setAmount('');
-    setType('expense');
+    setType(initialType);
     setSelectedCategory(null);
     setDescription('');
     onClose();

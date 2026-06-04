@@ -25,7 +25,7 @@ import {
 } from 'lucide-react-native';
 import { COLORS } from '../../../theme/colors';
 
-const SPRING_CONFIG = { damping: 16, stiffness: 140, mass: 1 };
+// SPRING_CONFIG replaced with chained methods
 
 // Permission definitions
 const PERMISSION_GROUPS = [
@@ -289,7 +289,7 @@ export const PermissionsRolesScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <Animated.View entering={FadeInDown.springify(SPRING_CONFIG)} style={styles.header}>
+      <Animated.View entering={FadeInDown.springify().damping(16).stiffness(140).mass(1)} style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <ArrowLeft size={22} color="#121723" />
         </TouchableOpacity>
@@ -300,7 +300,7 @@ export const PermissionsRolesScreen: React.FC<Props> = ({ navigation }) => {
       </Animated.View>
 
       {/* Tab Selector */}
-      <Animated.View entering={FadeInDown.delay(30).springify(SPRING_CONFIG)} style={styles.tabRow}>
+      <Animated.View entering={FadeInDown.delay(30).springify().damping(16).stiffness(140).mass(1)} style={styles.tabRow}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'roles' && styles.activeTab]}
           onPress={() => { ReactNativeHapticFeedback.trigger('selection'); setActiveTab('roles'); }}
@@ -324,7 +324,7 @@ export const PermissionsRolesScreen: React.FC<Props> = ({ navigation }) => {
         {activeTab === 'roles' ? (
           <>
             {/* Role List */}
-            <Animated.View entering={FadeInDown.delay(60).springify(SPRING_CONFIG)} style={styles.section}>
+            <Animated.View entering={FadeInDown.delay(60).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
               <Text style={styles.sectionTitle}>Available Roles</Text>
               {roles.map(role => (
                 <TouchableOpacity
@@ -354,7 +354,7 @@ export const PermissionsRolesScreen: React.FC<Props> = ({ navigation }) => {
 
             {/* Selected Role Details */}
             {selectedRole && (
-              <Animated.View entering={FadeInDown.delay(90).springify(SPRING_CONFIG)} style={styles.section}>
+              <Animated.View entering={FadeInDown.delay(90).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>{selectedRole.name} Permissions</Text>
                   {!isEditing ? (
@@ -431,7 +431,7 @@ export const PermissionsRolesScreen: React.FC<Props> = ({ navigation }) => {
           </>
         ) : (
           /* Users Tab */
-          <Animated.View entering={FadeInDown.delay(60).springify(SPRING_CONFIG)} style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(60).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
             <Text style={styles.sectionTitle}>Admin Users ({users.length})</Text>
             {users.length === 0 ? (
               <View style={styles.emptyState}>

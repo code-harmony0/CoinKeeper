@@ -1,44 +1,21 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from 'react';
+import auth from '@react-native-firebase/auth';
 import { Transaction } from '../types/transaction';
-
-// Mock initial data
-const INITIAL_TRANSACTIONS: Transaction[] = [
-  {
-    id: '1',
-    amount: 350,
-    type: 'expense',
-    category: 'Food',
-    categoryIcon: 'food',
-    description: 'Lunch at restaurant',
-    date: new Date().toISOString(),
-    paymentMethod: 'UPI',
-  },
-  {
-    id: '2',
-    amount: 5000,
-    type: 'income',
-    category: 'Salary',
-    categoryIcon: 'cash',
-    description: 'Monthly salary',
-    date: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    amount: 120,
-    type: 'expense',
-    category: 'Transport',
-    categoryIcon: 'car',
-    description: 'Uber ride',
-    date: new Date().toISOString(),
-    paymentMethod: 'Card',
-  },
-];
+import { transactionService } from '../services/transactionService';
 
 interface TransactionsContextType {
   transactions: Transaction[];
   addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => void;
   deleteTransaction: (id: string) => void;
   updateTransaction: (id: string, updates: Partial<Transaction>) => void;
+  refreshTransactions: () => Promise<void>;
   loading: boolean;
 }
 
@@ -49,28 +26,69 @@ const TransactionsContext = createContext<TransactionsContextType | undefined>(
 export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(INITIAL_TRANSACTIONS);
-  const [loading] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addTransaction = (newTx: Omit<Transaction, 'id' | 'date'>) => {
-    const transaction: Transaction = {
-      ...newTx,
-      id: Math.random().toString(36).substring(2, 11),
-      date: new Date().toISOString(),
-    };
-    setTransactions(prev => [transaction, ...prev]);
-  };
+  // Real-time Firestore listener
+  useEffect(() => {
+    const user = auth().currentUser;
+    if (!user) {
+      setTransactions([]);
+      setLoading(false);
+      return;
+    }
 
-  const deleteTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
-  };
-
-  const updateTransaction = (id: string, updates: Partial<Transaction>) => {
-    setTransactions(prev =>
-      prev.map(t => (t.id === id ? { ...t, ...updates } : t)),
+    setLoading(true);
+    const unsubscribe = transactionService.onTransactionsSnapshot(
+      txs => {
+        setTransactions(txs);
+        setLoading(false);
+      },
+      error => {
+        console.error('[TransactionsContext] Listener error:', error);
+        setLoading(false);
+      },
     );
-  };
+
+    return () => unsubscribe();
+  }, []);
+
+  const addTransaction = useCallback(
+    async (newTx: Omit<Transaction, 'id' | 'date'>) => {
+      try {
+        await transactionService.addTransaction(newTx);
+        // onSnapshot will automatically update the list
+      } catch (error) {
+        console.error('[TransactionsContext] Add error:', error);
+      }
+    },
+    [],
+  );
+
+  const deleteTransaction = useCallback(async (id: string) => {
+    try {
+      await transactionService.deleteTransaction(id);
+    } catch (error) {
+      console.error('[TransactionsContext] Delete error:', error);
+    }
+  }, []);
+
+  const updateTransaction = useCallback(
+    async (id: string, updates: Partial<Transaction>) => {
+      try {
+        await transactionService.updateTransaction(id, updates);
+      } catch (error) {
+        console.error('[TransactionsContext] Update error:', error);
+      }
+    },
+    [],
+  );
+
+  const refreshTransactions = useCallback(async () => {
+    // onSnapshot handles real-time — this is a no-op but keeps the API stable
+    setLoading(true);
+    setTimeout(() => setLoading(false), 300);
+  }, []);
 
   return (
     <TransactionsContext.Provider
@@ -79,6 +97,7 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({
         addTransaction,
         deleteTransaction,
         updateTransaction,
+        refreshTransactions,
         loading,
       }}
     >

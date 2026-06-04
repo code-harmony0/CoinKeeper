@@ -17,7 +17,10 @@ const COLLECTIONS = {
 export const drawsService = {
   // ==================== DRAW MANAGEMENT ====================
 
-  createDraw: async (drawData: Omit<Draw, 'id' | 'createdAt' | 'updatedAt'>, adminId: string): Promise<Draw> => {
+  createDraw: async (
+    drawData: Omit<Draw, 'id' | 'createdAt' | 'updatedAt'>,
+    adminId: string,
+  ): Promise<Draw> => {
     try {
       const ref = firestore().collection(COLLECTIONS.DRAWS).doc();
 
@@ -64,7 +67,10 @@ export const drawsService = {
       }
 
       const snapshot = await query.get();
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Draw[];
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Draw[];
     } catch (error) {
       console.error('[drawsService] Error fetching upcoming draws:', error);
       throw new Error('Failed to fetch upcoming draws');
@@ -88,7 +94,9 @@ export const drawsService = {
 
   // ==================== BID MANAGEMENT ====================
 
-  submitBid: async (bidData: Omit<DrawBid, 'id' | 'timestamp'>): Promise<DrawBid> => {
+  submitBid: async (
+    bidData: Omit<DrawBid, 'id' | 'timestamp'>,
+  ): Promise<DrawBid> => {
     try {
       const ref = firestore().collection(COLLECTIONS.DRAW_BIDS).doc();
 
@@ -125,7 +133,10 @@ export const drawsService = {
         .orderBy('bidAmount', 'desc')
         .get();
 
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as DrawBid[];
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as DrawBid[];
     } catch (error) {
       console.error('[drawsService] Error fetching draw bids:', error);
       throw new Error('Failed to fetch draw bids');
@@ -134,7 +145,11 @@ export const drawsService = {
 
   // ==================== WINNER SELECTION ====================
 
-  selectWinner: async (drawId: string, winnerId: string, winningBid: number): Promise<DrawWinner> => {
+  selectWinner: async (
+    drawId: string,
+    winnerId: string,
+    winningBid: number,
+  ): Promise<DrawWinner> => {
     try {
       const batch = firestore().batch();
 
@@ -142,6 +157,16 @@ export const drawsService = {
       const drawRef = firestore().collection(COLLECTIONS.DRAWS).doc(drawId);
       const drawSnap = await drawRef.get();
       const drawData = drawSnap.data() as Draw;
+
+      // Fetch winner's member data
+      const memberSnapshot = await firestore()
+        .collection('group_members')
+        .where('userId', '==', winnerId)
+        .where('groupId', '==', drawData.groupId)
+        .limit(1)
+        .get();
+
+      const memberData = memberSnapshot.docs[0]?.data();
 
       // Create winner record
       const winnerRef = firestore().collection(COLLECTIONS.DRAW_WINNERS).doc();
@@ -151,8 +176,8 @@ export const drawsService = {
         groupId: drawData.groupId,
         groupName: drawData.groupName,
         memberId: winnerId,
-        memberName: '', // Should be fetched from member data
-        memberPhone: '', // Should be fetched from member data
+        memberName: memberData?.userName || 'Unknown',
+        memberPhone: memberData?.userPhone || '',
         winningBid,
         prizeAmount: drawData.totalPrizeAmount,
         settlementStatus: 'pending',
@@ -196,20 +221,27 @@ export const drawsService = {
 
   // ==================== SETTLEMENT ====================
 
-  createSettlement: async (settlementData: Omit<DrawSettlement, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> => {
+  createSettlement: async (
+    settlementData: Omit<DrawSettlement, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<void> => {
     try {
-      await firestore().collection(COLLECTIONS.DRAW_SETTLEMENTS).add({
-        ...settlementData,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-      });
+      await firestore()
+        .collection(COLLECTIONS.DRAW_SETTLEMENTS)
+        .add({
+          ...settlementData,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        });
     } catch (error) {
       console.error('[drawsService] Error creating settlement:', error);
       throw new Error('Failed to create settlement');
     }
   },
 
-  updateSettlement: async (settlementId: string, updates: Partial<DrawSettlement>): Promise<void> => {
+  updateSettlement: async (
+    settlementId: string,
+    updates: Partial<DrawSettlement>,
+  ): Promise<void> => {
     try {
       await firestore()
         .collection(COLLECTIONS.DRAW_SETTLEMENTS)
@@ -232,7 +264,7 @@ export const drawsService = {
     filters?: {
       status?: string[];
       groupId?: string;
-    }
+    },
   ) => {
     try {
       let query = firestore()
@@ -245,22 +277,17 @@ export const drawsService = {
 
       return query.onSnapshot(
         snapshot => {
-          let draws = snapshot.docs.map(doc => ({
+          const draws = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
           })) as Draw[];
-
-          // Apply status filter in memory
-          if (filters?.status && filters.status.length > 0) {
-            draws = draws.filter(draw => filters.status!.includes(draw.status));
-          }
 
           callback(draws);
         },
         error => {
           console.error('[drawsService] Snapshot error:', error);
           onError?.(error);
-        }
+        },
       );
     } catch (error) {
       console.error('[drawsService] Error setting up listener:', error);
@@ -286,35 +313,54 @@ export const drawsService = {
       const completedDraws = draws.filter(d => d.status === 'completed').length;
       const cancelledDraws = draws.filter(d => d.status === 'cancelled').length;
 
-      const completedWithPrize = draws.filter(d => d.status === 'completed' && d.totalPrizeAmount > 0);
-      const totalPrizeDisbursed = completedWithPrize.reduce((sum, d) => sum + d.totalPrizeAmount, 0);
+      const completedWithPrize = draws.filter(
+        d => d.status === 'completed' && d.totalPrizeAmount > 0,
+      );
+      const totalPrizeDisbursed = completedWithPrize.reduce(
+        (sum, d) => sum + d.totalPrizeAmount,
+        0,
+      );
 
-      // Calculate average bid from all draws
-      const bidsSnapshot = await firestore().collection(COLLECTIONS.DRAW_BIDS).get();
+      // PERFORMANCE WARNING: This fetches all draw bids which is inefficient
+      // for large datasets. Consider using Cloud Functions for aggregation
+      // or implement pagination for bid analysis.
+      const bidsSnapshot = await firestore()
+        .collection(COLLECTIONS.DRAW_BIDS)
+        .get();
       const allBids = bidsSnapshot.docs.map(doc => doc.data() as DrawBid);
-      const averageBidAmount = allBids.length > 0
-        ? allBids.reduce((sum, bid) => sum + bid.bidAmount, 0) / allBids.length
-        : 0;
+      const averageBidAmount =
+        allBids.length > 0
+          ? allBids.reduce((sum, bid) => sum + bid.bidAmount, 0) /
+            allBids.length
+          : 0;
 
-      const winningBids = draws.filter(d => d.winningBid).map(d => d.winningBid!);
-      const averageWinningBid = winningBids.length > 0
-        ? winningBids.reduce((sum, bid) => sum + bid, 0) / winningBids.length
-        : 0;
+      const winningBids = draws
+        .filter(d => d.winningBid)
+        .map(d => d.winningBid!);
+      const averageWinningBid =
+        winningBids.length > 0
+          ? winningBids.reduce((sum, bid) => sum + bid, 0) / winningBids.length
+          : 0;
 
       // Calculate participation rate
       const drawsWithParticipants = draws.filter(d => d.participantCount > 0);
-      const participationRate = drawsWithParticipants.length > 0
-        ? drawsWithParticipants.reduce((sum, d) => sum + d.participantCount, 0) / drawsWithParticipants.length
-        : 0;
+      const participationRate =
+        drawsWithParticipants.length > 0
+          ? drawsWithParticipants.reduce(
+              (sum, d) => sum + d.participantCount,
+              0,
+            ) / drawsWithParticipants.length
+          : 0;
 
       // Settlement rate
       const settlementsSnapshot = await firestore()
         .collection(COLLECTIONS.DRAW_SETTLEMENTS)
         .where('status', '==', 'completed')
         .get();
-      const settlementRate = completedDraws > 0
-        ? (settlementsSnapshot.size / completedDraws) * 100
-        : 0;
+      const settlementRate =
+        completedDraws > 0
+          ? (settlementsSnapshot.size / completedDraws) * 100
+          : 0;
 
       return {
         totalDraws,

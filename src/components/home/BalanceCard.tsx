@@ -78,7 +78,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
     >
       <View style={styles.shadowContainer}>
         <LinearGradient
-          colors={colors.balanceGradient1 as unknown as string[]}
+          colors={[colors.primaryBlue, colors.primaryBlueDark]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.container}
@@ -161,7 +161,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 
 const styles = StyleSheet.create({
   shadowContainer: {
-    ...shadows.balanceCard,
+    ...shadows.lg,
     borderRadius: radii.card,
     marginBottom: spacing.xl,
   },
@@ -196,12 +196,12 @@ const styles = StyleSheet.create({
     marginRight: spacing.s,
   },
   label: {
-    ...typography.label,
+    ...(typography.bodySmall as any),
     fontSize: 14,
     fontWeight: '600',
   },
   balance: {
-    ...typography.titleLarge,
+    ...(typography.h1 as any),
     marginVertical: spacing.m,
   },
   trendContainer: {

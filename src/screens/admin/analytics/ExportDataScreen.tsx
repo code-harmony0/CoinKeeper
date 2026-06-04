@@ -94,7 +94,7 @@ export const ExportDataScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <Animated.View entering={FadeInDown.springify(SPRING_CONFIG)} style={styles.header}>
+        <Animated.View entering={FadeInDown.springify().damping(16).stiffness(140).mass(1)} style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <ArrowLeft size={22} color="#121723" />
           </TouchableOpacity>
@@ -105,7 +105,7 @@ export const ExportDataScreen: React.FC<Props> = ({ navigation }) => {
         </Animated.View>
 
         {/* Export Templates */}
-        <Animated.View entering={FadeInDown.delay(50).springify(SPRING_CONFIG)} style={styles.section}>
+        <Animated.View entering={FadeInDown.delay(50).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
           <Text style={styles.sectionTitle}>Report Template</Text>
           {EXPORT_TEMPLATES.map(template => (
             <TouchableOpacity
@@ -145,7 +145,7 @@ export const ExportDataScreen: React.FC<Props> = ({ navigation }) => {
         </Animated.View>
 
         {/* Format Selection */}
-        <Animated.View entering={FadeInDown.delay(100).springify(SPRING_CONFIG)} style={styles.section}>
+        <Animated.View entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
           <Text style={styles.sectionTitle}>Export Format</Text>
           <View style={styles.formatGrid}>
             {FORMATS.map(format => {
@@ -173,7 +173,7 @@ export const ExportDataScreen: React.FC<Props> = ({ navigation }) => {
         </Animated.View>
 
         {/* Export Button */}
-        <Animated.View entering={FadeInDown.delay(150).springify(SPRING_CONFIG)} style={styles.section}>
+        <Animated.View entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
           <TouchableOpacity
             onPress={handleExport}
             disabled={isExporting || !selectedTemplate}
@@ -194,7 +194,7 @@ export const ExportDataScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Export Status */}
         {exportId && (
-          <Animated.View entering={FadeInDown.delay(200).springify(SPRING_CONFIG)} style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(200).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
             <View style={styles.statusCard}>
               <CheckCircle size={20} color="#2E7D32" />
               <View style={styles.statusInfo}>

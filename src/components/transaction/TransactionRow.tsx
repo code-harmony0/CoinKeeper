@@ -31,7 +31,7 @@ export const TransactionRow = ({ transaction }: { transaction: Transaction }) =>
         </Text>
         {isIncome 
             ? <ArrowDownLeft size={16} color={colors.primary} /> 
-            : <ArrowUpRight size={16} color={styles.expense.color} />
+            : <ArrowUpRight size={16} color={colors.accent} />
         }
       </View>
     </View>
@@ -60,13 +60,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    ...typography.body,
+    ...(typography.body as any),
     fontFamily: 'Inter-Medium',
-    color: colors.textTitle,
+    color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   date: {
-    ...typography.bodySmall,
+    ...(typography.bodySmall as any),
     color: colors.textMuted,
   },
   amountContainer: {
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   amount: {
-    ...typography.body,
+    ...(typography.body as any),
     fontFamily: 'Inter-SemiBold',
     marginRight: spacing.s,
   },

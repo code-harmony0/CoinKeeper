@@ -153,7 +153,7 @@ const NavButton: React.FC<NavButtonProps> = ({ icon, isActive, onPress }) => {
       style={[styles.navButton, animatedStyle]}
     >
       <View style={styles.iconWrapper}>
-        {React.cloneElement(icon as React.ReactElement, {
+        {React.cloneElement(icon as React.ReactElement<any>, {
           color: isActive ? colors.primary : colors.textMuted,
         })}
       </View>
@@ -208,6 +208,6 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.fab,
+    ...shadows.floating,
   },
 });

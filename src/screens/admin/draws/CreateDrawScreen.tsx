@@ -3,14 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   TextInput,
   Modal,
   Alert,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { Calendar, DollarSign, Users, Plus, ChevronDown, X } from 'lucide-react-native';
@@ -25,11 +24,7 @@ const DUMMY_GROUPS = [
   { id: 'group5', name: 'Women Empowerment Group' },
 ];
 
-const SPRING_CONFIG = {
-  damping: 16,
-  stiffness: 140,
-  mass: 1,
-};
+// SPRING_CONFIG removed for chained methods
 
 interface Props {
   navigation: any;
@@ -92,7 +87,7 @@ export const CreateDrawScreen: React.FC<Props> = ({ navigation }) => {
       onRequestClose={() => setShowGroupPicker(false)}>
       <View style={styles.modalOverlay}>
         <Animated.View
-          entering={FadeInDown.springify(SPRING_CONFIG)}
+          entering={FadeInDown.springify().damping(16).stiffness(140).mass(1)}
           style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Group</Text>
@@ -108,7 +103,7 @@ export const CreateDrawScreen: React.FC<Props> = ({ navigation }) => {
             {DUMMY_GROUPS.map((group, index) => (
               <Animated.View
                 key={group.id}
-                entering={FadeInDown.delay(index * 50).springify(SPRING_CONFIG)}>
+                entering={FadeInDown.delay(index * 50).springify().damping(16).stiffness(140).mass(1)}>
                 <TouchableOpacity
                   onPress={() => {
                     ReactNativeHapticFeedback.trigger('selection');
@@ -143,7 +138,7 @@ export const CreateDrawScreen: React.FC<Props> = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <Animated.View
-          entering={FadeInDown.delay(0).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(0).springify().damping(16).stiffness(140).mass(1)}
           style={styles.header}>
           <Text style={styles.headerTitle}>Create New Draw</Text>
           <Text style={styles.headerSubtitle}>Fill in the details below</Text>
@@ -151,7 +146,7 @@ export const CreateDrawScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Group Selection */}
         <Animated.View
-          entering={FadeInDown.delay(50).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(50).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Select Group</Text>
           <TouchableOpacity
@@ -172,7 +167,7 @@ export const CreateDrawScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Draw Number (Auto-generated, read-only) */}
         <Animated.View
-          entering={FadeInDown.delay(100).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Draw Number</Text>
           <View style={styles.readOnlyField}>
@@ -183,7 +178,7 @@ export const CreateDrawScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Prize Amount */}
         <Animated.View
-          entering={FadeInDown.delay(150).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Prize Amount</Text>
           <View style={styles.inputContainer}>
@@ -202,7 +197,7 @@ export const CreateDrawScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Scheduled Date */}
         <Animated.View
-          entering={FadeInDown.delay(200).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(200).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Scheduled Date</Text>
           <View style={styles.inputContainer}>
@@ -220,7 +215,7 @@ export const CreateDrawScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Bidding Deadline */}
         <Animated.View
-          entering={FadeInDown.delay(250).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(250).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Bidding Deadline</Text>
           <View style={styles.inputContainer}>
@@ -238,7 +233,7 @@ export const CreateDrawScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Create Button */}
         <Animated.View
-          entering={FadeInDown.delay(300).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(300).springify().damping(16).stiffness(140).mass(1)}
           style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={handleCreate}

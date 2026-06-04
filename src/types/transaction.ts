@@ -13,6 +13,8 @@ export interface Transaction {
  * Contribution type for receipt generation
  * Extended from group Contribution with receipt-specific fields
  */
+export type ContributionStatus = 'paid' | 'pending' | 'overdue' | 'failed' | 'approved' | 'refunded';
+
 export interface Contribution {
   id: string;
   groupId: string;
@@ -20,11 +22,17 @@ export interface Contribution {
   memberId: string;
   memberName: string;
   userName?: string;
+  userId?: string;
   amount: number;
   dueDate?: any;
   paidDate?: any;
   paidAt?: any;
-  status: 'paid' | 'pending' | 'overdue' | 'failed';
+  approvedAt?: any;
+  approvedBy?: string;
+  createdAt?: any;
+  updatedAt?: any;
+  refundedAt?: any;
+  status: ContributionStatus;
   cycleNumber?: number;
   paymentMethod?: string;
   transactionId?: string;

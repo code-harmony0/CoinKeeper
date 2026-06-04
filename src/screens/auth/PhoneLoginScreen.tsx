@@ -286,7 +286,7 @@ const PhoneLoginScreen: React.FC<PhoneLoginScreenProps> = ({ navigation }) => {
                 {otp.map((digit, index) => (
                   <View key={index} style={styles.otpInputWrapper}>
                     <RNTextInput
-                      ref={(ref) => (otpRefs.current[index] = ref)}
+                      ref={(ref) => { otpRefs.current[index] = ref; }}
                       style={[
                         styles.otpInput,
                         digit ? styles.otpInputFilled : null,

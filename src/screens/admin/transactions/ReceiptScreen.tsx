@@ -31,7 +31,7 @@ import {
 } from '../../../services/receiptService';
 import type { Contribution } from '../../../types/transaction';
 
-const SPRING_CONFIG = { damping: 16, stiffness: 140, mass: 1 };
+// SPRING_CONFIG replaced with chained methods
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -190,7 +190,7 @@ export const ReceiptScreen: React.FC<Props> = ({ navigation, route }) => {
     const showOptions = showShareOptions === item.id;
 
     return (
-      <Animated.View entering={FadeInDown.delay(Math.min(index * 40, 300)).springify(SPRING_CONFIG)}>
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 40, 300)).springify().damping(16).stiffness(140).mass(1)}>
         <View style={styles.contributionCard}>
           <View style={styles.cardHeader}>
             <View style={[styles.statusIcon, { backgroundColor: `${statusColor}20` }]}>
@@ -302,7 +302,7 @@ export const ReceiptScreen: React.FC<Props> = ({ navigation, route }) => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <Animated.View entering={FadeInDown.springify(SPRING_CONFIG)} style={styles.header}>
+      <Animated.View entering={FadeInDown.springify().damping(16).stiffness(140).mass(1)} style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <ArrowLeft size={22} color="#121723" />
         </TouchableOpacity>
@@ -313,7 +313,7 @@ export const ReceiptScreen: React.FC<Props> = ({ navigation, route }) => {
       </Animated.View>
 
       {/* Search */}
-      <Animated.View entering={FadeInDown.delay(30).springify(SPRING_CONFIG)} style={styles.searchContainer}>
+      <Animated.View entering={FadeInDown.delay(30).springify().damping(16).stiffness(140).mass(1)} style={styles.searchContainer}>
         <Search size={18} color="#999" />
         <TextInput
           style={styles.searchInput}
@@ -326,7 +326,7 @@ export const ReceiptScreen: React.FC<Props> = ({ navigation, route }) => {
       </Animated.View>
 
       {/* Stats */}
-      <Animated.View entering={FadeInDown.delay(60).springify(SPRING_CONFIG)} style={styles.statsRow}>
+      <Animated.View entering={FadeInDown.delay(60).springify().damping(16).stiffness(140).mass(1)} style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{contributions.length}</Text>
           <Text style={styles.statLabel}>Paid Contributions</Text>

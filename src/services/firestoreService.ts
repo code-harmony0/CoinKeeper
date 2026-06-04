@@ -1,11 +1,7 @@
 import firestore from '@react-native-firebase/firestore';
-import {
-  Query,
-  DocumentData,
-  WhereFilterOp,
-} from '@react-native-firebase/firestore';
+import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
-type WhereOptions = [string, WhereFilterOp, any];
+type WhereOptions = [string, FirebaseFirestoreTypes.WhereFilterOp, any];
 type OrderByOptions = [string, 'asc' | 'desc'];
 
 // Generic Firestore Service for all collections
@@ -20,7 +16,7 @@ type OrderByOptions = [string, 'asc' | 'desc'];
 export const getDocument = async <T>(collectionPath: string, id: string): Promise<T | null> => {
   try {
     const docSnapshot = await firestore().collection(collectionPath).doc(id).get();
-    if (docSnapshot.exists) {
+    if (docSnapshot.data()) {
       return { id: docSnapshot.id, ...docSnapshot.data() } as T;
     }
     return null;
@@ -38,7 +34,7 @@ export const getDocument = async <T>(collectionPath: string, id: string): Promis
  */
 export const addDocument = async <T>(collectionPath: string, data: T): Promise<T & { id: string }> => {
   try {
-    const docRef = await firestore().collection(collectionPath).add(data);
+    const docRef = await firestore().collection(collectionPath).add(data as any);
     return { id: docRef.id, ...data };
   } catch (error) {
     console.error(`Error adding document to [${collectionPath}]:`, error);
@@ -52,7 +48,7 @@ export const addDocument = async <T>(collectionPath: string, data: T): Promise<T
  * @param id - The ID of the document to update.
  * @param data - The data to merge into the document.
  */
-export const updateDocument = async (collectionPath: string, id: string, data: Partial<DocumentData>): Promise<void> => {
+export const updateDocument = async (collectionPath: string, id: string, data: Partial<FirebaseFirestoreTypes.DocumentData>): Promise<void> => {
   try {
     await firestore().collection(collectionPath).doc(id).update(data);
   } catch (error) {
@@ -83,10 +79,10 @@ export const deleteDocument = async (collectionPath: string, id: string): Promis
  * @param onError - Optional callback to handle errors.
  * @returns An unsubscribe function.
  */
-export const onSnapshotDocument = (collectionPath: string, id: string, onResult: (data: DocumentData | null) => void, onError?: (error: Error) => void) => {
+export const onSnapshotDocument = (collectionPath: string, id: string, onResult: (data: FirebaseFirestoreTypes.DocumentData | null) => void, onError?: (error: Error) => void) => {
   return firestore().collection(collectionPath).doc(id).onSnapshot(
     (doc) => {
-      onResult(doc.exists ? { id: doc.id, ...doc.data() } : null);
+      onResult(doc.data() ? { id: doc.id, ...doc.data() } : null);
     },
     onError
   );
@@ -110,7 +106,7 @@ export const onSnapshotCollection = <T>(
     orderBy?: OrderByOptions,
     limit?: number
 ) => {
-    let query: Query = firestore().collection(collectionPath);
+    let query: FirebaseFirestoreTypes.Query = firestore().collection(collectionPath);
 
     if (where) {
         where.forEach(([field, op, value]) => {
@@ -128,7 +124,7 @@ export const onSnapshotCollection = <T>(
 
     return query.onSnapshot(
         (querySnapshot) => {
-            const data: T[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as T));
+            const data: T[] = querySnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as unknown as T));
             onResult(data);
         },
         onError

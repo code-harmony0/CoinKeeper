@@ -70,7 +70,7 @@ export const MemberAnalyticsScreen: React.FC<Props> = ({ navigation, route }) =>
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <Animated.View entering={FadeInDown.springify(SPRING_CONFIG)} style={styles.header}>
+        <Animated.View entering={FadeInDown.springify().damping(16).stiffness(140).mass(1)} style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <ArrowLeft size={22} color="#121723" />
           </TouchableOpacity>
@@ -81,7 +81,7 @@ export const MemberAnalyticsScreen: React.FC<Props> = ({ navigation, route }) =>
         </Animated.View>
 
         {/* Time Range Selector */}
-        <Animated.View entering={FadeInDown.delay(30).springify(SPRING_CONFIG)} style={styles.rangeRow}>
+        <Animated.View entering={FadeInDown.delay(30).springify().damping(16).stiffness(140).mass(1)} style={styles.rangeRow}>
           {(['week', 'month', 'quarter', 'year'] as TimeRange[]).map(r => (
             <TouchableOpacity
               key={r}
@@ -103,7 +103,7 @@ export const MemberAnalyticsScreen: React.FC<Props> = ({ navigation, route }) =>
         )}
 
         {/* Risk Score Card */}
-        <Animated.View entering={FadeInDown.delay(50).springify(SPRING_CONFIG)} style={styles.riskCard}>
+        <Animated.View entering={FadeInDown.delay(50).springify().damping(16).stiffness(140).mass(1)} style={styles.riskCard}>
           <View style={styles.riskHeader}>
             <Shield size={24} color={riskColor} />
             <Text style={styles.riskTitle}>Risk Assessment</Text>
@@ -133,7 +133,7 @@ export const MemberAnalyticsScreen: React.FC<Props> = ({ navigation, route }) =>
         </Animated.View>
 
         {/* Payment Behavior */}
-        <Animated.View entering={FadeInDown.delay(100).springify(SPRING_CONFIG)} style={styles.section}>
+        <Animated.View entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Behavior</Text>
           <View style={styles.behaviorGrid}>
             <View style={styles.behaviorCard}>
@@ -155,7 +155,7 @@ export const MemberAnalyticsScreen: React.FC<Props> = ({ navigation, route }) =>
         </Animated.View>
 
         {/* Financial Summary */}
-        <Animated.View entering={FadeInDown.delay(150).springify(SPRING_CONFIG)} style={styles.section}>
+        <Animated.View entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
           <Text style={styles.sectionTitle}>Financial Summary</Text>
           <View style={styles.finCard}>
             <View style={styles.finRow}>
@@ -190,7 +190,7 @@ export const MemberAnalyticsScreen: React.FC<Props> = ({ navigation, route }) =>
 
         {/* Group Memberships */}
         {analytics?.groupMemberships && analytics.groupMemberships.length > 0 && (
-          <Animated.View entering={FadeInDown.delay(200).springify(SPRING_CONFIG)} style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(200).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
             <Text style={styles.sectionTitle}>Group Memberships</Text>
             {analytics.groupMemberships.map(group => (
               <View key={group.groupId} style={styles.groupRow}>

@@ -69,7 +69,7 @@ export const GroupAnalyticsScreen: React.FC<Props> = ({ navigation, route }) => 
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <Animated.View entering={FadeInDown.springify(SPRING_CONFIG)} style={styles.header}>
+        <Animated.View entering={FadeInDown.springify().damping(16).stiffness(140).mass(1)} style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <ArrowLeft size={22} color="#121723" />
           </TouchableOpacity>
@@ -80,7 +80,7 @@ export const GroupAnalyticsScreen: React.FC<Props> = ({ navigation, route }) => 
         </Animated.View>
 
         {/* Time Range Selector */}
-        <Animated.View entering={FadeInDown.delay(50).springify(SPRING_CONFIG)} style={styles.rangeRow}>
+        <Animated.View entering={FadeInDown.delay(50).springify().damping(16).stiffness(140).mass(1)} style={styles.rangeRow}>
           {TIME_RANGES.map(r => (
             <TouchableOpacity
               key={r.value}
@@ -97,7 +97,7 @@ export const GroupAnalyticsScreen: React.FC<Props> = ({ navigation, route }) => 
         </Animated.View>
 
         {/* KPI Grid */}
-        <Animated.View entering={FadeInDown.delay(100).springify(SPRING_CONFIG)} style={styles.kpiGrid}>
+        <Animated.View entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)} style={styles.kpiGrid}>
           <View style={styles.kpiCard}>
             <View style={[styles.kpiIcon, { backgroundColor: '#E8F5E9' }]}>
               <DollarSign size={20} color="#2E7D32" />
@@ -144,7 +144,7 @@ export const GroupAnalyticsScreen: React.FC<Props> = ({ navigation, route }) => 
 
         {/* Contribution Trend Chart */}
         {chartData.length > 0 && (
-        <Animated.View entering={FadeInDown.delay(150).springify(SPRING_CONFIG)} style={styles.chartCard}>
+        <Animated.View entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)} style={styles.chartCard}>
           <Text style={styles.chartTitle}>Contribution Trend</Text>
           <VictoryChart
             width={340}
@@ -177,7 +177,7 @@ export const GroupAnalyticsScreen: React.FC<Props> = ({ navigation, route }) => 
 
         {/* Top Contributors */}
         {analytics?.topContributors && analytics.topContributors.length > 0 && (
-          <Animated.View entering={FadeInDown.delay(200).springify(SPRING_CONFIG)} style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(200).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
             <Text style={styles.sectionTitle}>Top Contributors</Text>
             {analytics.topContributors.map((contributor, i) => (
               <View key={contributor.memberId} style={styles.contributorRow}>
@@ -200,7 +200,7 @@ export const GroupAnalyticsScreen: React.FC<Props> = ({ navigation, route }) => 
 
         {/* Delinquent Members */}
         {analytics?.delinquentMembers && analytics.delinquentMembers.length > 0 && (
-          <Animated.View entering={FadeInDown.delay(250).springify(SPRING_CONFIG)} style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(250).springify().damping(16).stiffness(140).mass(1)} style={styles.section}>
             <Text style={[styles.sectionTitle, { color: COLORS.errorCoral }]}>Overdue Members</Text>
             {analytics.delinquentMembers.map(member => (
               <View key={member.memberId} style={[styles.contributorRow, styles.delinquentRow]}>

@@ -29,7 +29,7 @@ import {
   ImageIcon,
 } from 'lucide-react-native';
 import { getConfirmationById, confirmPayment, rejectPayment, disputePayment } from '../../../services/paymentConfirmationService';
-import { COLORS, SPACING, TYPOGRAPHY, RADII, SHADOWS } from '../../../theme/designTokens';
+import { colors, spacing, typography, radii, shadows } from '../../../theme/designTokens';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { PaymentConfirmation } from '../../../types/paymentConfirmation';
 
@@ -94,7 +94,7 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
         {
           text: 'Reject',
           style: 'destructive',
-          onPress: async (reason) => {
+          onPress: async (reason?: string) => {
             try {
               setIsActioning(true);
               ReactNativeHapticFeedback.trigger('impactMedium');
@@ -120,7 +120,7 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Submit',
-          onPress: async (reason) => {
+          onPress: async (reason?: string) => {
             try {
               setIsActioning(true);
               ReactNativeHapticFeedback.trigger('impactMedium');
@@ -140,17 +140,17 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmed': return COLORS.success;
-      case 'rejected': return COLORS.error;
-      case 'disputed': return COLORS.warning;
-      default: return COLORS.accent;
+      case 'confirmed': return colors.success;
+      case 'rejected': return colors.error;
+      case 'disputed': return colors.warning;
+      default: return colors.accent;
     }
   };
 
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centerContainer, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -168,7 +168,7 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
       {/* Header */}
       <Animated.View entering={FadeInUp.springify()} style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft size={24} color={COLORS.textPrimary} />
+          <ArrowLeft size={24} color={colors.textPrimary} />
         </Pressable>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Payment Detail</Text>
@@ -196,7 +196,7 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
           <Text style={styles.sectionTitle}>Details</Text>
 
           <View style={styles.detailItem}>
-            <View style={styles.detailIcon}><User size={18} color={COLORS.textTertiary} /></View>
+            <View style={styles.detailIcon}><User size={18} color={colors.textTertiary} /></View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Member</Text>
               <Text style={styles.detailValue}>{confirmation.memberName}</Text>
@@ -204,7 +204,7 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
           </View>
 
           <View style={styles.detailItem}>
-            <View style={styles.detailIcon}><Hash size={18} color={COLORS.textTertiary} /></View>
+            <View style={styles.detailIcon}><Hash size={18} color={colors.textTertiary} /></View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Group</Text>
               <Text style={styles.detailValue}>{confirmation.groupName}</Text>
@@ -212,7 +212,7 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
           </View>
 
           <View style={styles.detailItem}>
-            <View style={styles.detailIcon}><CreditCard size={18} color={COLORS.textTertiary} /></View>
+            <View style={styles.detailIcon}><CreditCard size={18} color={colors.textTertiary} /></View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Payment Method</Text>
               <Text style={styles.detailValue}>{confirmation.paymentMethod.toUpperCase()}</Text>
@@ -221,7 +221,7 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
 
           {confirmation.referenceId && (
             <View style={styles.detailItem}>
-              <View style={styles.detailIcon}><Hash size={18} color={COLORS.textTertiary} /></View>
+              <View style={styles.detailIcon}><Hash size={18} color={colors.textTertiary} /></View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Reference ID</Text>
                 <Text style={styles.detailValue}>{confirmation.referenceId}</Text>
@@ -230,7 +230,7 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
           )}
 
           <View style={styles.detailItem}>
-            <View style={styles.detailIcon}><Calendar size={18} color={COLORS.textTertiary} /></View>
+            <View style={styles.detailIcon}><Calendar size={18} color={colors.textTertiary} /></View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Submitted</Text>
               <Text style={styles.detailValue}>
@@ -269,14 +269,14 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
       {confirmation.status === 'pending' && (
         <Animated.View
           entering={FadeInDown.delay(400).springify()}
-          style={[styles.actionBar, { paddingBottom: insets.bottom + SPACING.md }]}
+          style={[styles.actionBar, { paddingBottom: insets.bottom + spacing.m }]}
         >
           <Pressable
             style={({ pressed }) => [styles.rejectButton, pressed && styles.buttonPressed]}
             onPress={handleReject}
             disabled={isActioning}
           >
-            <XCircle size={20} color={COLORS.error} />
+            <XCircle size={20} color={colors.error} />
             <Text style={styles.rejectButtonText}>Reject</Text>
           </Pressable>
 
@@ -285,7 +285,7 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
             onPress={handleDispute}
             disabled={isActioning}
           >
-            <AlertTriangle size={20} color={COLORS.warning} />
+            <AlertTriangle size={20} color={colors.warning} />
             <Text style={styles.disputeButtonText}>Dispute</Text>
           </Pressable>
 
@@ -310,38 +310,38 @@ export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> =
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: colors.background },
   centerContainer: { justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, gap: SPACING.md },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.surfaceLight, justifyContent: 'center', alignItems: 'center', ...SHADOWS.soft },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.l, paddingVertical: spacing.m, gap: spacing.m },
+  backButton: { width: 40, height: 40, borderRadius: radii.round, backgroundColor: colors.backgroundLight, justifyContent: 'center', alignItems: 'center', ...shadows.card },
   headerContent: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { fontSize: TYPOGRAPHY.sizes.xl, fontWeight: '800', color: COLORS.textPrimary },
-  statusBadge: { paddingHorizontal: SPACING.md, paddingVertical: 4, borderRadius: RADII.full },
-  statusBadgeText: { fontSize: TYPOGRAPHY.sizes.xs, fontWeight: '700' },
-  scrollContent: { paddingHorizontal: SPACING.lg },
-  amountCard: { backgroundColor: COLORS.primary, borderRadius: RADII.lg, padding: SPACING.xl, alignItems: 'center', marginBottom: SPACING.md },
-  amountLabel: { fontSize: TYPOGRAPHY.sizes.sm, color: 'rgba(255,255,255,0.7)', marginBottom: SPACING.xs },
+  headerTitle: { fontSize: typography.sizes.xl, fontWeight: '800', color: colors.textPrimary },
+  statusBadge: { paddingHorizontal: spacing.m, paddingVertical: 4, borderRadius: radii.round },
+  statusBadgeText: { fontSize: typography.sizes.xs, fontWeight: '700' },
+  scrollContent: { paddingHorizontal: spacing.l },
+  amountCard: { backgroundColor: colors.primary, borderRadius: radii.l, padding: spacing.xl, alignItems: 'center', marginBottom: spacing.m },
+  amountLabel: { fontSize: typography.sizes.s, color: 'rgba(255,255,255,0.7)', marginBottom: spacing.xs },
   amountValue: { fontSize: 36, fontWeight: '900', color: '#FFFFFF' },
-  cycleText: { fontSize: TYPOGRAPHY.sizes.sm, color: 'rgba(255,255,255,0.7)', marginTop: SPACING.xs },
-  detailsCard: { backgroundColor: COLORS.card, borderRadius: RADII.lg, padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.soft },
-  sectionTitle: { fontSize: TYPOGRAPHY.sizes.md, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.md },
-  detailItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.sm, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  detailIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.backgroundSecondary, justifyContent: 'center', alignItems: 'center', marginRight: SPACING.md },
+  cycleText: { fontSize: typography.sizes.s, color: 'rgba(255,255,255,0.7)', marginTop: spacing.xs },
+  detailsCard: { backgroundColor: colors.card, borderRadius: radii.l, padding: spacing.l, marginBottom: spacing.m, ...shadows.card },
+  sectionTitle: { fontSize: typography.sizes.m, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.m },
+  detailItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.s, borderBottomWidth: 1, borderBottomColor: colors.pillBorder },
+  detailIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.backgroundSecondary, justifyContent: 'center', alignItems: 'center', marginRight: spacing.m },
   detailContent: { flex: 1 },
-  detailLabel: { fontSize: TYPOGRAPHY.sizes.xs, color: COLORS.textTertiary },
-  detailValue: { fontSize: TYPOGRAPHY.sizes.md, fontWeight: '600', color: COLORS.textPrimary, marginTop: 2 },
-  screenshotContainer: { borderRadius: RADII.md, overflow: 'hidden', backgroundColor: COLORS.backgroundSecondary },
+  detailLabel: { fontSize: typography.sizes.xs, color: colors.textTertiary },
+  detailValue: { fontSize: typography.sizes.m, fontWeight: '600', color: colors.textPrimary, marginTop: 2 },
+  screenshotContainer: { borderRadius: radii.m, overflow: 'hidden', backgroundColor: colors.backgroundSecondary },
   screenshot: { width: '100%', height: 300 },
-  reasonCard: { backgroundColor: COLORS.errorBackground, borderRadius: RADII.lg, padding: SPACING.lg, marginBottom: SPACING.md },
-  reasonTitle: { fontSize: TYPOGRAPHY.sizes.sm, fontWeight: '700', color: COLORS.error, marginBottom: SPACING.xs },
-  reasonText: { fontSize: TYPOGRAPHY.sizes.md, color: COLORS.textPrimary },
-  actionBar: { flexDirection: 'row', paddingHorizontal: SPACING.lg, paddingTop: SPACING.md, gap: SPACING.sm, backgroundColor: COLORS.card, borderTopWidth: 1, borderTopColor: COLORS.border },
-  rejectButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING.md, borderRadius: RADII.md, backgroundColor: COLORS.errorMuted, gap: SPACING.xs },
-  rejectButtonText: { fontSize: TYPOGRAPHY.sizes.sm, fontWeight: '700', color: COLORS.error },
-  disputeButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING.md, borderRadius: RADII.md, backgroundColor: COLORS.warningMuted, gap: SPACING.xs },
-  disputeButtonText: { fontSize: TYPOGRAPHY.sizes.sm, fontWeight: '700', color: COLORS.warning },
-  confirmButton: { flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING.md, borderRadius: RADII.md, backgroundColor: COLORS.primary, gap: SPACING.xs },
-  confirmButtonText: { fontSize: TYPOGRAPHY.sizes.sm, fontWeight: '700', color: '#FFFFFF' },
+  reasonCard: { backgroundColor: colors.errorBackground, borderRadius: radii.l, padding: spacing.l, marginBottom: spacing.m },
+  reasonTitle: { fontSize: typography.sizes.s, fontWeight: '700', color: colors.error, marginBottom: spacing.xs },
+  reasonText: { fontSize: typography.sizes.m, color: colors.textPrimary },
+  actionBar: { flexDirection: 'row', paddingHorizontal: spacing.l, paddingTop: spacing.m, gap: spacing.s, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.pillBorder },
+  rejectButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.m, borderRadius: radii.m, backgroundColor: colors.errorMuted, gap: spacing.xs },
+  rejectButtonText: { fontSize: typography.sizes.s, fontWeight: '700', color: colors.error },
+  disputeButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.m, borderRadius: radii.m, backgroundColor: colors.warningMuted, gap: spacing.xs },
+  disputeButtonText: { fontSize: typography.sizes.s, fontWeight: '700', color: colors.warning },
+  confirmButton: { flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.m, borderRadius: radii.m, backgroundColor: colors.primary, gap: spacing.xs },
+  confirmButtonText: { fontSize: typography.sizes.s, fontWeight: '700', color: '#FFFFFF' },
   buttonPressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
-  errorText: { fontSize: TYPOGRAPHY.sizes.md, color: COLORS.error },
+  errorText: { fontSize: typography.sizes.m, color: colors.error },
 });

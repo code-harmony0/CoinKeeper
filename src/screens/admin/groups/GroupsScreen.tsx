@@ -93,7 +93,7 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation, adminId 
   const insets = useSafeAreaInsets();
   const { scrollY } = useTabBarScroll();
 
-  const { groups, isLoading, error, refetch } = useGroups(adminId);
+  const { groups, isLoading, error } = useGroups(adminId);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<GroupStatus[]>([]);
@@ -158,7 +158,8 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation, adminId 
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await refetch?.();
+    // Data is real-time, just show refresh indicator briefly
+    await new Promise((resolve) => setTimeout(resolve, 500));
     setRefreshing(false);
   };
 

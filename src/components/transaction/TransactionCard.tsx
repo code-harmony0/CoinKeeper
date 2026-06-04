@@ -7,21 +7,24 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { ArrowUpRight, ArrowDownLeft, Clock, CheckCircle, XCircle } from 'lucide-react-native';
 import { theme } from '../../theme';
-import type { Transaction } from '../../hooks/useTransactions';
+import type { Contribution } from '../../types/transaction';
 
 interface TransactionCardProps {
-  transaction: Transaction;
+  transaction: Contribution;
   onPress?: () => void;
 }
 
 export const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, onPress }) => {
-  const isCredit = transaction.type === 'credit';
+  const isCredit = transaction.status !== 'refunded';
+  
+  const dateObj = transaction.paidDate?.toDate?.() || transaction.createdAt?.toDate?.() || new Date();
+  const dateStr = dateObj.toLocaleDateString();
   
   const getStatusIcon = () => {
     switch (transaction.status) {
       case 'approved':
         return <CheckCircle size={16} color="#2E7D32" />;
-      case 'rejected':
+      case 'failed':
         return <XCircle size={16} color="#C62828" />;
       default:
         return <Clock size={16} color="#F57C00" />;
@@ -32,7 +35,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, o
     switch (transaction.status) {
       case 'approved':
         return '#E8F5E9';
-      case 'rejected':
+      case 'failed':
         return '#FFEBEE';
       default:
         return '#FFF3E0';
@@ -43,7 +46,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, o
     switch (transaction.status) {
       case 'approved':
         return '#2E7D32';
-      case 'rejected':
+      case 'failed':
         return '#C62828';
       default:
         return '#E65100';
@@ -65,14 +68,14 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, o
 
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <Text style={styles.userName}>{transaction.userName}</Text>
+          <Text style={styles.userName}>{transaction.userName || transaction.memberName}</Text>
           <Text style={[styles.amount, { color: isCredit ? '#2E7D32' : '#C62828' }]}>
             {isCredit ? '+' : '-'}₹{transaction.amount.toLocaleString()}
           </Text>
         </View>
         
         <View style={styles.bottomRow}>
-          <Text style={styles.groupName}>{transaction.groupName}</Text>
+          <Text style={styles.groupName}>{transaction.groupName || 'Group'}</Text>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}>
             {getStatusIcon()}
             <Text style={[styles.statusText, { color: getStatusTextColor() }]}>
@@ -81,7 +84,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, o
           </View>
         </View>
         
-        <Text style={styles.date}>{transaction.date.toLocaleDateString()}</Text>
+        <Text style={styles.date}>{dateStr}</Text>
       </View>
     </Pressable>
   );

@@ -3,14 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   TextInput,
   Modal,
   Alert,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { Calendar, DollarSign, Save, ChevronDown, X, Edit } from 'lucide-react-native';
@@ -37,11 +36,7 @@ const DUMMY_DRAW = {
   status: 'in_progress' as DrawStatus,
 };
 
-const SPRING_CONFIG = {
-  damping: 16,
-  stiffness: 140,
-  mass: 1,
-};
+// SPRING_CONFIG removed for chained methods
 
 interface Props {
   navigation: any;
@@ -130,7 +125,7 @@ export const EditDrawScreen: React.FC<Props> = ({ navigation, route }) => {
       onRequestClose={() => setShowStatusPicker(false)}>
       <View style={styles.modalOverlay}>
         <Animated.View
-          entering={FadeInDown.springify(SPRING_CONFIG)}
+          entering={FadeInDown.springify().damping(16).stiffness(140).mass(1)}
           style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Status</Text>
@@ -146,7 +141,7 @@ export const EditDrawScreen: React.FC<Props> = ({ navigation, route }) => {
             {STATUS_OPTIONS.map((statusOption, index) => (
               <Animated.View
                 key={statusOption}
-                entering={FadeInDown.delay(index * 50).springify(SPRING_CONFIG)}>
+                entering={FadeInDown.delay(index * 50).springify().damping(16).stiffness(140).mass(1)}>
                 <TouchableOpacity
                   onPress={() => {
                     ReactNativeHapticFeedback.trigger('selection');
@@ -201,7 +196,7 @@ export const EditDrawScreen: React.FC<Props> = ({ navigation, route }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <Animated.View
-          entering={FadeInDown.delay(0).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(0).springify().damping(16).stiffness(140).mass(1)}
           style={styles.header}>
           <Text style={styles.headerTitle}>Edit Draw</Text>
           <Text style={styles.headerSubtitle}>Modify draw details below</Text>
@@ -209,7 +204,7 @@ export const EditDrawScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Group Name (Read-only) */}
         <Animated.View
-          entering={FadeInDown.delay(50).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(50).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Group Name</Text>
           <View style={styles.readOnlyField}>
@@ -220,7 +215,7 @@ export const EditDrawScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Draw Number (Read-only) */}
         <Animated.View
-          entering={FadeInDown.delay(100).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Draw Number</Text>
           <View style={styles.readOnlyField}>
@@ -231,7 +226,7 @@ export const EditDrawScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Status Selection */}
         <Animated.View
-          entering={FadeInDown.delay(150).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Status</Text>
           <TouchableOpacity
@@ -252,7 +247,7 @@ export const EditDrawScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Prize Amount */}
         <Animated.View
-          entering={FadeInDown.delay(200).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(200).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Prize Amount</Text>
           <View style={styles.inputContainer}>
@@ -271,7 +266,7 @@ export const EditDrawScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Scheduled Date */}
         <Animated.View
-          entering={FadeInDown.delay(250).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(250).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Scheduled Date</Text>
           <View style={styles.inputContainer}>
@@ -289,7 +284,7 @@ export const EditDrawScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Bidding Deadline */}
         <Animated.View
-          entering={FadeInDown.delay(300).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(300).springify().damping(16).stiffness(140).mass(1)}
           style={styles.inputCard}>
           <Text style={styles.label}>Bidding Deadline</Text>
           <View style={styles.inputContainer}>
@@ -307,7 +302,7 @@ export const EditDrawScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Action Buttons */}
         <Animated.View
-          entering={FadeInDown.delay(350).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(350).springify().damping(16).stiffness(140).mass(1)}
           style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={handleCancel}

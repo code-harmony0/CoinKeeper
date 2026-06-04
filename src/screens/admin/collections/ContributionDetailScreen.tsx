@@ -31,7 +31,8 @@ import { getContributionById } from '../../../services/contributionService';
 import { generateAndShareReceipt } from '../../../services/receiptService';
 import { Contribution } from '../../../types/transaction';
 import { StatusChip } from '../../../components/shared/StatusChip';
-import { COLORS, SPACING, TYPOGRAPHY, RADII, SHADOWS } from '../../../theme/designTokens';
+import { spacing as SPACING, typography as TYPOGRAPHY, radii as RADII, shadows as SHADOWS } from '../../../theme/designTokens';
+import { COLORS } from '../../../theme/colors';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 interface ContributionDetailScreenProps {
@@ -87,7 +88,7 @@ export const ContributionDetailScreen: React.FC<ContributionDetailScreenProps> =
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={COLORS.primaryBlue} />
         </View>
       </View>
     );
@@ -155,7 +156,7 @@ export const ContributionDetailScreen: React.FC<ContributionDetailScreenProps> =
           <View style={styles.detailCard}>
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
-                <User size={20} color={COLORS.primary} />
+                <User size={20} color={COLORS.primaryBlue} />
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Member</Text>
@@ -167,7 +168,7 @@ export const ContributionDetailScreen: React.FC<ContributionDetailScreenProps> =
 
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
-                <User size={20} color={COLORS.primary} />
+                <User size={20} color={COLORS.primaryBlue} />
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Group</Text>
@@ -179,7 +180,7 @@ export const ContributionDetailScreen: React.FC<ContributionDetailScreenProps> =
 
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
-                <Calendar size={20} color={COLORS.primary} />
+                <Calendar size={20} color={COLORS.primaryBlue} />
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Due Date</Text>
@@ -192,7 +193,7 @@ export const ContributionDetailScreen: React.FC<ContributionDetailScreenProps> =
                 <View style={styles.divider} />
                 <View style={styles.detailRow}>
                   <View style={styles.detailIcon}>
-                    <CheckCircle size={20} color="#10B981" />
+                    <CheckCircle size={20} color={COLORS.successGreen} />
                   </View>
                   <View style={styles.detailContent}>
                     <Text style={styles.detailLabel}>Paid On</Text>
@@ -207,7 +208,7 @@ export const ContributionDetailScreen: React.FC<ContributionDetailScreenProps> =
                 <View style={styles.divider} />
                 <View style={styles.detailRow}>
                   <View style={styles.detailIcon}>
-                    <CreditCard size={20} color={COLORS.primary} />
+                    <CreditCard size={20} color={COLORS.primaryBlue} />
                   </View>
                   <View style={styles.detailContent}>
                     <Text style={styles.detailLabel}>Payment Method</Text>
@@ -222,7 +223,7 @@ export const ContributionDetailScreen: React.FC<ContributionDetailScreenProps> =
                 <View style={styles.divider} />
                 <View style={styles.detailRow}>
                   <View style={styles.detailIcon}>
-                    <FileText size={20} color={COLORS.primary} />
+                    <FileText size={20} color={COLORS.primaryBlue} />
                   </View>
                   <View style={styles.detailContent}>
                     <Text style={styles.detailLabel}>Transaction ID</Text>
@@ -237,7 +238,7 @@ export const ContributionDetailScreen: React.FC<ContributionDetailScreenProps> =
                 <View style={styles.divider} />
                 <View style={styles.detailRow}>
                   <View style={styles.detailIcon}>
-                    <FileText size={20} color={COLORS.primary} />
+                    <FileText size={20} color={COLORS.primaryBlue} />
                   </View>
                   <View style={styles.detailContent}>
                     <Text style={styles.detailLabel}>Notes</Text>
@@ -266,10 +267,10 @@ export const ContributionDetailScreen: React.FC<ContributionDetailScreenProps> =
             disabled={isGenerating}
           >
             {isGenerating ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={COLORS.surface} />
             ) : (
               <>
-                <MessageCircle size={20} color="#FFFFFF" strokeWidth={2.5} />
+                <MessageCircle size={20} color={COLORS.surface} strokeWidth={2.5} />
                 <Text style={styles.actionButtonText}>Share via WhatsApp</Text>
               </>
             )}
@@ -285,10 +286,10 @@ export const ContributionDetailScreen: React.FC<ContributionDetailScreenProps> =
             disabled={isGenerating}
           >
             {isGenerating ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={COLORS.surface} />
             ) : (
               <>
-                <ShareIcon size={20} color="#FFFFFF" strokeWidth={2.5} />
+                <ShareIcon size={20} color={COLORS.surface} strokeWidth={2.5} />
                 <Text style={styles.actionButtonText}>Share Receipt</Text>
               </>
             )}
@@ -308,20 +309,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.l,
+    paddingVertical: SPACING.m,
     backgroundColor: COLORS.surfaceLight,
   },
   backButton: {
     width: 44,
     height: 44,
-    borderRadius: RADII.md,
+    borderRadius: RADII.s,
     backgroundColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: TYPOGRAPHY.sizes.lg,
+    fontSize: TYPOGRAPHY.sizes.l,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
@@ -329,18 +330,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: SPACING.lg,
+    padding: SPACING.l,
   },
   amountCard: {
     backgroundColor: COLORS.surfaceLight,
-    borderRadius: RADII.lg,
+    borderRadius: RADII.l,
     padding: SPACING.xl,
     alignItems: 'center',
     marginBottom: SPACING.xl,
-    ...SHADOWS.medium,
+    ...SHADOWS.md,
   },
   amountLabel: {
-    fontSize: TYPOGRAPHY.sizes.sm,
+    fontSize: TYPOGRAPHY.sizes.s,
     fontWeight: '600',
     color: COLORS.textSecondary,
     textTransform: 'uppercase',
@@ -350,37 +351,37 @@ const styles = StyleSheet.create({
   amountValue: {
     fontSize: 42,
     fontWeight: '800',
-    color: COLORS.primary,
-    marginBottom: SPACING.md,
+    color: COLORS.primaryBlue,
+    marginBottom: SPACING.m,
   },
   section: {
     marginBottom: SPACING.xl,
   },
   sectionTitle: {
-    fontSize: TYPOGRAPHY.sizes.sm,
+    fontSize: TYPOGRAPHY.sizes.s,
     fontWeight: '700',
     color: COLORS.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.m,
   },
   detailCard: {
     backgroundColor: COLORS.surfaceLight,
-    borderRadius: RADII.lg,
-    padding: SPACING.lg,
-    ...SHADOWS.soft,
+    borderRadius: RADII.l,
+    padding: SPACING.l,
+    ...SHADOWS.sm,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-    paddingVertical: SPACING.sm,
+    gap: SPACING.m,
+    paddingVertical: SPACING.s,
   },
   detailIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: `${COLORS.primary}15`,
+    backgroundColor: `${COLORS.primaryBlue}15`,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -393,14 +394,14 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   detailValue: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
   divider: {
     height: 1,
     backgroundColor: COLORS.border,
-    marginVertical: SPACING.sm,
+    marginVertical: SPACING.s,
   },
   footer: {
     position: 'absolute',
@@ -408,8 +409,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    gap: SPACING.sm,
-    padding: SPACING.lg,
+    gap: SPACING.s,
+    padding: SPACING.l,
     backgroundColor: COLORS.surfaceLight,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
@@ -419,21 +420,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.sm,
+    gap: SPACING.s,
     height: 56,
-    borderRadius: RADII.full,
-    ...SHADOWS.medium,
+    borderRadius: RADII.round,
+    ...SHADOWS.md,
   },
   whatsappButton: {
     backgroundColor: '#25D366',
   },
   shareButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryBlue,
   },
   actionButtonText: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   centerContainer: {
     flex: 1,
@@ -441,8 +442,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    fontSize: TYPOGRAPHY.sizes.md,
-    color: '#EF4444',
+    fontSize: TYPOGRAPHY.sizes.m,
+    color: COLORS.errorCoral,
     textAlign: 'center',
   },
   buttonPressed: {

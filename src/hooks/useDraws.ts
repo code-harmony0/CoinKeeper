@@ -93,8 +93,8 @@ export const useDrawSummary = (groupId?: string) => {
       setIsLoading(true);
       const getDrawSummary = functions().httpsCallable('getDrawSummary');
       const result = await getDrawSummary({ groupId });
-      if (result.data.success) {
-        setSummary(result.data.summary);
+      if ((result.data as any).success) {
+        setSummary((result.data as any).summary);
       }
     } catch (err) {
       console.error('[useDrawSummary] Refresh error:', err);
@@ -424,7 +424,7 @@ export const useDrawAdminActions = () => {
       setError(null);
       const fn = functions().httpsCallable('runManualDraw');
       const result = await fn({ drawId, reason });
-      return result.data;
+      return (result.data as any);
     } catch (err) {
       const message = (err as Error).message;
       setError(message);
@@ -440,7 +440,7 @@ export const useDrawAdminActions = () => {
       setError(null);
       const fn = functions().httpsCallable('cancelDraw');
       const result = await fn({ drawId, reason });
-      return result.data;
+      return (result.data as any);
     } catch (err) {
       const message = (err as Error).message;
       setError(message);
@@ -456,7 +456,7 @@ export const useDrawAdminActions = () => {
       setError(null);
       const fn = functions().httpsCallable('rerunDraw');
       const result = await fn({ drawId, reason, newSeed });
-      return result.data;
+      return (result.data as any);
     } catch (err) {
       const message = (err as Error).message;
       setError(message);
@@ -472,7 +472,7 @@ export const useDrawAdminActions = () => {
       setError(null);
       const fn = functions().httpsCallable('retrySettlement');
       const result = await fn({ settlementId, reason });
-      return result.data;
+      return (result.data as any);
     } catch (err) {
       const message = (err as Error).message;
       setError(message);
@@ -488,7 +488,7 @@ export const useDrawAdminActions = () => {
       setError(null);
       const fn = functions().httpsCallable('exportDraw');
       const result = await fn({ drawId, format });
-      return result.data;
+      return (result.data as any);
     } catch (err) {
       const message = (err as Error).message;
       setError(message);

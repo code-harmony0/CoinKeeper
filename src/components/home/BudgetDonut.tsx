@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     fontSize: 20,
     lineHeight: 26,
-    color: colors.textTitle,
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   totalLabel: {

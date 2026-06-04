@@ -69,7 +69,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, onPress, index }) =
     return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   };
 
-  const statusColor = STATUS_COLORS[group.status] || theme.colors.primary;
+  const statusColor = STATUS_COLORS[group.status] || theme.colors.primaryBlue;
   const statusBg = STATUS_BG_COLORS[group.status] || '#F5F5F5';
 
   return (

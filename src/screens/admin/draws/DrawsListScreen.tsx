@@ -4,13 +4,12 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   TextInput,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { Trophy, Calendar, Users, TrendingUp, DollarSign, Search, Plus, AlertCircle } from 'lucide-react-native';
@@ -19,11 +18,7 @@ import { useDraws, useDrawSummary } from '../../../hooks/useDraws';
 import { COLORS } from '../../../theme/colors';
 import { StatusChip } from '../../../components/shared/StatusChip';
 
-const SPRING_CONFIG = {
-  damping: 16,
-  stiffness: 140,
-  mass: 1,
-};
+// SPRING_CONFIG removed for chained methods
 
 type FilterStatus = 'all' | 'upcoming' | 'in_progress' | 'completed';
 
@@ -91,7 +86,7 @@ const DrawCard: React.FC<{
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 50).springify(SPRING_CONFIG)}>
+    <Animated.View entering={FadeInDown.delay(index * 50).springify().damping(16).stiffness(140).mass(1)}>
       <TouchableOpacity
         onPress={() => {
           ReactNativeHapticFeedback.trigger('impactLight');
@@ -217,7 +212,7 @@ export const DrawsListScreen: React.FC<Props> = ({ navigation }) => {
       style={[styles.container, { paddingTop: insets.top }]}
       edges={['top', 'left', 'right']}>
       {/* Header */}
-      <Animated.View entering={FadeInDown.delay(0).springify(SPRING_CONFIG)} style={styles.header}>
+      <Animated.View entering={FadeInDown.delay(0).springify().damping(16).stiffness(140).mass(1)} style={styles.header}>
         <Text style={styles.headerTitle}>Draws</Text>
         <Text style={styles.headerSubtitle}>
           {stats.upcoming} upcoming • {stats.inProgress} in progress • {stats.completed} completed
@@ -226,7 +221,7 @@ export const DrawsListScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Search Bar */}
       <Animated.View
-        entering={FadeInDown.delay(100).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)}
         style={styles.searchContainer}>
         <Search size={20} color="#666" />
         <TextInput
@@ -240,7 +235,7 @@ export const DrawsListScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Status Filter Chips */}
       <Animated.View
-        entering={FadeInDown.delay(150).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)}
         style={styles.filterContainer}>
         <FilterChip label="All" isActive={filterStatus === 'all'} onPress={() => setFilterStatus('all')} />
         <FilterChip label="Upcoming" isActive={filterStatus === 'upcoming'} onPress={() => setFilterStatus('upcoming')} />

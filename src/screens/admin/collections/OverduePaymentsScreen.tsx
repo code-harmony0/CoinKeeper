@@ -4,14 +4,13 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   TextInput,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { AlertCircle, Calendar, Clock, Search, Bell } from 'lucide-react-native';
@@ -19,11 +18,7 @@ import type { ScheduledPayment } from '../../../types/payment';
 import { useOverduePayments } from '../../../hooks/useScheduledPayments';
 import { COLORS } from '../../../theme/colors';
 
-const SPRING_CONFIG = {
-  damping: 16,
-  stiffness: 140,
-  mass: 1,
-};
+// SPRING_CONFIG removed for chained methods
 
 type SortOption = 'days' | 'amount';
 
@@ -62,19 +57,19 @@ const OverdueCard: React.FC<{
     year: 'numeric',
   });
 
-  const daysOverdue = payment.daysOverdue ?? 0;
+  const daysOverdue = (payment as any).daysOverdue ?? 0;
   const lateFee = payment.lateFeeAmount ?? 0;
   const totalDue = payment.amount + lateFee;
 
   const getUrgencyColor = () => {
     if (daysOverdue > 30) return COLORS.errorCoral;
     if (daysOverdue > 14) return COLORS.warningAmber;
-    return '#FFA726';
+    return COLORS.warningAmber;
   };
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(index * 50).springify(SPRING_CONFIG)}>
+      entering={FadeInDown.delay(index * 50).springify().damping(16).stiffness(140).mass(1)}>
       <TouchableOpacity
         onPress={() => {
           ReactNativeHapticFeedback.trigger('impactLight');
@@ -83,7 +78,7 @@ const OverdueCard: React.FC<{
         style={[styles.overdueCard, { borderLeftColor: getUrgencyColor(), borderLeftWidth: 6 }]}>
         <View style={styles.cardHeader}>
           <View style={[styles.urgencyBadge, { backgroundColor: getUrgencyColor() }]}>
-            <AlertCircle size={18} color="#FFFFFF" />
+            <AlertCircle size={18} color={COLORS.surface} />
             <Text style={styles.daysOverdueText}>{daysOverdue} days overdue</Text>
           </View>
         </View>
@@ -124,7 +119,7 @@ const OverdueCard: React.FC<{
               onRemind();
             }}
             style={styles.remindButton}>
-            <Bell size={16} color="#FFFFFF" />
+            <Bell size={16} color={COLORS.surface} />
             <Text style={styles.remindButtonText}>Remind</Text>
           </TouchableOpacity>
         </View>
@@ -160,7 +155,7 @@ export const OverduePaymentsScreen: React.FC<Props> = ({ navigation, route }) =>
     // Apply sorting
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === 'days') {
-        return (b.daysOverdue ?? 0) - (a.daysOverdue ?? 0);
+        return ((b as any).daysOverdue ?? 0) - ((a as any).daysOverdue ?? 0);
       } else {
         const aTotal = a.amount + (a.lateFeeAmount ?? 0);
         const bTotal = b.amount + (b.lateFeeAmount ?? 0);
@@ -176,7 +171,7 @@ export const OverduePaymentsScreen: React.FC<Props> = ({ navigation, route }) =>
   }, [navigation]);
 
   const handleSendReminder = useCallback((payment: ScheduledPayment) => {
-    const daysOverdue = payment.daysOverdue ?? 0;
+    const daysOverdue = (payment as any).daysOverdue ?? 0;
     Alert.alert(
       'Send Overdue Reminder',
       `Send overdue reminder to ${payment.memberName}?\n\nAmount: ₹${payment.amount.toLocaleString('en-IN')}\nOverdue: ${daysOverdue} days`,
@@ -223,7 +218,7 @@ export const OverduePaymentsScreen: React.FC<Props> = ({ navigation, route }) =>
       edges={['top', 'left', 'right']}>
       {/* Header */}
       <Animated.View
-        entering={FadeInDown.delay(0).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(0).springify().damping(16).stiffness(140).mass(1)}
         style={styles.header}>
         <Text style={styles.headerTitle}>Overdue Payments</Text>
         <Text style={styles.headerSubtitle}>
@@ -233,7 +228,7 @@ export const OverduePaymentsScreen: React.FC<Props> = ({ navigation, route }) =>
 
       {/* Search Bar */}
       <Animated.View
-        entering={FadeInDown.delay(100).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)}
         style={styles.searchContainer}>
         <Search size={20} color={COLORS.textSecondary} />
         <TextInput
@@ -247,7 +242,7 @@ export const OverduePaymentsScreen: React.FC<Props> = ({ navigation, route }) =>
 
       {/* Sort Buttons */}
       <Animated.View
-        entering={FadeInDown.delay(150).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)}
         style={styles.sortContainer}>
         <SortButton
           label="Sort by Days"
@@ -292,7 +287,7 @@ export const OverduePaymentsScreen: React.FC<Props> = ({ navigation, route }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#C2DFF7',
+    backgroundColor: COLORS.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -301,25 +296,25 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#121723',
+    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#D32F2F',
+    color: COLORS.errorCoral,
     fontWeight: '600',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     marginHorizontal: 20,
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: COLORS.neumorphic.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -330,7 +325,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 15,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#121723',
+    color: COLORS.textPrimary,
   },
   sortContainer: {
     flexDirection: 'row',
@@ -344,32 +339,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#CCCCCC',
-    backgroundColor: '#FFFFFF',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
   },
   activeSortButton: {
-    backgroundColor: '#121723',
-    borderColor: '#121723',
+    backgroundColor: COLORS.primaryBlue,
+    borderColor: COLORS.primaryBlue,
   },
   sortButtonText: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans-Medium',
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   activeSortButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   listContent: {
     paddingBottom: 20,
   },
   overdueCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     marginHorizontal: 20,
     marginBottom: 16,
     padding: 20,
     borderRadius: 20,
-    shadowColor: '#000',
+    shadowColor: COLORS.neumorphic.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -381,7 +376,7 @@ const styles = StyleSheet.create({
   urgencyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#D32F2F',
+    backgroundColor: COLORS.errorCoralDark,
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -391,7 +386,7 @@ const styles = StyleSheet.create({
   daysOverdueText: {
     fontSize: 12,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   cardBody: {
     marginBottom: 16,
@@ -399,13 +394,13 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#121723',
+    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   groupName: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#666',
+    color: COLORS.textSecondary,
     marginBottom: 16,
   },
   amountRow: {
@@ -415,13 +410,13 @@ const styles = StyleSheet.create({
   amountLabel: {
     fontSize: 11,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#999',
+    color: COLORS.textTertiary,
     marginBottom: 4,
   },
   amount: {
     fontSize: 20,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#121723',
+    color: COLORS.textPrimary,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -429,7 +424,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: COLORS.border,
   },
   footerLeft: {
     gap: 6,
@@ -446,7 +441,7 @@ const styles = StyleSheet.create({
   remindButtonText: {
     fontSize: 12,
     fontFamily: 'PlusJakartaSans-SemiBold',
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   footerItem: {
     flexDirection: 'row',
@@ -456,7 +451,7 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 11,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   emptyState: {
     alignItems: 'center',
@@ -467,14 +462,14 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#5cb85c',
+    color: COLORS.successGreen,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#BBB',
+    color: COLORS.textTertiary,
     textAlign: 'center',
   },
   centered: {
@@ -484,13 +479,13 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     fontFamily: 'PlusJakartaSans-Medium',
-    color: '#666',
+    color: COLORS.textSecondary,
     marginTop: 12,
   },
   errorText: {
     fontSize: 16,
     fontFamily: 'PlusJakartaSans-Medium',
-    color: '#E74C3C',
+    color: COLORS.errorCoral,
     marginTop: 12,
     textAlign: 'center',
     paddingHorizontal: 40,
@@ -499,13 +494,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: '#E74C3C',
+    backgroundColor: COLORS.errorCoral,
     borderRadius: 12,
   },
   retryButtonText: {
     fontSize: 14,
     fontFamily: 'PlusJakartaSans-SemiBold',
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
 });
 

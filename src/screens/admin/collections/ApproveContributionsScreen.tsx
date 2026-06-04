@@ -23,7 +23,8 @@ import { ArrowLeft, Check, X, CheckSquare, Square } from 'lucide-react-native';
 import { usePendingContributions } from '../../../hooks/useContributions';
 import { ContributionCard } from '../../../components/contributions/ContributionCard';
 import { useTabBarScroll } from '../../../context/TabBarScrollContext';
-import { COLORS, SPACING, TYPOGRAPHY, RADII, SHADOWS } from '../../../theme/designTokens';
+import { spacing as SPACING, typography as TYPOGRAPHY, radii as RADII, shadows as SHADOWS } from '../../../theme/designTokens';
+import { COLORS } from '../../../theme/colors';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 interface ApproveContributionsScreenProps {
@@ -181,7 +182,7 @@ export const ApproveContributionsScreen: React.FC<ApproveContributionsScreenProp
           onPress={handleSelectAll}
         >
           {selectedIds.length === contributions.length && contributions.length > 0 ? (
-            <CheckSquare size={24} color={COLORS.primary} />
+            <CheckSquare size={24} color={COLORS.primaryBlue} />
           ) : (
             <Square size={24} color={COLORS.textSecondary} />
           )}
@@ -202,7 +203,7 @@ export const ApproveContributionsScreen: React.FC<ApproveContributionsScreenProp
               onPress={handleBatchReject}
               disabled={isProcessing}
             >
-              <X size={20} color="#FFFFFF" strokeWidth={2.5} />
+              <X size={20} color={COLORS.surface} strokeWidth={2.5} />
               <Text style={styles.actionButtonText}>Reject</Text>
             </Pressable>
             <Pressable
@@ -214,7 +215,7 @@ export const ApproveContributionsScreen: React.FC<ApproveContributionsScreenProp
               onPress={handleBatchApprove}
               disabled={isProcessing}
             >
-              <Check size={20} color="#FFFFFF" strokeWidth={2.5} />
+              <Check size={20} color={COLORS.surface} strokeWidth={2.5} />
               <Text style={styles.actionButtonText}>Approve</Text>
             </Pressable>
           </View>
@@ -224,7 +225,7 @@ export const ApproveContributionsScreen: React.FC<ApproveContributionsScreenProp
       {/* Contributions List */}
       {isLoading && !isRefreshing ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={COLORS.primaryBlue} />
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
@@ -248,7 +249,7 @@ export const ApproveContributionsScreen: React.FC<ApproveContributionsScreenProp
                 {/* Selection Checkbox */}
                 <View style={styles.checkbox}>
                   {selectedIds.includes(item.id) ? (
-                    <CheckSquare size={24} color={COLORS.primary} />
+                    <CheckSquare size={24} color={COLORS.primaryBlue} />
                   ) : (
                     <Square size={24} color={COLORS.textTertiary} />
                   )}
@@ -275,7 +276,7 @@ export const ApproveContributionsScreen: React.FC<ApproveContributionsScreenProp
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={COLORS.primary}
+              tintColor={COLORS.primaryBlue}
             />
           }
         />
@@ -285,7 +286,7 @@ export const ApproveContributionsScreen: React.FC<ApproveContributionsScreenProp
       {isProcessing && (
         <View style={styles.processingOverlay}>
           <View style={styles.processingCard}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={COLORS.primaryBlue} />
             <Text style={styles.processingText}>Processing...</Text>
           </View>
         </View>
@@ -303,14 +304,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.l,
+    paddingVertical: SPACING.m,
     backgroundColor: COLORS.surfaceLight,
   },
   backButton: {
     width: 44,
     height: 44,
-    borderRadius: RADII.md,
+    borderRadius: RADII.m,
     backgroundColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
@@ -320,12 +321,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: TYPOGRAPHY.sizes.lg,
+    fontSize: TYPOGRAPHY.sizes.l,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
   headerSubtitle: {
-    fontSize: TYPOGRAPHY.sizes.sm,
+    fontSize: TYPOGRAPHY.sizes.s,
     color: COLORS.textSecondary,
   },
   selectAllButton: {
@@ -338,48 +339,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.l,
+    paddingVertical: SPACING.m,
     backgroundColor: COLORS.surfaceLight,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
   selectionCount: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: SPACING.sm,
+    gap: SPACING.s,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADII.md,
+    paddingHorizontal: SPACING.m,
+    paddingVertical: SPACING.s,
+    borderRadius: RADII.m,
   },
   approveButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: COLORS.successGreen,
   },
   rejectButton: {
-    backgroundColor: '#EF4444',
+    backgroundColor: COLORS.errorCoral,
   },
   actionButtonText: {
-    fontSize: TYPOGRAPHY.sizes.sm,
+    fontSize: TYPOGRAPHY.sizes.s,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   listContent: {
-    padding: SPACING.lg,
+    padding: SPACING.l,
   },
   contributionWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
+    gap: SPACING.s,
+    marginBottom: SPACING.m,
   },
   checkbox: {
     width: 32,
@@ -395,20 +396,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
   },
   emptyText: {
-    fontSize: TYPOGRAPHY.sizes.lg,
+    fontSize: TYPOGRAPHY.sizes.l,
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   emptySubtext: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
   errorText: {
-    fontSize: TYPOGRAPHY.sizes.md,
-    color: '#EF4444',
+    fontSize: TYPOGRAPHY.sizes.m,
+    color: COLORS.errorCoral,
     textAlign: 'center',
   },
   processingOverlay: {
@@ -420,13 +421,13 @@ const styles = StyleSheet.create({
   processingCard: {
     backgroundColor: COLORS.surfaceLight,
     padding: SPACING.xl,
-    borderRadius: RADII.lg,
+    borderRadius: RADII.l,
     alignItems: 'center',
-    gap: SPACING.md,
-    ...SHADOWS.large,
+    gap: SPACING.m,
+    ...SHADOWS.lg,
   },
   processingText: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },

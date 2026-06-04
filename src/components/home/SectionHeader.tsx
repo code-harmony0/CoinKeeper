@@ -22,10 +22,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.m,
   },
   title: {
-    ...typography.section,
+    ...(typography.h2 as any),
   },
   seeAll: {
-    ...typography.body,
+    ...(typography.body as any),
     color: colors.primary,
     fontFamily: 'Inter-Medium',
   },

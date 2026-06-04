@@ -3,13 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {
@@ -22,11 +21,7 @@ import { COLORS } from '../../../theme/colors';
 import firestore from '@react-native-firebase/firestore';
 import type { DrawBid } from '../../../types/draw';
 
-const SPRING_CONFIG = {
-  damping: 16,
-  stiffness: 140,
-  mass: 1,
-};
+// SPRING_CONFIG removed for chained methods
 
 interface Props {
   navigation: any;
@@ -78,7 +73,7 @@ const BidCard: React.FC<{
   const isWinner = bid.status === 'won';
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 50).springify(SPRING_CONFIG)}>
+    <Animated.View entering={FadeInDown.delay(index * 50).springify().damping(16).stiffness(140).mass(1)}>
       <View style={[styles.bidCard, isWinner && styles.winnerBidCard, isHighestBid && !isWinner && styles.highestBidCard]}>
         <View style={styles.bidHeader}>
           <View style={styles.bidHeaderLeft}>
@@ -363,7 +358,7 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Back Button + Header */}
         <Animated.View
-          entering={FadeInDown.delay(0).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(0).springify().damping(16).stiffness(140).mass(1)}
           style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <ChevronLeft size={24} color="#121723" />
@@ -384,7 +379,7 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Draw Info Card */}
         <Animated.View
-          entering={FadeInDown.delay(50).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(50).springify().damping(16).stiffness(140).mass(1)}
           style={styles.infoCard}>
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
@@ -418,7 +413,7 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
         {/* Winner Card (if completed) */}
         {draw.status === 'completed' && draw.winnerId && (
           <Animated.View
-            entering={FadeInDown.delay(100).springify(SPRING_CONFIG)}
+            entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)}
             style={styles.winnerCard}>
             <Award size={28} color={COLORS.warningAmber} />
             <View style={styles.winnerInfo}>
@@ -434,7 +429,7 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Bids Section */}
         <Animated.View
-          entering={FadeInDown.delay(150).springify(SPRING_CONFIG)}
+          entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)}
           style={styles.bidsSection}>
           <Text style={styles.sectionTitle}>
             All Bids ({bids.length})
@@ -461,7 +456,7 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Draw Audit Log */}
         <Animated.View
-          entering={FadeInUp.delay(200).springify(SPRING_CONFIG)}
+          entering={FadeInUp.delay(200).springify().damping(16).stiffness(140).mass(1)}
           style={styles.auditSection}>
           <View style={styles.auditHeader}>
             <FileText size={18} color="#666" />
@@ -473,7 +468,7 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
         {/* Action Buttons */}
         {draw.status === 'upcoming' && (
           <Animated.View
-            entering={FadeInDown.delay(250).springify(SPRING_CONFIG)}
+            entering={FadeInDown.delay(250).springify().damping(16).stiffness(140).mass(1)}
             style={styles.actionContainer}>
             <TouchableOpacity
               onPress={handleStartBidding}
@@ -486,7 +481,7 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {draw.status === 'in_progress' && highestBid && (
           <Animated.View
-            entering={FadeInDown.delay(250).springify(SPRING_CONFIG)}
+            entering={FadeInDown.delay(250).springify().damping(16).stiffness(140).mass(1)}
             style={styles.actionContainer}>
             <TouchableOpacity
               onPress={() => handleSelectWinner(highestBid)}
@@ -499,7 +494,7 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {draw.status === 'completed' && !(draw as any).settledAt && (
           <Animated.View
-            entering={FadeInDown.delay(250).springify(SPRING_CONFIG)}
+            entering={FadeInDown.delay(250).springify().damping(16).stiffness(140).mass(1)}
             style={styles.actionContainer}>
             <TouchableOpacity
               onPress={handleSettleDraw}
@@ -511,7 +506,7 @@ export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {isLocked && (
           <Animated.View
-            entering={FadeInUp.delay(300).springify(SPRING_CONFIG)}
+            entering={FadeInUp.delay(300).springify().damping(16).stiffness(140).mass(1)}
             style={styles.lockedNotice}>
             <Lock size={16} color={COLORS.textTertiary} />
             <Text style={styles.lockedNoticeText}>

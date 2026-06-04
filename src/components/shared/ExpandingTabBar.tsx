@@ -23,7 +23,7 @@ import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { THEME_COLORS } from '../../theme/blobTheme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BAR_WIDTH = SCREEN_WIDTH * 0.88; // Narrower width
+const BAR_WIDTH = SCREEN_WIDTH * 0.94; // Wider bar, less side space
 const BAR_HEIGHT = 56; // Reduced height
 const CORNER_RADIUS = BAR_HEIGHT / 2;
 
@@ -369,6 +369,23 @@ const TabIcon = memo(({ name, color, fill, isActive }: { name: string; color: st
           <Path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001.51 1H15a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke={color} strokeWidth={sw} />
         </Svg>
       );
+    case 'receipt':
+    case 'transactions':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2-3-2z" stroke={color} strokeWidth={sw} fill={vibrantFill} fillOpacity={fillOpacity} />
+          <Path d="M8 10h8M8 14h5" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        </Svg>
+      );
+    case 'chart':
+    case 'reports':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Rect x={3} y={12} width={4} height={9} rx={1} stroke={color} strokeWidth={sw} fill={vibrantFill} fillOpacity={fillOpacity} />
+          <Rect x={10} y={7} width={4} height={14} rx={1} stroke={color} strokeWidth={sw} fill={vibrantFill} fillOpacity={fillOpacity} />
+          <Rect x={17} y={3} width={4} height={18} rx={1} stroke={color} strokeWidth={sw} fill={vibrantFill} fillOpacity={fillOpacity} />
+        </Svg>
+      );
     case 'add':
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -413,6 +430,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.barBg,
   },
   tabSlot: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -439,7 +457,7 @@ const styles = StyleSheet.create({
   tabContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 2,
   },
   iconWrapper: {
     width: ICON_SIZE,

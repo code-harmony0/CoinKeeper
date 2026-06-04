@@ -9,12 +9,11 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {
@@ -26,11 +25,7 @@ import { COLORS } from '../../../theme/colors';
 import { useTabBarScroll } from '../../../context/TabBarScrollContext';
 import type { AdminNotificationType } from '../../../types/payment';
 
-const SPRING_CONFIG = {
-  damping: 16,
-  stiffness: 140,
-  mass: 1,
-};
+// SPRING_CONFIG replaced by chained methods
 
 type FilterType = 'all' | AdminNotificationType;
 
@@ -95,7 +90,7 @@ const NotificationCard: React.FC<{
   const timeAgo = createdAt ? getTimeAgo(createdAt) : '';
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 40).springify(SPRING_CONFIG)}>
+    <Animated.View entering={FadeInDown.delay(index * 40).springify().damping(16).stiffness(140).mass(1)}>
       <TouchableOpacity
         onPress={() => {
           ReactNativeHapticFeedback.trigger('impactLight');
@@ -241,7 +236,7 @@ export const AdminNotificationsScreen: React.FC<{ navigation: any }> = ({ naviga
       edges={['top', 'left', 'right']}>
       {/* Header */}
       <Animated.View
-        entering={FadeInDown.delay(0).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(0).springify().damping(16).stiffness(140).mass(1)}
         style={styles.header}>
         <View style={styles.headerRow}>
           <View>
@@ -261,7 +256,7 @@ export const AdminNotificationsScreen: React.FC<{ navigation: any }> = ({ naviga
 
       {/* Filter Chips */}
       <Animated.View
-        entering={FadeInDown.delay(50).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(50).springify().damping(16).stiffness(140).mass(1)}
         style={styles.filterRow}>
         <FlatList
           horizontal

@@ -81,3 +81,9 @@ qwen
 qwen-outputs.txt
 gemini-analysis.txt
 *.ai-output
+.agents/
+.gemini/
+graphify-out/
+out/
+firebase-debug.log
+*.log

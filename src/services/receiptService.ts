@@ -278,7 +278,7 @@ export const generateReceipt = async (contribution: Contribution): Promise<strin
       base64: false,
     };
 
-    const file = await RNHTMLtoPDF.convert(options);
+    const file = await (RNHTMLtoPDF as any).convert(options);
     return file.filePath || '';
   } catch (error) {
     console.error('Error generating receipt:', error);

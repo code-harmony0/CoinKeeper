@@ -53,8 +53,8 @@ const PermissionScreen: React.FC<PermissionScreenProps> = ({ navigation }) => {
     // Gradient pulse
     gradientOpacity.value = withRepeat(
       withSequence(
-        withTiming(0.8, { duration: 2000, easing: Easing.inOut(Easing.sine) }),
-        withTiming(0.5, { duration: 2000, easing: Easing.inOut(Easing.sine) })
+        withTiming(0.8, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0.5, { duration: 2000, easing: Easing.inOut(Easing.sin) })
       ),
       -1,
       false
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primaryMuted,
+    backgroundColor: colors.backgroundLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.m,

@@ -28,7 +28,16 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const [darkMode, setDarkMode] = React.useState(false);
   const [notifications, setNotifications] = React.useState(true);
 
-  const settingsGroups = [
+  type SettingItem = {
+    icon: any;
+    label: string;
+    onPress?: () => void;
+    toggle?: boolean;
+    value?: boolean;
+    onToggle?: (val: boolean) => void;
+  };
+
+  const settingsGroups: { title: string; items: SettingItem[] }[] = [
     {
       title: 'Account',
       items: [

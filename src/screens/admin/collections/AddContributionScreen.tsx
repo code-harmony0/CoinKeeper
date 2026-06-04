@@ -30,7 +30,8 @@ import {
 } from 'lucide-react-native';
 import { useAllContributions } from '../../../hooks/useContributions';
 import { ToggleSwitch } from '../../../components/group';
-import { COLORS, SPACING, TYPOGRAPHY, RADII, SHADOWS } from '../../../theme/designTokens';
+import { spacing as SPACING, typography as TYPOGRAPHY, radii as RADII, shadows as SHADOWS } from '../../../theme/designTokens';
+import { COLORS } from '../../../theme/colors';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { pick, types, errorCodes, isErrorWithCode } from '@react-native-documents/picker';
 import RNFS from 'react-native-fs';
@@ -96,7 +97,9 @@ export const AddContributionScreen: React.FC<AddContributionScreenProps> = ({
       await createNewContribution({
         groupId: formData.groupId.trim(),
         userId: formData.userId.trim(),
+        memberId: formData.userId.trim(),
         userName: formData.userName.trim(),
+        memberName: formData.userName.trim(),
         groupName: formData.groupName.trim() || 'Unknown Group',
         amount: parseFloat(formData.amount),
         dueDate: formData.dueDate,
@@ -270,7 +273,7 @@ export const AddContributionScreen: React.FC<AddContributionScreenProps> = ({
                   setEntryMode('manual');
                 }}
               >
-                <User size={20} color={entryMode === 'manual' ? '#FFFFFF' : COLORS.textSecondary} />
+                <User size={20} color={entryMode === 'manual' ? COLORS.surface : COLORS.textSecondary} />
                 <Text
                   style={[
                     styles.modeButtonText,
@@ -290,7 +293,7 @@ export const AddContributionScreen: React.FC<AddContributionScreenProps> = ({
                   setEntryMode('bulk');
                 }}
               >
-                <Upload size={20} color={entryMode === 'bulk' ? '#FFFFFF' : COLORS.textSecondary} />
+                <Upload size={20} color={entryMode === 'bulk' ? COLORS.surface : COLORS.textSecondary} />
                 <Text
                   style={[
                     styles.modeButtonText,
@@ -399,7 +402,7 @@ export const AddContributionScreen: React.FC<AddContributionScreenProps> = ({
                   ]}
                   onPress={handleFileSelect}
                 >
-                  <Upload size={24} color={COLORS.primary} />
+                  <Upload size={24} color={COLORS.primaryBlue} />
                   <Text style={styles.uploadButtonText}>
                     {selectedFile ? 'Change File' : 'Select CSV File'}
                   </Text>
@@ -407,7 +410,7 @@ export const AddContributionScreen: React.FC<AddContributionScreenProps> = ({
 
                 {selectedFile && (
                   <View style={styles.fileInfo}>
-                    <FileText size={20} color={COLORS.primary} />
+                    <FileText size={20} color={COLORS.primaryBlue} />
                     <Text style={styles.fileName}>{selectedFile.name}</Text>
                   </View>
                 )}
@@ -432,13 +435,13 @@ export const AddContributionScreen: React.FC<AddContributionScreenProps> = ({
           disabled={isSubmitting}
         >
           {isSubmitting ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={COLORS.surface} />
           ) : (
             <>
               <Text style={styles.submitButtonText}>
                 {entryMode === 'manual' ? 'Create Contribution' : 'Import Contributions'}
               </Text>
-              <Check size={20} color="#FFFFFF" strokeWidth={3} />
+              <Check size={20} color={COLORS.surface} strokeWidth={3} />
             </>
           )}
         </Pressable>
@@ -456,20 +459,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.l,
+    paddingVertical: SPACING.m,
     backgroundColor: COLORS.surfaceLight,
   },
   backButton: {
     width: 44,
     height: 44,
-    borderRadius: RADII.md,
+    borderRadius: RADII.m,
     backgroundColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: TYPOGRAPHY.sizes.lg,
+    fontSize: TYPOGRAPHY.sizes.l,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
@@ -477,57 +480,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: SPACING.lg,
+    padding: SPACING.l,
   },
   section: {
     marginBottom: SPACING.xl,
   },
   sectionTitle: {
-    fontSize: TYPOGRAPHY.sizes.sm,
+    fontSize: TYPOGRAPHY.sizes.s,
     fontWeight: '700',
     color: COLORS.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.m,
   },
   helperText: {
-    fontSize: TYPOGRAPHY.sizes.sm,
+    fontSize: TYPOGRAPHY.sizes.s,
     color: COLORS.textSecondary,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.m,
   },
   modeToggle: {
     flexDirection: 'row',
-    gap: SPACING.sm,
+    gap: SPACING.s,
   },
   modeButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.md,
-    borderRadius: RADII.md,
+    gap: SPACING.s,
+    paddingVertical: SPACING.m,
+    borderRadius: RADII.m,
     backgroundColor: COLORS.surfaceLight,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   modeButtonActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryBlue,
+    borderColor: COLORS.primaryBlue,
   },
   modeButtonText: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
   modeButtonTextActive: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   inputGroup: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.m,
   },
   label: {
-    fontSize: TYPOGRAPHY.sizes.sm,
+    fontSize: TYPOGRAPHY.sizes.s,
     fontWeight: '600',
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
@@ -536,29 +539,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surfaceLight,
-    borderRadius: RADII.md,
+    borderRadius: RADII.m,
     borderWidth: 1,
     borderColor: COLORS.border,
     height: 56,
-    paddingHorizontal: SPACING.md,
-    ...SHADOWS.soft,
+    paddingHorizontal: SPACING.m,
+    ...SHADOWS.sm,
   },
   inputError: {
-    borderColor: '#EF4444',
+    borderColor: COLORS.errorCoral,
   },
   inputIcon: {
-    marginRight: SPACING.sm,
+    marginRight: SPACING.s,
   },
   input: {
     flex: 1,
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     fontWeight: '500',
     color: COLORS.textPrimary,
     height: '100%',
   },
   errorText: {
     fontSize: TYPOGRAPHY.sizes.xs,
-    color: '#EF4444',
+    color: COLORS.errorCoral,
     marginTop: 4,
     marginLeft: 4,
   },
@@ -566,31 +569,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.lg,
-    borderRadius: RADII.md,
+    gap: SPACING.s,
+    paddingVertical: SPACING.l,
+    borderRadius: RADII.m,
     backgroundColor: COLORS.surfaceLight,
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: COLORS.primaryBlue,
     borderStyle: 'dashed',
   },
   uploadButtonText: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: COLORS.primaryBlue,
   },
   fileInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
-    marginTop: SPACING.md,
-    padding: SPACING.md,
-    borderRadius: RADII.md,
-    backgroundColor: `${COLORS.primary}15`,
+    gap: SPACING.s,
+    marginTop: SPACING.m,
+    padding: SPACING.m,
+    borderRadius: RADII.m,
+    backgroundColor: `${COLORS.primaryBlue}15`,
   },
   fileName: {
     flex: 1,
-    fontSize: TYPOGRAPHY.sizes.sm,
+    fontSize: TYPOGRAPHY.sizes.s,
     fontWeight: '500',
     color: COLORS.textPrimary,
   },
@@ -600,27 +603,27 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: COLORS.surfaceLight,
-    padding: SPACING.lg,
+    padding: SPACING.l,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },
   submitButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryBlue,
     height: 56,
-    borderRadius: RADII.full,
+    borderRadius: RADII.round,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: SPACING.sm,
-    ...SHADOWS.medium,
+    gap: SPACING.s,
+    ...SHADOWS.md,
   },
   submitButtonDisabled: {
     opacity: 0.7,
   },
   submitButtonText: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   buttonPressed: {
     transform: [{ scale: 0.98 }],

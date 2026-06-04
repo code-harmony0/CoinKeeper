@@ -4,14 +4,13 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   TextInput,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { Calendar, Clock, CheckCircle, Search, AlertCircle, Bell, TrendingUp } from 'lucide-react-native';
@@ -20,11 +19,7 @@ import { useUpcomingPayments } from '../../../hooks/useScheduledPayments';
 import { useTabBarScroll } from '../../../context/TabBarScrollContext';
 import { COLORS } from '../../../theme/colors';
 
-const SPRING_CONFIG = {
-  damping: 16,
-  stiffness: 140,
-  mass: 1,
-};
+// SPRING_CONFIG removed for chained methods
 
 type FilterStatus = 'all' | 'pending' | 'reminded';
 
@@ -93,7 +88,7 @@ const PaymentCard: React.FC<{
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(index * 50).springify(SPRING_CONFIG)}>
+      entering={FadeInDown.delay(index * 50).springify().damping(16).stiffness(140).mass(1)}>
       <TouchableOpacity
         onPress={() => {
           ReactNativeHapticFeedback.trigger('impactLight');
@@ -121,7 +116,7 @@ const PaymentCard: React.FC<{
 
         <View style={styles.cardFooter}>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}>
-            <CheckCircle size={14} color="#FFFFFF" />
+            <CheckCircle size={14} color={COLORS.surface} />
             <Text style={styles.statusText}>{getStatusLabel()}</Text>
           </View>
           <TouchableOpacity
@@ -236,7 +231,7 @@ export const UpcomingPaymentsScreen: React.FC<Props> = ({ navigation, route }) =
       edges={['top', 'left', 'right']}>
       {/* Header */}
       <Animated.View
-        entering={FadeInDown.delay(0).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(0).springify().damping(16).stiffness(140).mass(1)}
         style={styles.header}>
         <Text style={styles.headerTitle}>Upcoming Payments</Text>
         <Text style={styles.headerSubtitle}>
@@ -246,7 +241,7 @@ export const UpcomingPaymentsScreen: React.FC<Props> = ({ navigation, route }) =
 
       {/* Collection Rate Bar */}
       <Animated.View
-        entering={FadeInDown.delay(50).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(50).springify().damping(16).stiffness(140).mass(1)}
         style={styles.rateBar}>
         <View style={styles.rateInfo}>
           <TrendingUp size={18} color={COLORS.successGreen} />
@@ -260,7 +255,7 @@ export const UpcomingPaymentsScreen: React.FC<Props> = ({ navigation, route }) =
 
       {/* Search Bar */}
       <Animated.View
-        entering={FadeInDown.delay(100).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(100).springify().damping(16).stiffness(140).mass(1)}
         style={styles.searchContainer}>
         <Search size={20} color={COLORS.textSecondary} />
         <TextInput
@@ -274,7 +269,7 @@ export const UpcomingPaymentsScreen: React.FC<Props> = ({ navigation, route }) =
 
       {/* Status Filter Chips */}
       <Animated.View
-        entering={FadeInDown.delay(150).springify(SPRING_CONFIG)}
+        entering={FadeInDown.delay(150).springify().damping(16).stiffness(140).mass(1)}
         style={styles.filterContainer}>
         <StatusChip
           label="All"
@@ -330,7 +325,7 @@ export const UpcomingPaymentsScreen: React.FC<Props> = ({ navigation, route }) =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#C2DFF7',
+    backgroundColor: COLORS.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -339,24 +334,24 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#121723',
+    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   rateBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     marginHorizontal: 20,
     marginBottom: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: COLORS.neumorphic.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -371,12 +366,12 @@ const styles = StyleSheet.create({
   rateLabel: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans-Medium',
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   rateTrack: {
     flex: 1,
     height: 6,
-    backgroundColor: '#E8E8E8',
+    backgroundColor: COLORS.border,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -395,13 +390,13 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     marginHorizontal: 20,
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: COLORS.neumorphic.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -412,7 +407,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 15,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#121723',
+    color: COLORS.textPrimary,
   },
   filterContainer: {
     flexDirection: 'row',
@@ -425,31 +420,31 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: '#CCCCCC',
-    backgroundColor: '#FFFFFF',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
   },
   activeStatusChip: {
-    backgroundColor: '#121723',
-    borderColor: '#121723',
+    backgroundColor: COLORS.textPrimary,
+    borderColor: COLORS.textPrimary,
   },
   statusChipText: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans-Medium',
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   activeStatusChipText: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   listContent: {
     paddingBottom: 20,
   },
   paymentCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     marginHorizontal: 20,
     marginBottom: 16,
     padding: 20,
     borderRadius: 20,
-    shadowColor: '#000',
+    shadowColor: COLORS.neumorphic.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -468,13 +463,13 @@ const styles = StyleSheet.create({
   dueDate: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans-Medium',
-    color: '#666',
+    color: COLORS.textSecondary,
     marginLeft: 8,
   },
   remindedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF5E6',
+    backgroundColor: '#FFF8E1',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -491,19 +486,19 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#121723',
+    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   groupName: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#666',
+    color: COLORS.textSecondary,
     marginBottom: 8,
   },
   amount: {
     fontSize: 22,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#121723',
+    color: COLORS.textPrimary,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -516,7 +511,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: '#E6F0FA',
+    backgroundColor: COLORS.primaryBlueLight,
     gap: 6,
   },
   remindButtonText: {
@@ -535,7 +530,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontFamily: 'PlusJakartaSans-SemiBold',
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   emptyState: {
     alignItems: 'center',
@@ -546,14 +541,14 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#999',
+    color: COLORS.textTertiary,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
     fontFamily: 'PlusJakartaSans-Regular',
-    color: '#BBB',
+    color: COLORS.textTertiary,
     textAlign: 'center',
   },
   centered: {
@@ -563,13 +558,13 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     fontFamily: 'PlusJakartaSans-Medium',
-    color: '#666',
+    color: COLORS.textSecondary,
     marginTop: 12,
   },
   errorText: {
     fontSize: 16,
     fontFamily: 'PlusJakartaSans-Medium',
-    color: '#E74C3C',
+    color: COLORS.errorCoral,
     marginTop: 12,
     textAlign: 'center',
     paddingHorizontal: 40,
@@ -578,13 +573,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: '#007AFF',
+    backgroundColor: COLORS.primaryBlue,
     borderRadius: 12,
   },
   retryButtonText: {
     fontSize: 14,
     fontFamily: 'PlusJakartaSans-SemiBold',
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
 });
 

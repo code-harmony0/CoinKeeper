@@ -30,7 +30,8 @@ import {
 import { useAllContributions } from '../../../hooks/useContributions';
 import { ContributionCard } from '../../../components/contributions/ContributionCard';
 import { useTabBarScroll } from '../../../context/TabBarScrollContext';
-import { COLORS, SPACING, TYPOGRAPHY, RADII, SHADOWS } from '../../../theme/designTokens';
+import { spacing as SPACING, typography as TYPOGRAPHY, radii as RADII, shadows as SHADOWS } from '../../../theme/designTokens';
+import { COLORS } from '../../../theme/colors';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 interface ContributionsScreenProps {
@@ -226,7 +227,7 @@ export const ContributionsScreen: React.FC<ContributionsScreenProps> = ({ naviga
       {/* Contributions List */}
       {isLoading && !isRefreshing ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={COLORS.primaryBlue} />
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
@@ -263,7 +264,7 @@ export const ContributionsScreen: React.FC<ContributionsScreenProps> = ({ naviga
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={COLORS.primary}
+              tintColor={COLORS.primaryBlue}
             />
           }
         />
@@ -278,7 +279,7 @@ export const ContributionsScreen: React.FC<ContributionsScreenProps> = ({ naviga
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
           onPress={handleAddContribution}
         >
-          <PlusIcon size={32} color="#FFFFFF" />
+          <PlusIcon size={32} color={COLORS.surface} />
         </Pressable>
       </Animated.View>
     </View>
@@ -291,8 +292,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.l,
+    paddingVertical: SPACING.m,
   },
   headerTitle: {
     fontSize: TYPOGRAPHY.sizes.xxl,
@@ -301,73 +302,73 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     color: COLORS.textSecondary,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.md,
+    gap: SPACING.s,
+    paddingHorizontal: SPACING.l,
+    marginBottom: SPACING.m,
   },
   searchInputWrapper: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surfaceLight,
-    borderRadius: RADII.md,
-    paddingHorizontal: SPACING.md,
+    borderRadius: RADII.m,
+    paddingHorizontal: SPACING.m,
     height: 48,
-    gap: SPACING.sm,
-    ...SHADOWS.soft,
+    gap: SPACING.s,
+    ...SHADOWS.sm,
   },
   searchInput: {
     flex: 1,
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     color: COLORS.textPrimary,
     height: '100%',
   },
   sortButton: {
     width: 48,
     height: 48,
-    borderRadius: RADII.md,
+    borderRadius: RADII.m,
     backgroundColor: COLORS.surfaceLight,
     justifyContent: 'center',
     alignItems: 'center',
-    ...SHADOWS.soft,
+    ...SHADOWS.sm,
   },
   filtersContainer: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.m,
   },
   filtersContent: {
-    paddingHorizontal: SPACING.lg,
-    gap: SPACING.sm,
+    paddingHorizontal: SPACING.l,
+    gap: SPACING.s,
   },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADII.full,
+    paddingHorizontal: SPACING.m,
+    paddingVertical: SPACING.s,
+    borderRadius: RADII.round,
     backgroundColor: COLORS.surfaceLight,
     gap: SPACING.xs,
   },
   filterChipActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryBlue,
   },
   filterChipText: {
-    fontSize: TYPOGRAPHY.sizes.sm,
+    fontSize: TYPOGRAPHY.sizes.s,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
   filterChipTextActive: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   countBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: RADII.sm,
+    borderRadius: RADII.s,
     backgroundColor: COLORS.border,
   },
   countBadgeActive: {
@@ -379,10 +380,10 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   countBadgeTextActive: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   listContent: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.l,
   },
   centerContainer: {
     flex: 1,
@@ -391,34 +392,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
   },
   emptyText: {
-    fontSize: TYPOGRAPHY.sizes.lg,
+    fontSize: TYPOGRAPHY.sizes.l,
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   emptySubtext: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.m,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
   errorText: {
-    fontSize: TYPOGRAPHY.sizes.md,
-    color: '#EF4444',
+    fontSize: TYPOGRAPHY.sizes.m,
+    color: COLORS.errorCoral,
     textAlign: 'center',
   },
   fabContainer: {
     position: 'absolute',
-    right: SPACING.lg,
+    right: SPACING.l,
   },
   fab: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryBlue,
     justifyContent: 'center',
     alignItems: 'center',
-    ...SHADOWS.large,
+    ...SHADOWS.lg,
   },
   fabPressed: {
     transform: [{ scale: 0.95 }],

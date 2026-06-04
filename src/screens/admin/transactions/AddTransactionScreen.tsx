@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { ArrowLeft, User, Users, DollarSign, FileText } from 'lucide-react-native';
 import { theme } from '../../../theme';
-import { useTransactions } from '../../../hooks/useTransactions';
+import { useAllContributions } from '../../../hooks/useContributions';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 interface AddTransactionScreenProps {
@@ -27,7 +27,7 @@ interface AddTransactionScreenProps {
 
 export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { addTransaction } = useTransactions();
+  const { createNewContribution } = useAllContributions();
   
   const [amount, setAmount] = useState('');
   const [memberId, setMemberId] = useState('');
@@ -47,14 +47,14 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({ navi
 
     // Simulate API delay
     setTimeout(() => {
-      addTransaction({
+      createNewContribution({
         amount: parseFloat(amount),
-        userId: memberId, // In real app, this would be selected from a list
-        userName: 'Selected Member', // Dummy
+        memberId: memberId, // In real app, this would be selected from a list
+        memberName: 'Selected Member', // Dummy
         groupId: groupId,
         groupName: 'Selected Group', // Dummy
-        reference,
-        type: 'credit',
+        status: 'pending',
+        notes: reference,
       });
       setIsLoading(false);
       navigation.goBack();

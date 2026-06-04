@@ -136,7 +136,7 @@ const EmptyIcon = () => (
 
 // Category icons - thin stroke, geometric
 const CategoryIcon: React.FC<{ category: string }> = ({ category }) => {
-  const icons: Record<string, React.ReactNode> = {
+  const icons: Record<string, React.ReactElement> = {
     Food: (
       <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
         <Circle cx={12} cy={12} r={9} stroke={ICON_CLR} strokeWidth={SW} fill="none" />
