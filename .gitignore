@@ -88,3 +88,6 @@ graphify-out/
 out/
 firebase-debug.log
 *.log
+
+# Git worktrees
+.worktrees/
