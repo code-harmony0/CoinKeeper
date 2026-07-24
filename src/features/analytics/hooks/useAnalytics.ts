@@ -38,7 +38,7 @@ export const useAnalyticsOverview = (range: TimeRange = 'month') => {
       .doc('global')
       .onSnapshot(
         (snapshot) => {
-          if (snapshot.exists) {
+          if ((snapshot as any).exists) {
             setOverview({ id: snapshot.id, ...snapshot.data() } as AnalyticsOverview);
           } else {
             // Fallback: compute on-the-fly
@@ -448,7 +448,7 @@ export const useAnalyticsHealth = () => {
       .doc('status')
       .onSnapshot(
         (snapshot) => {
-          if (snapshot.exists) {
+          if ((snapshot as any).exists) {
             setHealth({ id: snapshot.id, ...snapshot.data() } as AnalyticsHealth);
           }
           setIsLoading(false);

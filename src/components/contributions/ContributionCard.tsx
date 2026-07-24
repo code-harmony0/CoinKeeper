@@ -8,8 +8,8 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Calendar, DollarSign, User } from 'lucide-react-native';
 import { Contribution } from '../../types/transaction';
-import { StatusChip } from '../group/StatusChip';
-import { COLORS, SPACING, TYPOGRAPHY, RADII, SHADOWS } from '../../theme/designTokens';
+import { StatusChip } from '../shared/StatusChip';
+import { colors, spacing, typography, radii, shadows } from '../../theme/designTokens';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 interface ContributionCardProps {
@@ -35,7 +35,7 @@ export const ContributionCard: React.FC<ContributionCardProps> = ({
       case 'overdue':
         return '#EF4444'; // Red
       default:
-        return COLORS.textTertiary;
+        return colors.textTertiary;
     }
   };
 
@@ -76,7 +76,7 @@ export const ContributionCard: React.FC<ContributionCardProps> = ({
           <View style={styles.header}>
             <View style={styles.memberInfo}>
               <View style={styles.iconCircle}>
-                <User size={16} color={COLORS.primary} />
+                <User size={16} color={colors.primary} />
               </View>
               <View style={styles.memberDetails}>
                 <Text style={styles.memberName}>{contribution.userName || 'Member'}</Text>
@@ -89,7 +89,7 @@ export const ContributionCard: React.FC<ContributionCardProps> = ({
           {/* Stats Row (following GroupCard pattern) */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <DollarSign size={16} color={COLORS.textSecondary} />
+              <DollarSign size={16} color={colors.textSecondary} />
               <Text style={styles.statValue}>{formattedAmount}</Text>
               <Text style={styles.statLabel}>Amount</Text>
             </View>
@@ -97,7 +97,7 @@ export const ContributionCard: React.FC<ContributionCardProps> = ({
             <View style={styles.statDivider} />
 
             <View style={styles.statItem}>
-              <Calendar size={16} color={COLORS.textSecondary} />
+              <Calendar size={16} color={colors.textSecondary} />
               <Text style={styles.statValue}>{formattedDate}</Text>
               <Text style={styles.statLabel}>Due Date</Text>
             </View>
@@ -121,36 +121,36 @@ export const ContributionCard: React.FC<ContributionCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surfaceLight,
-    borderRadius: RADII.lg,
-    marginBottom: SPACING.md,
+    backgroundColor: colors.card,
+    borderRadius: radii.l,
+    marginBottom: spacing.m,
     overflow: 'hidden',
-    ...SHADOWS.soft,
+    ...shadows.sm,
   },
   accentBar: {
     height: 4,
     width: '100%',
   },
   cardContent: {
-    padding: SPACING.lg,
+    padding: spacing.l,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: SPACING.md,
+    marginBottom: spacing.m,
   },
   memberInfo: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: spacing.s,
   },
   iconCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: `${COLORS.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -158,21 +158,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   memberName: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: typography.sizes.m,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   groupName: {
-    fontSize: TYPOGRAPHY.sizes.sm,
-    color: COLORS.textSecondary,
+    fontSize: typography.sizes.s,
+    color: colors.textSecondary,
   },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: SPACING.md,
+    paddingVertical: spacing.m,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: colors.pillBorder,
   },
   statItem: {
     flex: 1,
@@ -180,34 +180,34 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statValue: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: typography.sizes.m,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
   },
   statLabel: {
-    fontSize: TYPOGRAPHY.sizes.xs,
-    color: COLORS.textSecondary,
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.pillBorder,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    marginTop: SPACING.sm,
+    marginTop: spacing.s,
   },
   badge: {
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: spacing.s,
     paddingVertical: 4,
-    borderRadius: RADII.sm,
+    borderRadius: radii.s,
   },
   badgeText: {
-    fontSize: TYPOGRAPHY.sizes.xs,
+    fontSize: typography.sizes.xs,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,

@@ -65,7 +65,7 @@ export const useExportStatus = (exportId: string | null) => {
       .doc(exportId)
       .onSnapshot(
         (snapshot) => {
-          if (snapshot.exists) {
+          if ((snapshot as any).exists) {
             setExportRequest({ id: snapshot.id, ...snapshot.data() } as ExportRequest);
           } else {
             setError('Export not found');

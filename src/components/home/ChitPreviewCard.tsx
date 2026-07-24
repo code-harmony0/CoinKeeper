@@ -64,7 +64,7 @@ export const ChitPreviewCard: React.FC<ChitPreviewCardProps> = ({
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      android_ripple={{ color: `${colors.surfaceLight}20` }}
+      android_ripple={{ color: `${colors.cardSecondary}20` }}
       style={animatedStyle}
     >
       <View style={styles.shadowContainer}>
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.m,
   },
   groupName: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Satoshi-Medium',
     fontSize: 14,
     lineHeight: 20,
     color: colors.textPrimary,

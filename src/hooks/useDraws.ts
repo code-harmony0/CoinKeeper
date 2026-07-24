@@ -70,7 +70,7 @@ export const useDrawSummary = (groupId?: string) => {
       .doc(summaryId)
       .onSnapshot(
         (snapshot) => {
-          if (snapshot.exists) {
+          if ((snapshot as any).exists) {
             setSummary({ id: snapshot.id, ...snapshot.data() } as DrawSummary);
           } else {
             // If no cached summary, compute from draws
@@ -316,7 +316,7 @@ export const useDrawDetails = (drawId: string) => {
       .doc(drawId)
       .onSnapshot(
         (snapshot) => {
-          if (snapshot.exists) {
+          if ((snapshot as any).exists) {
             setDraw({ id: snapshot.id, ...snapshot.data() } as Draw);
           } else {
             setDraw(null);

@@ -14,7 +14,7 @@ export const BalanceCard = () => (
 
 const styles = StyleSheet.create({
   shadowContainer: {
-    ...shadows.balanceCard,
+    ...shadows.card,
     marginHorizontal: spacing.l,
     marginTop: spacing.m,
   },
@@ -24,10 +24,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    ...typography.label,
+    ...typography.balanceLabel as any,
     marginBottom: spacing.s,
   },
   balance: {
-    ...typography.titleLarge,
+    ...typography.balanceAmount as any,
   },
 });

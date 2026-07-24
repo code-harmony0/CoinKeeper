@@ -237,8 +237,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: 24, fontFamily: 'PlusJakartaSans-Bold', color: '#121723' },
-  headerSubtitle: { fontSize: 13, fontFamily: 'PlusJakartaSans-Regular', color: '#666' },
+  headerTitle: { fontSize: 24, fontFamily: 'Satoshi-Black', color: '#121723' },
+  headerSubtitle: { fontSize: 13, fontFamily: 'Satoshi-Regular', color: '#666' },
   rangeRow: {
     flexDirection: 'row', paddingHorizontal: 20, gap: 8, marginBottom: 16,
   },
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#CCC',
   },
   activeRangeChip: { backgroundColor: '#121723', borderColor: '#121723' },
-  rangeChipText: { fontSize: 12, fontFamily: 'PlusJakartaSans-Medium', color: '#666' },
+  rangeChipText: { fontSize: 12, fontFamily: 'Satoshi-Medium', color: '#666' },
   activeRangeChipText: { color: '#FFFFFF' },
   kpiGrid: {
     flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, gap: 12, marginBottom: 20,
@@ -260,15 +260,15 @@ const styles = StyleSheet.create({
   kpiIcon: {
     width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10,
   },
-  kpiValue: { fontSize: 22, fontFamily: 'PlusJakartaSans-Bold', color: '#121723', marginBottom: 4 },
-  kpiLabel: { fontSize: 12, fontFamily: 'PlusJakartaSans-Regular', color: '#666' },
+  kpiValue: { fontSize: 22, fontFamily: 'Satoshi-Black', color: '#121723', marginBottom: 4 },
+  kpiLabel: { fontSize: 12, fontFamily: 'Satoshi-Regular', color: '#666' },
   chartCard: {
     backgroundColor: '#FFFFFF', marginHorizontal: 20, borderRadius: 20, padding: 20, marginBottom: 20,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
   },
-  chartTitle: { fontSize: 16, fontFamily: 'PlusJakartaSans-Bold', color: '#121723', marginBottom: 8 },
+  chartTitle: { fontSize: 16, fontFamily: 'Satoshi-Black', color: '#121723', marginBottom: 8 },
   section: { paddingHorizontal: 20, marginBottom: 20 },
-  sectionTitle: { fontSize: 16, fontFamily: 'PlusJakartaSans-Bold', color: '#121723', marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontFamily: 'Satoshi-Black', color: '#121723', marginBottom: 12 },
   contributorRow: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
     padding: 14, borderRadius: 14, marginBottom: 8,
@@ -279,17 +279,17 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 10, backgroundColor: '#F0F0F0',
     alignItems: 'center', justifyContent: 'center', marginRight: 12,
   },
-  rankText: { fontSize: 13, fontFamily: 'PlusJakartaSans-Bold', color: '#121723' },
+  rankText: { fontSize: 13, fontFamily: 'Satoshi-Black', color: '#121723' },
   contributorInfo: { flex: 1 },
-  contributorName: { fontSize: 14, fontFamily: 'PlusJakartaSans-SemiBold', color: '#121723' },
-  contributorMeta: { fontSize: 12, fontFamily: 'PlusJakartaSans-Regular', color: '#999', marginTop: 2 },
-  contributorAmount: { fontSize: 15, fontFamily: 'PlusJakartaSans-Bold', color: '#121723' },
-  loadingText: { fontSize: 15, fontFamily: 'PlusJakartaSans-Medium', color: '#666', marginTop: 12 },
+  contributorName: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: '#121723' },
+  contributorMeta: { fontSize: 12, fontFamily: 'Satoshi-Regular', color: '#999', marginTop: 2 },
+  contributorAmount: { fontSize: 15, fontFamily: 'Satoshi-Black', color: '#121723' },
+  loadingText: { fontSize: 15, fontFamily: 'Satoshi-Medium', color: '#666', marginTop: 12 },
   errorBanner: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFEBEE',
     marginHorizontal: 20, borderRadius: 12, padding: 12, gap: 8, marginBottom: 16,
   },
-  errorText: { fontSize: 13, fontFamily: 'PlusJakartaSans-Medium', color: COLORS.errorCoral, flex: 1 },
+  errorText: { fontSize: 13, fontFamily: 'Satoshi-Medium', color: COLORS.errorCoral, flex: 1 },
 });
 
 export default GroupAnalyticsScreen;

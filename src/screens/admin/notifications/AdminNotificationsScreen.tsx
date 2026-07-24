@@ -325,13 +325,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
   },
   markAllButton: {
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   markAllText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: COLORS.primaryBlue,
   },
   filterRow: {
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: '#666',
   },
   activeFilterChipText: {
@@ -420,28 +420,28 @@ const styles = StyleSheet.create({
   },
   notificationTitle: {
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: '#121723',
     flex: 1,
     marginRight: 8,
   },
   unreadTitle: {
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
   },
   timeText: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#999',
   },
   notificationMessage: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
     lineHeight: 18,
   },
   groupTag: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.primaryBlue,
     marginTop: 6,
   },
@@ -459,20 +459,20 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#999',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#BBB',
     textAlign: 'center',
   },
   loadingText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: '#666',
     marginTop: 12,
   },

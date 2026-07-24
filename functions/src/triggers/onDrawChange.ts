@@ -36,27 +36,30 @@ export const onDrawComplete = functions.firestore
 
         // Queue winner notification
         if (after.winnerId) {
-          await db.collection('notificationQueue').add({
+          await db.collection('notificationLogs').add({
             type: 'draw_winner',
+            channel: 'push',
             recipientId: after.winnerId,
-            drawId,
+            message: `Congratulations! You won Draw #${after.drawNumber} in ${after.groupName} with a prize of ₹${after.totalPrizeAmount}`,
+            status: 'queued',
             groupId: after.groupId,
-            groupName: after.groupName,
-            drawNumber: after.drawNumber,
-            prizeAmount: after.totalPrizeAmount,
-            status: 'pending',
+            drawId,
+            retryCount: 0,
+            maxRetries: 3,
             createdAt: FieldValue.serverTimestamp(),
           });
 
           // Queue group broadcast
-          await db.collection('notificationQueue').add({
+          await db.collection('notificationLogs').add({
             type: 'draw_completed',
+            channel: 'push',
+            recipientId: after.groupId,
+            message: `Draw #${after.drawNumber} has been completed. Winner: ${after.winnerName}`,
+            status: 'queued',
             groupId: after.groupId,
             drawId,
-            winnerName: after.winnerName,
-            drawNumber: after.drawNumber,
-            prizeAmount: after.totalPrizeAmount,
-            status: 'pending',
+            retryCount: 0,
+            maxRetries: 3,
             createdAt: FieldValue.serverTimestamp(),
           });
         }
@@ -77,14 +80,16 @@ export const onDrawComplete = functions.firestore
         await updateDrawSummary();
 
         // Queue admin alert
-        await db.collection('notificationQueue').add({
+        await db.collection('notificationLogs').add({
           type: 'draw_cancelled',
+          channel: 'push',
+          recipientId: after.groupId,
+          message: `Draw #${after.drawNumber} was cancelled. Reason: ${after.cancellationReason || 'Not specified'}`,
+          status: 'queued',
           groupId: after.groupId,
           drawId,
-          drawNumber: after.drawNumber,
-          reason: after.cancellationReason,
-          cancelledBy: after.cancelledBy,
-          status: 'pending',
+          retryCount: 0,
+          maxRetries: 3,
           createdAt: FieldValue.serverTimestamp(),
         });
 
@@ -134,14 +139,16 @@ export const onSettlementChange = functions.firestore
         });
 
         // Notify winner
-        await db.collection('notificationQueue').add({
+        await db.collection('notificationLogs').add({
           type: 'settlement_completed',
+          channel: 'push',
           recipientId: after.winnerId,
-          settlementId,
+          message: `Your prize of ₹${after.netAmount} has been settled via ${after.method}`,
+          status: 'queued',
+          groupId: after.groupId,
           drawId: after.drawId,
-          amount: after.netAmount,
-          method: after.method,
-          status: 'pending',
+          retryCount: 0,
+          maxRetries: 3,
           createdAt: FieldValue.serverTimestamp(),
         });
 
@@ -165,16 +172,16 @@ export const onSettlementChange = functions.firestore
         });
 
         // Alert admin
-        await db.collection('notificationQueue').add({
+        await db.collection('notificationLogs').add({
           type: 'settlement_failed',
-          priority: 'high',
-          settlementId,
+          channel: 'push',
+          recipientId: after.groupId,
+          message: `Settlement of ₹${after.netAmount} failed: ${after.failureReason || 'Not specified'}`,
+          status: 'queued',
+          groupId: after.groupId,
           drawId: after.drawId,
-          winnerId: after.winnerId,
-          amount: after.netAmount,
-          reason: after.failureReason,
-          retryCount: after.retryCount,
-          status: 'pending',
+          retryCount: 0,
+          maxRetries: 3,
           createdAt: FieldValue.serverTimestamp(),
         });
 

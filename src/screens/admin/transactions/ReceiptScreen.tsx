@@ -370,8 +370,8 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 14, backgroundColor: '#FFFFFF',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: 24, fontFamily: 'PlusJakartaSans-Bold', color: '#121723' },
-  headerSubtitle: { fontSize: 13, fontFamily: 'PlusJakartaSans-Regular', color: '#666' },
+  headerTitle: { fontSize: 24, fontFamily: 'Satoshi-Black', color: '#121723' },
+  headerSubtitle: { fontSize: 13, fontFamily: 'Satoshi-Regular', color: '#666' },
   searchContainer: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
     marginHorizontal: 20, borderRadius: 14, paddingHorizontal: 14, height: 44,
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
   searchInput: {
-    flex: 1, fontSize: 14, fontFamily: 'PlusJakartaSans-Regular', color: '#121723', padding: 0,
+    flex: 1, fontSize: 14, fontFamily: 'Satoshi-Regular', color: '#121723', padding: 0,
   },
   statsRow: {
     flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginBottom: 16,
@@ -388,8 +388,8 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, alignItems: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
-  statValue: { fontSize: 18, fontFamily: 'PlusJakartaSans-Bold', color: '#121723' },
-  statLabel: { fontSize: 11, fontFamily: 'PlusJakartaSans-Medium', color: '#999', marginTop: 4 },
+  statValue: { fontSize: 18, fontFamily: 'Satoshi-Black', color: '#121723' },
+  statLabel: { fontSize: 11, fontFamily: 'Satoshi-Medium', color: '#999', marginTop: 4 },
   contributionCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 10,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
@@ -399,19 +399,19 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
   },
   cardInfo: { flex: 1 },
-  memberName: { fontSize: 14, fontFamily: 'PlusJakartaSans-SemiBold', color: '#121723' },
-  groupName: { fontSize: 12, fontFamily: 'PlusJakartaSans-Regular', color: '#999', marginTop: 2 },
+  memberName: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: '#121723' },
+  groupName: { fontSize: 12, fontFamily: 'Satoshi-Regular', color: '#999', marginTop: 2 },
   amountContainer: { alignItems: 'flex-end' },
-  amount: { fontSize: 16, fontFamily: 'PlusJakartaSans-Bold', color: '#2E7D32' },
-  date: { fontSize: 11, fontFamily: 'PlusJakartaSans-Regular', color: '#999', marginTop: 2 },
+  amount: { fontSize: 16, fontFamily: 'Satoshi-Black', color: '#2E7D32' },
+  date: { fontSize: 11, fontFamily: 'Satoshi-Regular', color: '#999', marginTop: 2 },
   detailsRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingLeft: 48,
   },
   detailChip: {
     backgroundColor: '#F0F0F0', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
   },
-  detailChipText: { fontSize: 10, fontFamily: 'PlusJakartaSans-Medium', color: '#666' },
-  txnId: { fontSize: 10, fontFamily: 'PlusJakartaSans-Regular', color: '#999', flex: 1 },
+  detailChipText: { fontSize: 10, fontFamily: 'Satoshi-Medium', color: '#666' },
+  txnId: { fontSize: 10, fontFamily: 'Satoshi-Regular', color: '#999', flex: 1 },
   actionRow: {
     flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12,
     borderTopWidth: 1, borderTopColor: '#F0F0F0',
@@ -420,12 +420,12 @@ const styles = StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#121723', borderRadius: 12, height: 40, gap: 8,
   },
-  generateButtonText: { fontSize: 13, fontFamily: 'PlusJakartaSans-SemiBold', color: '#FFFFFF' },
+  generateButtonText: { fontSize: 13, fontFamily: 'Satoshi-Bold', color: '#FFFFFF' },
   shareOptionsButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#EBF5FF', borderRadius: 12, height: 40, paddingHorizontal: 16, gap: 6,
   },
-  shareOptionsText: { fontSize: 13, fontFamily: 'PlusJakartaSans-SemiBold', color: COLORS.primaryBlue },
+  shareOptionsText: { fontSize: 13, fontFamily: 'Satoshi-Bold', color: COLORS.primaryBlue },
   shareRow: {
     flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12,
     borderTopWidth: 1, borderTopColor: '#F0F0F0',
@@ -435,15 +435,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primaryBlue, borderRadius: 12, height: 40, gap: 6,
   },
   whatsappButton: { backgroundColor: '#25D366' },
-  shareButtonText: { fontSize: 13, fontFamily: 'PlusJakartaSans-SemiBold', color: '#FFFFFF' },
+  shareButtonText: { fontSize: 13, fontFamily: 'Satoshi-Bold', color: '#FFFFFF' },
   cancelShareButton: {
     width: 40, height: 40, borderRadius: 12, backgroundColor: '#F0F0F0',
     alignItems: 'center', justifyContent: 'center',
   },
   emptyState: { alignItems: 'center', paddingTop: 60 },
-  emptyTitle: { fontSize: 18, fontFamily: 'PlusJakartaSans-Bold', color: '#121723', marginTop: 16 },
-  emptySubtitle: { fontSize: 14, fontFamily: 'PlusJakartaSans-Regular', color: '#999', marginTop: 4, textAlign: 'center', paddingHorizontal: 40 },
-  loadingText: { fontSize: 15, fontFamily: 'PlusJakartaSans-Medium', color: '#666', marginTop: 12 },
+  emptyTitle: { fontSize: 18, fontFamily: 'Satoshi-Black', color: '#121723', marginTop: 16 },
+  emptySubtitle: { fontSize: 14, fontFamily: 'Satoshi-Regular', color: '#999', marginTop: 4, textAlign: 'center', paddingHorizontal: 40 },
+  loadingText: { fontSize: 15, fontFamily: 'Satoshi-Medium', color: '#666', marginTop: 12 },
 });
 
 export default ReceiptScreen;

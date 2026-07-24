@@ -278,13 +278,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textSecondary,
   },
   searchContainer: {
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textPrimary,
   },
   filterContainer: {
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   },
   statusChipText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.textSecondary,
   },
   activeStatusChipText: {
@@ -364,11 +364,11 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
   },
   dateText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textTertiary,
   },
   cardBody: {
@@ -376,19 +376,19 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
   groupName: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textSecondary,
     marginBottom: 8,
   },
   amount: {
     fontSize: 22,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textPrimary,
   },
   cardFooter: {
@@ -404,12 +404,12 @@ const styles = StyleSheet.create({
   },
   methodText: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: COLORS.textSecondary,
   },
   transactionId: {
     fontSize: 10,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textTertiary,
   },
   notes: {
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.borderLight,
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textSecondary,
     fontStyle: 'italic',
   },
@@ -430,14 +430,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textTertiary,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textTertiary,
     textAlign: 'center',
   },

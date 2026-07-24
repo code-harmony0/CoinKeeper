@@ -131,7 +131,7 @@ const BidCard: React.FC<{
   );
 };
 
-export const DrawDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
+export const DrawDetailsScreen: React.FC<any> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const drawId = route.params.drawId;
   const { draw, isLoading, error } = useDrawDetails(drawId);
@@ -610,7 +610,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
   },
   lockBadge: {
@@ -624,12 +624,12 @@ const styles = StyleSheet.create({
   },
   lockText: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#FFFFFF',
   },
   groupName: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
     marginTop: 4,
   },
@@ -658,14 +658,14 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
     marginTop: 8,
     marginBottom: 4,
   },
   infoValue: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
   },
   statusRow: {
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
   },
   statusBadge: {
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
   },
   statusBadgeText: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#FFFFFF',
   },
   winnerCard: {
@@ -710,19 +710,19 @@ const styles = StyleSheet.create({
   },
   winnerLabel: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
     marginBottom: 4,
   },
   winnerName: {
     fontSize: 20,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
     marginBottom: 4,
   },
   winnerAmount: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: COLORS.warningAmber,
   },
   bidsSection: {
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
     marginBottom: 16,
   },
@@ -743,7 +743,7 @@ const styles = StyleSheet.create({
   },
   noBidsText: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#999',
   },
   bidCard: {
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
   },
   bidderName: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: '#121723',
     marginBottom: 4,
   },
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
   },
   highestBadgeText: {
     fontSize: 10,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#FFFFFF',
   },
   wonBadge: {
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
   },
   wonBadgeText: {
     fontSize: 10,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#FFFFFF',
   },
   bidAmountContainer: {
@@ -824,7 +824,7 @@ const styles = StyleSheet.create({
   },
   bidAmount: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
   },
   selectWinnerBtn: {
@@ -838,7 +838,7 @@ const styles = StyleSheet.create({
   },
   selectWinnerText: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#FFFFFF',
   },
   bidFooter: {
@@ -853,12 +853,12 @@ const styles = StyleSheet.create({
   },
   bidTime: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
   },
   bidStatus: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
   },
   auditSection: {
     paddingHorizontal: 20,
@@ -872,7 +872,7 @@ const styles = StyleSheet.create({
   },
   auditEmpty: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#999',
     paddingVertical: 12,
   },
@@ -898,14 +898,14 @@ const styles = StyleSheet.create({
   },
   auditAction: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: '#121723',
     textTransform: 'capitalize',
     marginBottom: 2,
   },
   auditTime: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#999',
   },
   actionContainer: {
@@ -933,7 +933,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#FFFFFF',
   },
   lockedNotice: {
@@ -949,7 +949,7 @@ const styles = StyleSheet.create({
   },
   lockedNoticeText: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textTertiary,
   },
   loadingOverlay: {
@@ -965,13 +965,13 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: '#666',
     marginTop: 12,
   },
   errorText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.errorCoral,
     marginTop: 12,
     textAlign: 'center',
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: '#FFFFFF',
   },
 });

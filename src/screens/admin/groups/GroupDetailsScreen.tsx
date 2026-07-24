@@ -150,7 +150,7 @@ export const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise<void>(resolve => setTimeout(resolve, 500));
     setRefreshing(false);
   };
 

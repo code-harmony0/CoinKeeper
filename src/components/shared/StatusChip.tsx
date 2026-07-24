@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   text: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     textTransform: 'capitalize',
   },
   textSmall: {

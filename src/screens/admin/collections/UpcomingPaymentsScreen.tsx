@@ -333,13 +333,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textSecondary,
   },
   rateBar: {
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   },
   rateLabel: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.textSecondary,
   },
   rateTrack: {
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   },
   rateValue: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.successGreen,
     minWidth: 36,
     textAlign: 'right',
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textPrimary,
   },
   filterContainer: {
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
   },
   statusChipText: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.textSecondary,
   },
   activeStatusChipText: {
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   },
   dueDate: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.textSecondary,
     marginLeft: 8,
   },
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   },
   remindedText: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.warningAmber,
   },
   cardBody: {
@@ -485,19 +485,19 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
   groupName: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textSecondary,
     marginBottom: 8,
   },
   amount: {
     fontSize: 22,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textPrimary,
   },
   cardFooter: {
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
   },
   remindButtonText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: COLORS.primaryBlue,
   },
   statusBadge: {
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: COLORS.surface,
   },
   emptyState: {
@@ -540,14 +540,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textTertiary,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textTertiary,
     textAlign: 'center',
   },
@@ -557,13 +557,13 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.textSecondary,
     marginTop: 12,
   },
   errorText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.errorCoral,
     marginTop: 12,
     textAlign: 'center',
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: COLORS.surface,
   },
 });

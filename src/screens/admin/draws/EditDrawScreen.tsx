@@ -337,13 +337,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
   },
   inputCard: {
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: '#121723',
     marginBottom: 12,
   },
@@ -375,12 +375,12 @@ const styles = StyleSheet.create({
   },
   readOnlyText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: '#666',
   },
   readOnlyLabel: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#999',
     fontStyle: 'italic',
   },
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   },
   pickerText: {
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#121723',
   },
   statusDot: {
@@ -420,19 +420,19 @@ const styles = StyleSheet.create({
   },
   currencySymbol: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: '#121723',
   },
   input: {
     flex: 1,
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#121723',
     paddingVertical: 10,
   },
   helperText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#999',
     marginTop: 8,
   },
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
   },
   saveButton: {
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#FFFFFF',
   },
   modalOverlay: {
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
   },
   modalList: {
@@ -521,12 +521,12 @@ const styles = StyleSheet.create({
   },
   modalItemText: {
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#121723',
   },
   modalItemTextSelected: {
     color: '#FFFFFF',
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
   },
 });
 

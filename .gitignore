@@ -83,6 +83,7 @@ gemini-analysis.txt
 *.ai-output
 .agents/
 .gemini/
+.antigravitycli/
 graphify-out/
 out/
 firebase-debug.log

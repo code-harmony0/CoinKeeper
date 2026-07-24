@@ -38,7 +38,7 @@ interface ConfirmationDetailScreenProps {
   route: { params: { confirmationId: string } };
 }
 
-export const ConfirmationDetailScreen: React.FC<ConfirmationDetailScreenProps> = ({ navigation, route }) => {
+export const ConfirmationDetailScreen: React.FC<any> = ({ navigation, route }) => {
   const { confirmationId } = route.params;
   const insets = useSafeAreaInsets();
   const [confirmation, setConfirmation] = useState<PaymentConfirmation | null>(null);

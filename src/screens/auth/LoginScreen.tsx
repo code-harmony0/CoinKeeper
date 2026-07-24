@@ -1,5 +1,5 @@
 /**
- * LoginScreen - Blob Theme
+ * LoginScreen - Spec Theme
  * Phone login + Admin bypass
  */
 import React, { useState, useRef } from 'react';
@@ -22,10 +22,9 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { THEME_SHADOWS, THEME_ANIMATION } from '../../theme/blobTheme';
+import { useSpecTheme } from '../../theme/specTheme';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import Svg, { Path, Circle } from 'react-native-svg';
 
@@ -33,6 +32,7 @@ type Props = NativeStackScreenProps<any, 'Login'>;
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { colors, cardShadow, inputRadius, chipRadius, spring } = useSpecTheme();
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -45,7 +45,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const buttonAnim = useAnimatedStyle(() => {
     'worklet';
     return {
-      transform: [{ scale: withSpring(buttonScale.value, THEME_ANIMATION.spring) }],
+      transform: [{ scale: withSpring(buttonScale.value, spring) }],
     };
   });
 
@@ -88,24 +88,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={['#C2DFF7', '#D8E2FA', '#CFD9F1']}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Decorative blob */}
-      <View style={styles.blobDecor}>
-        <Svg width={300} height={300} viewBox="0 0 200 200">
-          <Path
-            d="M40,-62C51.5,-54.5,60.5,-42.5,67.5,-29C74.5,-15.5,79.5,0,77,14C74.5,28,64.5,40.5,52.5,50C40.5,59.5,26.5,66,11,69.5C-4.5,73,-21.5,73.5,-36,68C-50.5,62.5,-62.5,51,-70,37C-77.5,23,-80.5,6.5,-78,-9C-75.5,-24.5,-67.5,-39,-55.5,-47.5C-43.5,-56,-27.5,-58.5,-13,-59.5C1.5,-60.5,28.5,-60,40,-62Z"
-            fill="#B8D4EA"
-            opacity={0.4}
-            transform="translate(100 100)"
-          />
-        </Svg>
-      </View>
-
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -113,33 +96,40 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         <View style={[styles.inner, { paddingTop: insets.top + 60 }]}>
           {/* Logo */}
           <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.logoContainer}>
-            <View style={styles.logo}>
-              <LogoIcon />
+            <View style={[styles.logo, { backgroundColor: colors.card }, cardShadow]}>
+              <LogoIcon accentColor={colors.primaryAccent} />
             </View>
-            <Text style={styles.brandName}>CoinKeeper</Text>
+            <Text style={[styles.brandName, { color: colors.textPrimary }]}>CoinKeeper</Text>
           </Animated.View>
 
           {/* Welcome text */}
           <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.welcomeContainer}>
-            <Text style={styles.welcomeTitle}>Welcome back</Text>
-            <Text style={styles.welcomeSubtitle}>Track your money with ease</Text>
+            <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>Welcome back</Text>
+            <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>Track your money with ease</Text>
           </Animated.View>
 
           {/* Phone input */}
           <Animated.View entering={FadeInUp.delay(300).springify()} style={[styles.inputContainer, inputAnim]}>
-            <Text style={styles.inputLabel}>Phone Number</Text>
-            <View style={[styles.inputWrapper, error ? styles.inputError : phone ? styles.inputFocused : null]}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Phone Number</Text>
+            <View
+              style={[
+                styles.inputWrapper,
+                { backgroundColor: colors.card, borderRadius: inputRadius },
+                cardShadow,
+                error ? { borderWidth: 1.5, borderColor: colors.danger } : phone ? { borderWidth: 1.5, borderColor: colors.primaryAccent } : null,
+              ]}
+            >
               <View style={styles.prefixContainer}>
                 <Text style={styles.flagEmoji}>🇮🇳</Text>
-                <Text style={styles.prefixText}>+91</Text>
-                <View style={styles.divider} />
+                <Text style={[styles.prefixText, { color: colors.textPrimary }]}>+91</Text>
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
               </View>
-              <PhoneIcon />
+              <PhoneIcon color={colors.textSecondary} />
               <TextInput
                 ref={inputRef}
-                style={styles.input}
+                style={[styles.input, { color: colors.textPrimary }]}
                 placeholder="Enter phone number"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.textSecondary}
                 keyboardType="phone-pad"
                 maxLength={10}
                 value={phone}
@@ -148,9 +138,9 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                   if (error) setError('');
                 }}
               />
-              {isValidPhone && <CheckIcon />}
+              {isValidPhone && <CheckIcon color={colors.success} />}
             </View>
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            {error ? <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text> : null}
           </Animated.View>
 
           {/* Continue button */}
@@ -161,11 +151,18 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
               onPressOut={() => { buttonScale.value = 1; }}
               disabled={isLoading}
             >
-              <Animated.View style={[styles.continueButton, buttonAnim, isLoading && styles.buttonDisabled]}>
+              <Animated.View
+                style={[
+                  styles.continueButton,
+                  { backgroundColor: colors.primaryAccent, borderRadius: chipRadius },
+                  buttonAnim,
+                  isLoading && styles.buttonDisabled,
+                ]}
+              >
                 {isLoading ? (
-                  <ActivityIndicator color="#FFF" />
+                  <ActivityIndicator color={colors.background} />
                 ) : (
-                  <Text style={styles.continueText}>Continue</Text>
+                  <Text style={[styles.continueText, { color: colors.background }]}>Continue</Text>
                 )}
               </Animated.View>
             </Pressable>
@@ -173,29 +170,29 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* Divider */}
           <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or continue with</Text>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textSecondary }]}>or continue with</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </Animated.View>
 
           {/* Social buttons */}
           <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.socialRow}>
-            <Pressable style={styles.socialButton}>
+            <Pressable style={[styles.socialButton, { backgroundColor: colors.card }, cardShadow]}>
               <GoogleIcon />
-              <Text style={styles.socialText}>Google</Text>
+              <Text style={[styles.socialText, { color: colors.textPrimary }]}>Google</Text>
             </Pressable>
-            <Pressable style={styles.socialButton}>
-              <AppleIcon />
-              <Text style={styles.socialText}>Apple</Text>
+            <Pressable style={[styles.socialButton, { backgroundColor: colors.card }, cardShadow]}>
+              <AppleIcon color={colors.textPrimary} />
+              <Text style={[styles.socialText, { color: colors.textPrimary }]}>Apple</Text>
             </Pressable>
           </Animated.View>
 
           {/* Terms */}
           <Animated.View entering={FadeInUp.delay(700).springify()}>
-            <Text style={styles.termsText}>
+            <Text style={[styles.termsText, { color: colors.textSecondary }]}>
               By continuing, you agree to our{' '}
-              <Text style={styles.termsLink}>Terms</Text> &{' '}
-              <Text style={styles.termsLink}>Privacy Policy</Text>
+              <Text style={[styles.termsLink, { color: colors.lavenderDeep }]}>Terms</Text> &{' '}
+              <Text style={[styles.termsLink, { color: colors.lavenderDeep }]}>Privacy Policy</Text>
             </Text>
           </Animated.View>
         </View>
@@ -203,7 +200,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         {/* Admin login - bottom */}
         <Animated.View entering={FadeInUp.delay(800).springify()} style={[styles.adminContainer, { paddingBottom: insets.bottom + 20 }]}>
           <Pressable onPress={handleAdminLogin}>
-            <Text style={styles.adminText}>Admin Login (Temporary)</Text>
+            <Text style={[styles.adminText, { color: colors.textSecondary }]}>Admin Login (Temporary)</Text>
           </Pressable>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -214,25 +211,21 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 // ============================================
 // SVG ICONS - Thick stroke (2px)
 // ============================================
-const ICON_CLR = '#475569';
 const SW = 2;
 
-const LogoIcon = () => (
+const LogoIcon = ({ accentColor }: { accentColor: string }) => (
   <Svg width={48} height={48} viewBox="0 0 48 48" fill="none">
-    <Circle cx={24} cy={24} r={20} fill="#5B8DEF" opacity={0.15} />
-    <Circle cx={24} cy={24} r={14} stroke="#5B8DEF" strokeWidth={2.5} fill="none" />
-    <Text 
-      style={{ position: 'absolute', fontSize: 20, fontWeight: '700', color: '#5B8DEF' }}
-    >₹</Text>
-    <Path d="M18 24h12M20 20h8M20 28h8" stroke="#5B8DEF" strokeWidth={2} strokeLinecap="round" />
+    <Circle cx={24} cy={24} r={20} fill={accentColor} opacity={0.12} />
+    <Circle cx={24} cy={24} r={14} stroke={accentColor} strokeWidth={2.5} fill="none" />
+    <Path d="M18 24h12M20 20h8M20 28h8" stroke={accentColor} strokeWidth={2} strokeLinecap="round" />
   </Svg>
 );
 
-const PhoneIcon = () => (
+const PhoneIcon = ({ color }: { color: string }) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
     <Path
       d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"
-      stroke={ICON_CLR}
+      stroke={color}
       strokeWidth={SW}
       strokeLinecap="round"
       fill="none"
@@ -240,9 +233,9 @@ const PhoneIcon = () => (
   </Svg>
 );
 
-const CheckIcon = () => (
+const CheckIcon = ({ color }: { color: string }) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M20 6L9 17l-5-5" stroke="#059669" strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M20 6L9 17l-5-5" stroke={color} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
@@ -255,11 +248,11 @@ const GoogleIcon = () => (
   </Svg>
 );
 
-const AppleIcon = () => (
+const AppleIcon = ({ color }: { color: string }) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
     <Path
       d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"
-      fill="#1E293B"
+      fill={color}
     />
   </Svg>
 );
@@ -270,12 +263,6 @@ const AppleIcon = () => (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  blobDecor: {
-    position: 'absolute',
-    top: -50,
-    right: -80,
-    opacity: 0.6,
   },
   content: {
     flex: 1,
@@ -294,16 +281,13 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 24,
-    backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    ...THEME_SHADOWS.elevated,
   },
   brandName: {
+    fontFamily: 'Satoshi-Black',
     fontSize: 28,
-    fontWeight: '700',
-    color: '#1E293B',
     letterSpacing: -0.5,
   },
 
@@ -313,15 +297,13 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   welcomeTitle: {
+    fontFamily: 'Satoshi-Black',
     fontSize: 28,
-    fontWeight: '700',
-    color: '#1E293B',
     marginBottom: 8,
   },
   welcomeSubtitle: {
+    fontFamily: 'Satoshi-Regular',
     fontSize: 15,
-    fontWeight: '400',
-    color: '#64748B',
   },
 
   // Input
@@ -329,29 +311,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   inputLabel: {
+    fontFamily: 'Satoshi-Medium',
     fontSize: 14,
-    fontWeight: '500',
-    color: '#64748B',
     marginBottom: 8,
     marginLeft: 4,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
     height: 56,
-    borderRadius: 16,
     paddingHorizontal: 16,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
     gap: 12,
-    ...THEME_SHADOWS.card,
-  },
-  inputFocused: {
-    borderColor: '#3B82F6',
-  },
-  inputError: {
-    borderColor: '#DC2626',
   },
   prefixContainer: {
     flexDirection: 'row',
@@ -362,26 +332,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   prefixText: {
+    fontFamily: 'Satoshi-Bold',
     fontSize: 15,
-    fontWeight: '600',
-    color: '#1E293B',
   },
   divider: {
     width: 1,
     height: 24,
-    backgroundColor: '#E2E8F0',
     marginLeft: 8,
   },
   input: {
     flex: 1,
+    fontFamily: 'Satoshi-Medium',
     fontSize: 16,
-    fontWeight: '500',
-    color: '#1E293B',
   },
   errorText: {
+    fontFamily: 'Satoshi-Medium',
     fontSize: 13,
-    fontWeight: '500',
-    color: '#DC2626',
     marginTop: 8,
     marginLeft: 4,
   },
@@ -389,19 +355,15 @@ const styles = StyleSheet.create({
   // Button
   continueButton: {
     height: 56,
-    backgroundColor: '#121723',
-    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    ...THEME_SHADOWS.elevated,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   continueText: {
+    fontFamily: 'Satoshi-Bold',
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
   },
 
   // Divider
@@ -414,12 +376,10 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E2E8F0',
   },
   dividerText: {
+    fontFamily: 'Satoshi-Medium',
     fontSize: 13,
-    fontWeight: '500',
-    color: '#94A3B8',
   },
 
   // Social
@@ -432,32 +392,25 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     height: 52,
-    backgroundColor: '#FFF',
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
-    ...THEME_SHADOWS.card,
   },
   socialText: {
+    fontFamily: 'Satoshi-Bold',
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
   },
 
   // Terms
   termsText: {
+    fontFamily: 'Satoshi-Regular',
     fontSize: 13,
-    fontWeight: '400',
-    color: '#94A3B8',
     textAlign: 'center',
     lineHeight: 20,
   },
   termsLink: {
-    color: '#3B82F6',
-    fontWeight: '500',
+    fontFamily: 'Satoshi-Medium',
   },
 
   // Admin
@@ -466,9 +419,8 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   adminText: {
+    fontFamily: 'Satoshi-Medium',
     fontSize: 14,
-    fontWeight: '500',
-    color: '#64748B',
     textDecorationLine: 'underline',
   },
 });

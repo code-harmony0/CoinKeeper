@@ -6,10 +6,10 @@
 import { TextStyle } from 'react-native';
 
 export const FONT_FAMILY = {
-  regular: 'PlusJakartaSans-Regular',
-  medium: 'PlusJakartaSans-Medium',
-  semibold: 'PlusJakartaSans-SemiBold',
-  bold: 'PlusJakartaSans-Bold',
+  regular: 'Satoshi-Regular',
+  medium: 'Satoshi-Medium',
+  semibold: 'Satoshi-Bold',
+  bold: 'Satoshi-Black',
   // Fallback to system fonts if custom fonts aren't loaded
   systemRegular: 'System',
   systemBold: 'System',

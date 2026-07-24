@@ -1,8 +1,8 @@
 /**
- * AddTransactionSheet - Blob Theme
- * Organic bottom sheet for adding transactions
+ * AddTransactionSheet - Spec Theme
+ * Bottom sheet for adding a transaction (expense or income)
  */
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -20,44 +20,47 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
+  interpolateColor,
+  useDerivedValue,
 } from 'react-native-reanimated';
-import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { THEME_SHADOWS, THEME_ANIMATION } from '../../theme/blobTheme';
+import { X } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import Svg, { Path } from 'react-native-svg';
+import { useSpecTheme } from '../../theme/specTheme';
+import { PressableScale } from '../anim';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SHEET_HEIGHT = SCREEN_HEIGHT * 0.88;
 
-interface AddTransactionSheetProps {
+const SHEET_SPRING = { damping: 15, stiffness: 300 };
+
+interface Props {
   visible: boolean;
   onClose: () => void;
   onSubmit: (data: any) => void;
   initialType?: 'expense' | 'income';
 }
 
-// Category data with SVG icons
 const CATEGORIES = [
-  { id: 'food', name: 'Food', color: '#FEF3E2', icon: 'food' },
-  { id: 'transport', name: 'Transport', color: '#EFF6FF', icon: 'transport' },
-  { id: 'shopping', name: 'Shopping', color: '#FDF2F8', icon: 'shopping' },
-  { id: 'bills', name: 'Bills', color: '#FFFBEB', icon: 'bills' },
-  { id: 'entertainment', name: 'Entertainment', color: '#F5F3FF', icon: 'entertainment' },
-  { id: 'health', name: 'Health', color: '#ECFDF5', icon: 'health' },
-  { id: 'salary', name: 'Salary', color: '#ECFDF5', icon: 'salary' },
-  { id: 'other', name: 'Other', color: '#F1F5F9', icon: 'other' },
+  { id: 'food', name: 'Food', icon: 'food' },
+  { id: 'transport', name: 'Transport', icon: 'transport' },
+  { id: 'shopping', name: 'Shopping', icon: 'shopping' },
+  { id: 'bills', name: 'Bills', icon: 'bills' },
+  { id: 'entertainment', name: 'Entertainment', icon: 'entertainment' },
+  { id: 'health', name: 'Health', icon: 'health' },
+  { id: 'other', name: 'Other', icon: 'other' },
 ];
 
-export const AddTransactionSheet: React.FC<AddTransactionSheetProps> = ({
+export const AddTransactionSheet: React.FC<Props> = ({
   visible,
   onClose,
   onSubmit,
   initialType = 'expense',
 }) => {
   const insets = useSafeAreaInsets();
+  const { colors, spring: springConfig } = useSpecTheme();
+
   const translateY = useSharedValue(SCREEN_HEIGHT);
-  const opacity = useSharedValue(0);
+  const backdropOpacity = useSharedValue(0);
 
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'expense' | 'income'>(initialType);
@@ -66,22 +69,23 @@ export const AddTransactionSheet: React.FC<AddTransactionSheetProps> = ({
 
   useEffect(() => {
     if (visible) {
-      opacity.value = withTiming(1, { duration: 250 });
-      translateY.value = withSpring(0, THEME_ANIMATION.spring);
-      ReactNativeHapticFeedback.trigger('impactLight');
-    } else {
-      opacity.value = withTiming(0, { duration: 200 });
-      translateY.value = withSpring(SCREEN_HEIGHT, { damping: 20, stiffness: 150 });
-    }
-  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (visible) {
+      backdropOpacity.value = withTiming(1, { duration: 200 });
+      translateY.value = withSpring(0, SHEET_SPRING);
       setType(initialType);
+    } else {
+      backdropOpacity.value = withTiming(0, { duration: 200 });
+      translateY.value = withSpring(SCREEN_HEIGHT, SHEET_SPRING);
     }
-  }, [visible, initialType]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
-  const overlayStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const backdropStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      backdropOpacity.value,
+      [0, 1],
+      ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.4)'],
+    ),
+  }));
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
 
   const handleClose = () => {
@@ -89,12 +93,23 @@ export const AddTransactionSheet: React.FC<AddTransactionSheetProps> = ({
     onClose();
   };
 
+  const handleTypeSwitch = (next: 'expense' | 'income') => {
+    if (next === type) return;
+    ReactNativeHapticFeedback.trigger('impactLight');
+    setType(next);
+  };
+
+  const handleSelectCategory = (id: string) => {
+    ReactNativeHapticFeedback.trigger('impactLight');
+    setSelectedCategory(id);
+  };
+
   const handleSubmit = () => {
     if (!amount || !selectedCategory) return;
-    
+
     ReactNativeHapticFeedback.trigger('notificationSuccess');
     const category = CATEGORIES.find(c => c.id === selectedCategory);
-    
+
     onSubmit({
       amount: parseFloat(amount),
       type,
@@ -103,7 +118,6 @@ export const AddTransactionSheet: React.FC<AddTransactionSheetProps> = ({
       description,
     });
 
-    // Reset
     setAmount('');
     setType(initialType);
     setSelectedCategory(null);
@@ -111,100 +125,100 @@ export const AddTransactionSheet: React.FC<AddTransactionSheetProps> = ({
     onClose();
   };
 
-  if (!visible) return null;
+  const isDisabled = !amount || !selectedCategory;
 
   return (
-    <Modal visible={visible} transparent animationType="none" statusBarTranslucent>
+    <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={handleClose}>
       <View style={styles.container}>
-        {/* Backdrop */}
-        <Animated.View style={[styles.backdrop, overlayStyle]}>
+        <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         </Animated.View>
 
-        {/* Sheet */}
-        <Animated.View style={[styles.sheet, sheetStyle]}>
-          <LinearGradient colors={['#FFFFFF', '#FAFBFD']} style={StyleSheet.absoluteFill} />
-          
-          <View style={styles.content}>
-            {/* Handle + Header */}
-            <View style={styles.header}>
-              <View style={styles.handle} />
-              <View style={styles.headerRow}>
-                <Text style={styles.headerTitle}>Add Transaction</Text>
-                <Pressable onPress={handleClose} style={styles.closeBtn}>
-                  <CloseIcon />
-                </Pressable>
-              </View>
-            </View>
+        <Animated.View
+          style={[
+            styles.sheet,
+            { backgroundColor: colors.card, paddingBottom: insets.bottom + 20 },
+            sheetStyle,
+          ]}
+        >
+          <View style={[styles.handle, { backgroundColor: colors.chipBg }]} />
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.scrollWrapper}>
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}>
-                
-                {/* Type Toggle */}
-                <View style={styles.typeToggle}>
-                  <TypeButton label="Expense" active={type === 'expense'} onPress={() => setType('expense')} color="#FDF2F8" />
-                  <TypeButton label="Income" active={type === 'income'} onPress={() => setType('income')} color="#ECFDF5" />
-                </View>
+          <PressableScale onPress={handleClose} style={styles.closeBtn} haptic="none">
+            <X size={22} color={colors.textSecondary} />
+          </PressableScale>
 
-                {/* Amount Input */}
-                <View style={styles.amountSection}>
-                  <Text style={styles.sectionLabel}>Amount</Text>
-                  <View style={styles.amountRow}>
-                    <Text style={styles.currencySymbol}>₹</Text>
-                    <TextInput
-                      style={styles.amountInput}
-                      value={amount}
-                      onChangeText={text => setAmount(text.replace(/[^0-9.]/g, ''))}
-                      placeholder="0"
-                      placeholderTextColor="#94A3B8"
-                      keyboardType="decimal-pad"
-                    />
-                  </View>
-                </View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.flex}
+          >
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+              <TypeToggle
+                type={type}
+                onChange={handleTypeSwitch}
+                colors={colors}
+                spring={springConfig}
+              />
 
-                {/* Categories */}
-                <View style={styles.section}>
-                  <Text style={styles.sectionLabel}>Category</Text>
-                  <View style={styles.categoriesGrid}>
-                    {CATEGORIES.filter(c => type === 'income' ? c.id === 'salary' || c.id === 'other' : c.id !== 'salary').map(cat => (
-                      <CategoryChip
-                        key={cat.id}
-                        name={cat.name}
-                        color={cat.color}
-                        icon={cat.icon}
-                        selected={selectedCategory === cat.id}
-                        onPress={() => {
-                          ReactNativeHapticFeedback.trigger('impactLight');
-                          setSelectedCategory(cat.id);
-                        }}
-                      />
-                    ))}
-                  </View>
-                </View>
-
-                {/* Description */}
-                <View style={styles.section}>
-                  <Text style={styles.sectionLabel}>Description (Optional)</Text>
+              <View style={styles.amountSection}>
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Amount</Text>
+                <View style={styles.amountRow}>
+                  <Text style={[styles.currencySymbol, { color: colors.textPrimary }]}>₹</Text>
                   <TextInput
-                    style={styles.descInput}
-                    value={description}
-                    onChangeText={setDescription}
-                    placeholder="Add a note..."
-                    placeholderTextColor="#94A3B8"
-                    multiline
+                    style={[styles.amountInput, { color: colors.textPrimary }]}
+                    value={amount}
+                    onChangeText={text => setAmount(text.replace(/[^0-9.]/g, ''))}
+                    placeholder="0"
+                    placeholderTextColor={colors.textSecondary}
+                    keyboardType="decimal-pad"
                   />
                 </View>
+              </View>
 
-                {/* Submit */}
-                <SubmitButton
-                  label="Add Transaction"
-                  disabled={!amount || !selectedCategory}
-                  onPress={handleSubmit}
-                  type={type}
+              <View style={styles.section}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.chipsRow}
+                >
+                  {CATEGORIES.map(cat => (
+                    <CategoryChip
+                      key={cat.id}
+                      name={cat.name}
+                      selected={selectedCategory === cat.id}
+                      onPress={() => handleSelectCategory(cat.id)}
+                      colors={colors}
+                      spring={springConfig}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View style={styles.section}>
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                  Description (Optional)
+                </Text>
+                <TextInput
+                  style={[
+                    styles.descInput,
+                    { backgroundColor: colors.inputBg, color: colors.textPrimary },
+                  ]}
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Add a note..."
+                  placeholderTextColor={colors.textSecondary}
+                  multiline
                 />
-              </ScrollView>
-            </KeyboardAvoidingView>
-          </View>
+              </View>
+
+              <SubmitButton
+                label={type === 'expense' ? 'Add Expense' : 'Add Income'}
+                disabled={isDisabled}
+                onPress={handleSubmit}
+                colors={colors}
+                spring={springConfig}
+              />
+            </ScrollView>
+          </KeyboardAvoidingView>
         </Animated.View>
       </View>
     </Modal>
@@ -214,119 +228,162 @@ export const AddTransactionSheet: React.FC<AddTransactionSheetProps> = ({
 // ============================================
 // COMPONENTS
 // ============================================
-const TypeButton: React.FC<{ label: string; active: boolean; onPress: () => void; color: string }> = ({ label, active, onPress, color }) => {
-  const scale = useSharedValue(1);
-  const anim = useAnimatedStyle(() => ({ transform: [{ scale: withSpring(scale.value, THEME_ANIMATION.spring) }] }));
+type ThemeColors = ReturnType<typeof useSpecTheme>['colors'];
+type SpringConfig = ReturnType<typeof useSpecTheme>['spring'];
+
+const TypeToggle: React.FC<{
+  type: 'expense' | 'income';
+  onChange: (t: 'expense' | 'income') => void;
+  colors: ThemeColors;
+  spring: SpringConfig;
+}> = ({ type, onChange, colors, spring }) => {
+  const progress = useDerivedValue(() => withSpring(type === 'income' ? 1 : 0, spring), [type]);
+
+  const expenseStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      [colors.expenseTint, colors.card],
+    ),
+    borderColor: type === 'expense' ? 'transparent' : colors.chipBg,
+  }));
+
+  const incomeStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      [colors.card, colors.incomeTint],
+    ),
+    borderColor: type === 'income' ? 'transparent' : colors.chipBg,
+  }));
 
   return (
-    <Pressable onPress={onPress} onPressIn={() => { scale.value = 0.96; }} onPressOut={() => { scale.value = 1; }} style={styles.typeButtonWrapper}>
-      <Animated.View style={[styles.typeButton, active && [styles.typeButtonActive, { backgroundColor: color }], anim]}>
-        <Text style={[styles.typeButtonText, active && styles.typeButtonTextActive]}>{label}</Text>
-      </Animated.View>
-    </Pressable>
+    <View style={styles.typeToggle}>
+      <PressableScale style={styles.typeButtonWrapper} onPress={() => onChange('expense')} haptic="none">
+        <Animated.View style={[styles.typeButton, expenseStyle]}>
+          <Text style={[styles.typeButtonText, { color: type === 'expense' ? colors.danger : colors.textSecondary }]}>
+            Expense
+          </Text>
+        </Animated.View>
+      </PressableScale>
+      <PressableScale style={styles.typeButtonWrapper} onPress={() => onChange('income')} haptic="none">
+        <Animated.View style={[styles.typeButton, incomeStyle]}>
+          <Text style={[styles.typeButtonText, { color: type === 'income' ? colors.success : colors.textSecondary }]}>
+            Income
+          </Text>
+        </Animated.View>
+      </PressableScale>
+    </View>
   );
 };
 
-const CategoryChip: React.FC<{ name: string; color: string; icon: string; selected: boolean; onPress: () => void }> = ({ name, color, selected, onPress }) => {
-  const scale = useSharedValue(1);
-  const anim = useAnimatedStyle(() => ({ transform: [{ scale: withSpring(scale.value, THEME_ANIMATION.spring) }] }));
-
+const CategoryChip: React.FC<{
+  name: string;
+  selected: boolean;
+  onPress: () => void;
+  colors: ThemeColors;
+  spring: SpringConfig;
+}> = ({ name, selected, onPress, colors }) => {
   return (
-    <Pressable onPress={onPress} onPressIn={() => { scale.value = 0.94; }} onPressOut={() => { scale.value = 1; }}>
-      <Animated.View style={[styles.categoryChip, { backgroundColor: selected ? color : '#F1F5F9' }, selected && styles.categoryChipSelected, anim]}>
-        <Text style={[styles.categoryChipText, selected && styles.categoryChipTextSelected]}>{name}</Text>
-      </Animated.View>
-    </Pressable>
+    <PressableScale onPress={onPress} haptic="none">
+      <View
+        style={[
+          styles.categoryChip,
+          { backgroundColor: selected ? colors.primaryAccent : colors.chipBg },
+        ]}
+      >
+        <Text style={[styles.categoryChipText, { color: selected ? '#FFFFFF' : colors.textSecondary }]}>
+          {name}
+        </Text>
+      </View>
+    </PressableScale>
   );
 };
 
-const SubmitButton: React.FC<{ label: string; disabled: boolean; onPress: () => void; type: 'expense' | 'income' }> = ({ label, disabled, onPress, type }) => {
-  const scale = useSharedValue(1);
-  const anim = useAnimatedStyle(() => ({ transform: [{ scale: withSpring(scale.value, THEME_ANIMATION.spring) }] }));
-
+const SubmitButton: React.FC<{
+  label: string;
+  disabled: boolean;
+  onPress: () => void;
+  colors: ThemeColors;
+  spring: SpringConfig;
+}> = ({ label, disabled, onPress, colors }) => {
   return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => { if (!disabled) scale.value = 0.97; }}
-      onPressOut={() => { scale.value = 1; }}
-      disabled={disabled}
-    >
-      <Animated.View style={[styles.submitButton, disabled && styles.submitButtonDisabled, anim]}>
-        <LinearGradient
-          colors={type === 'expense' ? ['#FDA4AF', '#FCA5A5'] : ['#6EE7B7', '#86EFAC']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
+    <PressableScale onPress={onPress} disabled={disabled} haptic="none">
+      <View
+        style={[
+          styles.submitButton,
+          { backgroundColor: colors.primaryAccent },
+          disabled && styles.submitButtonDisabled,
+        ]}
+      >
         <Text style={styles.submitButtonText}>{label}</Text>
-      </Animated.View>
-    </Pressable>
+      </View>
+    </PressableScale>
   );
 };
-
-// Icons
-const CloseIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path d="M18 6L6 18M6 6l12 12" stroke="#475569" strokeWidth={2} strokeLinecap="round" />
-  </Svg>
-);
 
 // ============================================
 // STYLES
 // ============================================
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.4)' },
+  flex: { flex: 1 },
+  backdrop: { ...StyleSheet.absoluteFillObject },
   sheet: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: SHEET_HEIGHT,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    overflow: 'hidden',
-    ...THEME_SHADOWS.elevated,
+    maxHeight: SCREEN_HEIGHT * 0.9,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingTop: 12,
+    paddingHorizontal: 20,
   },
-  content: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
-  handle: { width: 40, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: '#1E293B' },
-  closeBtn: { width: 40, height: 40, borderRadius: 14, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
-  scrollWrapper: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20 },
+  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 8 },
+  closeBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 20,
+    zIndex: 1,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollContent: { paddingTop: 16, paddingBottom: 8 },
 
   // Type toggle
   typeToggle: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   typeButtonWrapper: { flex: 1 },
-  typeButton: { paddingVertical: 14, borderRadius: 16, borderWidth: 2, borderColor: '#E2E8F0', alignItems: 'center', backgroundColor: '#FFF' },
-  typeButtonActive: { borderColor: 'transparent' },
-  typeButtonText: { fontSize: 15, fontWeight: '600', color: '#64748B' },
-  typeButtonTextActive: { color: '#1E293B' },
+  typeButton: {
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  typeButtonText: { fontSize: 15, fontFamily: 'Satoshi-Bold' },
 
   // Amount
   amountSection: { marginBottom: 24 },
-  sectionLabel: { fontSize: 13, fontWeight: '600', color: '#64748B', marginBottom: 10 },
+  sectionLabel: { fontSize: 13, fontFamily: 'Satoshi-Medium', marginBottom: 10 },
   amountRow: { flexDirection: 'row', alignItems: 'center' },
-  currencySymbol: { fontSize: 36, fontWeight: '600', color: '#1E293B', marginRight: 8 },
-  amountInput: { flex: 1, fontSize: 42, fontWeight: '300', color: '#1E293B', padding: 0 },
+  currencySymbol: { fontSize: 36, fontFamily: 'Satoshi-Black', marginRight: 8 },
+  amountInput: { flex: 1, fontSize: 42, fontFamily: 'Satoshi-Regular', padding: 0 },
 
   // Categories
   section: { marginBottom: 24 },
-  categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  categoryChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14 },
-  categoryChipSelected: { borderWidth: 2, borderColor: '#1E293B' },
-  categoryChipText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
-  categoryChipTextSelected: { color: '#1E293B' },
+  chipsRow: { flexDirection: 'row', gap: 10, paddingRight: 4 },
+  categoryChip: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999 },
+  categoryChipText: { fontSize: 14, fontFamily: 'Satoshi-Medium' },
 
   // Description
-  descInput: { backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, fontSize: 15, fontWeight: '500', color: '#1E293B', minHeight: 80, textAlignVertical: 'top' },
+  descInput: { borderRadius: 16, padding: 16, fontSize: 15, fontFamily: 'Satoshi-Medium', minHeight: 80, textAlignVertical: 'top' },
 
   // Submit
-  submitButton: { height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginTop: 8, ...THEME_SHADOWS.elevated },
+  submitButton: { height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
   submitButtonDisabled: { opacity: 0.5 },
-  submitButtonText: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  submitButtonText: { fontSize: 16, fontFamily: 'Satoshi-Bold', color: '#FFFFFF' },
 });
 
 export default AddTransactionSheet;

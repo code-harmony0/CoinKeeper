@@ -4,43 +4,61 @@
  * Follows groupService.ts pattern with real-time listeners and atomic updates
  */
 
-import firestore from '@react-native-firebase/firestore';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+  limit,
+  writeBatch,
+  serverTimestamp,
+  Timestamp,
+} from '@react-native-firebase/firestore';
 import { Contribution, ContributionStatus } from '../types/transaction';
 
 const CONTRIBUTIONS_COLLECTION = 'contributions';
 const AUDIT_LOG_COLLECTION = 'contributionAuditLog';
 
-/**
- * Real-time listener for contributions by group
- */
 export const subscribeToContributions = (
   groupId: string,
   callback: (contributions: Contribution[]) => void,
   errorCallback?: (error: Error) => void
 ) => {
   try {
-    const unsubscribe = firestore()
-      .collection(CONTRIBUTIONS_COLLECTION)
-      .where('groupId', '==', groupId)
-      .orderBy('dueDate', 'desc')
-      .onSnapshot(
-        (snapshot) => {
-          const contributions = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            dueDate: doc.data().dueDate?.toDate(),
-            paidAt: doc.data().paidAt?.toDate(),
-            approvedAt: doc.data().approvedAt?.toDate(),
-            createdAt: doc.data().createdAt?.toDate(),
-            updatedAt: doc.data().updatedAt?.toDate(),
-          })) as Contribution[];
-          callback(contributions);
-        },
-        (error) => {
-          console.error('Error subscribing to contributions:', error);
-          errorCallback?.(error);
-        }
-      );
+    const db = getFirestore();
+    const q = query(
+      collection(db, CONTRIBUTIONS_COLLECTION),
+      where('groupId', '==', groupId),
+      orderBy('dueDate', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const contributions = snapshot.docs.map((docSnap: any) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+          dueDate: docSnap.data().dueDate?.toDate(),
+          paidAt: docSnap.data().paidAt?.toDate(),
+          approvedAt: docSnap.data().approvedAt?.toDate(),
+          createdAt: docSnap.data().createdAt?.toDate(),
+          updatedAt: docSnap.data().updatedAt?.toDate(),
+        })) as Contribution[];
+        callback(contributions);
+      },
+      (error) => {
+        console.error('Error subscribing to contributions:', error);
+        errorCallback?.(error);
+      }
+    );
 
     return unsubscribe;
   } catch (error) {
@@ -50,36 +68,37 @@ export const subscribeToContributions = (
   }
 };
 
-/**
- * Real-time listener for all contributions (admin view)
- */
 export const subscribeToAllContributions = (
   callback: (contributions: Contribution[]) => void,
   errorCallback?: (error: Error) => void
 ) => {
   try {
-    const unsubscribe = firestore()
-      .collection(CONTRIBUTIONS_COLLECTION)
-      .orderBy('dueDate', 'desc')
-      .limit(100) // Performance limit
-      .onSnapshot(
-        (snapshot) => {
-          const contributions = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            dueDate: doc.data().dueDate?.toDate(),
-            paidAt: doc.data().paidAt?.toDate(),
-            approvedAt: doc.data().approvedAt?.toDate(),
-            createdAt: doc.data().createdAt?.toDate(),
-            updatedAt: doc.data().updatedAt?.toDate(),
-          })) as Contribution[];
-          callback(contributions);
-        },
-        (error) => {
-          console.error('Error subscribing to all contributions:', error);
-          errorCallback?.(error);
-        }
-      );
+    const db = getFirestore();
+    const q = query(
+      collection(db, CONTRIBUTIONS_COLLECTION),
+      orderBy('dueDate', 'desc'),
+      limit(100)
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const contributions = snapshot.docs.map((docSnap: any) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+          dueDate: docSnap.data().dueDate?.toDate(),
+          paidAt: docSnap.data().paidAt?.toDate(),
+          approvedAt: docSnap.data().approvedAt?.toDate(),
+          createdAt: docSnap.data().createdAt?.toDate(),
+          updatedAt: docSnap.data().updatedAt?.toDate(),
+        })) as Contribution[];
+        callback(contributions);
+      },
+      (error) => {
+        console.error('Error subscribing to all contributions:', error);
+        errorCallback?.(error);
+      }
+    );
 
     return unsubscribe;
   } catch (error) {
@@ -89,36 +108,37 @@ export const subscribeToAllContributions = (
   }
 };
 
-/**
- * Real-time listener for pending approval contributions
- */
 export const subscribeToPendingContributions = (
   callback: (contributions: Contribution[]) => void,
   errorCallback?: (error: Error) => void
 ) => {
   try {
-    const unsubscribe = firestore()
-      .collection(CONTRIBUTIONS_COLLECTION)
-      .where('status', '==', 'pending')
-      .orderBy('createdAt', 'desc')
-      .onSnapshot(
-        (snapshot) => {
-          const contributions = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            dueDate: doc.data().dueDate?.toDate(),
-            paidAt: doc.data().paidAt?.toDate(),
-            approvedAt: doc.data().approvedAt?.toDate(),
-            createdAt: doc.data().createdAt?.toDate(),
-            updatedAt: doc.data().updatedAt?.toDate(),
-          })) as Contribution[];
-          callback(contributions);
-        },
-        (error) => {
-          console.error('Error subscribing to pending contributions:', error);
-          errorCallback?.(error);
-        }
-      );
+    const db = getFirestore();
+    const q = query(
+      collection(db, CONTRIBUTIONS_COLLECTION),
+      where('status', '==', 'pending'),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const contributions = snapshot.docs.map((docSnap: any) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+          dueDate: docSnap.data().dueDate?.toDate(),
+          paidAt: docSnap.data().paidAt?.toDate(),
+          approvedAt: docSnap.data().approvedAt?.toDate(),
+          createdAt: docSnap.data().createdAt?.toDate(),
+          updatedAt: docSnap.data().updatedAt?.toDate(),
+        })) as Contribution[];
+        callback(contributions);
+      },
+      (error) => {
+        console.error('Error subscribing to pending contributions:', error);
+        errorCallback?.(error);
+      }
+    );
 
     return unsubscribe;
   } catch (error) {
@@ -128,26 +148,21 @@ export const subscribeToPendingContributions = (
   }
 };
 
-/**
- * Create a new contribution
- */
 export const createContribution = async (
   data: Omit<Contribution, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<string> => {
   try {
-    const now = firestore.Timestamp.now();
-    const docRef = await firestore()
-      .collection(CONTRIBUTIONS_COLLECTION)
-      .add({
-        ...data,
-        dueDate: firestore.Timestamp.fromDate(data.dueDate),
-        paidAt: data.paidAt ? firestore.Timestamp.fromDate(data.paidAt) : null,
-        approvedAt: data.approvedAt ? firestore.Timestamp.fromDate(data.approvedAt) : null,
-        createdAt: now,
-        updatedAt: now,
-      });
+    const db = getFirestore();
+    const now = Timestamp.now();
+    const docRef = await addDoc(collection(db, CONTRIBUTIONS_COLLECTION), {
+      ...data,
+      dueDate: Timestamp.fromDate(data.dueDate),
+      paidAt: data.paidAt ? Timestamp.fromDate(data.paidAt) : null,
+      approvedAt: data.approvedAt ? Timestamp.fromDate(data.approvedAt) : null,
+      createdAt: now,
+      updatedAt: now,
+    });
 
-    // Audit log
     await logAudit({
       contributionId: docRef.id,
       action: 'created',
@@ -163,27 +178,25 @@ export const createContribution = async (
   }
 };
 
-/**
- * Bulk create contributions (for CSV import)
- */
 export const bulkCreateContributions = async (
   contributions: Omit<Contribution, 'id' | 'createdAt' | 'updatedAt'>[],
   performedBy: string
 ): Promise<{ success: number; failed: number; errors: string[] }> => {
-  const batch = firestore().batch();
-  const now = firestore.Timestamp.now();
+  const db = getFirestore();
+  const batch = writeBatch(db);
+  const now = Timestamp.now();
   const errors: string[] = [];
   let success = 0;
 
   try {
     for (const contribution of contributions) {
       try {
-        const docRef = firestore().collection(CONTRIBUTIONS_COLLECTION).doc();
+        const docRef = doc(collection(db, CONTRIBUTIONS_COLLECTION));
         batch.set(docRef, {
           ...contribution,
-          dueDate: firestore.Timestamp.fromDate(contribution.dueDate),
-          paidAt: contribution.paidAt ? firestore.Timestamp.fromDate(contribution.paidAt) : null,
-          approvedAt: contribution.approvedAt ? firestore.Timestamp.fromDate(contribution.approvedAt) : null,
+          dueDate: Timestamp.fromDate(contribution.dueDate),
+          paidAt: contribution.paidAt ? Timestamp.fromDate(contribution.paidAt) : null,
+          approvedAt: contribution.approvedAt ? Timestamp.fromDate(contribution.approvedAt) : null,
           createdAt: now,
           updatedAt: now,
         });
@@ -195,7 +208,6 @@ export const bulkCreateContributions = async (
 
     await batch.commit();
 
-    // Audit log for bulk operation
     await logAudit({
       contributionId: 'bulk',
       action: 'bulk_created',
@@ -211,9 +223,6 @@ export const bulkCreateContributions = async (
   }
 };
 
-/**
- * Update contribution status
- */
 export const updateContributionStatus = async (
   contributionId: string,
   status: ContributionStatus,
@@ -221,7 +230,8 @@ export const updateContributionStatus = async (
   notes?: string
 ): Promise<void> => {
   try {
-    const now = firestore.Timestamp.now();
+    const db = getFirestore();
+    const now = Timestamp.now();
     const updateData: any = {
       status,
       updatedAt: now,
@@ -238,12 +248,8 @@ export const updateContributionStatus = async (
       updateData.notes = notes;
     }
 
-    await firestore()
-      .collection(CONTRIBUTIONS_COLLECTION)
-      .doc(contributionId)
-      .update(updateData);
+    await updateDoc(doc(db, CONTRIBUTIONS_COLLECTION, contributionId), updateData);
 
-    // Audit log
     await logAudit({
       contributionId,
       action: `status_changed_${status}`,
@@ -257,22 +263,20 @@ export const updateContributionStatus = async (
   }
 };
 
-/**
- * Batch approve contributions
- */
 export const batchApproveContributions = async (
   contributionIds: string[],
   performedBy: string
 ): Promise<{ success: number; failed: number }> => {
-  const batch = firestore().batch();
-  const now = firestore.Timestamp.now();
+  const db = getFirestore();
+  const batch = writeBatch(db);
+  const now = Timestamp.now();
   let success = 0;
   let failed = 0;
 
   try {
     for (const id of contributionIds) {
       try {
-        const docRef = firestore().collection(CONTRIBUTIONS_COLLECTION).doc(id);
+        const docRef = doc(db, CONTRIBUTIONS_COLLECTION, id);
         batch.update(docRef, {
           status: 'approved',
           approvedAt: now,
@@ -288,7 +292,6 @@ export const batchApproveContributions = async (
 
     await batch.commit();
 
-    // Audit log
     await logAudit({
       contributionId: 'batch',
       action: 'batch_approved',
@@ -304,23 +307,21 @@ export const batchApproveContributions = async (
   }
 };
 
-/**
- * Batch reject contributions
- */
 export const batchRejectContributions = async (
   contributionIds: string[],
   performedBy: string,
   reason?: string
 ): Promise<{ success: number; failed: number }> => {
-  const batch = firestore().batch();
-  const now = firestore.Timestamp.now();
+  const db = getFirestore();
+  const batch = writeBatch(db);
+  const now = Timestamp.now();
   let success = 0;
   let failed = 0;
 
   try {
     for (const id of contributionIds) {
       try {
-        const docRef = firestore().collection(CONTRIBUTIONS_COLLECTION).doc(id);
+        const docRef = doc(db, CONTRIBUTIONS_COLLECTION, id);
         batch.update(docRef, {
           status: 'failed',
           notes: reason || 'Rejected by admin',
@@ -335,7 +336,6 @@ export const batchRejectContributions = async (
 
     await batch.commit();
 
-    // Audit log
     await logAudit({
       contributionId: 'batch',
       action: 'batch_rejected',
@@ -351,9 +351,6 @@ export const batchRejectContributions = async (
   }
 };
 
-/**
- * Mark contribution as paid
- */
 export const markContributionAsPaid = async (
   contributionId: string,
   paymentMethod: string,
@@ -361,19 +358,16 @@ export const markContributionAsPaid = async (
   performedBy: string
 ): Promise<void> => {
   try {
-    const now = firestore.Timestamp.now();
-    await firestore()
-      .collection(CONTRIBUTIONS_COLLECTION)
-      .doc(contributionId)
-      .update({
-        status: 'paid',
-        paidAt: now,
-        paymentMethod,
-        transactionId,
-        updatedAt: now,
-      });
+    const db = getFirestore();
+    const now = Timestamp.now();
+    await updateDoc(doc(db, CONTRIBUTIONS_COLLECTION, contributionId), {
+      status: 'paid',
+      paidAt: now,
+      paymentMethod,
+      transactionId,
+      updatedAt: now,
+    });
 
-    // Audit log
     await logAudit({
       contributionId,
       action: 'marked_paid',
@@ -387,30 +381,26 @@ export const markContributionAsPaid = async (
   }
 };
 
-/**
- * Get contribution by ID
- */
 export const getContributionById = async (
   contributionId: string
 ): Promise<Contribution | null> => {
   try {
-    const doc = await firestore()
-      .collection(CONTRIBUTIONS_COLLECTION)
-      .doc(contributionId)
-      .get();
+    const db = getFirestore();
+    const docSnap = await getDoc(doc(db, CONTRIBUTIONS_COLLECTION, contributionId));
 
-    if (!doc.exists) {
+    if (!docSnap.exists) {
       return null;
     }
 
+    const data = docSnap.data() as any;
     return {
-      id: doc.id,
-      ...doc.data(),
-      dueDate: doc.data()?.dueDate?.toDate(),
-      paidAt: doc.data()?.paidAt?.toDate(),
-      approvedAt: doc.data()?.approvedAt?.toDate(),
-      createdAt: doc.data()?.createdAt?.toDate(),
-      updatedAt: doc.data()?.updatedAt?.toDate(),
+      id: docSnap.id,
+      ...data,
+      dueDate: data?.dueDate?.toDate(),
+      paidAt: data?.paidAt?.toDate(),
+      approvedAt: data?.approvedAt?.toDate(),
+      createdAt: data?.createdAt?.toDate(),
+      updatedAt: data?.updatedAt?.toDate(),
     } as Contribution;
   } catch (error) {
     console.error('Error getting contribution by ID:', error);
@@ -418,20 +408,14 @@ export const getContributionById = async (
   }
 };
 
-/**
- * Delete contribution
- */
 export const deleteContribution = async (
   contributionId: string,
   performedBy: string
 ): Promise<void> => {
   try {
-    await firestore()
-      .collection(CONTRIBUTIONS_COLLECTION)
-      .doc(contributionId)
-      .delete();
+    const db = getFirestore();
+    await deleteDoc(doc(db, CONTRIBUTIONS_COLLECTION, contributionId));
 
-    // Audit log
     await logAudit({
       contributionId,
       action: 'deleted',
@@ -445,9 +429,6 @@ export const deleteContribution = async (
   }
 };
 
-/**
- * Audit log helper
- */
 const logAudit = async (data: {
   contributionId: string;
   action: string;
@@ -456,44 +437,41 @@ const logAudit = async (data: {
   metadata: any;
 }): Promise<void> => {
   try {
-    await firestore()
-      .collection(AUDIT_LOG_COLLECTION)
-      .add({
-        ...data,
-        timestamp: firestore.Timestamp.fromDate(data.timestamp),
-      });
+    const db = getFirestore();
+    await addDoc(collection(db, AUDIT_LOG_COLLECTION), {
+      ...data,
+      timestamp: Timestamp.fromDate(data.timestamp),
+    });
   } catch (error) {
     console.error('Error logging audit:', error);
-    // Don't throw - audit log failure shouldn't break the main operation
   }
 };
 
-/**
- * Get contributions analytics for a group
- */
 export const getContributionsAnalytics = async (groupId: string) => {
   try {
-    const snapshot = await firestore()
-      .collection(CONTRIBUTIONS_COLLECTION)
-      .where('groupId', '==', groupId)
-      .get();
+    const db = getFirestore();
+    const q = query(
+      collection(db, CONTRIBUTIONS_COLLECTION),
+      where('groupId', '==', groupId)
+    );
+    const snapshot = await getDocs(q);
 
-    const contributions = snapshot.docs.map((doc) => doc.data());
+    const contributions = snapshot.docs.map((docSnap: any) => docSnap.data());
 
     const total = contributions.length;
-    const paid = contributions.filter((c) => c.status === 'paid').length;
-    const pending = contributions.filter((c) => c.status === 'pending').length;
+    const paid = contributions.filter((c: any) => c.status === 'paid').length;
+    const pending = contributions.filter((c: any) => c.status === 'pending').length;
     const overdue = contributions.filter(
-      (c) =>
+      (c: any) =>
         c.status === 'pending' &&
         c.dueDate &&
         c.dueDate.toDate() < new Date()
     ).length;
 
-    const totalAmount = contributions.reduce((sum, c) => sum + (c.amount || 0), 0);
+    const totalAmount = contributions.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
     const paidAmount = contributions
-      .filter((c) => c.status === 'paid')
-      .reduce((sum, c) => sum + (c.amount || 0), 0);
+      .filter((c: any) => c.status === 'paid')
+      .reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
 
     return {
       total,

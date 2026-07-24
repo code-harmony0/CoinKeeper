@@ -286,13 +286,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
   },
   searchContainer: {
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#121723',
   },
   filterContainer: {
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   },
   statusChipText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: '#666',
   },
   activeStatusChipText: {
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   },
   drawNumberText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#FFFFFF',
   },
   headerInfo: {
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   },
   groupName: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
     marginBottom: 4,
   },
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
   },
   statusBadge: {
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#FFFFFF',
   },
   cardBody: {
@@ -424,13 +424,13 @@ const styles = StyleSheet.create({
   },
   prizeLabel: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#666',
     marginBottom: 2,
   },
   prizeAmount: {
     fontSize: 20,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#121723',
   },
   statsRow: {
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: '#666',
   },
   cardFooter: {
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
   },
   winnerText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: '#F57C00',
   },
   emptyState: {
@@ -474,14 +474,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: '#999',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: '#BBB',
     textAlign: 'center',
   },
@@ -507,14 +507,14 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: '#666',
   },
   errorText: {
     marginTop: 16,
     marginBottom: 16,
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: '#D32F2F',
     textAlign: 'center',
     paddingHorizontal: 32,
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: '#FFFFFF',
   },
 });

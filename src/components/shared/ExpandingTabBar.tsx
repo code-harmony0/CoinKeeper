@@ -362,6 +362,20 @@ const TabIcon = memo(({ name, color, fill, isActive }: { name: string; color: st
           <Circle cx={17} cy={14.5} r={1.5} fill={isActive ? fill : color} />
         </Svg>
       );
+    case 'kaza':
+    case 'moon':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z"
+            stroke={color}
+            strokeWidth={sw}
+            fill={vibrantFill}
+            fillOpacity={fillOpacity}
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
     case 'settings':
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

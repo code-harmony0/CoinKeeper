@@ -221,10 +221,10 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 14, backgroundColor: '#FFFFFF',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: 24, fontFamily: 'PlusJakartaSans-Bold', color: '#121723' },
-  headerSubtitle: { fontSize: 13, fontFamily: 'PlusJakartaSans-Regular', color: '#666' },
+  headerTitle: { fontSize: 24, fontFamily: 'Satoshi-Black', color: '#121723' },
+  headerSubtitle: { fontSize: 13, fontFamily: 'Satoshi-Regular', color: '#666' },
   section: { paddingHorizontal: 20, marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontFamily: 'PlusJakartaSans-Bold', color: '#121723', marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontFamily: 'Satoshi-Black', color: '#121723', marginBottom: 12 },
   templateCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 10,
     borderWidth: 2, borderColor: 'transparent',
@@ -232,11 +232,11 @@ const styles = StyleSheet.create({
   },
   selectedTemplateCard: { borderColor: COLORS.primaryBlue, backgroundColor: '#F0F7FF' },
   templateHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
-  templateName: { flex: 1, fontSize: 15, fontFamily: 'PlusJakartaSans-SemiBold', color: '#121723' },
+  templateName: { flex: 1, fontSize: 15, fontFamily: 'Satoshi-Bold', color: '#121723' },
   selectedTemplateName: { color: COLORS.primaryBlue },
-  templateDescription: { fontSize: 13, fontFamily: 'PlusJakartaSans-Regular', color: '#666', marginBottom: 8, lineHeight: 18 },
+  templateDescription: { fontSize: 13, fontFamily: 'Satoshi-Regular', color: '#666', marginBottom: 8, lineHeight: 18 },
   templateMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  templateRange: { fontSize: 11, fontFamily: 'PlusJakartaSans-Medium', color: '#999' },
+  templateRange: { fontSize: 11, fontFamily: 'Satoshi-Medium', color: '#999' },
   formatGrid: { flexDirection: 'row', gap: 12 },
   formatCard: {
     flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, alignItems: 'center',
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
   selectedFormatCard: { backgroundColor: '#121723', borderColor: '#121723' },
-  formatLabel: { fontSize: 12, fontFamily: 'PlusJakartaSans-SemiBold', color: '#121723', marginTop: 8 },
+  formatLabel: { fontSize: 12, fontFamily: 'Satoshi-Bold', color: '#121723', marginTop: 8 },
   selectedFormatLabel: { color: '#FFFFFF' },
   exportButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -252,14 +252,14 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 4,
   },
   exportButtonDisabled: { opacity: 0.5 },
-  exportButtonText: { fontSize: 16, fontFamily: 'PlusJakartaSans-Bold', color: '#FFFFFF' },
+  exportButtonText: { fontSize: 16, fontFamily: 'Satoshi-Black', color: '#FFFFFF' },
   statusCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9',
     borderRadius: 14, padding: 14, gap: 12,
   },
   statusInfo: { flex: 1 },
-  statusTitle: { fontSize: 14, fontFamily: 'PlusJakartaSans-SemiBold', color: '#2E7D32' },
-  statusMeta: { fontSize: 12, fontFamily: 'PlusJakartaSans-Regular', color: '#666', marginTop: 2 },
+  statusTitle: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: '#2E7D32' },
+  statusMeta: { fontSize: 12, fontFamily: 'Satoshi-Regular', color: '#666', marginTop: 2 },
 });
 
 export default ExportDataScreen;

@@ -1,5 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import firestore from '@react-native-firebase/firestore';
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  doc,
+  increment,
+  serverTimestamp,
+  Timestamp,
+} from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { ChitGroup } from '../types/chitFund';
 
@@ -19,50 +32,48 @@ export const ChitFundsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Real-time Firestore listener for chit groups
   useEffect(() => {
-    const user = auth().currentUser;
-    if (!user) {
-      setGroups([]);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
-    const unsubscribe = firestore()
-      .collection('groups')
-      .where('archived', '==', false)
-      .orderBy('createdAt', 'desc')
-      .onSnapshot(
-        snapshot => {
-          const docs = snapshot.docs.map(doc => {
-            const d = doc.data();
-            return {
-              id: doc.id,
-              name: d.name || '',
-              amount: d.contributionAmount || d.amount || 0,
-              totalMembers: d.maxMembers || d.totalMembers || 0,
-              frequency: d.cycleTime === 'weekly' ? 'weekly' : 'monthly',
-              startDate: d.startDate?.toDate?.()
-                ? d.startDate.toDate().toISOString()
-                : d.startDate || '',
-              nextDrawDate: d.nextDrawDate?.toDate?.()
-                ? d.nextDrawDate.toDate().toISOString()
-                : d.nextDrawDate || '',
-              status: d.status === 'active' ? 'active' : d.status === 'completed' ? 'completed' : 'pending',
-              currentCycle: d.currentCycle || 1,
-              totalCycles: d.durationMonths || d.totalCycles || d.maxMembers || 12,
-              potAmount: d.totalPooled || d.potAmount || 0,
-              adminId: d.createdBy || d.adminId || '',
-              members: [],
-            } as ChitGroup;
-          });
-          setGroups(docs);
-          setLoading(false);
-        },
-        error => {
-          console.error('[useChitFunds] Snapshot error:', error);
-          setLoading(false);
-        },
-      );
+
+    const db = getFirestore();
+    const q = query(
+      collection(db, 'groups'),
+      where('archived', '==', false),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      snapshot => {
+        const docs = snapshot.docs.map((docSnap: any) => {
+          const d = docSnap.data();
+          return {
+            id: docSnap.id,
+            name: d.name || '',
+            amount: d.contributionAmount || d.amount || 0,
+            totalMembers: d.maxMembers || d.totalMembers || 0,
+            frequency: d.cycleTime === 'weekly' ? 'weekly' : 'monthly',
+            startDate: d.startDate?.toDate?.()
+              ? d.startDate.toDate().toISOString()
+              : d.startDate || '',
+            nextDrawDate: d.nextDrawDate?.toDate?.()
+              ? d.nextDrawDate.toDate().toISOString()
+              : d.nextDrawDate || '',
+            status: d.status === 'active' ? 'active' : d.status === 'completed' ? 'completed' : 'pending',
+            currentCycle: d.currentCycle || 1,
+            totalCycles: d.durationMonths || d.totalCycles || d.maxMembers || 12,
+            potAmount: d.totalPooled || d.potAmount || 0,
+            adminId: d.createdBy || d.adminId || '',
+            members: [],
+          } as ChitGroup;
+        });
+        setGroups(docs);
+        setLoading(false);
+      },
+      error => {
+        console.error('[useChitFunds] Snapshot error:', error);
+        setLoading(false);
+      },
+    );
 
     return () => unsubscribe();
   }, []);
@@ -73,12 +84,13 @@ export const ChitFundsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const user = auth().currentUser;
         if (!user) return;
 
-        await firestore().collection('groups').add({
+        const db = getFirestore();
+        await addDoc(collection(db, 'groups'), {
           name: newGroup.name,
           contributionAmount: newGroup.amount,
           maxMembers: newGroup.totalMembers,
           cycleTime: newGroup.frequency,
-          startDate: firestore.Timestamp.fromDate(new Date(newGroup.startDate)),
+          startDate: Timestamp.fromDate(new Date(newGroup.startDate)),
           status: 'active',
           currentCycle: 1,
           totalPooled: 0,
@@ -86,8 +98,8 @@ export const ChitFundsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           archived: false,
           closed: false,
           createdBy: user.uid,
-          createdAt: firestore.FieldValue.serverTimestamp(),
-          updatedAt: firestore.FieldValue.serverTimestamp(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
       } catch (error) {
         console.error('[useChitFunds] Create error:', error);
@@ -101,7 +113,8 @@ export const ChitFundsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const user = auth().currentUser;
       if (!user) return;
 
-      await firestore().collection('group_members').add({
+      const db = getFirestore();
+      await addDoc(collection(db, 'group_members'), {
         groupId,
         userId: user.uid,
         userName: user.displayName || 'Member',
@@ -109,16 +122,13 @@ export const ChitFundsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         contributionStatus: 'pending',
         totalContributed: 0,
         missedPayments: 0,
-        joinedDate: firestore.FieldValue.serverTimestamp(),
+        joinedDate: serverTimestamp(),
       });
 
-      await firestore()
-        .collection('groups')
-        .doc(groupId)
-        .update({
-          activeMembers: firestore.FieldValue.increment(1),
-          updatedAt: firestore.FieldValue.serverTimestamp(),
-        });
+      await updateDoc(doc(db, 'groups', groupId), {
+        activeMembers: increment(1),
+        updatedAt: serverTimestamp(),
+      });
     } catch (error) {
       console.error('[useChitFunds] Join error:', error);
     }

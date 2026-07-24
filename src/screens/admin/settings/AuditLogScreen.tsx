@@ -22,7 +22,7 @@ import {
   ArrowLeft, Search, Filter, CheckCircle, XCircle,
   Clock, User, Shield, Zap, RefreshCw, ChevronDown,
 } from 'lucide-react-native';
-import { COLORS } from '../../../theme/colors';
+import { useTheme } from '../../../hooks/useTheme';
 import type { AuditLogEntry, AuditAction, AuditActorType } from '../../../types/payment';
 
 // SPRING_CONFIG replaced with chained methods
@@ -47,12 +47,12 @@ const getActionIcon = (action: AuditAction) => {
   return Zap;
 };
 
-const getActionColor = (action: AuditAction, success: boolean) => {
+const getActionColor = (action: AuditAction, success: boolean, primaryColor: string) => {
   if (!success) return '#D32F2F';
   if (action.includes('success') || action.includes('confirmed') || action.includes('matched')) return '#2E7D32';
   if (action.includes('failed') || action.includes('mismatch')) return '#D32F2F';
   if (action.includes('reminder') || action.includes('overdue')) return '#F57C00';
-  return COLORS.primaryBlue;
+  return primaryColor;
 };
 
 const formatAction = (action: string): string => {
@@ -94,6 +94,7 @@ interface Props {
 
 export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -102,6 +103,32 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
   const [activeFilter, setActiveFilter] = useState<FilterChip>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const dynamicStyles = {
+    container: { backgroundColor: colors.background },
+    headerTitle: { color: colors.text },
+    headerSubtitle: { color: colors.textSecondary },
+    backButton: { backgroundColor: colors.surfaceSecondary },
+    refreshButton: { backgroundColor: colors.surfaceSecondary },
+    searchContainer: { backgroundColor: colors.card },
+    searchInput: { color: colors.text },
+    filterChip: { backgroundColor: colors.card, borderColor: colors.border },
+    activeFilterChip: { backgroundColor: colors.primary, borderColor: colors.primary },
+    filterChipText: { color: colors.textSecondary },
+    activeFilterChipText: { color: colors.textOnPrimary },
+    logCard: { backgroundColor: colors.card },
+    logAction: { color: colors.text },
+    logActor: { color: colors.textSecondary },
+    logTime: { color: colors.textTertiary },
+    logTarget: { color: colors.textSecondary },
+    expandedSection: { borderTopColor: colors.divider },
+    detailLabel: { color: colors.textTertiary },
+    detailValue: { color: colors.text },
+    payloadText: { color: colors.textSecondary, backgroundColor: colors.surfaceSecondary },
+    emptyTitle: { color: colors.text },
+    emptySubtitle: { color: colors.textSecondary },
+    loadingText: { color: colors.textSecondary },
+  };
 
   const loadLogs = useCallback(async (reset = false) => {
     if (reset) {
@@ -193,14 +220,14 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
 
   const renderLogItem = useCallback(({ item, index }: { item: AuditLogEntry; index: number }) => {
     const IconComponent = getActionIcon(item.action);
-    const color = getActionColor(item.action, item.success);
+    const color = getActionColor(item.action, item.success, colors.primary);
     const ActorIcon = getActorIcon(item.actorType);
     const isExpanded = expandedId === item.id;
 
     return (
       <Animated.View entering={FadeInDown.delay(Math.min(index * 30, 300)).springify().damping(16).stiffness(140).mass(1)}>
         <TouchableOpacity
-          style={[styles.logCard, !item.success && styles.failedCard]}
+          style={[styles.logCard, !item.success && styles.failedCard, dynamicStyles.logCard]}
           onPress={() => {
             ReactNativeHapticFeedback.trigger('selection');
             setExpandedId(isExpanded ? null : item.id);
@@ -212,23 +239,23 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
               <IconComponent size={18} color={color} />
             </View>
             <View style={styles.logInfo}>
-              <Text style={styles.logAction} numberOfLines={1}>
+              <Text style={[styles.logAction, dynamicStyles.logAction]} numberOfLines={1}>
                 {formatAction(item.action)}
               </Text>
               <View style={styles.logMeta}>
-                <ActorIcon size={12} color="#999" />
-                <Text style={styles.logActor}>
+                <ActorIcon size={12} color={colors.textSecondary} />
+                <Text style={[styles.logActor, dynamicStyles.logActor]}>
                   {item.actorName || item.actorType}
                 </Text>
                 <Text style={styles.logDot}>{'\u00B7'}</Text>
-                <Text style={styles.logTime}>{formatTimestamp(item.timestamp)}</Text>
+                <Text style={[styles.logTime, dynamicStyles.logTime]}>{formatTimestamp(item.timestamp)}</Text>
               </View>
             </View>
             <View style={[styles.statusDot, { backgroundColor: item.success ? '#2E7D32' : '#D32F2F' }]} />
           </View>
 
           {item.targetName && (
-            <Text style={styles.logTarget} numberOfLines={1}>
+            <Text style={[styles.logTarget, dynamicStyles.logTarget]} numberOfLines={1}>
               Target: {item.targetName} ({item.targetCollection})
             </Text>
           )}
@@ -240,29 +267,29 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
           )}
 
           {isExpanded && (
-            <View style={styles.expandedSection}>
+            <View style={[styles.expandedSection, dynamicStyles.expandedSection]}>
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Actor ID</Text>
-                <Text style={styles.detailValue} numberOfLines={1}>{item.actorId}</Text>
+                <Text style={[styles.detailLabel, dynamicStyles.detailLabel]}>Actor ID</Text>
+                <Text style={[styles.detailValue, dynamicStyles.detailValue]} numberOfLines={1}>{item.actorId}</Text>
               </View>
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Target ID</Text>
-                <Text style={styles.detailValue} numberOfLines={1}>{item.targetId}</Text>
+                <Text style={[styles.detailLabel, dynamicStyles.detailLabel]}>Target ID</Text>
+                <Text style={[styles.detailValue, dynamicStyles.detailValue]} numberOfLines={1}>{item.targetId}</Text>
               </View>
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Collection</Text>
-                <Text style={styles.detailValue}>{item.targetCollection}</Text>
+                <Text style={[styles.detailLabel, dynamicStyles.detailLabel]}>Collection</Text>
+                <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{item.targetCollection}</Text>
               </View>
               {item.ipAddress && (
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>IP Address</Text>
-                  <Text style={styles.detailValue}>{item.ipAddress}</Text>
+                  <Text style={[styles.detailLabel, dynamicStyles.detailLabel]}>IP Address</Text>
+                  <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{item.ipAddress}</Text>
                 </View>
               )}
               {item.payload && Object.keys(item.payload).length > 0 && (
                 <View style={styles.payloadSection}>
-                  <Text style={styles.detailLabel}>Payload</Text>
-                  <Text style={styles.payloadText}>
+                  <Text style={[styles.detailLabel, dynamicStyles.detailLabel]}>Payload</Text>
+                  <Text style={[styles.payloadText, dynamicStyles.payloadText]}>
                     {JSON.stringify(item.payload, null, 2).slice(0, 300)}
                   </Text>
                 </View>
@@ -273,22 +300,22 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.expandIndicator}>
             <ChevronDown
               size={14}
-              color="#999"
+              color={colors.textTertiary}
               style={isExpanded ? { transform: [{ rotate: '180deg' }] } : undefined}
             />
           </View>
         </TouchableOpacity>
       </Animated.View>
     );
-  }, [expandedId]);
+  }, [expandedId, colors]);
 
   const renderEmpty = () => {
     if (isLoading) return null;
     return (
       <View style={styles.emptyState}>
-        <Shield size={48} color="#CCC" />
-        <Text style={styles.emptyTitle}>No Audit Logs</Text>
-        <Text style={styles.emptySubtitle}>
+        <Shield size={48} color={colors.border} />
+        <Text style={[styles.emptyTitle, dynamicStyles.emptyTitle]}>No Audit Logs</Text>
+        <Text style={[styles.emptySubtitle, dynamicStyles.emptySubtitle]}>
           {searchQuery ? 'No logs match your search' : 'No logs found for this filter'}
         </Text>
       </View>
@@ -296,28 +323,28 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top }, dynamicStyles.container]}>
       {/* Header */}
       <Animated.View entering={FadeInDown.springify().damping(16).stiffness(140).mass(1)} style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft size={22} color="#121723" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, dynamicStyles.backButton]}>
+          <ArrowLeft size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Audit Log</Text>
-          <Text style={styles.headerSubtitle}>{filteredLogs.length} entries</Text>
+          <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>Audit Log</Text>
+          <Text style={[styles.headerSubtitle, dynamicStyles.headerSubtitle]}>{filteredLogs.length} entries</Text>
         </View>
-        <TouchableOpacity onPress={handleRefresh} style={styles.refreshButton}>
-          <RefreshCw size={18} color={COLORS.primaryBlue} />
+        <TouchableOpacity onPress={handleRefresh} style={[styles.refreshButton, dynamicStyles.refreshButton]}>
+          <RefreshCw size={18} color={colors.primary} />
         </TouchableOpacity>
       </Animated.View>
 
       {/* Search */}
-      <Animated.View entering={FadeInDown.delay(30).springify().damping(16).stiffness(140).mass(1)} style={styles.searchContainer}>
-        <Search size={18} color="#999" />
+      <Animated.View entering={FadeInDown.delay(30).springify().damping(16).stiffness(140).mass(1)} style={[styles.searchContainer, dynamicStyles.searchContainer]}>
+        <Search size={18} color={colors.textTertiary} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, dynamicStyles.searchInput]}
           placeholder="Search actions, actors, targets..."
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.placeholder}
           value={searchQuery}
           onChangeText={setSearchQuery}
           autoCapitalize="none"
@@ -335,9 +362,19 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => handleFilterChange(item.value)}
-              style={[styles.filterChip, activeFilter === item.value && styles.activeFilterChip]}
+              style={[
+                styles.filterChip,
+                dynamicStyles.filterChip,
+                activeFilter === item.value && styles.activeFilterChip,
+                activeFilter === item.value && dynamicStyles.activeFilterChip
+              ]}
             >
-              <Text style={[styles.filterChipText, activeFilter === item.value && styles.activeFilterChipText]}>
+              <Text style={[
+                styles.filterChipText,
+                dynamicStyles.filterChipText,
+                activeFilter === item.value && styles.activeFilterChipText,
+                activeFilter === item.value && dynamicStyles.activeFilterChipText
+              ]}>
                 {item.label}
               </Text>
             </TouchableOpacity>
@@ -348,8 +385,8 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
       {/* Log List */}
       {isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={COLORS.primaryBlue} />
-          <Text style={styles.loadingText}>Loading audit logs...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, dynamicStyles.loadingText]}>Loading audit logs...</Text>
         </View>
       ) : (
         <FlatList
@@ -367,7 +404,7 @@ export const AuditLogScreen: React.FC<Props> = ({ navigation }) => {
           onEndReachedThreshold={0.3}
           ListFooterComponent={
             isLoadingMore ? (
-              <ActivityIndicator style={{ paddingVertical: 16 }} color={COLORS.primaryBlue} />
+              <ActivityIndicator style={{ paddingVertical: 16 }} color={colors.primary} />
             ) : null
           }
         />
@@ -391,8 +428,8 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 14, backgroundColor: '#FFFFFF',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: 24, fontFamily: 'PlusJakartaSans-Bold', color: '#121723' },
-  headerSubtitle: { fontSize: 13, fontFamily: 'PlusJakartaSans-Regular', color: '#666' },
+  headerTitle: { fontSize: 24, fontFamily: 'Satoshi-Black', color: '#121723' },
+  headerSubtitle: { fontSize: 13, fontFamily: 'Satoshi-Regular', color: '#666' },
   searchContainer: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
     marginHorizontal: 20, borderRadius: 14, paddingHorizontal: 14, height: 44,
@@ -400,7 +437,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
   searchInput: {
-    flex: 1, fontSize: 14, fontFamily: 'PlusJakartaSans-Regular', color: '#121723',
+    flex: 1, fontSize: 14, fontFamily: 'Satoshi-Regular', color: '#121723',
     padding: 0,
   },
   filterRow: { marginBottom: 12 },
@@ -409,7 +446,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#CCC',
   },
   activeFilterChip: { backgroundColor: '#121723', borderColor: '#121723' },
-  filterChipText: { fontSize: 12, fontFamily: 'PlusJakartaSans-Medium', color: '#666' },
+  filterChipText: { fontSize: 12, fontFamily: 'Satoshi-Medium', color: '#666' },
   activeFilterChipText: { color: '#FFFFFF' },
   logCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 10,
@@ -421,18 +458,18 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
   },
   logInfo: { flex: 1 },
-  logAction: { fontSize: 14, fontFamily: 'PlusJakartaSans-SemiBold', color: '#121723' },
+  logAction: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: '#121723' },
   logMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  logActor: { fontSize: 11, fontFamily: 'PlusJakartaSans-Regular', color: '#999' },
+  logActor: { fontSize: 11, fontFamily: 'Satoshi-Regular', color: '#999' },
   logDot: { fontSize: 11, color: '#999' },
-  logTime: { fontSize: 11, fontFamily: 'PlusJakartaSans-Regular', color: '#999' },
+  logTime: { fontSize: 11, fontFamily: 'Satoshi-Regular', color: '#999' },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   logTarget: {
-    fontSize: 12, fontFamily: 'PlusJakartaSans-Regular', color: '#666',
+    fontSize: 12, fontFamily: 'Satoshi-Regular', color: '#666',
     marginTop: 8, paddingLeft: 48,
   },
   logError: {
-    fontSize: 12, fontFamily: 'PlusJakartaSans-Regular', color: '#D32F2F',
+    fontSize: 12, fontFamily: 'Satoshi-Regular', color: '#D32F2F',
     marginTop: 6, paddingLeft: 48, lineHeight: 16,
   },
   expandedSection: {
@@ -442,18 +479,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingVertical: 6,
   },
-  detailLabel: { fontSize: 12, fontFamily: 'PlusJakartaSans-Medium', color: '#999' },
-  detailValue: { fontSize: 12, fontFamily: 'PlusJakartaSans-Regular', color: '#121723', flex: 1, textAlign: 'right', marginLeft: 12 },
+  detailLabel: { fontSize: 12, fontFamily: 'Satoshi-Medium', color: '#999' },
+  detailValue: { fontSize: 12, fontFamily: 'Satoshi-Regular', color: '#121723', flex: 1, textAlign: 'right', marginLeft: 12 },
   payloadSection: { marginTop: 8 },
   payloadText: {
-    fontSize: 11, fontFamily: 'PlusJakartaSans-Regular', color: '#666',
+    fontSize: 11, fontFamily: 'Satoshi-Regular', color: '#666',
     backgroundColor: '#F8F9FA', padding: 10, borderRadius: 8, marginTop: 4, lineHeight: 16,
   },
   expandIndicator: { alignItems: 'center', marginTop: 6 },
   emptyState: { alignItems: 'center', paddingTop: 60 },
-  emptyTitle: { fontSize: 18, fontFamily: 'PlusJakartaSans-Bold', color: '#121723', marginTop: 16 },
-  emptySubtitle: { fontSize: 14, fontFamily: 'PlusJakartaSans-Regular', color: '#999', marginTop: 4 },
-  loadingText: { fontSize: 15, fontFamily: 'PlusJakartaSans-Medium', color: '#666', marginTop: 12 },
+  emptyTitle: { fontSize: 18, fontFamily: 'Satoshi-Black', color: '#121723', marginTop: 16 },
+  emptySubtitle: { fontSize: 14, fontFamily: 'Satoshi-Regular', color: '#999', marginTop: 4 },
+  loadingText: { fontSize: 15, fontFamily: 'Satoshi-Medium', color: '#666', marginTop: 12 },
 });
 
 export default AuditLogScreen;

@@ -11,7 +11,17 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Check, X, Clock, RefreshCw } from 'lucide-react-native';
 import { theme } from '../../theme';
 import { useTheme } from '../../hooks/useTheme';
-import firestore from '@react-native-firebase/firestore';
+import { 
+  getFirestore, 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  onSnapshot, 
+  doc, 
+  updateDoc, 
+  serverTimestamp 
+} from '@react-native-firebase/firestore';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 // Transaction type for approvals
@@ -38,28 +48,35 @@ export const AdminApprovalsScreen = () => {
   useEffect(() => {
     setIsLoading(true);
 
-    const unsubscribe = firestore()
-      .collection('pendingApprovals')
-      .where('status', '==', 'pending')
-      .orderBy('createdAt', 'desc')
-      .onSnapshot(
-        (snapshot) => {
-          const transactions = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            date: doc.data().createdAt?.toDate() || new Date(),
-            createdAt: doc.data().createdAt?.toDate() || new Date(),
-          })) as ApprovalTransaction[];
-          setPendingTransactions(transactions);
-          setIsLoading(false);
-          setError(null);
-        },
-        (err) => {
-          console.error('[AdminApprovalsScreen] Error:', err);
-          setError('Failed to load approvals');
-          setIsLoading(false);
-        }
-      );
+    const db = getFirestore();
+    const q = query(
+      collection(db, 'pendingApprovals'),
+      where('status', '==', 'pending'),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const transactions = snapshot.docs.map((docSnap: any) => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            ...data,
+            date: data.createdAt?.toDate() || new Date(),
+            createdAt: data.createdAt?.toDate() || new Date(),
+          };
+        }) as ApprovalTransaction[];
+        setPendingTransactions(transactions);
+        setIsLoading(false);
+        setError(null);
+      },
+      (err) => {
+        console.error('[AdminApprovalsScreen] Error:', err);
+        setError('Failed to load approvals');
+        setIsLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
@@ -67,9 +84,10 @@ export const AdminApprovalsScreen = () => {
   const handleApprove = useCallback(async (id: string) => {
     ReactNativeHapticFeedback.trigger('notificationSuccess');
     try {
-      await firestore().collection('pendingApprovals').doc(id).update({
+      const db = getFirestore();
+      await updateDoc(doc(db, 'pendingApprovals', id), {
         status: 'approved',
-        approvedAt: firestore.FieldValue.serverTimestamp(),
+        approvedAt: serverTimestamp(),
       });
       // Update group/member totals would be done via Firestore trigger
     } catch (err) {
@@ -80,9 +98,10 @@ export const AdminApprovalsScreen = () => {
   const handleReject = useCallback(async (id: string) => {
     ReactNativeHapticFeedback.trigger('notificationError');
     try {
-      await firestore().collection('pendingApprovals').doc(id).update({
+      const db = getFirestore();
+      await updateDoc(doc(db, 'pendingApprovals', id), {
         status: 'rejected',
-        rejectedAt: firestore.FieldValue.serverTimestamp(),
+        rejectedAt: serverTimestamp(),
       });
     } catch (err) {
       console.error('Failed to reject:', err);

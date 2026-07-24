@@ -324,15 +324,14 @@ export const drawsService = {
       // PERFORMANCE WARNING: This fetches all draw bids which is inefficient
       // for large datasets. Consider using Cloud Functions for aggregation
       // or implement pagination for bid analysis.
-      const bidsSnapshot = await firestore()
-        .collection(COLLECTIONS.DRAW_BIDS)
+      // Read pre-aggregated bid average from drawSummaries instead of scanning all bids
+      const summaryId = groupId || 'global';
+      const summarySnap = await firestore()
+        .collection('drawSummaries')
+        .doc(summaryId)
         .get();
-      const allBids = bidsSnapshot.docs.map(doc => doc.data() as DrawBid);
-      const averageBidAmount =
-        allBids.length > 0
-          ? allBids.reduce((sum, bid) => sum + bid.bidAmount, 0) /
-            allBids.length
-          : 0;
+      const summaryData = summarySnap.data();
+      const averageBidAmount = summaryData?.averageWinningBid ?? 0;
 
       const winningBids = draws
         .filter(d => d.winningBid)

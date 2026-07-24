@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   },
   name: {
     ...(typography.body as any),
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   },
   amount: {
     ...(typography.body as any),
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     marginRight: spacing.s,
   },
   income: {

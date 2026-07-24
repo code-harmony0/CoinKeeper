@@ -1,14 +1,7 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  ReactNode,
-} from 'react';
-import auth from '@react-native-firebase/auth';
+import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 import { Transaction } from '../types/transaction';
-import { transactionService } from '../services/transactionService';
+import { initDatabase } from '../store/database';
+import { useTransactionStore } from '../store/transactionStore';
 
 interface TransactionsContextType {
   transactions: Transaction[];
@@ -26,69 +19,29 @@ const TransactionsContext = createContext<TransactionsContextType | undefined>(
 export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const transactions = useTransactionStore(state => state.transactions);
+  const loading = useTransactionStore(state => state.loading);
+  const loadTransactions = useTransactionStore(
+    state => state.loadTransactions,
+  );
+  const addTransaction = useTransactionStore(state => state.addTransaction);
+  const deleteTransaction = useTransactionStore(
+    state => state.deleteTransaction,
+  );
+  const updateTransaction = useTransactionStore(
+    state => state.updateTransaction,
+  );
 
-  // Real-time Firestore listener
   useEffect(() => {
-    const user = auth().currentUser;
-    if (!user) {
-      setTransactions([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const unsubscribe = transactionService.onTransactionsSnapshot(
-      txs => {
-        setTransactions(txs);
-        setLoading(false);
-      },
-      error => {
-        console.error('[TransactionsContext] Listener error:', error);
-        setLoading(false);
-      },
-    );
-
-    return () => unsubscribe();
-  }, []);
-
-  const addTransaction = useCallback(
-    async (newTx: Omit<Transaction, 'id' | 'date'>) => {
+    (async () => {
       try {
-        await transactionService.addTransaction(newTx);
-        // onSnapshot will automatically update the list
+        await initDatabase();
+        await loadTransactions();
       } catch (error) {
-        console.error('[TransactionsContext] Add error:', error);
+        console.error('[TransactionsContext] Init error:', error);
       }
-    },
-    [],
-  );
-
-  const deleteTransaction = useCallback(async (id: string) => {
-    try {
-      await transactionService.deleteTransaction(id);
-    } catch (error) {
-      console.error('[TransactionsContext] Delete error:', error);
-    }
-  }, []);
-
-  const updateTransaction = useCallback(
-    async (id: string, updates: Partial<Transaction>) => {
-      try {
-        await transactionService.updateTransaction(id, updates);
-      } catch (error) {
-        console.error('[TransactionsContext] Update error:', error);
-      }
-    },
-    [],
-  );
-
-  const refreshTransactions = useCallback(async () => {
-    // onSnapshot handles real-time — this is a no-op but keeps the API stable
-    setLoading(true);
-    setTimeout(() => setLoading(false), 300);
-  }, []);
+    })();
+  }, [loadTransactions]);
 
   return (
     <TransactionsContext.Provider
@@ -97,7 +50,7 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({
         addTransaction,
         deleteTransaction,
         updateTransaction,
-        refreshTransactions,
+        refreshTransactions: loadTransactions,
         loading,
       }}
     >

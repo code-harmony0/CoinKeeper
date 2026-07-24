@@ -27,6 +27,6 @@ const styles = StyleSheet.create({
   seeAll: {
     ...(typography.body as any),
     color: colors.primary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Satoshi-Medium',
   },
 });

@@ -2,7 +2,21 @@
  * Transaction Service — Firestore CRUD for user transactions
  * Collection: 'transactions' (per-user, filtered by userId)
  */
-import firestore from '@react-native-firebase/firestore';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+  limit,
+  serverTimestamp,
+} from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import type { Transaction } from '../types/transaction';
 
@@ -15,26 +29,23 @@ const getCurrentUserId = (): string => {
 };
 
 export const transactionService = {
-  /**
-   * Add a new transaction
-   */
   addTransaction: async (
     data: Omit<Transaction, 'id' | 'date'>,
   ): Promise<Transaction> => {
     try {
       const userId = getCurrentUserId();
-      const ref = firestore().collection(COLLECTION).doc();
-      const doc = {
+      const db = getFirestore();
+      const ref = doc(collection(db, COLLECTION));
+      const docData = {
         ...data,
         userId,
-        date: firestore.FieldValue.serverTimestamp(),
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        date: serverTimestamp(),
+        createdAt: serverTimestamp(),
       };
-      await ref.set(doc);
+      await setDoc(ref, docData);
 
-      // Fetch the document to get actual server timestamps
-      const snapshot = await ref.get();
-      const savedData = snapshot.data();
+      const snapshot = await getDoc(ref);
+      const savedData = snapshot.data() as any;
       return {
         id: ref.id,
         ...data,
@@ -48,77 +59,71 @@ export const transactionService = {
     }
   },
 
-  /**
-   * Delete a transaction
-   */
   deleteTransaction: async (id: string): Promise<void> => {
     try {
-      await firestore().collection(COLLECTION).doc(id).delete();
+      const db = getFirestore();
+      await deleteDoc(doc(db, COLLECTION, id));
     } catch (error) {
       console.error('[transactionService] Error deleting transaction:', error);
       throw error;
     }
   },
 
-  /**
-   * Update a transaction
-   */
   updateTransaction: async (
     id: string,
     updates: Partial<Transaction>,
   ): Promise<void> => {
     try {
-      await firestore()
-        .collection(COLLECTION)
-        .doc(id)
-        .update({
-          ...updates,
-          updatedAt: firestore.FieldValue.serverTimestamp(),
-        });
+      const db = getFirestore();
+      await updateDoc(doc(db, COLLECTION, id), {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
     } catch (error) {
       console.error('[transactionService] Error updating transaction:', error);
       throw error;
     }
   },
 
-  /**
-   * Real-time listener for current user's transactions
-   */
   onTransactionsSnapshot: (
     callback: (transactions: Transaction[]) => void,
     onError?: (error: Error) => void,
   ) => {
     try {
       const userId = getCurrentUserId();
-      const unsubscribe = firestore()
-        .collection(COLLECTION)
-        .where('userId', '==', userId)
-        .orderBy('date', 'desc')
-        .limit(500)
-        .onSnapshot(
-          snapshot => {
-            const txs = snapshot.docs.map(doc => {
-              const data = doc.data();
-              return {
-                id: doc.id,
-                amount: data.amount,
-                type: data.type,
-                category: data.category,
-                categoryIcon: data.categoryIcon || 'other',
-                description: data.description,
-                date: data.date?.toDate?.()
-                  ? data.date.toDate().toISOString()
-                  : data.date || new Date().toISOString(),
-                paymentMethod: data.paymentMethod,
-              } as Transaction;
-            });
-            callback(txs);
-          },
-          error => {
-            console.error('[transactionService] Snapshot error:', error);
-            onError?.(error);
-          },
-        );
+      const db = getFirestore();
+      const q = query(
+        collection(db, COLLECTION),
+        where('userId', '==', userId),
+        orderBy('date', 'desc'),
+        limit(500)
+      );
+
+      const unsubscribe = onSnapshot(
+        q,
+        snapshot => {
+          const txs = snapshot.docs.map((docSnap: any) => {
+            const data = docSnap.data();
+            return {
+              id: docSnap.id,
+              amount: data.amount,
+              type: data.type,
+              category: data.category,
+              categoryIcon: data.categoryIcon || 'other',
+              description: data.description,
+              date: data.date?.toDate?.()
+                ? data.date.toDate().toISOString()
+                : data.date || new Date().toISOString(),
+              paymentMethod: data.paymentMethod,
+            } as Transaction;
+          });
+          callback(txs);
+        },
+        error => {
+          console.error('[transactionService] Snapshot error:', error);
+          onError?.(error);
+        },
+      );
       return unsubscribe;
     } catch (error) {
       console.error('[transactionService] Error setting up listener:', error);

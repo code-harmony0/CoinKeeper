@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   trendText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Satoshi-Medium',
     fontSize: 12,
     fontWeight: '600',
   },

@@ -79,6 +79,8 @@ export const colors = {
   white: '#FFFFFF',
   black: '#000000',
   transparent: 'transparent',
+  primaryBlue: '#5B8DEF',
+  primaryBlueDark: '#3B82F6',
 };
 
 /**

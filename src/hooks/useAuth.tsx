@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService, UserProfile } from '../services/authService';
-import { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
 type AuthContextType = {
   user: FirebaseAuthTypes.User | null;
@@ -10,6 +10,9 @@ type AuthContextType = {
   signInWithPhoneNumber: (phoneNumber: string) => Promise<FirebaseAuthTypes.ConfirmationResult>;
   confirmCode: (confirmation: FirebaseAuthTypes.ConfirmationResult, code: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin: false,
         onboardingCompleted: true,
       };
+
+      // Sign in anonymously to satisfy Firestore rules requiring request.auth != null
+      if (!auth().currentUser) {
+        auth().signInAnonymously().catch((err) => {
+          console.warn('[useAuth] Mock sign-in anonymously failed:', err);
+        });
+      }
 
       setUser(mockUser);
       setUserProfile(mockProfile);
@@ -109,6 +119,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithPhoneNumber,
     confirmCode,
     signOut,
+    signIn: async (email, password) => { console.warn('Mock signIn called:', email); },
+    signUp: async (email, password) => { console.warn('Mock signUp called:', email); },
+    resetPassword: async (email) => { console.warn('Mock resetPassword called:', email); },
   };
 
   return (

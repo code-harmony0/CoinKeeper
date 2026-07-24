@@ -295,13 +295,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.errorCoral,
     fontWeight: '600',
   },
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textPrimary,
   },
   sortContainer: {
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   },
   sortButtonText: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.textSecondary,
   },
   activeSortButtonText: {
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   },
   daysOverdueText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.surface,
   },
   cardBody: {
@@ -393,13 +393,13 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
   groupName: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textSecondary,
     marginBottom: 16,
   },
@@ -409,13 +409,13 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textTertiary,
     marginBottom: 4,
   },
   amount: {
     fontSize: 20,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.textPrimary,
   },
   cardFooter: {
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   },
   remindButtonText: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: COLORS.surface,
   },
   footerItem: {
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textSecondary,
   },
   emptyState: {
@@ -461,14 +461,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Satoshi-Black',
     color: COLORS.successGreen,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'Satoshi-Regular',
     color: COLORS.textTertiary,
     textAlign: 'center',
   },
@@ -478,13 +478,13 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.textSecondary,
     marginTop: 12,
   },
   errorText: {
     fontSize: 16,
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'Satoshi-Medium',
     color: COLORS.errorCoral,
     marginTop: 12,
     textAlign: 'center',
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'Satoshi-Bold',
     color: COLORS.surface,
   },
 });

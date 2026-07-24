@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text as RNText, TextProps as RNTextProps } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { FONTS } from '../../theme/fonts';
 
 interface TextProps extends RNTextProps {
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'caption' | 'label';
@@ -19,19 +20,19 @@ export const Text: React.FC<TextProps> = ({
   const getVariantStyles = () => {
     switch (variant) {
       case 'h1':
-        return { fontSize: 32, fontWeight: 'bold' as const };
+        return { fontSize: 32, fontFamily: FONTS.black };
       case 'h2':
-        return { fontSize: 24, fontWeight: 'bold' as const };
+        return { fontSize: 24, fontFamily: FONTS.black };
       case 'h3':
-        return { fontSize: 20, fontWeight: '600' as const };
+        return { fontSize: 20, fontFamily: FONTS.bold };
       case 'body':
-        return { fontSize: 16, fontWeight: '400' as const };
+        return { fontSize: 16, fontFamily: FONTS.regular };
       case 'caption':
-        return { fontSize: 14, fontWeight: '400' as const };
+        return { fontSize: 14, fontFamily: FONTS.regular };
       case 'label':
-        return { fontSize: 14, fontWeight: '500' as const };
+        return { fontSize: 14, fontFamily: FONTS.medium };
       default:
-        return { fontSize: 16, fontWeight: '400' as const };
+        return { fontSize: 16, fontFamily: FONTS.regular };
     }
   };
 

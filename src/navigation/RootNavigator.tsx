@@ -19,6 +19,8 @@ import { NotificationsStackNavigator } from './NotificationsStackNavigator';
 import { AnalyticsStackNavigator } from './AnalyticsStackNavigator';
 import { AuditLogScreen } from '../screens/admin/settings/AuditLogScreen';
 import { PermissionsRolesScreen } from '../screens/admin/settings/PermissionsRolesScreen';
+import { ChitDetailScreen } from '../screens/user/ChitDetailScreen';
+import { ReportsScreen } from '../screens/user/ReportsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -74,6 +76,8 @@ export const RootNavigator = () => {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="UserTabs" component={UserTabNavigator} />
         <Stack.Screen name="Groups" component={GroupsScreen} />
+        <Stack.Screen name="ChitDetail" component={ChitDetailScreen} />
+        <Stack.Screen name="Reports" component={ReportsScreen} />
         <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
         <Stack.Screen name="MembersStack" component={MembersStackNavigator} />
         <Stack.Screen name="TransactionsStack" component={TransactionsStackNavigator} />

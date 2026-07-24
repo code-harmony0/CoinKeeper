@@ -3,7 +3,23 @@
  * Firestore operations for admin group management
  */
 
-import firestore from '@react-native-firebase/firestore';
+import {
+  getFirestore,
+  collection,
+  doc,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  increment,
+  serverTimestamp,
+  Timestamp,
+} from '@react-native-firebase/firestore';
 import type {
   Group,
   CreateGroupData,
@@ -24,6 +40,8 @@ const COLLECTIONS = {
   CONTRIBUTIONS: 'group_contributions',
 };
 
+const db = getFirestore();
+
 export const groupService = {
   // ==================== GROUP CRUD ====================
 
@@ -35,7 +53,7 @@ export const groupService = {
     adminId: string,
   ): Promise<Group> => {
     try {
-      const groupRef = firestore().collection(COLLECTIONS.GROUPS).doc();
+      const groupRef = doc(collection(db, COLLECTIONS.GROUPS));
 
       const groupData: Omit<Group, 'id'> = {
         name: data.name.trim(),
@@ -46,20 +64,20 @@ export const groupService = {
         totalPooled: 0,
         autoDebit: data.autoDebit,
         status: 'pending',
-        startDate: firestore.Timestamp.fromDate(data.startDate),
-        createdAt: firestore.FieldValue.serverTimestamp() as any,
-        updatedAt: firestore.FieldValue.serverTimestamp() as any,
+        startDate: Timestamp.fromDate(data.startDate),
+        createdAt: serverTimestamp() as any,
+        updatedAt: serverTimestamp() as any,
         createdBy: adminId,
         archived: false,
         closed: false,
       };
 
-      await groupRef.set(groupData);
+      await setDoc(groupRef, groupData);
 
-      const snapshot = await groupRef.get();
+      const snapshot = await getDoc(groupRef);
       return {
         id: snapshot.id,
-        ...snapshot.data(),
+        ...(snapshot.data() as any),
       } as Group;
     } catch (error) {
       console.error('[groupService] Error creating group:', error);
@@ -72,10 +90,7 @@ export const groupService = {
    */
   getGroup: async (groupId: string): Promise<Group | null> => {
     try {
-      const snapshot = await firestore()
-        .collection(COLLECTIONS.GROUPS)
-        .doc(groupId)
-        .get();
+      const snapshot = await getDoc(doc(db, COLLECTIONS.GROUPS, groupId));
 
       if (!snapshot.exists) {
         return null;
@@ -83,7 +98,7 @@ export const groupService = {
 
       return {
         id: snapshot.id,
-        ...snapshot.data(),
+        ...(snapshot.data() as any),
       } as Group;
     } catch (error) {
       console.error('[groupService] Error fetching group:', error);
@@ -99,13 +114,10 @@ export const groupService = {
     updates: UpdateGroupData,
   ): Promise<void> => {
     try {
-      await firestore()
-        .collection(COLLECTIONS.GROUPS)
-        .doc(groupId)
-        .update({
-          ...updates,
-          updatedAt: firestore.FieldValue.serverTimestamp(),
-        });
+      await updateDoc(doc(db, COLLECTIONS.GROUPS, groupId), {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
     } catch (error) {
       console.error('[groupService] Error updating group:', error);
       throw new Error('Failed to update group');
@@ -117,10 +129,10 @@ export const groupService = {
    */
   archiveGroup: async (groupId: string): Promise<void> => {
     try {
-      await firestore().collection(COLLECTIONS.GROUPS).doc(groupId).update({
+      await updateDoc(doc(db, COLLECTIONS.GROUPS, groupId), {
         archived: true,
         status: 'inactive',
-        updatedAt: firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     } catch (error) {
       console.error('[groupService] Error archiving group:', error);
@@ -133,10 +145,10 @@ export const groupService = {
    */
   closeGroup: async (groupId: string): Promise<void> => {
     try {
-      await firestore().collection(COLLECTIONS.GROUPS).doc(groupId).update({
+      await updateDoc(doc(db, COLLECTIONS.GROUPS, groupId), {
         closed: true,
         status: 'closed',
-        updatedAt: firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     } catch (error) {
       console.error('[groupService] Error closing group:', error);
@@ -159,24 +171,26 @@ export const groupService = {
     },
   ) => {
     try {
-      let query = firestore()
-        .collection(COLLECTIONS.GROUPS)
-        .orderBy('createdAt', 'desc');
+      let q = query(
+        collection(db, COLLECTIONS.GROUPS),
+        orderBy('createdAt', 'desc')
+      );
 
       // Apply filters
       if (filters?.adminId) {
-        query = query.where('createdBy', '==', filters.adminId) as any;
+        q = query(q, where('createdBy', '==', filters.adminId));
       }
 
       if (filters?.archived !== undefined) {
-        query = query.where('archived', '==', filters.archived) as any;
+        q = query(q, where('archived', '==', filters.archived));
       }
 
-      const unsubscribe = query.onSnapshot(
+      const unsubscribe = onSnapshot(
+        q,
         snapshot => {
-          const groups = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
+          const groups = snapshot.docs.map((docSnap: any) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
           })) as Group[];
 
           // Apply status filter in memory (Firestore doesn't support array contains for non-array fields)
@@ -206,7 +220,7 @@ export const groupService = {
    */
   addMember: async (data: AddMemberData): Promise<GroupMember> => {
     try {
-      const memberRef = firestore().collection(COLLECTIONS.MEMBERS).doc();
+      const memberRef = doc(collection(db, COLLECTIONS.MEMBERS));
 
       const memberData: Omit<GroupMember, 'id'> = {
         groupId: data.groupId,
@@ -214,28 +228,25 @@ export const groupService = {
         userName: data.userName,
         userEmail: data.userEmail,
         userPhone: data.userPhone,
-        joinedDate: firestore.FieldValue.serverTimestamp() as any,
+        joinedDate: serverTimestamp() as any,
         contributionStatus: 'pending',
         totalContributed: 0,
         missedPayments: 0,
         status: 'active',
       };
 
-      await memberRef.set(memberData);
+      await setDoc(memberRef, memberData);
 
       // Increment activeMembers count in group
-      await firestore()
-        .collection(COLLECTIONS.GROUPS)
-        .doc(data.groupId)
-        .update({
-          activeMembers: firestore.FieldValue.increment(1),
-          updatedAt: firestore.FieldValue.serverTimestamp(),
-        });
+      await updateDoc(doc(db, COLLECTIONS.GROUPS, data.groupId), {
+        activeMembers: increment(1),
+        updatedAt: serverTimestamp(),
+      });
 
-      const snapshot = await memberRef.get();
+      const snapshot = await getDoc(memberRef);
       return {
         id: snapshot.id,
-        ...snapshot.data(),
+        ...(snapshot.data() as any),
       } as GroupMember;
     } catch (error) {
       console.error('[groupService] Error adding member:', error);
@@ -249,18 +260,15 @@ export const groupService = {
   removeMember: async (memberId: string, groupId: string): Promise<void> => {
     try {
       // Update member status
-      await firestore().collection(COLLECTIONS.MEMBERS).doc(memberId).update({
+      await updateDoc(doc(db, COLLECTIONS.MEMBERS, memberId), {
         status: 'removed',
       });
 
       // Decrement activeMembers count in group
-      await firestore()
-        .collection(COLLECTIONS.GROUPS)
-        .doc(groupId)
-        .update({
-          activeMembers: firestore.FieldValue.increment(-1),
-          updatedAt: firestore.FieldValue.serverTimestamp(),
-        });
+      await updateDoc(doc(db, COLLECTIONS.GROUPS, groupId), {
+        activeMembers: increment(-1),
+        updatedAt: serverTimestamp(),
+      });
     } catch (error) {
       console.error('[groupService] Error removing member:', error);
       throw new Error('Failed to remove member');
@@ -276,26 +284,29 @@ export const groupService = {
     onError?: (error: Error) => void,
   ) => {
     try {
-      const unsubscribe = firestore()
-        .collection(COLLECTIONS.MEMBERS)
-        .where('groupId', '==', groupId)
-        .where('status', '!=', 'removed')
-        .orderBy('status', 'asc')
-        .orderBy('joinedDate', 'desc')
-        .onSnapshot(
-          snapshot => {
-            const members = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-            })) as GroupMember[];
+      const q = query(
+        collection(db, COLLECTIONS.MEMBERS),
+        where('groupId', '==', groupId),
+        where('status', '!=', 'removed'),
+        orderBy('status', 'asc'),
+        orderBy('joinedDate', 'desc')
+      );
 
-            callback(members);
-          },
-          error => {
-            console.error('[groupService] Members snapshot error:', error);
-            onError?.(error);
-          },
-        );
+      const unsubscribe = onSnapshot(
+        q,
+        snapshot => {
+          const members = snapshot.docs.map((docSnap: any) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          })) as GroupMember[];
+
+          callback(members);
+        },
+        error => {
+          console.error('[groupService] Members snapshot error:', error);
+          onError?.(error);
+        },
+      );
 
       return unsubscribe;
     } catch (error) {
@@ -315,25 +326,28 @@ export const groupService = {
     onError?: (error: Error) => void,
   ) => {
     try {
-      const unsubscribe = firestore()
-        .collection(COLLECTIONS.TRANSACTIONS)
-        .where('groupId', '==', groupId)
-        .orderBy('date', 'desc')
-        .limit(100)
-        .onSnapshot(
-          snapshot => {
-            const transactions = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-            })) as GroupTransaction[];
+      const q = query(
+        collection(db, COLLECTIONS.TRANSACTIONS),
+        where('groupId', '==', groupId),
+        orderBy('date', 'desc'),
+        limit(100)
+      );
 
-            callback(transactions);
-          },
-          error => {
-            console.error('[groupService] Transactions snapshot error:', error);
-            onError?.(error);
-          },
-        );
+      const unsubscribe = onSnapshot(
+        q,
+        snapshot => {
+          const transactions = snapshot.docs.map((docSnap: any) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          })) as GroupTransaction[];
+
+          callback(transactions);
+        },
+        error => {
+          console.error('[groupService] Transactions snapshot error:', error);
+          onError?.(error);
+        },
+      );
 
       return unsubscribe;
     } catch (error) {
@@ -356,24 +370,27 @@ export const groupService = {
     onError?: (error: Error) => void,
   ) => {
     try {
-      const unsubscribe = firestore()
-        .collection(COLLECTIONS.DRAWS)
-        .where('groupId', '==', groupId)
-        .orderBy('scheduledDate', 'desc')
-        .onSnapshot(
-          snapshot => {
-            const draws = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-            })) as GroupDraw[];
+      const q = query(
+        collection(db, COLLECTIONS.DRAWS),
+        where('groupId', '==', groupId),
+        orderBy('scheduledDate', 'desc')
+      );
 
-            callback(draws);
-          },
-          error => {
-            console.error('[groupService] Draws snapshot error:', error);
-            onError?.(error);
-          },
-        );
+      const unsubscribe = onSnapshot(
+        q,
+        snapshot => {
+          const draws = snapshot.docs.map((docSnap: any) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          })) as GroupDraw[];
+
+          callback(draws);
+        },
+        error => {
+          console.error('[groupService] Draws snapshot error:', error);
+          onError?.(error);
+        },
+      );
 
       return unsubscribe;
     } catch (error) {
@@ -393,28 +410,31 @@ export const groupService = {
     onError?: (error: Error) => void,
   ) => {
     try {
-      const unsubscribe = firestore()
-        .collection(COLLECTIONS.CONTRIBUTIONS)
-        .where('groupId', '==', groupId)
-        .orderBy('dueDate', 'desc')
-        .limit(200)
-        .onSnapshot(
-          snapshot => {
-            const contributions = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-            })) as Contribution[];
+      const q = query(
+        collection(db, COLLECTIONS.CONTRIBUTIONS),
+        where('groupId', '==', groupId),
+        orderBy('dueDate', 'desc'),
+        limit(200)
+      );
 
-            callback(contributions);
-          },
-          error => {
-            console.error(
-              '[groupService] Contributions snapshot error:',
-              error,
-            );
-            onError?.(error);
-          },
-        );
+      const unsubscribe = onSnapshot(
+        q,
+        snapshot => {
+          const contributions = snapshot.docs.map((docSnap: any) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          })) as Contribution[];
+
+          callback(contributions);
+        },
+        error => {
+          console.error(
+            '[groupService] Contributions snapshot error:',
+            error,
+          );
+          onError?.(error);
+        },
+      );
 
       return unsubscribe;
     } catch (error) {
@@ -433,14 +453,14 @@ export const groupService = {
    */
   getGroupStats: async (adminId?: string) => {
     try {
-      let query = firestore().collection(COLLECTIONS.GROUPS);
+      let q = query(collection(db, COLLECTIONS.GROUPS));
 
       if (adminId) {
-        query = query.where('createdBy', '==', adminId) as any;
+        q = query(q, where('createdBy', '==', adminId));
       }
 
-      const snapshot = await query.get();
-      const groups = snapshot.docs.map(doc => doc.data()) as Group[];
+      const snapshot = await getDocs(q);
+      const groups = snapshot.docs.map((docSnap: any) => docSnap.data()) as Group[];
 
       const totalGroups = groups.length;
       const activeGroups = groups.filter(g => g.status === 'active').length;

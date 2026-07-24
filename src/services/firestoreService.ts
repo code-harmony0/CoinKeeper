@@ -1,23 +1,31 @@
-import firestore from '@react-native-firebase/firestore';
-import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+  limit,
+  serverTimestamp,
+} from '@react-native-firebase/firestore';
 
-type WhereOptions = [string, FirebaseFirestoreTypes.WhereFilterOp, any];
+type WhereFilterOp = '<' | '<=' | '==' | '!=' | '>=' | '>' | 'array-contains' | 'array-contains-any' | 'in' | 'not-in';
+type WhereOptions = [string, WhereFilterOp, any];
 type OrderByOptions = [string, 'asc' | 'desc'];
 
-// Generic Firestore Service for all collections
-// This will handle create, read, update, delete, and real-time listeners.
-
-/**
- * Fetches a single document from a collection.
- * @param collectionPath - The path to the Firestore collection.
- * @param id - The ID of the document to fetch.
- * @returns The document data or null if not found.
- */
 export const getDocument = async <T>(collectionPath: string, id: string): Promise<T | null> => {
   try {
-    const docSnapshot = await firestore().collection(collectionPath).doc(id).get();
+    const db = getFirestore();
+    const docSnapshot = await getDoc(doc(db, collectionPath, id));
     if (docSnapshot.data()) {
-      return { id: docSnapshot.id, ...docSnapshot.data() } as T;
+      return { id: docSnapshot.id, ...(docSnapshot.data() as any) } as T;
     }
     return null;
   } catch (error) {
@@ -26,15 +34,10 @@ export const getDocument = async <T>(collectionPath: string, id: string): Promis
   }
 };
 
-/**
- * Adds a new document to a collection.
- * @param collectionPath - The path to the Firestore collection.
- * @param data - The data for the new document.
- * @returns The newly created document with its ID.
- */
 export const addDocument = async <T>(collectionPath: string, data: T): Promise<T & { id: string }> => {
   try {
-    const docRef = await firestore().collection(collectionPath).add(data as any);
+    const db = getFirestore();
+    const docRef = await addDoc(collection(db, collectionPath), data as any);
     return { id: docRef.id, ...data };
   } catch (error) {
     console.error(`Error adding document to [${collectionPath}]:`, error);
@@ -42,89 +45,68 @@ export const addDocument = async <T>(collectionPath: string, data: T): Promise<T
   }
 };
 
-/**
- * Updates an existing document in a collection.
- * @param collectionPath - The path to the Firestore collection.
- * @param id - The ID of the document to update.
- * @param data - The data to merge into the document.
- */
-export const updateDocument = async (collectionPath: string, id: string, data: Partial<FirebaseFirestoreTypes.DocumentData>): Promise<void> => {
+export const updateDocument = async (collectionPath: string, id: string, data: Record<string, any>): Promise<void> => {
   try {
-    await firestore().collection(collectionPath).doc(id).update(data);
+    const db = getFirestore();
+    await updateDoc(doc(db, collectionPath, id), data);
   } catch (error) {
     console.error(`Error updating document [${collectionPath}/${id}]:`, error);
     throw error;
   }
 };
 
-/**
- * Deletes a document from a collection.
- * @param collectionPath - The path to the Firestore collection.
- * @param id - The ID of the document to delete.
- */
 export const deleteDocument = async (collectionPath: string, id: string): Promise<void> => {
   try {
-    await firestore().collection(collectionPath).doc(id).delete();
+    const db = getFirestore();
+    await deleteDoc(doc(db, collectionPath, id));
   } catch (error) {
     console.error(`Error deleting document [${collectionPath}/${id}]:`, error);
     throw error;
   }
 };
 
-/**
- * Sets up a real-time listener for a single document.
- * @param collectionPath - The path to the Firestore collection.
- * @param id - The ID of the document to listen to.
- * @param onResult - Callback function to handle the document data.
- * @param onError - Optional callback to handle errors.
- * @returns An unsubscribe function.
- */
-export const onSnapshotDocument = (collectionPath: string, id: string, onResult: (data: FirebaseFirestoreTypes.DocumentData | null) => void, onError?: (error: Error) => void) => {
-  return firestore().collection(collectionPath).doc(id).onSnapshot(
-    (doc) => {
-      onResult(doc.data() ? { id: doc.id, ...doc.data() } : null);
+export const onSnapshotDocument = (collectionPath: string, id: string, onResult: (data: Record<string, any> | null) => void, onError?: (error: Error) => void) => {
+  const db = getFirestore();
+  return onSnapshot(
+    doc(db, collectionPath, id),
+    (docSnap) => {
+      onResult(docSnap.data() ? { id: docSnap.id, ...(docSnap.data() as any) } : null);
     },
     onError
   );
 };
 
-/**
- * Sets up a real-time listener for a collection with optional queries.
- * @param collectionPath - The path to the Firestore collection.
- * @param onResult - Callback function to handle the array of documents.
- * @param onError - Optional callback to handle errors.
- * @param where - Optional array for where clauses.
- * @param orderBy - Optional array for ordering clauses.
- * @param limit - Optional limit for pagination.
- * @returns An unsubscribe function.
- */
 export const onSnapshotCollection = <T>(
-    collectionPath: string, 
-    onResult: (data: T[]) => void, 
+    collectionPath: string,
+    onResult: (data: T[]) => void,
     onError?: (error: Error) => void,
-    where?: WhereOptions[],
-    orderBy?: OrderByOptions,
-    limit?: number
+    whereOpts?: WhereOptions[],
+    orderByOpt?: OrderByOptions,
+    limitOpt?: number
 ) => {
-    let query: FirebaseFirestoreTypes.Query = firestore().collection(collectionPath);
+    const db = getFirestore();
+    const constraints: any[] = [];
 
-    if (where) {
-        where.forEach(([field, op, value]) => {
-            query = query.where(field, op, value);
+    if (whereOpts) {
+        whereOpts.forEach(([field, op, value]) => {
+            constraints.push(where(field, op, value));
         });
     }
 
-    if (orderBy) {
-        query = query.orderBy(...orderBy);
-    }
-    
-    if (limit) {
-        query = query.limit(limit);
+    if (orderByOpt) {
+        constraints.push(orderBy(orderByOpt[0], orderByOpt[1]));
     }
 
-    return query.onSnapshot(
+    if (limitOpt) {
+        constraints.push(limit(limitOpt));
+    }
+
+    const q = query(collection(db, collectionPath), ...constraints);
+
+    return onSnapshot(
+        q,
         (querySnapshot) => {
-            const data: T[] = querySnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as unknown as T));
+            const data: T[] = querySnapshot.docs.map((docSnap: any) => ({ id: docSnap.id, ...docSnap.data() } as unknown as T));
             onResult(data);
         },
         onError

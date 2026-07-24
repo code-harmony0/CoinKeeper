@@ -159,7 +159,7 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation, adminId 
   const handleRefresh = async () => {
     setRefreshing(true);
     // Data is real-time, just show refresh indicator briefly
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise<void>((resolve) => setTimeout(resolve, 500));
     setRefreshing(false);
   };
 

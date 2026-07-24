@@ -27,7 +27,7 @@ interface MemberDetailsScreenProps {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export const MemberDetailsScreen: React.FC<MemberDetailsScreenProps> = ({ route, navigation }) => {
+export const MemberDetailsScreen: React.FC<any> = ({ route, navigation }) => {
   const { memberId } = route.params ?? {};
   const insets = useSafeAreaInsets();
   const { getMemberById, suspendMember } = useMembers();
