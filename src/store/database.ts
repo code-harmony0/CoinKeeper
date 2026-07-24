@@ -26,6 +26,53 @@ export const initDatabase = async (): Promise<void> => {
       );
     `);
 
+    // Privacy-First Local AI Tables
+    await database.execute(`
+      CREATE TABLE IF NOT EXISTS personal_transactions (
+        id TEXT PRIMARY KEY,
+        amount REAL,
+        type TEXT,
+        category TEXT,
+        merchant TEXT,
+        date TEXT,
+        isAutoImported INTEGER DEFAULT 0,
+        originalSms TEXT,
+        notes TEXT
+      );
+    `);
+
+    await database.execute(`
+      CREATE TABLE IF NOT EXISTS merchants (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        defaultCategory TEXT,
+        transactionCount INTEGER DEFAULT 0,
+        lastSeen TEXT
+      );
+    `);
+
+    await database.execute(`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        amount REAL,
+        cycle TEXT,
+        nextDueDate TEXT,
+        isAutoDetected INTEGER DEFAULT 0,
+        isActive INTEGER DEFAULT 1
+      );
+    `);
+
+    await database.execute(`
+      CREATE TABLE IF NOT EXISTS goals (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        targetAmount REAL,
+        currentAmount REAL,
+        deadline TEXT
+      );
+    `);
+
     await database.execute(`
       CREATE TABLE IF NOT EXISTS preferences (
         key TEXT PRIMARY KEY,

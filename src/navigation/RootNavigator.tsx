@@ -5,9 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, ActivityIndicator } from 'react-native';
 
 // Screens
-import { SplashScreen, OnboardingScreen } from '../screens/onboarding';
+import { SplashScreen, OnboardingScreen, PrivacyFirstScreen } from '../screens/onboarding';
 import { LoginScreen } from '../screens/auth';
-import { GroupsScreen } from '../screens/user';
+import { GroupsScreen, AskAiScreen } from '../screens/user';
 import { UserTabNavigator } from './UserTabNavigator';
 import { AdminTabNavigator } from './AdminTabNavigator';
 import { MembersStackNavigator } from './MembersStackNavigator';
@@ -30,6 +30,7 @@ export const RootNavigator = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  const [showPrivacyScreen, setShowPrivacyScreen] = useState(false);
 
   useEffect(() => {
     checkOnboarding();
@@ -46,9 +47,14 @@ export const RootNavigator = () => {
     }
   };
 
-  const handleOnboardingComplete = async () => {
+  const handleOnboardingComplete = () => {
+    setShowPrivacyScreen(true);
+  };
+
+  const handlePrivacyAccept = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     setHasSeenOnboarding(true);
+    setShowPrivacyScreen(false);
   };
 
   // Splash screen
@@ -69,15 +75,22 @@ export const RootNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         {!hasSeenOnboarding && (
-          <Stack.Screen name="Onboarding">
-            {() => <OnboardingScreen onComplete={handleOnboardingComplete} />}
-          </Stack.Screen>
+          showPrivacyScreen ? (
+            <Stack.Screen name="PrivacyFirst">
+              {() => <PrivacyFirstScreen onAccept={handlePrivacyAccept} />}
+            </Stack.Screen>
+          ) : (
+            <Stack.Screen name="Onboarding">
+              {() => <OnboardingScreen onComplete={handleOnboardingComplete} />}
+            </Stack.Screen>
+          )
         )}
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="UserTabs" component={UserTabNavigator} />
         <Stack.Screen name="Groups" component={GroupsScreen} />
         <Stack.Screen name="ChitDetail" component={ChitDetailScreen} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
+        <Stack.Screen name="AskAi" component={AskAiScreen} />
         <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
         <Stack.Screen name="MembersStack" component={MembersStackNavigator} />
         <Stack.Screen name="TransactionsStack" component={TransactionsStackNavigator} />

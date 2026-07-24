@@ -23,9 +23,12 @@ import type { Transaction } from '../../types/transaction';
 import { PressableScale, CountUp, BlueRefreshControl } from '../../components/anim';
 import { ChartIllustration } from '../../components/illustrations';
 import { PastelCard } from '../../components/premium';
+import { generateInsights, getBudgetStreak, getPrimaryGoal, type Insight, type Goal } from '../../services/insightsEngine';
+import { SmartInsightCard } from '../../components/insights/SmartInsightCard';
+import { StreakBanner } from '../../components/insights/StreakBanner';
+import { GoalTrackerCard } from '../../components/insights/GoalTrackerCard';
 
 const SCREEN_W = Dimensions.get('window').width;
-const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const CHIT_TINTS = ['lavender', 'mint', 'peach'] as const;
 
 /** Build weekly expense totals for the current month */
@@ -60,15 +63,33 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   const { groups, refreshGroups } = useChitFunds();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const [streakDays, setStreakDays] = useState(0);
+  const [goal, setGoal] = useState<Goal | null>(null);
+
+  const loadInsights = useCallback(async () => {
+    const [insightData, streak, primaryGoal] = await Promise.all([
+      generateInsights(),
+      getBudgetStreak(),
+      getPrimaryGoal(),
+    ]);
+    setInsights(insightData);
+    setStreakDays(streak);
+    setGoal(primaryGoal);
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refreshTransactions(), refreshGroups()]);
+      await Promise.all([refreshTransactions(), refreshGroups(), loadInsights()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshGroups, refreshTransactions]);
+  }, [refreshGroups, refreshTransactions, loadInsights]);
+
+  React.useEffect(() => {
+    loadInsights();
+  }, [loadInsights]);
 
   const weekly = useMemo(() => buildWeeklyExpenses(transactions), [transactions]);
 
@@ -78,8 +99,8 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
       backgroundGradientFrom: colors.card,
       backgroundGradientTo: colors.card,
       decimalPlaces: 0,
-      color: (op = 1) => colors.lavenderDeep,
-      labelColor: (op = 1) => colors.textSecondary,
+      color: () => colors.lavenderDeep,
+      labelColor: () => colors.textSecondary,
       strokeWidth: 3,
       fillShadowGradientFrom: colors.lavenderDeep,
       fillShadowGradientFromOpacity: 0.12,
@@ -119,12 +140,26 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         {/* ═══════════════════ HEADER ═══════════════════ */}
-        <Animated.View entering={FadeInDown.delay(0).springify()} style={st.header}>
-          <Text style={st.title}>Spending</Text>
+        <Animated.View entering={FadeInDown.delay(0).springify()} style={[st.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <Text style={st.title}>Overview</Text>
+          <PressableScale onPress={() => navigation.navigate('AskAi')} style={{ backgroundColor: colors.lavender, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.lavenderDeep }}>Ask AI</Text>
+          </PressableScale>
         </Animated.View>
 
+        {/* ═══════════════════ GAMIFICATION & INSIGHTS ═══════════════════ */}
+        {streakDays > 0 && (
+          <View style={{ marginBottom: 16 }}>
+            <StreakBanner days={streakDays} message="Stayed under budget." />
+          </View>
+        )}
+
+        {insights.map((insight, index) => (
+          <SmartInsightCard key={insight.id} insight={insight} delay={20 + index * 20} />
+        ))}
+        
         {/* ═══════════════════ SPENDING CHART CARD ═══════════════════ */}
-        <Animated.View entering={FadeInDown.delay(40).springify()} style={st.chartCard}>
+        <Animated.View entering={FadeInDown.delay(100).springify()} style={st.chartCard}>
           {weekly.hasData ? (
             <PressableScale onPress={navigateToReports} style={st.chartCardTouchable}>
               <View style={st.chartCardTopRow}>
@@ -161,6 +196,13 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             </View>
           )}
         </Animated.View>
+
+        {/* ═══════════════════ GOALS ═══════════════════ */}
+        {goal && (
+          <View style={{ marginBottom: 24 }}>
+            <GoalTrackerCard name={goal.name} targetAmount={goal.targetAmount} currentAmount={goal.currentAmount} />
+          </View>
+        )}
 
         {/* ═══════════════════ CHITS ═══════════════════ */}
         <View style={st.section}>
