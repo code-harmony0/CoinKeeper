@@ -91,3 +91,6 @@ firebase-debug.log
 
 # Git worktrees
 .worktrees/
+
+# Build variant env (generated per-build from .env.public / .env.private)
+.env
