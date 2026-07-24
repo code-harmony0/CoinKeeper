@@ -3,12 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "android": "react-native run-android",
-    "ios": "react-native run-ios",
+    "android": "cp .env.private .env && react-native run-android",
+    "android:public": "cp .env.public .env && react-native run-android",
+    "android:private": "cp .env.private .env && react-native run-android",
+    "ios": "cp .env.private .env && react-native run-ios",
+    "ios:public": "cp .env.public .env && react-native run-ios",
+    "ios:private": "cp .env.private .env && react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest",
-    "and": "npx react-native run-android"
+    "test": "jest"
   },
   "dependencies": {
     "@op-engineering/op-sqlite": "^17.1.2",
@@ -29,6 +32,7 @@
     "react": "19.1.0",
     "react-native": "0.80.2",
     "react-native-chart-kit": "^6.12.0",
+    "react-native-config": "^1.6.1",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "^2.15.0",
     "react-native-haptic-feedback": "^2.3.3",
