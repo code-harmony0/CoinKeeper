@@ -21,6 +21,7 @@ import { AuditLogScreen } from '../screens/admin/settings/AuditLogScreen';
 import { PermissionsRolesScreen } from '../screens/admin/settings/PermissionsRolesScreen';
 import { ChitDetailScreen } from '../screens/user/ChitDetailScreen';
 import { ReportsScreen } from '../screens/user/ReportsScreen';
+import { isModuleEnabled } from '../config/modules';
 
 const Stack = createNativeStackNavigator();
 
@@ -65,6 +66,8 @@ export const RootNavigator = () => {
     );
   }
 
+  const chitFundEnabled = isModuleEnabled('chitFund');
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
@@ -75,19 +78,23 @@ export const RootNavigator = () => {
         )}
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="UserTabs" component={UserTabNavigator} />
-        <Stack.Screen name="Groups" component={GroupsScreen} />
-        <Stack.Screen name="ChitDetail" component={ChitDetailScreen} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
-        <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
-        <Stack.Screen name="MembersStack" component={MembersStackNavigator} />
-        <Stack.Screen name="TransactionsStack" component={TransactionsStackNavigator} />
-        <Stack.Screen name="Collections" component={CollectionsStackNavigator} />
-        <Stack.Screen name="Draws" component={DrawsStackNavigator} />
-        <Stack.Screen name="PaymentConfirmations" component={PaymentConfirmationsStackNavigator} />
+        {chitFundEnabled && (
+          <>
+            <Stack.Screen name="Groups" component={GroupsScreen} />
+            <Stack.Screen name="ChitDetail" component={ChitDetailScreen} />
+            <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
+            <Stack.Screen name="MembersStack" component={MembersStackNavigator} />
+            <Stack.Screen name="TransactionsStack" component={TransactionsStackNavigator} />
+            <Stack.Screen name="Collections" component={CollectionsStackNavigator} />
+            <Stack.Screen name="Draws" component={DrawsStackNavigator} />
+            <Stack.Screen name="PaymentConfirmations" component={PaymentConfirmationsStackNavigator} />
+            <Stack.Screen name="Analytics" component={AnalyticsStackNavigator} />
+            <Stack.Screen name="AuditLog" component={AuditLogScreen} />
+            <Stack.Screen name="PermissionsRoles" component={PermissionsRolesScreen} />
+          </>
+        )}
         <Stack.Screen name="Notifications" component={NotificationsStackNavigator} />
-        <Stack.Screen name="Analytics" component={AnalyticsStackNavigator} />
-        <Stack.Screen name="AuditLog" component={AuditLogScreen} />
-        <Stack.Screen name="PermissionsRoles" component={PermissionsRolesScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
