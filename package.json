@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "and":"npx react-native run-android"
+    "and": "npx react-native run-android"
   },
   "dependencies": {
     "@op-engineering/op-sqlite": "^17.1.2",
