@@ -94,3 +94,9 @@ firebase-debug.log
 
 # Build variant env (generated per-build from .env.public / .env.private)
 .env
+
+# AI Tools and Configs
+.claude/
+CLAUDE.md
+GEMINI.md
+.mcp.json
