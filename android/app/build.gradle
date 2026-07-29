@@ -89,15 +89,15 @@ android {
 
     flavorDimensions "version"
     productFlavors {
-        public {
+        lite {
             dimension "version"
             applicationId "com.coinkeeper.finance"
-            resValue "string", "app_name", "CoinKeeper Finance"
+            resValue "string", "app_name", "CoinKeeper"
             buildConfigField "boolean", "INCLUDE_CHITFUND", "false"
         }
-        private {
+        pro {
             dimension "version"
-            applicationId "com.coinkeeper.finance.private"
+            applicationId "com.coinkeeper.finance.pro"
             resValue "string", "app_name", "CoinKeeper Pro"
             buildConfigField "boolean", "INCLUDE_CHITFUND", "true"
         }

@@ -3,12 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "android": "cp .env.private .env && react-native run-android",
-    "android:public": "cp .env.public .env && react-native run-android",
-    "android:private": "cp .env.private .env && react-native run-android",
-    "ios": "cp .env.private .env && react-native run-ios",
-    "ios:public": "cp .env.public .env && react-native run-ios",
-    "ios:private": "cp .env.private .env && react-native run-ios",
+    "android": "react-native run-android --mode=proDebug",
+    "android:lite": "react-native run-android --mode=liteDebug",
+    "android:pro": "react-native run-android --mode=proDebug",
+    "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest"
