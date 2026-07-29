@@ -6,22 +6,17 @@ import { View, ActivityIndicator } from 'react-native';
 
 // Screens
 import { SplashScreen, OnboardingScreen, PrivacyFirstScreen } from '../screens/onboarding';
-import { LoginScreen } from '../screens/auth';
-import { GroupsScreen, AskAiScreen } from '../screens/user';
+import { AskAiScreen } from '../screens/user';
 import { UserTabNavigator } from './UserTabNavigator';
-import { AdminTabNavigator } from './AdminTabNavigator';
-import { MembersStackNavigator } from './MembersStackNavigator';
-import { TransactionsStackNavigator } from './TransactionsStackNavigator';
-import { CollectionsStackNavigator } from './CollectionsStackNavigator';
-import { DrawsStackNavigator } from './DrawsStackNavigator';
-import { PaymentConfirmationsStackNavigator } from './PaymentConfirmationsStackNavigator';
-import { NotificationsStackNavigator } from './NotificationsStackNavigator';
-import { AnalyticsStackNavigator } from './AnalyticsStackNavigator';
-import { AuditLogScreen } from '../screens/admin/settings/AuditLogScreen';
-import { PermissionsRolesScreen } from '../screens/admin/settings/PermissionsRolesScreen';
-import { ChitDetailScreen } from '../screens/user/ChitDetailScreen';
 import { ReportsScreen } from '../screens/user/ReportsScreen';
-import { isModuleEnabled } from '../config/modules';
+import { CHITFUND_ENABLED } from '../config/buildFlags';
+
+// Every chit-fund route resolves through one guarded require. CHITFUND_ENABLED
+// is inlined as a literal at build time, so Metro drops this branch and the
+// entire src/modules/chitfund tree from the lite bundle.
+const chitFundRoutes = process.env.CK_CHITFUND === '1'
+  ? require('../modules/chitfund/navigation/chitFundRoutes').chitFundRoutes
+  : [];
 
 const Stack = createNativeStackNavigator();
 
@@ -72,8 +67,6 @@ export const RootNavigator = () => {
     );
   }
 
-  const chitFundEnabled = isModuleEnabled('chitFund');
-
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
@@ -88,26 +81,14 @@ export const RootNavigator = () => {
             </Stack.Screen>
           )
         )}
-        <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="UserTabs" component={UserTabNavigator} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
         <Stack.Screen name="AskAi" component={AskAiScreen} />
-        {chitFundEnabled && (
-          <>
-            <Stack.Screen name="Groups" component={GroupsScreen} />
-            <Stack.Screen name="ChitDetail" component={ChitDetailScreen} />
-            <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
-            <Stack.Screen name="MembersStack" component={MembersStackNavigator} />
-            <Stack.Screen name="TransactionsStack" component={TransactionsStackNavigator} />
-            <Stack.Screen name="Collections" component={CollectionsStackNavigator} />
-            <Stack.Screen name="Draws" component={DrawsStackNavigator} />
-            <Stack.Screen name="PaymentConfirmations" component={PaymentConfirmationsStackNavigator} />
-            <Stack.Screen name="Analytics" component={AnalyticsStackNavigator} />
-            <Stack.Screen name="AuditLog" component={AuditLogScreen} />
-            <Stack.Screen name="PermissionsRoles" component={PermissionsRolesScreen} />
-          </>
-        )}
-        <Stack.Screen name="Notifications" component={NotificationsStackNavigator} />
+        {/* Login, admin console, and Notifications are all chit-fund routes —
+            the lite build has no accounts and no server to log into. */}
+        {chitFundRoutes.map((route: { name: string; component: React.ComponentType<any> }) => (
+          <Stack.Screen key={route.name} name={route.name} component={route.component} />
+        ))}
       </Stack.Navigator>
     </NavigationContainer>
   );

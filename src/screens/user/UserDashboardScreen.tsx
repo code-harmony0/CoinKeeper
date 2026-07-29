@@ -32,7 +32,7 @@ const SCREEN_W = Dimensions.get('window').width;
 // Guarded require, not a static import: CHITFUND_ENABLED is inlined as a
 // literal at build time, so Metro drops this branch — and the whole
 // src/modules/chitfund tree — from the lite bundle.
-const DashboardChitsSection = CHITFUND_ENABLED
+const DashboardChitsSection = process.env.CK_CHITFUND === '1'
   ? require('../../modules/chitfund/components/DashboardChitsSection').default
   : null;
 

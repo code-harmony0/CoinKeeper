@@ -18,7 +18,7 @@ import {
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSpecTheme } from '../../theme/specTheme';
 import { useTheme } from '../../hooks/useTheme';
-import { useAuth } from '../../hooks/useAuth';
+import { useOptionalAuth } from '../../hooks/useOptionalAuth';
 import { getPreference, setPreference } from '../../store/database';
 import { PressableScale } from '../../components/anim';
 import {
@@ -36,7 +36,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { colors, cardRadius, cardShadow, isDark: specIsDark } = useSpecTheme();
   const { isDark, toggleTheme } = useTheme();
-  const { userProfile, signOut } = useAuth();
+  const { userProfile, signOut } = useOptionalAuth();
   const [notifications, setNotifications] = useState(true);
 
   // Hydrate notifications preference from local SQLite

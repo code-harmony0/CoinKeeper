@@ -8,9 +8,9 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useChitFunds } from '../../../hooks/useChitFunds';
+import { useChitFunds } from '../hooks/useChitFunds';
 import { useSpecTheme } from '../../../theme/specTheme';
-import type { ChitGroup } from '../../../types/chitFund';
+import type { ChitGroup } from '../types/chitFund';
 import { PressableScale } from '../../../components/anim';
 import { PastelCard } from '../../../components/premium';
 
