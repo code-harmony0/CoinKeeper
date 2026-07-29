@@ -86,6 +86,22 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
+    flavorDimensions "version"
+    productFlavors {
+        public {
+            dimension "version"
+            applicationId "com.coinkeeper.finance"
+            resValue "string", "app_name", "CoinKeeper Finance"
+            buildConfigField "boolean", "INCLUDE_CHITFUND", "false"
+        }
+        private {
+            dimension "version"
+            applicationId "com.coinkeeper.finance.private"
+            resValue "string", "app_name", "CoinKeeper Pro"
+            buildConfigField "boolean", "INCLUDE_CHITFUND", "true"
+        }
+    }
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
