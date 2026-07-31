@@ -12,11 +12,13 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { THEME_COLORS, THEME_SHADOWS, THEME_RADIUS, THEME_SPACING, THEME_TYPOGRAPHY, THEME_ANIMATION } from '../../../theme/blobTheme';
 import { CreateGroupSheet } from '../../../components/modals/CreateGroupSheet';
+import { useSecureScreen } from '../../../hooks/useSecureScreen';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 type Props = NativeStackScreenProps<any, 'Groups'>;
 
 export const GroupsScreen: React.FC<Props> = ({ navigation }) => {
+  useSecureScreen();
   const insets = useSafeAreaInsets();
   const { groups, createGroup } = useGroups();
   const [showCreateSheet, setShowCreateSheet] = useState(false);

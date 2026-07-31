@@ -20,6 +20,7 @@ import Svg, { Path, Circle, Rect, Defs, Pattern } from 'react-native-svg';
 import { ActionSquircle } from '../../../../components/ui/ActionSquircle';
 import { useTabBarScroll } from '../../../../context/TabBarScrollContext';
 import { useTheme } from '../../../../hooks/useTheme';
+import { useSecureScreen } from '../../../../hooks/useSecureScreen';
 
 const { width: _ } = Dimensions.get('window'); // Removed SCREEN_WIDTH as it's unused, replaced with _
 const SPRING_CONFIG = { damping: 16, stiffness: 140, mass: 1 };
@@ -57,6 +58,7 @@ const ADMIN_DATA = {
 };
 
 export const AdminDashboardScreen: React.FC<any> = ({ navigation }) => {
+  useSecureScreen();
   const insets = useSafeAreaInsets();
   const { scrollY } = useTabBarScroll();
   const { colors, isDark } = useTheme();

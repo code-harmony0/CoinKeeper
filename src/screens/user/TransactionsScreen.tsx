@@ -37,6 +37,7 @@ import {
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTransactions } from '../../hooks/useTransactions';
+import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useSpecTheme } from '../../theme/specTheme';
 import { Transaction } from '../../types/transaction';
 import { CountUp, PressableScale } from '../../components/anim';
@@ -64,6 +65,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
 };
 
 export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
+  useSecureScreen();
   const insets = useSafeAreaInsets();
   const { colors, cardRadius, spring, iconShadow } = useSpecTheme();
 

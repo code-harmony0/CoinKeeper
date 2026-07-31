@@ -620,24 +620,589 @@ The master spec's §5 schema is adopted with these corrections — each one is a
 
 Use `PRAGMA user_version` for versioning. The spec demanded migration tests in §13 but specified no versioning mechanism at all.
 
+### ✅ DONE (2026-07-31)
+
+Implemented `src/db/migrations/{001_initial,002_finance,transform,index}.ts` and `__tests__/db/migrations.test.ts`, wired into `src/db/index.ts` so `initEncryptedDb()` runs pending migrations on open. Two things deliberately **not** built, flagged rather than guessed:
+
+- **Chit tables** — the correction table says "always create, gate only the UI," but Phase 7 of this same plan keeps chit-fund on Firestore, untouched, "integration not rebuild." These contradict; building parallel SQLite tables nothing would read made no sense. Skipped — resolve the contradiction in the plan text if the intent was something else.
+- **`category_budgets`** — only ever described as "drop `spent_amount`, compute it," no full schema anywhere in this doc. Deferred to Task 4.1, which actually needs it.
+
+**A real, unbudgeted landmine found and fixed along the way:** the migration renames `transactions` (old shape) → `transactions_v1_backup` and creates a new `transactions` with entirely different columns (`amount_paise`, `occurred_at`, `category_id` vs. the old `amount`, `date`, `category`). `src/db/index.ts` already wires migrations into the live init path (`initEncryptedDb` ← `initDatabase` ← `TransactionsContext`'s mount effect), so this would have run automatically on the very next app launch — and `src/store/transactionStore.ts`'s `INSERT INTO transactions (amount, category, ...)` would have failed immediately, breaking Add Transaction, the app's core flow, before Task 3.1 (the plan's scheduled Zustand rewrite) ever landed. Rather than leave that landmine for whoever runs the app next, patched `transactionStore.ts` and `insightsEngine.ts` now to read/write the new schema — the public `Transaction` type and every UI consumer of it are unchanged; the translation (paise↔rupees via `src/utils/money.ts`, category name↔id via a resolve-or-create helper, `occurred_at`↔ISO date string) happens only inside the store. This is a compatibility patch, not Task 3.1's full rewrite — Task 3.1 may still want to restructure this further.
+
+**Also found, not fixed (pre-existing, still orphaned):** `src/services/subscriptionDetector.ts` queries `personal_transactions`, which the migration renames to `personal_transactions_v1_backup`. It's unwired today (confirmed orphaned in section H of `docs/APP_FLOW_PLAN.md`), so this doesn't break anything live, but it will need the same schema update whenever Task 4.5 rebuilds it.
+
+Verified:
+- `npx tsc --noEmit` clean.
+- `npx jest` — 46/46 (10 new: `migrations.test.ts` covers every pure transform in `transform.ts` with real, executing assertions — no mocking needed since they're pure functions). Same 1 pre-existing unrelated `App.test.tsx` failure.
+- `eslint` clean on every new/changed file.
+
+**Not verified, and can't be honestly claimed as verified from this sandbox:** running the actual migration against a real op-sqlite database — creating a v1 fixture, running 001+002, asserting on the resulting rows and that the CHECK constraints really reject bad inserts. `op-sqlite` is a native JSI module; its published `node` build target throws `ERR_MODULE_NOT_FOUND` on a broken internal import in the installed version, closing off the one path that might have allowed real SQL execution under Jest (same limitation class as Task 1.2's wrong-key-throws test). This needs a device/emulator run against a compiled build — tracked as an open manual step, not a passing automated test.
+
 ---
 
-### Task 1.4: Default categories and category seeding
+### Task 1.4: Default categories and category seeding ✅ DONE (2026-07-31)
 
-Adopt §5's 13 default categories verbatim — that list is good. Seed inside migration `002`, not on every launch.
+§5's "13 default categories" text is unusable — §5 is never quoted anywhere in this repo, so there's no list to adopt "verbatim." Seeded the app's actual, already-in-use category list instead: `src/components/transaction/CategorySelector.tsx`'s `DEFAULT_CATEGORIES` (8 categories — Food/Transport/Shopping/Entertainment/Bills/Health/Education/Others, with their real icon names), inserted via `INSERT OR IGNORE` in `002_finance.ts` before the find-or-create resolver runs on legacy data, so migrated categories land on the seeded ids instead of duplicating. Verified: ids/icons byte-diffed against `CategorySelector.tsx` (exact match), `tsc` clean, `npx jest __tests__/db/categorySeeding.test.ts` 4/4, full suite 50/50 (+1 pre-existing unrelated `App.test.tsx` failure), `eslint` clean. Not committed.
 
 ---
 
 ## Phase 2: App lock and privacy shell
 
-- **2.1** PIN creation + confirmation screens; store an Argon2id hash of the PIN, never the PIN.
-- **2.2** Biometric unlock via `react-native-biometrics`, with PIN fallback.
-- **2.3** Auto-lock: lock on cold start and after 2 minutes backgrounded; timer resets on interaction.
-- **2.4** `FLAG_SECURE` on dashboard, transactions, and chit screens (blocks screenshots and screen recording).
-- **2.5** Onboarding flow per §7.1 Steps 1–5, minus the SMS step (moved to Phase 5). Reuse the existing `OnboardingScreen` and `PrivacyFirstScreen`.
-- **2.6** The unrecoverable-data warning during PIN setup, and the "Start Fresh" recovery screen for the forgotten-PIN case.
+**Expanded to full TDD granularity 2026-07-31** (per this plan's own instruction: "before starting each [outline] phase, re-run the writing-plans skill against it"). Tasks 2.1–2.3, 2.5, 2.6 below are new; 2.4 was already done (see above) and is unaffected.
 
-**Watch for:** the spec proposes encrypting backups with the 4-digit PIN. 10,000 candidates is an offline brute-force in milliseconds. Backups get either Argon2id at a real cost factor or a generated 12-word recovery phrase. Do not ship PIN-encrypted backups.
+### A correction found while expanding this phase, read before starting 2.6
+
+The plan's original one-liners for 2.6 ("unrecoverable-data warning," "Start Fresh recovery screen for the forgotten-PIN case") assume forgetting the app PIN risks the user's data. **It doesn't, given how Task 1.2 was actually built.** The database encryption key is gated by the *device's* biometric/passcode via Keychain (`ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE` — Android's system-level lock, Task 1.2), completely independent of the app-specific PIN this phase adds. The app PIN never touches the encryption key. So:
+
+- A forgotten app PIN is **not** a data-loss event — the underlying encrypted data was never gated by it.
+- Building a destructive "wipe everything" flow for a non-catastrophic scenario would be a real usability regression, not a safety feature — exactly the class of mistake this session has been catching all along (see the `insightsEngine.ts` dead-table bug, Gemini's invented Pro-tier scope creep).
+- Task 2.6 below is redesigned as a **safe reset**: re-authenticate via the device's existing biometric/passcode prompt (the same one that already gates the DB key), then clear and re-set the app PIN. Zero data loss. A genuinely destructive "erase all app data" option belongs in Settings as an unrelated, explicit danger-zone action — out of scope for this phase.
+
+**Watch for** (unchanged from the original plan): never encrypt backups with the 4-digit PIN — 10,000 candidates is an offline brute-force in milliseconds. Backups (Phase 6) get Argon2id at a real cost factor or a generated recovery phrase, decided when Phase 6 is reached.
+
+**Libraries needed, verified before writing this (not assumed):**
+- `react-native-argon2` — no npm-enforced peer-dependency conflict against RN 0.80.2 (its compatibility table only documents up to RN 0.63.3+, but nothing blocks a newer install; verify it actually links cleanly in Step 1 below before trusting this).
+- `react-native-biometrics` — peer dep `react-native >=0.60.0`, compatible.
+- `react-native-argon2`'s real API (from its README, not invented): `const { rawHash, encodedHash } = await argon2(password, saltHex, { mode: 'argon2id' })`. There is no built-in verify function — verification means re-running `argon2()` with the same stored salt and comparing `encodedHash` strings.
+- `react-native-biometrics`'s real API: `ReactNativeBiometrics.isSensorAvailable()` returns `{ available, biometryType }`; `ReactNativeBiometrics.simplePrompt({ promptMessage })` returns `{ success }` — this is the correct call for gating an app action (not `createSignature`, which is for server-verified challenges we don't need).
+
+---
+
+### Task 2.1: PIN creation, storage, and verification
+
+**Files:**
+- Create: `src/services/pinService.ts`
+- Create: `src/screens/auth/SetupPinScreen.tsx`
+- Create: `src/screens/auth/UnlockScreen.tsx` (PIN-entry half only here; Task 2.2 adds the biometric-first branch)
+- Test: `__tests__/services/pinService.test.ts`
+
+**Step 1: Install and verify the dependency actually links**
+
+```bash
+npm install react-native-argon2
+npx tsc --noEmit
+```
+Expected: install succeeds, no new type errors (there won't be any yet — nothing imports it).
+
+**Step 2: Write the failing test**
+
+```ts
+// __tests__/services/pinService.test.ts
+jest.mock('react-native-argon2', () => jest.fn(async (password: string, salt: string) => ({
+  rawHash: `raw-${password}-${salt}`,
+  encodedHash: `enc-${password}-${salt}`,
+})));
+
+jest.mock('react-native-keychain', () => {
+  let store: string | null = null;
+  return {
+    getGenericPassword: jest.fn(async () =>
+      store === null ? false : { username: 'coinkeeper.app.pin', password: store, service: 'coinkeeper.app.pin', storage: 'x' }
+    ),
+    setGenericPassword: jest.fn(async (_u: string, password: string) => {
+      store = password;
+      return { service: 'coinkeeper.app.pin', storage: 'x' };
+    }),
+    resetGenericPassword: jest.fn(async () => {
+      store = null;
+      return true;
+    }),
+    ACCESSIBLE: { WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'AccessibleWhenUnlockedThisDeviceOnly' },
+  };
+});
+
+import { hasPinSet, setPin, verifyPin, clearPin } from '../../src/services/pinService';
+
+describe('pinService', () => {
+  it('reports no PIN set initially', async () => {
+    expect(await hasPinSet()).toBe(false);
+  });
+
+  it('rejects a PIN that is not 4-6 digits', async () => {
+    await expect(setPin('12')).rejects.toThrow();
+    await expect(setPin('abcdef')).rejects.toThrow();
+  });
+
+  it('accepts and verifies a correct PIN, rejects a wrong one', async () => {
+    await setPin('4821');
+    expect(await hasPinSet()).toBe(true);
+    expect(await verifyPin('4821')).toBe(true);
+    expect(await verifyPin('0000')).toBe(false);
+  });
+
+  it('clearPin removes it entirely', async () => {
+    await setPin('4821');
+    await clearPin();
+    expect(await hasPinSet()).toBe(false);
+    expect(await verifyPin('4821')).toBe(false);
+  });
+});
+```
+
+**Step 3: Run it to verify it fails**
+
+Run: `npx jest __tests__/services/pinService.test.ts`
+Expected: FAIL — `Cannot find module '../../src/services/pinService'`.
+
+**Step 4: Implement**
+
+```ts
+// src/services/pinService.ts
+import 'react-native-get-random-values';
+import argon2 from 'react-native-argon2';
+import * as Keychain from 'react-native-keychain';
+
+const SERVICE = 'coinkeeper.app.pin';
+
+interface StoredPin {
+  salt: string;
+  encodedHash: string;
+}
+
+const generateSaltHex = (): string => {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+};
+
+export const hasPinSet = async (): Promise<boolean> => {
+  const existing = await Keychain.getGenericPassword({ service: SERVICE });
+  return existing !== false;
+};
+
+/**
+ * Deliberately separate from the DB encryption key's Keychain entry
+ * (src/db/key.ts) and its accessControl. This PIN is an app-level lock, not
+ * a data-encryption factor — see the correction note above Task 2.1.
+ */
+export const setPin = async (pin: string): Promise<void> => {
+  if (!/^\d{4,6}$/.test(pin)) {
+    throw new Error('PIN must be 4 to 6 digits.');
+  }
+
+  const salt = generateSaltHex();
+  const { encodedHash } = await argon2(pin, salt, { mode: 'argon2id' });
+  const stored: StoredPin = { salt, encodedHash };
+
+  const saved = await Keychain.setGenericPassword(SERVICE, JSON.stringify(stored), {
+    service: SERVICE,
+    accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
+
+  if (!saved) {
+    throw new Error('Failed to store the app PIN.');
+  }
+};
+
+export const verifyPin = async (pin: string): Promise<boolean> => {
+  const existing = await Keychain.getGenericPassword({ service: SERVICE });
+  if (!existing) return false;
+
+  const stored: StoredPin = JSON.parse(existing.password);
+  const { encodedHash } = await argon2(pin, stored.salt, { mode: 'argon2id' });
+  return encodedHash === stored.encodedHash;
+};
+
+export const clearPin = async (): Promise<void> => {
+  await Keychain.resetGenericPassword({ service: SERVICE });
+};
+```
+
+**Step 5: Run the test to verify it passes**
+
+Run: `npx jest __tests__/services/pinService.test.ts`
+Expected: PASS (4 tests).
+
+**Step 6: Build the setup and unlock screens**
+
+`SetupPinScreen.tsx` — internal two-step state (enter, then confirm by re-entering); on mismatch, reset to step 1 with an error message; on match, call `setPin()` then `onComplete()`. Use the existing `Text`/`Button` components from `src/components/ui/` to match every other screen's conventions — do not invent a new numeric keypad component if a simple `TextInput` with `keyboardType="number-pad"` and `maxLength={6}` satisfies this; resist over-building a custom PIN-pad UI unless product explicitly asks for one.
+
+`UnlockScreen.tsx` (PIN portion only in this task) — a single PIN input, calls `verifyPin()` on submit, calls `onUnlock()` on success, shows an inline error and clears the input on failure. Leave a `// TODO Task 2.2` marker where the biometric-first branch will be added — do not stub it out speculatively now.
+
+**Step 7: Commit**
+
+```bash
+git add src/services/pinService.ts src/screens/auth/SetupPinScreen.tsx src/screens/auth/UnlockScreen.tsx __tests__/services/pinService.test.ts package.json package-lock.json
+git commit -m "feat: app-level PIN creation, storage, and verification"
+```
+
+---
+
+### Task 2.2: Biometric unlock with PIN fallback
+
+**Files:**
+- Create: `src/services/biometricService.ts`
+- Modify: `src/screens/auth/UnlockScreen.tsx`
+- Test: `__tests__/services/biometricService.test.ts`
+
+**Step 1: Install**
+
+```bash
+npm install react-native-biometrics
+npx tsc --noEmit
+```
+
+**Step 2: Write the failing test**
+
+```ts
+// __tests__/services/biometricService.test.ts
+const mockIsSensorAvailable = jest.fn();
+const mockSimplePrompt = jest.fn();
+
+jest.mock('react-native-biometrics', () => {
+  return jest.fn().mockImplementation(() => ({
+    isSensorAvailable: mockIsSensorAvailable,
+    simplePrompt: mockSimplePrompt,
+  }));
+});
+
+import { isBiometricAvailable, promptBiometric } from '../../src/services/biometricService';
+
+describe('biometricService', () => {
+  beforeEach(() => {
+    mockIsSensorAvailable.mockReset();
+    mockSimplePrompt.mockReset();
+  });
+
+  it('reports availability from the sensor check', async () => {
+    mockIsSensorAvailable.mockResolvedValue({ available: true, biometryType: 'Fingerprint' });
+    expect(await isBiometricAvailable()).toBe(true);
+  });
+
+  it('reports unavailable when no sensor exists', async () => {
+    mockIsSensorAvailable.mockResolvedValue({ available: false });
+    expect(await isBiometricAvailable()).toBe(false);
+  });
+
+  it('resolves true when the prompt succeeds', async () => {
+    mockSimplePrompt.mockResolvedValue({ success: true });
+    expect(await promptBiometric('Unlock CoinKeeper')).toBe(true);
+  });
+
+  it('resolves false (not throws) when the user cancels', async () => {
+    mockSimplePrompt.mockResolvedValue({ success: false });
+    expect(await promptBiometric('Unlock CoinKeeper')).toBe(false);
+  });
+
+  it('resolves false when the prompt itself rejects', async () => {
+    mockSimplePrompt.mockRejectedValue(new Error('sensor error'));
+    expect(await promptBiometric('Unlock CoinKeeper')).toBe(false);
+  });
+});
+```
+
+**Step 3: Run to verify it fails**
+
+Run: `npx jest __tests__/services/biometricService.test.ts`
+Expected: FAIL — module not found.
+
+**Step 4: Implement**
+
+```ts
+// src/services/biometricService.ts
+import ReactNativeBiometrics from 'react-native-biometrics';
+
+const biometrics = new ReactNativeBiometrics();
+
+export const isBiometricAvailable = async (): Promise<boolean> => {
+  const { available } = await biometrics.isSensorAvailable();
+  return available;
+};
+
+export const promptBiometric = async (promptMessage: string): Promise<boolean> => {
+  try {
+    const { success } = await biometrics.simplePrompt({ promptMessage });
+    return success;
+  } catch {
+    return false;
+  }
+};
+```
+
+**Step 5: Run to verify it passes**
+
+Run: `npx jest __tests__/services/biometricService.test.ts`
+Expected: PASS (5 tests).
+
+**Step 6: Wire into UnlockScreen**
+
+Replace the `// TODO Task 2.2` marker: on mount, if a `biometric_enabled` preference (via `getPreference`/`setPreference` from `src/store/database.ts`) is `'true'` AND `isBiometricAvailable()`, call `promptBiometric('Unlock CoinKeeper')` automatically; on success call `onUnlock()` immediately, on failure/cancel fall through to showing the PIN input (already built in 2.1) rather than blocking the user. The `biometric_enabled` preference itself is set by a Settings toggle — that toggle UI is not part of this phase (Settings already has dead rows tracked in `docs/APP_FLOW_PLAN.md`; wiring a real biometric-enable row there is a natural follow-on, not scope for Phase 2).
+
+**Step 7: Commit**
+
+```bash
+git add src/services/biometricService.ts src/screens/auth/UnlockScreen.tsx __tests__/services/biometricService.test.ts package.json package-lock.json
+git commit -m "feat: biometric unlock with PIN fallback"
+```
+
+---
+
+### Task 2.3: Auto-lock on cold start and after 2 minutes backgrounded
+
+**Files:**
+- Create: `src/context/AppLockContext.tsx`
+- Modify: `App.tsx`
+- Test: `__tests__/context/AppLockContext.test.tsx`
+
+**Step 1: Write the failing test**
+
+```tsx
+// __tests__/context/AppLockContext.test.tsx
+//
+// Verified before writing this: @testing-library/react-native is NOT
+// installed in this project (checked package.json directly). The one
+// existing render test (__tests__/App.test.tsx) uses raw `react-test-renderer`
+// — match that convention, don't add a new testing library for one test file.
+import React from 'react';
+import ReactTestRenderer, { act } from 'react-test-renderer';
+import { AppLockProvider, useAppLock } from '../../src/context/AppLockContext';
+
+let appStateHandler: ((state: string) => void) | undefined;
+
+jest.mock('react-native', () => {
+  const RN = jest.requireActual('react-native');
+  return {
+    ...RN,
+    AppState: {
+      ...RN.AppState,
+      addEventListener: jest.fn((_event: string, handler: (state: string) => void) => {
+        appStateHandler = handler;
+        return { remove: jest.fn() };
+      }),
+    },
+  };
+});
+
+describe('AppLockContext', () => {
+  beforeEach(() => {
+    appStateHandler = undefined;
+    jest.useFakeTimers();
+  });
+  afterEach(() => jest.useRealTimers());
+
+  it('starts locked on cold start', () => {
+    let captured: { isLocked: boolean } | undefined;
+    const Capture = () => { captured = useAppLock(); return null; };
+    act(() => {
+      ReactTestRenderer.create(<AppLockProvider><Capture /></AppLockProvider>);
+    });
+    expect(captured?.isLocked).toBe(true);
+  });
+
+  it('stays unlocked if backgrounded for less than 2 minutes', () => {
+    let captured: any;
+    const Capture = () => { captured = useAppLock(); return null; };
+    act(() => {
+      ReactTestRenderer.create(<AppLockProvider><Capture /></AppLockProvider>);
+    });
+    act(() => captured.unlock());
+    expect(captured.isLocked).toBe(false);
+
+    act(() => appStateHandler?.('background'));
+    jest.advanceTimersByTime(60 * 1000); // 1 minute
+    act(() => appStateHandler?.('active'));
+
+    expect(captured.isLocked).toBe(false);
+  });
+
+  it('re-locks after 2+ minutes backgrounded', () => {
+    let captured: any;
+    const Capture = () => { captured = useAppLock(); return null; };
+    act(() => {
+      ReactTestRenderer.create(<AppLockProvider><Capture /></AppLockProvider>);
+    });
+    act(() => captured.unlock());
+
+    act(() => appStateHandler?.('background'));
+    jest.advanceTimersByTime(3 * 60 * 1000); // 3 minutes
+    act(() => appStateHandler?.('active'));
+
+    expect(captured.isLocked).toBe(true);
+  });
+});
+```
+
+**Step 2: Run to verify it fails**
+
+Run: `npx jest __tests__/context/AppLockContext.test.tsx`
+Expected: FAIL — module not found.
+
+**Step 3: Implement**
+
+```tsx
+// src/context/AppLockContext.tsx
+import React, { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
+
+const AUTO_LOCK_MS = 2 * 60 * 1000;
+
+interface AppLockContextType {
+  isLocked: boolean;
+  unlock: () => void;
+}
+
+const AppLockContext = createContext<AppLockContextType | undefined>(undefined);
+
+export const AppLockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [isLocked, setIsLocked] = useState(true); // locked on cold start, always
+  const backgroundedAt = useRef<number | null>(null);
+
+  useEffect(() => {
+    const handleChange = (next: AppStateStatus) => {
+      if (next === 'background' || next === 'inactive') {
+        backgroundedAt.current = Date.now();
+      } else if (next === 'active' && backgroundedAt.current !== null) {
+        const elapsed = Date.now() - backgroundedAt.current;
+        if (elapsed >= AUTO_LOCK_MS) {
+          setIsLocked(true);
+        }
+        backgroundedAt.current = null;
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleChange);
+    return () => subscription.remove();
+  }, []);
+
+  const unlock = () => setIsLocked(false);
+
+  return (
+    <AppLockContext.Provider value={{ isLocked, unlock }}>
+      {children}
+    </AppLockContext.Provider>
+  );
+};
+
+export const useAppLock = (): AppLockContextType => {
+  const context = useContext(AppLockContext);
+  if (!context) {
+    throw new Error('useAppLock must be used within an AppLockProvider');
+  }
+  return context;
+};
+```
+
+**Step 4: Run to verify it passes**
+
+Run: `npx jest __tests__/context/AppLockContext.test.tsx`
+Expected: PASS (3 tests).
+
+**Step 5: Wire into App.tsx**
+
+Add `AppLockProvider` to the provider tree in `App.tsx` (alongside `ThemeProvider`, `TransactionsProvider`, etc. — check the current nesting order first, since `RootNavigator` needs to read `isLocked` to decide whether to render `UnlockScreen` instead of the normal navigation tree). This is the piece that actually blocks the UI: `RootNavigator.tsx` needs a check near its top — `const { isLocked, unlock } = useAppLock(); if (isLocked && await hasPinSet()) return <UnlockScreen onUnlock={unlock} />;` — the `hasPinSet()` check matters because a user who hasn't completed Task 2.5's onboarding PIN setup yet shouldn't be locked out before they've ever created a PIN.
+
+**Step 6: Commit**
+
+```bash
+git add src/context/AppLockContext.tsx App.tsx src/navigation/RootNavigator.tsx __tests__/context/AppLockContext.test.tsx
+git commit -m "feat: auto-lock after 2 minutes backgrounded, always lock on cold start"
+```
+
+---
+
+### Task 2.5: Insert PIN setup into the onboarding sequence
+
+**Files:**
+- Modify: `src/navigation/RootNavigator.tsx`
+
+**Context:** current sequence (confirmed from source, not assumed) is `Splash → Onboarding → PrivacyFirst → UserTabs`, gated by an AsyncStorage flag (`@hasSeenOnboarding`) set in `handlePrivacyAccept`. `OnboardingScreen` takes `onComplete: () => void`; `PrivacyFirstScreen` takes `onAccept: () => void`.
+
+**Step 1: Write the failing test**
+
+```ts
+// __tests__/navigation/onboardingSequence.test.ts
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+describe('onboarding sequence includes PIN setup', () => {
+  const source = readFileSync(join(__dirname, '..', '..', 'src/navigation/RootNavigator.tsx'), 'utf8');
+
+  it('renders SetupPinScreen somewhere in the first-run flow', () => {
+    expect(source).toMatch(/SetupPinScreen/);
+  });
+
+  it('does not mark onboarding complete until after PIN setup', () => {
+    // handlePrivacyAccept must NOT be the thing that sets hasSeenOnboarding
+    // directly anymore — it should transition to PIN setup first.
+    const acceptIndex = source.indexOf('handlePrivacyAccept');
+    const pinIndex = source.indexOf('SetupPinScreen');
+    expect(pinIndex).toBeGreaterThan(acceptIndex);
+  });
+});
+```
+
+**Step 2: Run to verify it fails**
+
+Run: `npx jest __tests__/navigation/onboardingSequence.test.ts`
+Expected: FAIL.
+
+**Step 3: Implement**
+
+Add a `showPinSetup` state alongside the existing `showPrivacyScreen`/`hasSeenOnboarding` states. Change `handlePrivacyAccept` to set `showPinSetup(true)` instead of immediately persisting `hasSeenOnboarding`. Add a new branch rendering `SetupPinScreen` when `showPinSetup` is true, whose `onComplete` callback does what `handlePrivacyAccept` used to do (persist `@hasSeenOnboarding`, flip to the main tabs). Biometric enrollment (an "Enable Face ID / Fingerprint?" prompt) is a single optional screen after PIN setup, skippable — reuse `promptBiometric` from Task 2.2 directly rather than building a whole new screen if `isBiometricAvailable()` is false, skip this step entirely and go straight to the tabs.
+
+**Step 4: Run to verify it passes**
+
+Run: `npx jest __tests__/navigation/onboardingSequence.test.ts`
+Expected: PASS.
+
+**Step 5: Manual verification (this one isn't fully Jest-testable — navigation flows with real screen transitions need a device/simulator run, same class of limitation as the DB migration tests earlier in this plan)**
+
+Run the app, go through onboarding start to finish, confirm: Splash → Onboarding carousel → Privacy screen → PIN setup (enter, confirm, mismatch retry) → optional biometric prompt (or skip if unavailable) → dashboard. Kill and reopen the app — should land on `UnlockScreen`, not onboarding again.
+
+**Step 6: Commit**
+
+```bash
+git add src/navigation/RootNavigator.tsx __tests__/navigation/onboardingSequence.test.ts
+git commit -m "feat: insert PIN setup and optional biometric enrollment into onboarding"
+```
+
+---
+
+### Task 2.6: Safe PIN reset (not a destructive wipe — see the correction note above)
+
+**Files:**
+- Create: `src/screens/auth/ResetPinScreen.tsx`
+- Modify: `src/screens/auth/UnlockScreen.tsx` (add a "Forgot PIN?" link)
+- Modify: `src/screens/auth/SetupPinScreen.tsx` (corrected warning copy)
+
+**Step 1: Correct the setup-time warning copy**
+
+The original ask was an "unrecoverable-data warning." The honest version, given the app PIN doesn't gate encryption: *"If you forget this PIN, you can reset it using your device's screen lock — your data stays safe either way."* Add this as a small caption below the PIN entry fields in `SetupPinScreen.tsx`. No test needed for copy text; this is a one-line UI change.
+
+**Step 2: Write the failing test for the reset flow**
+
+```ts
+// __tests__/services/pinService.test.ts — add this case to the existing file
+it('allows setting a new PIN after clearing, without touching stored transactions', async () => {
+  await setPin('1111');
+  await clearPin();
+  await setPin('2222');
+  expect(await verifyPin('2222')).toBe(true);
+  expect(await verifyPin('1111')).toBe(false);
+});
+```
+
+(`pinService.ts` from Task 2.1 already supports this — `clearPin()` + `setPin()` is the entire reset mechanism. This step just locks in the behavior with an explicit test rather than assuming it.)
+
+**Step 3: Run to verify it passes**
+
+Run: `npx jest __tests__/services/pinService.test.ts`
+Expected: PASS (now 5 tests in this file).
+
+**Step 4: Build ResetPinScreen**
+
+Reachable via a "Forgot PIN?" link on `UnlockScreen`. Flow: call `promptBiometric('Confirm your identity to reset your PIN')` (reusing Task 2.2's service) — if the device has no biometric enrolled, `isBiometricAvailable()` will be false, in which case fall back to the OS's own device-passcode prompt implicitly via the same Keychain access that already gates the DB key (attempting `getDb()` — if that resolves, the device owner has already proven their identity via the OS lock to get this far, so proceed). On success: call `clearPin()`, then render `SetupPinScreen` to set a new one. No data is touched, deleted, or re-encrypted at any point in this flow.
+
+**Step 5: Manual verification**
+
+On a device: set a PIN, force-quit, reopen (lands on `UnlockScreen`), tap "Forgot PIN?", confirm via biometric/device passcode, set a new PIN, confirm the old transactions are still all present and correct afterward — this last check is the one that actually matters, since it's the thing the plan's original "unrecoverable" framing got wrong.
+
+**Step 6: Commit**
+
+```bash
+git add src/screens/auth/ResetPinScreen.tsx src/screens/auth/UnlockScreen.tsx src/screens/auth/SetupPinScreen.tsx __tests__/services/pinService.test.ts
+git commit -m "feat: safe PIN reset via device biometric/passcode re-auth, no data loss"
+```
 
 ---
 

@@ -16,6 +16,7 @@ import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { LineChart } from 'react-native-chart-kit';
 import { ChevronRight } from 'lucide-react-native';
 import { useTransactions } from '../../hooks/useTransactions';
+import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useSpecTheme } from '../../theme/specTheme';
 import type { Transaction } from '../../types/transaction';
 import { PressableScale, CountUp, BlueRefreshControl } from '../../components/anim';
@@ -61,6 +62,7 @@ const buildWeeklyExpenses = (txs: Transaction[]) => {
 };
 
 export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
+  useSecureScreen();
   const insets = useSafeAreaInsets();
   const { colors, cardRadius, cardShadow } = useSpecTheme();
   const { transactions, refreshTransactions } = useTransactions();
