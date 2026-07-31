@@ -1208,10 +1208,992 @@ git commit -m "feat: safe PIN reset via device biometric/passcode re-auth, no da
 
 ## Phase 3: Transactions — the core loop
 
-- **3.1** Zustand transaction store over the encrypted DB; replace `src/store/transactionStore.ts`.
-- **3.2** Add-transaction bottom sheet per §7.3: custom number pad, category chips, merchant autocomplete, date picker, payment method, note. Validation: amount > 0, no future-dated expenses.
-- **3.3** Transaction list per §7.4 using **FlashList** (already installed), grouped by date, with swipe-to-delete + undo, multi-select, and search.
-- **3.4** Category management and the `merchant_category_map` correction-learning loop.
+**Expanded to full TDD granularity 2026-07-31** (per this plan's own instruction: "before starting each [outline] phase, re-run the writing-plans skill against it"). Reality check first — three of these four tasks are considerably more built than the one-line outline implies; this expansion extends and fixes existing code rather than writing it from a blank slate.
+
+- **3.1**: `src/store/transactionStore.ts` is not a blank slate — Task 1.3's landmine fix (see the note after that task, above) already made it a working Zustand store reading/writing paise/`occurred_at` through the encrypted DB via `resolveCategoryId`. What's actually missing: `addTransaction`/`updateTransaction`/`deleteTransaction` catch every error into `console.error` and return silently. That means Task 3.2's required validation ("amount > 0, no future-dated expenses") has nothing to attach a user-facing error to — a rejected write and a successful one currently look identical to the caller. Fixed here, plus a `searchTransactions` selector Task 3.3 needs.
+- **3.2**: `src/components/modals/AddTransactionSheet.tsx` already has the type toggle, amount input, category chips, and a note field, wired through `src/screens/user/AddScreen.tsx`. Missing: date picker, payment method, merchant autocomplete, and the validation the plan calls for. There's also an existing `src/components/transaction/PaymentMethodSelector.tsx` — fully built, unused by any screen, and written against the old `designTokens` theme (`COLORS`/`SPACING`/`RADIUS` imported from `'../../theme'`) rather than `specTheme`, which is what `AddTransactionSheet.tsx` and every other current screen use. Per this plan's locked decision ("specTheme wins... do this before Phase 3 or every new screen inherits the fork" — see "Resolved by code inspection" near the top), it gets ported to specTheme as part of wiring it in, not imported as-is.
+- **3.3**: `TransactionsScreen.tsx` already has FlashList, the income/expense summary cards, and the All/Income/Expense segmented filter. Missing: date grouping, swipe-to-delete + undo, multi-select, search. Swipe-to-delete needs `react-native-gesture-handler`'s `Swipeable` (confirmed exported from the installed v2.27.2 — `export { default as Swipeable } from './components/Swipeable'`), which needs `GestureHandlerRootView` wrapping the app; `App.tsx` currently only has the side-effect `import 'react-native-gesture-handler'` at the top with no `GestureHandlerRootView`, so that gap gets closed in this task, not assumed away.
+- **3.4** is genuinely new, and finds a real landmine on the way in: `src/services/categorizationService.ts` exists, is fully built (`guessCategory`, `updateMerchantCategory`), and is completely unused — grepping for imports of it across `src/` returns nothing. It queries a `merchants` table (`001_initial.ts`, legacy schema: `id`, `name`, `defaultCategory`, `transactionCount`, `lastSeen`) that Task 1.3's migration left in place but orphaned (same class of leftover as `subscriptionDetector.ts`'s `personal_transactions` reference, noted after Task 1.3). The table Task 1.3 actually built for this purpose is `merchant_category_map` (`002_finance.ts`: `merchant` TEXT PRIMARY KEY, `category_id` TEXT REFERENCES categories(id), `updated_at` INTEGER NOT NULL) — nothing currently reads or writes it. This task rebuilds `categorizationService.ts` against the real table instead of leaving two disconnected, competing merchant-mapping systems in the codebase.
+
+**Descoped, flagged rather than guessed:** `account_id` on `transactions` stays NULL for new rows in this phase. There is no UI concept of multiple accounts anywhere in the app yet, and the plan's own correction table (Task 1.3) only added the column because "Dashboard 'Total Balance' is otherwise uncomputable" for a *future* multi-account view — Phase 5 (statement import) is the first place account linking actually gets populated and used. Building account-picker UI now with nothing to point it at would be speculative.
+
+**§7.3/§7.4 do not exist in this repo** (same situation as Task 1.4's "§5" note) — there is no spec text to quote from. The design below follows the app's actual current `AddTransactionSheet.tsx`/`TransactionsScreen.tsx` conventions (specTheme colors, `PressableScale`, haptics on every interaction, `Satoshi-*` font family, FlashList) rather than an unwritten external spec.
+
+---
+
+### Task 3.1: Harden the transaction store — error propagation and search
+
+**Files:**
+- Modify: `src/store/transactionStore.ts`
+- Test: `__tests__/store/transactionStore.test.ts` (new)
+
+**Step 1: Write the failing test**
+
+```ts
+// __tests__/store/transactionStore.test.ts
+const mockExecute = jest.fn();
+jest.mock('../../src/store/database', () => ({
+  getDb: () => ({ execute: mockExecute }),
+}));
+
+import { useTransactionStore } from '../../src/store/transactionStore';
+
+beforeEach(() => {
+  mockExecute.mockReset();
+  useTransactionStore.setState({ transactions: [], loading: false });
+});
+
+describe('transactionStore', () => {
+  it('addTransaction rejects a non-positive amount and never touches the DB', async () => {
+    await expect(
+      useTransactionStore.getState().addTransaction({
+        amount: 0,
+        type: 'expense',
+        category: 'Food',
+        categoryIcon: 'food',
+      }),
+    ).rejects.toThrow('Invalid amount');
+    expect(mockExecute).not.toHaveBeenCalled();
+  });
+
+  it('addTransaction propagates a DB failure instead of swallowing it', async () => {
+    mockExecute.mockImplementation((sql: string) => {
+      if (sql.startsWith('SELECT id, icon FROM categories')) return Promise.resolve({ rows: [] });
+      if (sql.startsWith('INSERT INTO categories')) return Promise.resolve({});
+      if (sql.startsWith('INSERT INTO transactions')) return Promise.reject(new Error('disk full'));
+      return Promise.resolve({ rows: [] });
+    });
+
+    await expect(
+      useTransactionStore.getState().addTransaction({
+        amount: 100,
+        type: 'expense',
+        category: 'Food',
+        categoryIcon: 'food',
+      }),
+    ).rejects.toThrow('disk full');
+  });
+
+  it('deleteTransaction propagates a DB failure', async () => {
+    mockExecute.mockRejectedValue(new Error('locked'));
+    await expect(useTransactionStore.getState().deleteTransaction('tx1')).rejects.toThrow('locked');
+  });
+
+  it('searchTransactions filters by description and category, case-insensitively', () => {
+    useTransactionStore.setState({
+      transactions: [
+        { id: '1', amount: 100, type: 'expense', category: 'Food', categoryIcon: 'food', description: 'Swiggy order', date: '2026-01-01T00:00:00.000Z' },
+        { id: '2', amount: 200, type: 'expense', category: 'Transport', categoryIcon: 'car', description: 'Uber ride', date: '2026-01-02T00:00:00.000Z' },
+      ],
+      loading: false,
+    });
+
+    expect(useTransactionStore.getState().searchTransactions('swig').map(t => t.id)).toEqual(['1']);
+    expect(useTransactionStore.getState().searchTransactions('transport').map(t => t.id)).toEqual(['2']);
+    expect(useTransactionStore.getState().searchTransactions('').map(t => t.id)).toEqual(['1', '2']);
+  });
+});
+```
+
+**Step 2: Run to verify it fails**
+
+Run: `npx jest __tests__/store/transactionStore.test.ts`
+Expected: FAIL — `addTransaction` currently resolves instead of rejecting (it catches and swallows), and `searchTransactions` doesn't exist on the store.
+
+**Step 3: Implement**
+
+In `src/store/transactionStore.ts`, change every action's catch block from swallow-and-log to log-and-rethrow, and add `searchTransactions` to both the interface and the store body:
+
+```ts
+interface TransactionStore {
+  transactions: Transaction[];
+  loading: boolean;
+  loadTransactions: () => Promise<void>;
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
+  getMonthlyStats: (month: number, year: number) => MonthlyStats;
+  searchTransactions: (query: string) => Transaction[];
+}
+```
+
+```ts
+  addTransaction: async transaction => {
+    const id = generateId();
+    const date = new Date().toISOString();
+    const newTx: Transaction = { ...transaction, id, date };
+
+    try {
+      const db = getDb();
+      const categoryId = await resolveCategoryId(db, newTx.category, newTx.categoryIcon);
+
+      await db.execute(
+        `INSERT INTO transactions
+          (id, amount_paise, type, category_id, account_id, description, occurred_at, payment_method, upi_ref, sms_hash)
+         VALUES (?, ?, ?, ?, NULL, ?, ?, ?, NULL, NULL);`,
+        [
+          newTx.id,
+          toPaise(String(newTx.amount)),
+          newTx.type,
+          categoryId,
+          newTx.description ?? null,
+          new Date(newTx.date).getTime(),
+          newTx.paymentMethod ?? null,
+        ],
+      );
+
+      set(state => ({ transactions: [newTx, ...state.transactions] }));
+    } catch (error) {
+      console.error('[transactionStore] addTransaction error:', error);
+      throw error;
+    }
+  },
+```
+
+Apply the identical `catch { console.error(...); throw error; }` pattern to `deleteTransaction` and `updateTransaction` — same bodies as today, just re-throwing after logging instead of returning. `toPaise` (already imported) throws synchronously on a non-positive amount before any DB call, which is what makes the first test pass without touching `mockExecute`.
+
+```ts
+  searchTransactions: query => {
+    const { transactions } = get();
+    const q = query.trim().toLowerCase();
+    if (!q) return transactions;
+    return transactions.filter(
+      tx =>
+        (tx.description ?? '').toLowerCase().includes(q) ||
+        tx.category.toLowerCase().includes(q),
+    );
+  },
+```
+
+**Step 4: Run to verify it passes**
+
+Run: `npx jest __tests__/store/transactionStore.test.ts`
+Expected: PASS (4 tests).
+
+**Step 5: Check nothing that relied on swallowed errors breaks**
+
+`grep -rn "addTransaction\|deleteTransaction\|updateTransaction" src --include=*.tsx` — confirm every call site (`AddScreen.tsx` today) either already expects a promise it can catch, or will after Task 3.2 adds a `try/catch`. Run the full suite: `npx jest` — expected: previously-passing suites still pass (69/69 plus the 4 new ones here, minus the one pre-existing unrelated `App.test.tsx` failure).
+
+**Step 6: Commit**
+
+```bash
+git add src/store/transactionStore.ts __tests__/store/transactionStore.test.ts
+git commit -m "fix: propagate transaction store write errors instead of swallowing them; add search selector"
+```
+
+---
+
+### Task 3.2: Add-transaction sheet — date, payment method, merchant autocomplete, validation
+
+**Files:**
+- Modify: `src/components/modals/AddTransactionSheet.tsx`
+- Modify: `src/screens/user/AddScreen.tsx`
+- Modify: `src/components/transaction/PaymentMethodSelector.tsx` (port to specTheme)
+- Test: `__tests__/components/AddTransactionSheet.test.tsx` (new)
+
+**Step 1: Install the date picker and verify it links**
+
+```bash
+npm install @react-native-community/datetimepicker
+npx tsc --noEmit
+```
+Expected: install succeeds, no new type errors.
+
+**Step 2: Port `PaymentMethodSelector.tsx` to specTheme**
+
+Replace the `import { COLORS, SPACING, RADIUS } from '../../theme'` line with `import { useSpecTheme } from '../../theme/specTheme'`, call `const { colors } = useSpecTheme()` inside the component, and replace every `COLORS.*` reference with the equivalent `colors.*` key (`colors.textPrimary` for the old `COLORS.navyText`, `colors.chipBg` for unselected button backgrounds, `colors.primaryAccent` in place of the old per-method pastel `color` field so selected/unselected states read consistently with the rest of the sheet). `SPACING`/`RADIUS` become the literal numbers `AddTransactionSheet.tsx` already uses inline (`12`, `16`, etc.) — specTheme has no spacing/radius token export, confirmed by `grep -n "SPACING\|RADIUS" src/theme/specTheme.ts` returning nothing; matching the file's existing convention, not inventing a new token system for one component.
+
+**Step 3: Write the failing test**
+
+```tsx
+// __tests__/components/AddTransactionSheet.test.tsx
+import React from 'react';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { AddTransactionSheet } from '../../src/components/modals/AddTransactionSheet';
+
+jest.mock('../../src/services/categorizationService', () => ({
+  suggestCategoryForMerchant: jest.fn(async () => null),
+  recordMerchantCategory: jest.fn(async () => undefined),
+}));
+
+describe('AddTransactionSheet validation', () => {
+  it('disables submit until amount and category are set', () => {
+    const onSubmit = jest.fn();
+    const { getByText, getByPlaceholderText } = render(
+      <AddTransactionSheet visible onClose={() => {}} onSubmit={onSubmit} />,
+    );
+
+    fireEvent.press(getByText('Add Expense'));
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    fireEvent.changeText(getByPlaceholderText('0'), '250');
+    fireEvent.press(getByText('Food'));
+    fireEvent.press(getByText('Add Expense'));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 250, category: 'Food' }),
+    );
+  });
+
+  it('rejects an amount of zero with an inline error, no onSubmit call', () => {
+    const onSubmit = jest.fn();
+    const { getByText, getByPlaceholderText, queryByText } = render(
+      <AddTransactionSheet visible onClose={() => {}} onSubmit={onSubmit} />,
+    );
+
+    fireEvent.changeText(getByPlaceholderText('0'), '0');
+    fireEvent.press(getByText('Food'));
+    fireEvent.press(getByText('Add Expense'));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(queryByText(/greater than zero/i)).toBeTruthy();
+  });
+
+  it('rejects a future date for an expense with an inline error', () => {
+    const onSubmit = jest.fn();
+    const { getByText, getByPlaceholderText, getByTestId, queryByText } = render(
+      <AddTransactionSheet visible onClose={() => {}} onSubmit={onSubmit} />,
+    );
+
+    fireEvent.changeText(getByPlaceholderText('0'), '100');
+    fireEvent.press(getByText('Food'));
+
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    fireEvent(getByTestId('date-picker'), 'onChange', { type: 'set' }, tomorrow);
+
+    fireEvent.press(getByText('Add Expense'));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(queryByText(/future/i)).toBeTruthy();
+  });
+
+  it('suggests a category when a known merchant is typed, without overriding an explicit user pick', async () => {
+    const { suggestCategoryForMerchant } = require('../../src/services/categorizationService');
+    suggestCategoryForMerchant.mockResolvedValueOnce({ id: 'transport', name: 'Transport', icon: 'car' });
+
+    const { getByPlaceholderText, findByText } = render(
+      <AddTransactionSheet visible onClose={() => {}} onSubmit={jest.fn()} />,
+    );
+
+    fireEvent.changeText(getByPlaceholderText('Add a note...'), 'Uber');
+    await waitFor(() => expect(suggestCategoryForMerchant).toHaveBeenCalledWith('Uber'));
+
+    // The suggested chip becomes visually selected without another tap.
+    expect(await findByText('Transport')).toBeTruthy();
+  });
+});
+```
+
+**Step 4: Run to verify it fails**
+
+Run: `npx jest __tests__/components/AddTransactionSheet.test.tsx`
+Expected: FAIL — no `date-picker` testID exists yet, no future-date or zero-amount inline error, no merchant-suggestion effect, `categorizationService.suggestCategoryForMerchant`/`recordMerchantCategory` don't exist yet (Task 3.4 defines the real implementation; this test only needs the mock's shape to match what 3.4 will export — confirm the export names match when 3.4 lands).
+
+**Step 5: Implement**
+
+Add to `AddTransactionSheet.tsx`'s state: `const [occurredAt, setOccurredAt] = useState(new Date())`, `const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')`, `const [error, setError] = useState<string | null>(null)`, `const [showDatePicker, setShowDatePicker] = useState(false)`.
+
+Merchant autocomplete effect, debounced on the description field (which doubles as the merchant field — there is no separate `merchant` column; `002_finance.ts`'s migration already treats `description` as where merchant names live for migrated `personal_transactions.merchant` rows, so this reuses that same field rather than adding a new one):
+
+```tsx
+useEffect(() => {
+  if (!description.trim()) return;
+  const handle = setTimeout(async () => {
+    const match = await suggestCategoryForMerchant(description.trim());
+    if (match) {
+      setSelectedCategory(match.id);
+    }
+  }, 400);
+  return () => clearTimeout(handle);
+}, [description]);
+```
+
+Validation inside `handleSubmit`, before calling `onSubmit`:
+
+```tsx
+const handleSubmit = () => {
+  setError(null);
+
+  if (!amount || parseFloat(amount) <= 0) {
+    setError('Amount must be greater than zero.');
+    return;
+  }
+  if (!selectedCategory) return;
+  if (type === 'expense' && occurredAt.getTime() > Date.now()) {
+    setError('Expenses cannot be dated in the future.');
+    return;
+  }
+
+  ReactNativeHapticFeedback.trigger('notificationSuccess');
+  const category = CATEGORIES.find(c => c.id === selectedCategory);
+
+  onSubmit({
+    amount: parseFloat(amount),
+    type,
+    category: category?.name || 'Other',
+    categoryIcon: category?.icon || 'other',
+    description,
+    paymentMethod,
+    occurredAt: occurredAt.toISOString(),
+  });
+
+  if (description.trim() && category) {
+    recordMerchantCategory(description.trim(), category.id);
+  }
+
+  setAmount('');
+  setType(initialType);
+  setSelectedCategory(null);
+  setDescription('');
+  setOccurredAt(new Date());
+  setPaymentMethod('cash');
+  onClose();
+};
+```
+
+Render an inline error line (reuse the existing `sectionLabel`/danger-colored `Text` pattern already used elsewhere in the app — `{error && <Text style={{ color: colors.danger, fontSize: 13, marginBottom: 12 }}>{error}</Text>}`) directly above the submit button. Add a date row below the category chips using `@react-native-community/datetimepicker`'s `DateTimePicker` component with `testID="date-picker"`, `value={occurredAt}`, `mode="date"`, `maximumDate={type === 'expense' ? new Date() : undefined}`, `onChange={(_, date) => date && setOccurredAt(date)}`. Add the ported `PaymentMethodSelector` between the category chips and the description field, wired to `paymentMethod`/`setPaymentMethod`.
+
+In `AddScreen.tsx`, wrap the `addTransaction` call in `try/catch` now that Task 3.1 makes it reject on failure, and surface the error instead of navigating away on failure:
+
+```tsx
+onSubmit={async (payload) => {
+  try {
+    await addTransaction({
+      amount: payload.amount,
+      type: payload.type,
+      category: payload.category,
+      categoryIcon: payload.categoryIcon || 'other',
+      description: payload.description,
+      paymentMethod: payload.paymentMethod ?? 'Manual',
+    });
+    closeSheet();
+  } catch (error) {
+    Alert.alert('Could not save transaction', error instanceof Error ? error.message : 'Please try again.');
+  }
+}}
+```
+(Add `import { Alert } from 'react-native'` at the top of `AddScreen.tsx`.)
+
+**Step 6: Run to verify it passes**
+
+Run: `npx jest __tests__/components/AddTransactionSheet.test.tsx`
+Expected: PASS (4 tests). Then run the full suite: `npx jest` — no regressions.
+
+**Step 7: Manual verification**
+
+On a device: open Add, enter an amount, pick a category, submit — appears in Transactions immediately. Try amount `0` — inline error, no submit. Switch to Expense, pick tomorrow's date — inline error on submit; switch to Income with the same future date — submits fine (future income, e.g. a scheduled payment, is legitimate; only expenses are constrained). Type a merchant name already in `merchant_category_map` from a prior transaction (Task 3.4 populates this) — category chip auto-selects.
+
+**Step 8: Commit**
+
+```bash
+git add src/components/modals/AddTransactionSheet.tsx src/screens/user/AddScreen.tsx src/components/transaction/PaymentMethodSelector.tsx __tests__/components/AddTransactionSheet.test.tsx package.json package-lock.json
+git commit -m "feat: add date, payment method, merchant autocomplete, and validation to the add-transaction sheet"
+```
+
+---
+
+### Task 3.3: Transaction list — date grouping, swipe-to-delete + undo, multi-select, search
+
+**Files:**
+- Modify: `App.tsx` (add `GestureHandlerRootView`)
+- Modify: `src/screens/user/TransactionsScreen.tsx`
+- Create: `src/utils/groupTransactionsByDate.ts`
+- Test: `__tests__/utils/groupTransactionsByDate.test.ts` (new)
+- Test: `__tests__/screens/TransactionsScreen.test.tsx` (new)
+
+**Step 1: Close the GestureHandlerRootView gap**
+
+`App.tsx` currently only has the side-effect `import 'react-native-gesture-handler'` at the top with no `GestureHandlerRootView` wrapping the tree — required for `Swipeable` (used below) to receive touches correctly, particularly on Android. Wrap the outermost view:
+
+```tsx
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+// ...
+return (
+  <GestureHandlerRootView style={{ flex: 1 }}>
+    <ThemeProvider>
+      {/* ...unchanged... */}
+    </ThemeProvider>
+  </GestureHandlerRootView>
+);
+```
+
+Run `npx tsc --noEmit` — expected clean, this is a pure wrapper with no logic change.
+
+**Step 2: Write the failing test for date grouping (pure function, no native deps)**
+
+```ts
+// __tests__/utils/groupTransactionsByDate.test.ts
+import { groupTransactionsByDate } from '../../src/utils/groupTransactionsByDate';
+import { Transaction } from '../../src/types/transaction';
+
+const tx = (id: string, date: string): Transaction => ({
+  id, amount: 100, type: 'expense', category: 'Food', categoryIcon: 'food', date,
+});
+
+describe('groupTransactionsByDate', () => {
+  it('groups same-day transactions under one header, preserving list order', () => {
+    const input = [
+      tx('1', '2026-07-31T09:00:00.000Z'),
+      tx('2', '2026-07-31T18:00:00.000Z'),
+      tx('3', '2026-07-30T09:00:00.000Z'),
+    ];
+
+    const result = groupTransactionsByDate(input);
+
+    expect(result).toEqual([
+      { type: 'header', label: expect.any(String), key: 'header-2026-07-31' },
+      { type: 'row', tx: input[0], key: '1' },
+      { type: 'row', tx: input[1], key: '2' },
+      { type: 'header', label: expect.any(String), key: 'header-2026-07-30' },
+      { type: 'row', tx: input[2], key: '3' },
+    ]);
+  });
+
+  it('returns an empty array for no transactions', () => {
+    expect(groupTransactionsByDate([])).toEqual([]);
+  });
+});
+```
+
+**Step 3: Run to verify it fails**
+
+Run: `npx jest __tests__/utils/groupTransactionsByDate.test.ts`
+Expected: FAIL — module doesn't exist.
+
+**Step 4: Implement the grouping utility**
+
+```ts
+// src/utils/groupTransactionsByDate.ts
+import { Transaction } from '../types/transaction';
+
+export type GroupedRow =
+  | { type: 'header'; label: string; key: string }
+  | { type: 'row'; tx: Transaction; key: string };
+
+const dayKey = (iso: string): string => iso.slice(0, 10);
+
+const dayLabel = (iso: string): string => {
+  const date = new Date(iso);
+  const today = dayKey(new Date().toISOString());
+  const yesterday = dayKey(new Date(Date.now() - 86400000).toISOString());
+  const key = dayKey(iso);
+
+  if (key === today) return 'Today';
+  if (key === yesterday) return 'Yesterday';
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+// Assumes transactions are already sorted newest-first (transactionStore
+// loads them with `ORDER BY t.occurred_at DESC`) — this only groups, it
+// does not re-sort.
+export const groupTransactionsByDate = (transactions: Transaction[]): GroupedRow[] => {
+  const rows: GroupedRow[] = [];
+  let currentKey: string | null = null;
+
+  for (const tx of transactions) {
+    const key = dayKey(tx.date);
+    if (key !== currentKey) {
+      currentKey = key;
+      rows.push({ type: 'header', label: dayLabel(tx.date), key: `header-${key}` });
+    }
+    rows.push({ type: 'row', tx, key: tx.id });
+  }
+
+  return rows;
+};
+```
+
+**Step 5: Run to verify it passes**
+
+Run: `npx jest __tests__/utils/groupTransactionsByDate.test.ts`
+Expected: PASS (2 tests).
+
+**Step 6: Write the failing test for screen behavior (search, swipe-delete + undo, multi-select)**
+
+```tsx
+// __tests__/screens/TransactionsScreen.test.tsx
+import React from 'react';
+import { render, fireEvent, act } from '@testing-library/react-native';
+import { TransactionsScreen } from '../../src/screens/user/TransactionsScreen';
+
+const mockDelete = jest.fn(async () => {});
+jest.mock('../../src/hooks/useTransactions', () => ({
+  useTransactions: () => ({
+    transactions: [
+      { id: '1', amount: 100, type: 'expense', category: 'Food', categoryIcon: 'food', description: 'Lunch', date: '2026-07-31T09:00:00.000Z' },
+      { id: '2', amount: 5000, type: 'income', category: 'Salary', categoryIcon: 'salary', description: 'Paycheck', date: '2026-07-30T09:00:00.000Z' },
+    ],
+    deleteTransaction: mockDelete,
+  }),
+}));
+
+const navigation = { goBack: jest.fn() } as any;
+
+describe('TransactionsScreen', () => {
+  beforeEach(() => mockDelete.mockClear());
+
+  it('filters the list by search query across description and category', () => {
+    const { getByPlaceholderText, getByText, queryByText } = render(
+      <TransactionsScreen navigation={navigation} route={{} as any} />,
+    );
+
+    fireEvent.changeText(getByPlaceholderText('Search transactions'), 'salary');
+
+    expect(getByText('Paycheck')).toBeTruthy();
+    expect(queryByText('Lunch')).toBeNull();
+  });
+
+  it('shows an undo banner after a swipe-delete and restores the row on undo', async () => {
+    const { getByTestId, getByText, queryByText } = render(
+      <TransactionsScreen navigation={navigation} route={{} as any} />,
+    );
+
+    await act(async () => {
+      fireEvent(getByTestId('swipe-delete-1'), 'press');
+    });
+
+    expect(queryByText('Lunch')).toBeNull();
+    expect(getByText(/undo/i)).toBeTruthy();
+
+    fireEvent.press(getByText(/undo/i));
+    expect(getByText('Lunch')).toBeTruthy();
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it('commits the delete if undo is not pressed within the window', async () => {
+    jest.useFakeTimers();
+    const { getByTestId } = render(<TransactionsScreen navigation={navigation} route={{} as any} />);
+
+    await act(async () => {
+      fireEvent(getByTestId('swipe-delete-1'), 'press');
+    });
+
+    act(() => jest.advanceTimersByTime(5000));
+
+    expect(mockDelete).toHaveBeenCalledWith('1');
+    jest.useRealTimers();
+  });
+
+  it('enters multi-select on long-press and deletes the selection', async () => {
+    const { getByTestId, getByText, queryByText } = render(
+      <TransactionsScreen navigation={navigation} route={{} as any} />,
+    );
+
+    fireEvent(getByTestId('row-1'), 'longPress');
+    fireEvent.press(getByTestId('row-2'));
+    fireEvent.press(getByText(/delete/i));
+
+    await act(async () => {});
+
+    expect(mockDelete).toHaveBeenCalledWith('1');
+    expect(mockDelete).toHaveBeenCalledWith('2');
+    expect(queryByText('Lunch')).toBeNull();
+    expect(queryByText('Paycheck')).toBeNull();
+  });
+});
+```
+
+**Step 7: Run to verify it fails**
+
+Run: `npx jest __tests__/screens/TransactionsScreen.test.tsx`
+Expected: FAIL — no search input, no swipe/undo/multi-select behavior exists yet.
+
+**Step 8: Implement**
+
+Search bar (plain `TextInput`, matching the file's existing inline-style convention — no need for a new shared component for one field):
+
+```tsx
+const [searchQuery, setSearchQuery] = useState('');
+```
+
+```tsx
+<TextInput
+  style={[styles.searchInput, { backgroundColor: colors.inputBg, color: colors.textPrimary }]}
+  placeholder="Search transactions"
+  placeholderTextColor={colors.textSecondary}
+  value={searchQuery}
+  onChangeText={setSearchQuery}
+/>
+```
+
+Filter chain becomes `filteredTx` → also apply search:
+
+```tsx
+const searched = useMemo(() => {
+  const q = searchQuery.trim().toLowerCase();
+  if (!q) return filteredTx;
+  return filteredTx.filter(
+    t => (t.description ?? '').toLowerCase().includes(q) || t.category.toLowerCase().includes(q),
+  );
+}, [filteredTx, searchQuery]);
+
+const grouped = useMemo(() => groupTransactionsByDate(searched), [searched]);
+```
+
+Swipe-to-delete with a 5-second undo window, and multi-select, both driven by local state:
+
+```tsx
+const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
+const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+const requestDelete = (tx: Transaction) => {
+  ReactNativeHapticFeedback.trigger('impactMedium');
+  setPendingDelete(tx);
+  undoTimer.current = setTimeout(() => {
+    deleteTransaction(tx.id);
+    setPendingDelete(null);
+  }, 5000);
+};
+
+const undoDelete = () => {
+  if (undoTimer.current) clearTimeout(undoTimer.current);
+  setPendingDelete(null);
+};
+
+const toggleSelected = (id: string) => {
+  setSelectedIds(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+};
+
+const deleteSelected = async () => {
+  const ids = Array.from(selectedIds);
+  setSelectedIds(new Set());
+  await Promise.all(ids.map(id => deleteTransaction(id)));
+};
+```
+
+Filter `pendingDelete` out of the rendered list (`grouped` recomputed from `searched.filter(t => t.id !== pendingDelete?.id)`) so it disappears immediately on swipe, before the timer fires — that's what makes it feel like a delete rather than a pending action.
+
+Render each row wrapped in `Swipeable` (`renderRightActions` shows a red delete affordance, `testID={\`swipe-delete-${item.id}\`}` on that action's `Pressable`, calling `requestDelete(item)` on press) and give the row itself `testID={\`row-${item.id}\`}`, `onLongPress={() => { setSelectedIds(new Set([item.id])); }}`, and `onPress={() => selectedIds.size > 0 ? toggleSelected(item.id) : undefined}`. When `selectedIds.size > 0`, replace the header's back button area with a selection count and a delete action (`getByText(/delete/i)` in the test above); render an undo banner (`Animated.View` fixed to the bottom, above the tab bar) whenever `pendingDelete` is set, showing `"${pendingDelete.description || pendingDelete.category} deleted"` and an "Undo" `Pressable` calling `undoDelete`.
+
+Update `FlashList`'s `data` to `grouped`, `renderItem` to branch on `item.type` (`header` renders a small `Text` section label; `row` renders the existing row UI wrapped in `Swipeable`), and add `getItemType={item => item.type}` so FlashList recycles header/row views separately rather than treating them as the same shape.
+
+**Step 9: Run to verify it passes**
+
+Run: `npx jest __tests__/screens/TransactionsScreen.test.tsx __tests__/utils/groupTransactionsByDate.test.ts`
+Expected: PASS (6 tests total). Then `npx jest` for the full suite — no regressions.
+
+**Step 10: Manual verification**
+
+On a device: add transactions on different days, confirm date headers ("Today", "Yesterday", full date). Swipe a row left, tap delete — row vanishes, undo banner appears; tap Undo within 5s — row returns; let it expire — row stays gone and reappears if you kill/reopen the app (confirms the DB delete actually committed, not just local state). Long-press a row, tap a second row, tap Delete — both removed. Type in search — list narrows live.
+
+**Step 11: Commit**
+
+```bash
+git add App.tsx src/screens/user/TransactionsScreen.tsx src/utils/groupTransactionsByDate.ts __tests__/utils/groupTransactionsByDate.test.ts __tests__/screens/TransactionsScreen.test.tsx
+git commit -m "feat: date-grouped transaction list with swipe-to-delete, undo, multi-select, and search"
+```
+
+---
+
+### Task 3.4: Category management and the merchant-category correction-learning loop
+
+**Files:**
+- Modify: `src/services/categorizationService.ts` (rebuild against `merchant_category_map`, not the orphaned `merchants` table)
+- Create: `src/screens/user/CategoriesScreen.tsx`
+- Modify: `src/navigation` (register the new screen — check `RootNavigator.tsx`/`UserTabNavigator.tsx` for where Settings-adjacent screens are already registered and follow that pattern)
+- Test: `__tests__/services/categorizationService.test.ts` (new, replaces reliance on the old unused file's untested behavior)
+- Test: `__tests__/screens/CategoriesScreen.test.tsx` (new)
+
+**Step 1: Write the failing test for the rebuilt service**
+
+```ts
+// __tests__/services/categorizationService.test.ts
+const mockExecute = jest.fn();
+jest.mock('../../src/store/database', () => ({
+  getDb: () => ({ execute: mockExecute }),
+}));
+
+import { suggestCategoryForMerchant, recordMerchantCategory } from '../../src/services/categorizationService';
+
+describe('categorizationService', () => {
+  beforeEach(() => mockExecute.mockReset());
+
+  it('returns null for an empty merchant name without querying the DB', async () => {
+    expect(await suggestCategoryForMerchant('')).toBeNull();
+    expect(mockExecute).not.toHaveBeenCalled();
+  });
+
+  it('returns the mapped category when merchant_category_map has a match', async () => {
+    mockExecute.mockResolvedValueOnce({
+      rows: [{ id: 'transport', name: 'Transport', icon: 'car' }],
+    });
+
+    const result = await suggestCategoryForMerchant('Uber');
+
+    expect(result).toEqual({ id: 'transport', name: 'Transport', icon: 'car' });
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.stringContaining('merchant_category_map'),
+      ['uber'],
+    );
+  });
+
+  it('returns null when no mapping exists, without throwing', async () => {
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+    expect(await suggestCategoryForMerchant('Some New Shop')).toBeNull();
+  });
+
+  it('recordMerchantCategory upserts by merchant name, lowercased', async () => {
+    mockExecute.mockResolvedValueOnce({});
+    await recordMerchantCategory('Uber', 'transport');
+
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO merchant_category_map'),
+      ['uber', 'transport', expect.any(Number)],
+    );
+  });
+});
+```
+
+**Step 2: Run to verify it fails**
+
+Run: `npx jest __tests__/services/categorizationService.test.ts`
+Expected: FAIL — current exports are `guessCategory`/`updateMerchantCategory` against the wrong table; `suggestCategoryForMerchant`/`recordMerchantCategory` don't exist.
+
+**Step 3: Implement**
+
+Replace the body of `src/services/categorizationService.ts` entirely — the old `DEFAULT_MAPPINGS` regex fallback and the `merchants` table queries are removed, not kept alongside the new table (two systems answering the same question is exactly the landmine this task exists to close):
+
+```ts
+// src/services/categorizationService.ts
+import { getDb } from '../store/database';
+
+export interface SuggestedCategory {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+export const suggestCategoryForMerchant = async (
+  merchant: string,
+): Promise<SuggestedCategory | null> => {
+  const key = merchant.trim().toLowerCase();
+  if (!key) return null;
+
+  const db = getDb();
+  const result = await db.execute(
+    `SELECT c.id, c.name, c.icon
+     FROM merchant_category_map m
+     JOIN categories c ON c.id = m.category_id
+     WHERE m.merchant = ? LIMIT 1;`,
+    [key],
+  );
+  const row = result.rows?.[0] as SuggestedCategory | undefined;
+  return row ?? null;
+};
+
+export const recordMerchantCategory = async (
+  merchant: string,
+  categoryId: string,
+): Promise<void> => {
+  const key = merchant.trim().toLowerCase();
+  if (!key) return;
+
+  const db = getDb();
+  await db.execute(
+    `INSERT INTO merchant_category_map (merchant, category_id, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(merchant) DO UPDATE SET category_id = excluded.category_id, updated_at = excluded.updated_at;`,
+    [key, categoryId, Date.now()],
+  );
+};
+```
+
+This is what Task 3.2's `suggestCategoryForMerchant`/`recordMerchantCategory` mock was already shaped for — confirm the exported names match exactly what `AddTransactionSheet.tsx` imports (`import { suggestCategoryForMerchant, recordMerchantCategory } from '../../services/categorizationService'`); if 3.2 was implemented before this task, update that import if it drifted.
+
+**Step 4: Run to verify it passes**
+
+Run: `npx jest __tests__/services/categorizationService.test.ts`
+Expected: PASS (4 tests).
+
+**Step 5: Write the failing test for the categories screen**
+
+```tsx
+// __tests__/screens/CategoriesScreen.test.tsx
+import React from 'react';
+import { render, fireEvent, act } from '@testing-library/react-native';
+import { CategoriesScreen } from '../../src/screens/user/CategoriesScreen';
+
+const mockExecute = jest.fn();
+jest.mock('../../src/store/database', () => ({
+  getDb: () => ({ execute: mockExecute }),
+}));
+
+const navigation = { goBack: jest.fn() } as any;
+
+describe('CategoriesScreen', () => {
+  beforeEach(() => mockExecute.mockReset());
+
+  it('lists categories with their transaction counts', async () => {
+    mockExecute.mockResolvedValueOnce({
+      rows: [
+        { id: 'food', name: 'Food', icon: 'food', usageCount: 12 },
+        { id: 'transport', name: 'Transport', icon: 'car', usageCount: 0 },
+      ],
+    });
+
+    const { findByText } = render(<CategoriesScreen navigation={navigation} route={{} as any} />);
+
+    expect(await findByText('Food')).toBeTruthy();
+    expect(await findByText('Transport')).toBeTruthy();
+  });
+
+  it('blocks deleting a category still in use, allows deleting an unused one', async () => {
+    mockExecute
+      .mockResolvedValueOnce({
+        rows: [
+          { id: 'food', name: 'Food', icon: 'food', usageCount: 12 },
+          { id: 'transport', name: 'Transport', icon: 'car', usageCount: 0 },
+        ],
+      })
+      .mockResolvedValueOnce({}); // the DELETE for the unused one
+
+    const { findByTestId } = render(<CategoriesScreen navigation={navigation} route={{} as any} />);
+
+    const deleteUsed = await findByTestId('delete-category-food');
+    await act(async () => fireEvent.press(deleteUsed));
+    expect(mockExecute).toHaveBeenCalledTimes(1); // only the initial SELECT — DELETE was blocked
+
+    const deleteUnused = await findByTestId('delete-category-transport');
+    await act(async () => fireEvent.press(deleteUnused));
+    expect(mockExecute).toHaveBeenCalledWith(expect.stringContaining('DELETE FROM categories'), ['transport']);
+  });
+});
+```
+
+**Step 6: Run to verify it fails**
+
+Run: `npx jest __tests__/screens/CategoriesScreen.test.tsx`
+Expected: FAIL — `src/screens/user/CategoriesScreen.tsx` doesn't exist.
+
+**Step 7: Implement**
+
+```tsx
+// src/screens/user/CategoriesScreen.tsx
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, Alert } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ArrowLeft, Trash2 } from 'lucide-react-native';
+import { useSpecTheme } from '../../theme/specTheme';
+import { PressableScale } from '../../components/anim';
+import { getDb } from '../../store/database';
+
+type Props = NativeStackScreenProps<any, 'Categories'>;
+
+interface CategoryRow {
+  id: string;
+  name: string;
+  icon: string;
+  usageCount: number;
+}
+
+export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+  const { colors } = useSpecTheme();
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
+
+  const load = useCallback(async () => {
+    const db = getDb();
+    const result = await db.execute(`
+      SELECT c.id, c.name, c.icon, COUNT(t.id) AS usageCount
+      FROM categories c
+      LEFT JOIN transactions t ON t.category_id = c.id
+      GROUP BY c.id
+      ORDER BY c.name;
+    `);
+    setCategories((result.rows ?? []) as CategoryRow[]);
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleDelete = async (category: CategoryRow) => {
+    if (category.usageCount > 0) {
+      Alert.alert('Category in use', `${category.usageCount} transaction(s) use this category. Reassign them first.`);
+      return;
+    }
+    const db = getDb();
+    await db.execute('DELETE FROM categories WHERE id = ?;', [category.id]);
+    await load();
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 16 }]}>
+      <View style={styles.headerRow}>
+        <PressableScale onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.chipBg }]}>
+          <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+        </PressableScale>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>Categories</Text>
+      </View>
+
+      <FlatList
+        data={categories}
+        keyExtractor={item => item.id}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 32 }}
+        renderItem={({ item }) => (
+          <View style={styles.row}>
+            <View style={styles.rowInfo}>
+              <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{item.name}</Text>
+              <Text style={[styles.rowMeta, { color: colors.textSecondary }]}>
+                {item.usageCount} transaction{item.usageCount === 1 ? '' : 's'}
+              </Text>
+            </View>
+            <PressableScale
+              testID={`delete-category-${item.id}`}
+              onPress={() => handleDelete(item)}
+              style={styles.deleteButton}
+            >
+              <Trash2 size={18} color={colors.danger} strokeWidth={2} />
+            </PressableScale>
+          </View>
+        )}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 20 },
+  backButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  title: { fontSize: 24, fontFamily: 'Satoshi-Black' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
+  rowInfo: { flex: 1 },
+  rowTitle: { fontSize: 15, fontFamily: 'Satoshi-Bold' },
+  rowMeta: { fontSize: 12, fontFamily: 'Satoshi-Regular', marginTop: 2 },
+  deleteButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+});
+
+export default CategoriesScreen;
+```
+
+Adding a new category is deliberately not built here — `resolveCategoryId` in `transactionStore.ts` already creates a category on the fly the first time a transaction uses a new name typed into `AddTransactionSheet.tsx`'s category chips (there is currently no free-text category entry point in that sheet either, only the fixed `CATEGORIES` chip list — extending the sheet to accept a typed new category is out of scope for this task, which is about managing what exists, not chip-list UX; flag for whoever picks up 3.2/3.4 follow-on work if that gap needs closing).
+
+**Step 8: Run to verify it passes**
+
+Run: `npx jest __tests__/screens/CategoriesScreen.test.tsx`
+Expected: PASS (2 tests).
+
+**Step 9: Register the screen**
+
+Check `src/navigation/UserTabNavigator.tsx` or wherever `TransactionsScreen`/other secondary screens are registered in the stack (per [[coinkeeper-app-flow-plan]] conventions already established for post-split navigation) and add `Categories` alongside them, reachable from `TransactionsScreen`'s header or Settings — pick whichever existing entry point pattern this repo already uses for secondary screens (check how `TransactionsScreen` itself is reached from `UserDashboardScreen` and mirror it, rather than inventing a new navigation convention).
+
+**Step 10: Run the full suite and verify no regressions**
+
+Run: `npx jest` — expected: all Phase 3 tests plus everything from Phases 0–2 still pass (same 1 pre-existing unrelated `App.test.tsx` failure). Run: `npx tsc --noEmit` — expected: clean. Run: `npx eslint src/services/categorizationService.ts src/screens/user/CategoriesScreen.tsx` — expected: clean.
+
+**Step 11: Commit**
+
+```bash
+git add src/services/categorizationService.ts src/screens/user/CategoriesScreen.tsx src/navigation __tests__/services/categorizationService.test.ts __tests__/screens/CategoriesScreen.test.tsx
+git commit -m "feat: category management screen and merchant-category correction learning"
+```
 
 ---
 
