@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text as RNText, TextInput as RNTextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '../../components/ui/Text';
-import { TextInput } from '../../components/ui/TextInput';
 import { Button } from '../../components/ui/Button';
-import { useTheme } from '../../hooks/useTheme';
-import { spacing, radii } from '../../theme/designTokens';
+import { useSpecTheme } from '../../theme/specTheme';
 import { Cloud, Lock, Send, Bot } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -17,7 +14,8 @@ interface Message {
 
 export const AskAiScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, space, cardRadius, iconShadow, inputRadius, cardShadow } = useSpecTheme();
+  
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -53,24 +51,24 @@ export const AskAiScreen: React.FC = () => {
       style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={[styles.header, { paddingTop: insets.top + spacing.m }]}>
-        <Text variant="h1" style={styles.title}>Ask AI</Text>
+      <View style={[styles.header, { paddingTop: insets.top + space.md }]}>
+        <RNText style={[styles.title, { color: colors.textPrimary }]}>Ask AI</RNText>
       </View>
 
-      <View style={[styles.disclaimer, { backgroundColor: colors.surfaceSecondary }]}>
+      <View style={[styles.disclaimer, { backgroundColor: colors.surfaceSunken, borderRadius: cardRadius }]}>
         <View style={styles.disclaimerIcon}>
           <Cloud size={16} color={colors.textSecondary} />
           <Lock size={12} color={colors.textSecondary} style={{ position: 'absolute', bottom: -2, right: -2 }} />
         </View>
-        <Text variant="caption" color="secondary" style={styles.disclaimerText}>
+        <RNText style={[styles.disclaimerText, { color: colors.textSecondary }]}>
           Privacy Notice: Messages sent here are processed in the cloud to generate insights. 
           Your raw bank details are NEVER shared.
-        </Text>
+        </RNText>
       </View>
 
       <ScrollView 
         style={styles.chatArea} 
-        contentContainerStyle={styles.chatContent}
+        contentContainerStyle={[styles.chatContent, { padding: space.md, gap: space.md }]}
         showsVerticalScrollIndicator={false}
       >
         {messages.map((msg) => (
@@ -79,38 +77,50 @@ export const AskAiScreen: React.FC = () => {
             entering={FadeInDown.springify()}
             style={[
               styles.messageBubble,
-              msg.role === 'user' ? [styles.userBubble, { backgroundColor: colors.primary }] : [styles.aiBubble, { backgroundColor: colors.card }]
+              { borderRadius: cardRadius, padding: space.md, gap: space.sm },
+              msg.role === 'user' 
+                ? [styles.userBubble, { backgroundColor: colors.primaryAccent }] 
+                : [styles.aiBubble, { backgroundColor: colors.card }, cardShadow]
             ]}
           >
             {msg.role === 'assistant' && (
-              <View style={[styles.aiAvatar, { backgroundColor: colors.surfaceSecondary }]}>
-                <Bot size={16} color={colors.primary} />
+              <View style={[styles.aiAvatar, { backgroundColor: colors.chipBg }, iconShadow]}>
+                <Bot size={16} color={colors.primaryAccent} />
               </View>
             )}
-            <Text 
-              variant="body" 
+            <RNText 
               style={[
                 styles.messageText,
-                msg.role === 'user' ? { color: '#FFFFFF' } : { color: colors.text }
+                msg.role === 'user' ? { color: '#FFFFFF' } : { color: colors.textPrimary }
               ]}
             >
               {msg.content}
-            </Text>
+            </RNText>
           </Animated.View>
         ))}
         {isLoading && (
-          <View style={[styles.messageBubble, styles.aiBubble, { backgroundColor: colors.card }]}>
-            <Text variant="caption" color="secondary">Thinking...</Text>
+          <View style={[styles.messageBubble, styles.aiBubble, { backgroundColor: colors.card, borderRadius: cardRadius, padding: space.md }, cardShadow]}>
+            <RNText style={[styles.messageText, { color: colors.textSecondary }]}>Thinking...</RNText>
           </View>
         )}
       </ScrollView>
 
-      <View style={[styles.inputArea, { paddingBottom: Math.max(insets.bottom, spacing.m), backgroundColor: colors.card }]}>
-        <TextInput
+      <View style={[
+        styles.inputArea, 
+        { 
+          paddingBottom: Math.max(insets.bottom, space.md), 
+          backgroundColor: colors.card,
+          padding: space.sm,
+          gap: space.sm
+        },
+        cardShadow
+      ]}>
+        <RNTextInput
           value={prompt}
           onChangeText={setPrompt}
           placeholder="Ask me about your spending..."
-          style={styles.input}
+          placeholderTextColor={colors.textSecondary}
+          style={[styles.input, { backgroundColor: colors.inputBg, color: colors.textPrimary, borderRadius: inputRadius }]}
           multiline
         />
         <Button
@@ -118,7 +128,7 @@ export const AskAiScreen: React.FC = () => {
           icon={<Send size={20} color="#FFFFFF" />}
           onPress={handleSend}
           disabled={isLoading || !prompt.trim()}
-          style={styles.sendButton}
+          style={[styles.sendButton, { backgroundColor: colors.primaryAccent }]}
         />
       </View>
     </KeyboardAvoidingView>
@@ -130,20 +140,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: spacing.m,
-    paddingBottom: spacing.s,
+    paddingHorizontal: 24,
+    paddingBottom: 16,
   },
   title: {
     fontFamily: 'Satoshi-Black',
+    fontSize: 28,
+    letterSpacing: -0.3,
   },
   disclaimer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: spacing.m,
-    padding: spacing.s,
-    borderRadius: radii.card,
-    gap: spacing.s,
-    marginBottom: spacing.s,
+    marginHorizontal: 24,
+    padding: 16,
+    gap: 16,
+    marginBottom: 16,
   },
   disclaimerIcon: {
     width: 24,
@@ -153,21 +164,20 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
+    fontSize: 13,
+    fontFamily: 'Satoshi-Medium',
+    lineHeight: 18,
   },
   chatArea: {
     flex: 1,
   },
   chatContent: {
-    padding: spacing.m,
-    gap: spacing.m,
+    // Dynamic padding set inline
   },
   messageBubble: {
     maxWidth: '85%',
-    padding: spacing.m,
-    borderRadius: radii.card,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.s,
   },
   userBubble: {
     alignSelf: 'flex-end',
@@ -186,20 +196,25 @@ const styles = StyleSheet.create({
   },
   messageText: {
     flex: 1,
+    fontSize: 15,
+    fontFamily: 'Satoshi-Medium',
     lineHeight: 22,
   },
   inputArea: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: spacing.s,
-    gap: spacing.s,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
   },
   input: {
     flex: 1,
     maxHeight: 120,
     minHeight: 48,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+    fontSize: 15,
+    fontFamily: 'Satoshi-Medium',
   },
   sendButton: {
     width: 48,
