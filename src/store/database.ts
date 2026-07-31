@@ -1,117 +1,17 @@
-import { open, type DB } from '@op-engineering/op-sqlite';
+import { initEncryptedDb, getDb } from '../db';
 
-let db: DB | null = null;
+export { getDb };
 
-export const getDb = (): DB => {
-  if (!db) {
-    db = open({ name: 'coinkeeper.db' });
-  }
-  return db;
-};
-
+/**
+ * Table creation and seeding now live in src/db/migrations/ (001_initial.ts
+ * for the tables this used to create inline, 002_finance.ts for the schema
+ * fix — see docs/plans/2026-07-29-coinkeeper-finance.md Task 1.3).
+ * initEncryptedDb() runs them before resolving, so by the time this returns
+ * the schema is current.
+ */
 export const initDatabase = async (): Promise<void> => {
   try {
-    const database = getDb();
-
-    await database.execute(`
-      CREATE TABLE IF NOT EXISTS transactions (
-        id TEXT PRIMARY KEY,
-        amount REAL,
-        type TEXT,
-        category TEXT,
-        categoryIcon TEXT,
-        description TEXT,
-        date TEXT,
-        paymentMethod TEXT
-      );
-    `);
-
-    // Privacy-First Local AI Tables
-    await database.execute(`
-      CREATE TABLE IF NOT EXISTS personal_transactions (
-        id TEXT PRIMARY KEY,
-        amount REAL,
-        type TEXT,
-        category TEXT,
-        merchant TEXT,
-        date TEXT,
-        isAutoImported INTEGER DEFAULT 0,
-        originalSms TEXT,
-        notes TEXT
-      );
-    `);
-
-    await database.execute(`
-      CREATE TABLE IF NOT EXISTS merchants (
-        id TEXT PRIMARY KEY,
-        name TEXT,
-        defaultCategory TEXT,
-        transactionCount INTEGER DEFAULT 0,
-        lastSeen TEXT
-      );
-    `);
-
-    await database.execute(`
-      CREATE TABLE IF NOT EXISTS subscriptions (
-        id TEXT PRIMARY KEY,
-        name TEXT,
-        amount REAL,
-        cycle TEXT,
-        nextDueDate TEXT,
-        isAutoDetected INTEGER DEFAULT 0,
-        isActive INTEGER DEFAULT 1
-      );
-    `);
-
-    await database.execute(`
-      CREATE TABLE IF NOT EXISTS goals (
-        id TEXT PRIMARY KEY,
-        name TEXT,
-        targetAmount REAL,
-        currentAmount REAL,
-        deadline TEXT
-      );
-    `);
-
-    await database.execute(`
-      CREATE TABLE IF NOT EXISTS preferences (
-        key TEXT PRIMARY KEY,
-        value TEXT
-      );
-    `);
-
-    await database.execute(`
-      CREATE TABLE IF NOT EXISTS kaza_prayers (
-        name TEXT PRIMARY KEY,
-        arabic TEXT,
-        completed INTEGER DEFAULT 0,
-        pending INTEGER DEFAULT 0
-      );
-    `);
-
-    await database.execute(`
-      CREATE TABLE IF NOT EXISTS kaza_log (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        prayer TEXT,
-        action TEXT,
-        date TEXT
-      );
-    `);
-
-    const kazaPrayers: Array<[string, string]> = [
-      ['Fajr', 'الفجر'],
-      ['Dhuhr', 'الظهر'],
-      ['Asr', 'العصر'],
-      ['Maghrib', 'المغرب'],
-      ['Isha', 'العشاء'],
-    ];
-
-    for (const [name, arabic] of kazaPrayers) {
-      await database.execute(
-        'INSERT OR IGNORE INTO kaza_prayers (name, arabic, completed, pending) VALUES (?, ?, 0, 0);',
-        [name, arabic],
-      );
-    }
+    await initEncryptedDb();
   } catch (error) {
     console.error('[database] initDatabase error:', error);
   }

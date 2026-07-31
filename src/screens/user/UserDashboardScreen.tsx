@@ -7,18 +7,17 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
   Text,
   Dimensions,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { LineChart } from 'react-native-chart-kit';
 import { ChevronRight } from 'lucide-react-native';
 import { useTransactions } from '../../hooks/useTransactions';
-import { useChitFunds } from '../../hooks/useChitFunds';
+import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useSpecTheme } from '../../theme/specTheme';
-import type { ChitGroup } from '../../types/chitFund';
 import type { Transaction } from '../../types/transaction';
 import { PressableScale, CountUp, BlueRefreshControl } from '../../components/anim';
 import { ChartIllustration } from '../../components/illustrations';
@@ -29,7 +28,13 @@ import { StreakBanner } from '../../components/insights/StreakBanner';
 import { GoalTrackerCard } from '../../components/insights/GoalTrackerCard';
 
 const SCREEN_W = Dimensions.get('window').width;
-const CHIT_TINTS = ['lavender', 'mint', 'peach'] as const;
+
+// Guarded require, not a static import: CHITFUND_ENABLED is inlined as a
+// literal at build time, so Metro drops this branch — and the whole
+// src/modules/chitfund tree — from the lite bundle.
+const DashboardChitsSection = process.env.CK_CHITFUND === '1'
+  ? require('../../modules/chitfund/components/DashboardChitsSection').default
+  : null;
 
 /** Build weekly expense totals for the current month */
 const buildWeeklyExpenses = (txs: Transaction[]) => {
@@ -57,12 +62,13 @@ const buildWeeklyExpenses = (txs: Transaction[]) => {
 };
 
 export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
+  useSecureScreen();
   const insets = useSafeAreaInsets();
   const { colors, cardRadius, cardShadow } = useSpecTheme();
   const { transactions, refreshTransactions } = useTransactions();
-  const { groups, refreshGroups } = useChitFunds();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [streakDays, setStreakDays] = useState(0);
   const [goal, setGoal] = useState<Goal | null>(null);
@@ -80,12 +86,13 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    setRefreshToken(t => t + 1);
     try {
-      await Promise.all([refreshTransactions(), refreshGroups(), loadInsights()]);
+      await Promise.all([refreshTransactions(), loadInsights()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshGroups, refreshTransactions, loadInsights]);
+  }, [refreshTransactions, loadInsights]);
 
   React.useEffect(() => {
     loadInsights();
@@ -113,14 +120,6 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
     [colors],
   );
 
-  const activeChitCount = groups.length;
-  const visibleGroups = groups.slice(0, 2);
-  const extraGroupCount = Math.max(groups.length - 2, 0);
-
-  const navigateToGroups = useCallback(() => {
-    navigation.navigate('Groups');
-  }, [navigation]);
-
   const navigateToAdd = useCallback(() => {
     navigation.navigate('Add');
   }, [navigation]);
@@ -131,13 +130,23 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const st = useMemo(() => makeStyles(colors, cardRadius, cardShadow), [colors, cardRadius, cardShadow]);
 
+  // Feeds the shared scroll offset the tab bar reads to auto-hide.
+  const { scrollY } = useTabBarScroll();
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: event => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
   return (
     <View style={st.root}>
-      <ScrollView
+      <Animated.ScrollView
         style={st.scroll}
         contentContainerStyle={[st.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 144 }]}
         refreshControl={<BlueRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
         {/* ═══════════════════ HEADER ═══════════════════ */}
         <Animated.View entering={FadeInDown.delay(0).springify()} style={[st.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
@@ -204,79 +213,15 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
           </View>
         )}
 
-        {/* ═══════════════════ CHITS ═══════════════════ */}
-        <View style={st.section}>
-          <View style={st.sectionRow}>
-            <Text style={st.sectionTitle}>Chits ({activeChitCount} active)</Text>
-            <PressableScale onPress={navigateToGroups}>
-              <Text style={st.linkText}>View All</Text>
-            </PressableScale>
-          </View>
-
-          {visibleGroups.map((group, i) => (
-            <ChitCard
-              key={group.id}
-              group={group}
-              delay={80 + i * 40}
-              tint={CHIT_TINTS[i % 3]}
-              colors={colors}
-              onPress={() => navigation.navigate('ChitDetail', { groupId: group.id })}
-            />
-          ))}
-
-          {extraGroupCount > 0 && (
-            <PressableScale onPress={navigateToGroups} style={st.moreLink}>
-              <Text style={st.moreLinkText}>+{extraGroupCount} more groups</Text>
-            </PressableScale>
-          )}
-        </View>
-      </ScrollView>
+        {/* ═══════════════════ CHITS (pro flavor only) ═══════════════════ */}
+        {DashboardChitsSection ? (
+          <DashboardChitsSection navigation={navigation} refreshToken={refreshToken} />
+        ) : null}
+      </Animated.ScrollView>
     </View>
   );
 };
 
-/* ── Chit Card ── */
-const ChitCard: React.FC<{
-  group: ChitGroup;
-  delay: number;
-  tint: (typeof CHIT_TINTS)[number];
-  colors: any;
-  onPress: () => void;
-}> = ({ group, delay, tint, colors, onPress }) => {
-  const progress = group.totalCycles > 0 ? Math.min(group.currentCycle / group.totalCycles, 1) : 0;
-
-  return (
-    <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.chitCardWrap}>
-      {/* Plain View boundary so PressableScale's internal transform-animated
-          node is not the direct child of this entering-animated wrapper —
-          avoids the "transform may be overwritten by a layout animation" warning. */}
-      <View>
-        <PastelCard
-          tint={tint}
-          eyebrow={group.name}
-          value={`₹${group.amount.toLocaleString('en-IN')}/mo`}
-          caption={`${group.currentCycle}/${group.totalCycles} cycles`}
-          progress={progress}
-          onPress={onPress}
-        >
-          <View style={styles.chitStatusRow}>
-            <View style={[styles.chitBadge, { backgroundColor: 'rgba(255,255,255,0.6)' }]}>
-              <Text style={[styles.chitBadgeText, { color: colors[`${tint}Deep`] }]}>On track</Text>
-            </View>
-          </View>
-        </PastelCard>
-      </View>
-    </Animated.View>
-  );
-};
-
-/* ── Styles ── */
-const styles = {
-  chitCardWrap: { marginBottom: 24, marginTop: 8 },
-  chitStatusRow: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const },
-  chitBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  chitBadgeText: { fontSize: 11, fontFamily: 'Satoshi-Bold' },
-};
 
 const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
   StyleSheet.create({

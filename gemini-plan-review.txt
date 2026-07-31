@@ -1,0 +1,9 @@
+[CONFIRM] A. Entry Screens — smsParserService.ts is indeed orphaned and imported nowhere — src/services/smsParserService.ts:1
+[NEW FINDING] Orphaned Code — subscriptionDetector.ts is fully written but never imported/rendered anywhere — src/services/subscriptionDetector.ts:1
+[NEW FINDING] Orphaned Code — AnalyticsScreen.tsx is fully written but never imported/rendered anywhere — src/screens/user/AnalyticsScreen.tsx:1
+[NEW FINDING] Orphaned Code — NotificationsScreen.tsx is fully written but never imported/rendered anywhere — src/screens/user/NotificationsScreen.tsx:1
+[CORRECTION] B. Bottom Tabs — SettingsScreen has 5 inert rows (Profile card, Profile row, Payment Methods, Security, Help Center), not 6 — src/screens/user/SettingsScreen.tsx:128
+[CORRECTION] C. Settings Sub-Screens — CategorySelector.tsx and categorizationService.ts are completely orphaned and never imported anywhere, they do not "exist for transaction entry" — src/services/categorizationService.ts:1
+[CORRECTION] C. Settings Sub-Screens — BudgetDonut.tsx is completely orphaned and never imported anywhere, it is NOT "used on Home" — src/components/home/BudgetDonut.tsx:1
+[NEW FINDING] Dead Navigation — navigation.replace('Permission') is called but 'Permission' is not registered as a route anywhere — src/modules/chitfund/screens/auth/RegisterScreen.tsx:87
+Total findings: 8

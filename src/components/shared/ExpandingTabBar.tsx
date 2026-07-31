@@ -72,10 +72,10 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
   const currentRoute = state.routes[activeIndex];
   const isDetailScreen = currentRoute?.state?.index > 0;
 
-  // Hide entire tab bar on detail screens
-  if (isDetailScreen) {
-    return null;
-  }
+  // Every hook below must run on every render. The `isDetailScreen` early
+  // return lives after all of them (just above the JSX) — returning here
+  // would skip these hooks and crash React with "rendered fewer hooks than
+  // expected" the moment a nested stack pushes a detail screen.
 
   // Scroll Hiding Logic
   const { scrollY } = useTabBarScroll();
@@ -126,6 +126,13 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
     };
   });
 
+  // Coming back from a detail screen (or switching tabs) must always restore
+  // the bar. Without this it stays hidden at barVisible=0 if the user had
+  // scrolled down before drilling in, and only a scroll-up would reveal it.
+  useEffect(() => {
+    barVisible.value = withSpring(1, { damping: 20, stiffness: 200 });
+  }, [activeIndex, isDetailScreen, barVisible]);
+
   const renderTab = (tab: TabConfig, index: number, isFabPosition: boolean = false) => {
     // Render invisible spacer for FAB position
     if (isFabPosition && hasFab) {
@@ -153,6 +160,11 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
       </View>
     );
   };
+
+  // Safe to bail out now — every hook above has already run.
+  if (isDetailScreen) {
+    return null;
+  }
 
   return (
     <Animated.View style={[styles.wrapper, { paddingBottom: effectivePaddingBottom }, animatedWrapperStyle]}>

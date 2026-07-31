@@ -2,9 +2,19 @@
  * TransactionsScreen - Spec Theme Design
  * Left-aligned header, income/expense summary, animated segmented filter, list
  */
-import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, Pressable, Text, LayoutChangeEvent } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Text,
+  TextInput,
+  LayoutChangeEvent,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+} from 'react-native';
 import { FlashList, ListRenderItemInfo } from '@shopify/flash-list';
+import { Swipeable } from 'react-native-gesture-handler';
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
@@ -13,6 +23,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -25,13 +36,18 @@ import {
   HeartPulse,
   Wallet,
   MoreHorizontal,
+  Search,
+  Trash2,
+  Tag,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTransactions } from '../../hooks/useTransactions';
+import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useSpecTheme } from '../../theme/specTheme';
 import { Transaction } from '../../types/transaction';
 import { CountUp, PressableScale } from '../../components/anim';
 import { PiggyBankIllustration } from '../../components/illustrations';
+import { groupTransactionsByDate, GroupedRow } from '../../utils/groupTransactionsByDate';
 
 type Props = NativeStackScreenProps<any, 'Transactions'>;
 
@@ -55,17 +71,75 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
 };
 
 export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
+  useSecureScreen();
   const insets = useSafeAreaInsets();
   const { colors, cardRadius, spring, iconShadow } = useSpecTheme();
-  const { transactions } = useTransactions();
+
+  // Feeds the shared scroll offset the tab bar reads to auto-hide. FlashList
+  // is not a Reanimated component, so this writes the shared value from JS
+  // rather than through useAnimatedScrollHandler.
+  const { scrollY } = useTabBarScroll();
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollY.value = e.nativeEvent.contentOffset.y;
+    },
+    [scrollY],
+  );
+  const { transactions, deleteTransaction } = useTransactions();
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [segmentWidth, setSegmentWidth] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
+  // Rows removed from view optimistically — via swipe (pendingDelete tracks
+  // which one for the undo banner) or multi-select (no undo, committed
+  // straight away). The mocked useTransactions hook in tests returns a
+  // static transactions array regardless of deleteTransaction calls, same
+  // as a real store would look mid-flight before its next render — so the
+  // list has to hide rows itself rather than waiting on the source array.
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mirrors pendingDelete in a ref so the unmount cleanup can read the
+  // current value without capturing a stale closure.
+  const pendingDeleteRef = useRef<Transaction | null>(null);
 
   const indicatorX = useSharedValue(0);
+
+  // Keep pendingDeleteRef in sync so the unmount cleanup always has the
+  // current value (state in cleanup closures is stale).
+  useEffect(() => {
+    pendingDeleteRef.current = pendingDelete;
+  }, [pendingDelete]);
+
+  // Commit any pending delete when the user navigates away before the
+  // 5-second timer fires — prevents silent data loss on unmount.
+  useEffect(() => {
+    return () => {
+      if (undoTimer.current !== null) {
+        clearTimeout(undoTimer.current);
+        if (pendingDeleteRef.current) {
+          deleteTransaction(pendingDeleteRef.current.id);
+        }
+      }
+    };
+  }, [deleteTransaction]);
 
   const filteredTx = useMemo(
     () => (activeTab === 'all' ? transactions : transactions.filter(t => t.type === activeTab)),
     [transactions, activeTab],
+  );
+
+  const searched = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return filteredTx;
+    return filteredTx.filter(
+      t => (t.description ?? '').toLowerCase().includes(q) || t.category.toLowerCase().includes(q),
+    );
+  }, [filteredTx, searchQuery]);
+
+  const grouped = useMemo(
+    () => groupTransactionsByDate(searched.filter(t => !hiddenIds.has(t.id))),
+    [searched, hiddenIds],
   );
 
   const totalIncome = useMemo(
@@ -76,6 +150,74 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     () => transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
     [transactions],
   );
+
+  // Material Snackbar pattern: commit the previous pending delete immediately
+  // when a new swipe arrives, then start a fresh 5-second window for the new
+  // one. Prevents the old timer from firing as an orphan and silently deleting
+  // an item the user had no chance to undo.
+  const requestDelete = useCallback(
+    (tx: Transaction) => {
+      ReactNativeHapticFeedback.trigger('impactMedium');
+
+      if (undoTimer.current !== null) {
+        clearTimeout(undoTimer.current);
+        undoTimer.current = null;
+        // Commit whatever was pending before this new swipe arrived:
+        if (pendingDelete) {
+          deleteTransaction(pendingDelete.id);
+        }
+        setPendingDelete(null);
+      }
+
+      setHiddenIds(prev => new Set(prev).add(tx.id));
+      setPendingDelete(tx);
+      undoTimer.current = setTimeout(() => {
+        deleteTransaction(tx.id);
+        setPendingDelete(null);
+        undoTimer.current = null;
+      }, 5000);
+    },
+    [pendingDelete, deleteTransaction],
+  );
+
+  const undoDelete = () => {
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    setHiddenIds(prev => {
+      const next = new Set(prev);
+      if (pendingDelete) next.delete(pendingDelete.id);
+      return next;
+    });
+    setPendingDelete(null);
+  };
+
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const enterSelection = (id: string) => {
+    ReactNativeHapticFeedback.trigger('impactMedium');
+    setSelectedIds(new Set([id]));
+  };
+
+  const deleteSelected = async () => {
+    const ids = Array.from(selectedIds);
+    setSelectedIds(new Set());
+    setHiddenIds(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => next.add(id));
+      return next;
+    });
+    await Promise.all(ids.map(id => deleteTransaction(id)));
+  };
 
   const handleTabPress = (tab: FilterTab, index: number) => {
     ReactNativeHapticFeedback.trigger('impactLight');
@@ -96,53 +238,100 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
 
   const formatAmount = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 
-  const renderItem = ({ item, index }: ListRenderItemInfo<Transaction>) => {
+  const renderRow = (item: Transaction, index: number) => {
     const Icon = CATEGORY_ICONS[item.categoryIcon] || MoreHorizontal;
     const isIncome = item.type === 'income';
-    const date = new Date(item.date);
-    const dateLabel = isNaN(date.getTime())
-      ? ''
-      : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    const isSelected = selectedIds.has(item.id);
 
     return (
       <Animated.View entering={FadeInDown.delay(index * 30).springify()}>
-        <View style={styles.row}>
-          <View style={[styles.rowIcon, { backgroundColor: colors.chipBg }, iconShadow]}>
-            <Icon size={20} color={colors.textPrimary} strokeWidth={2} />
-          </View>
-          <View style={styles.rowInfo}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-              {item.description || item.category}
-            </Text>
-            <Text style={[styles.rowMeta, { color: colors.textSecondary }]} numberOfLines={1}>
-              {item.category}
-            </Text>
-          </View>
-          <View style={styles.rowRight}>
-            <Text style={[styles.rowAmount, { color: isIncome ? colors.success : colors.danger }]}>
-              {isIncome ? '+' : '-'}
-              {formatAmount(item.amount)}
-            </Text>
-            {!!dateLabel && (
-              <Text style={[styles.rowDate, { color: colors.textSecondary }]}>{dateLabel}</Text>
-            )}
-          </View>
-        </View>
+        <Swipeable
+          renderRightActions={() => (
+            <Pressable
+              testID={`swipe-delete-${item.id}`}
+              onPress={() => requestDelete(item)}
+              style={[styles.swipeDelete, { backgroundColor: colors.danger }]}
+            >
+              <Trash2 size={20} color="#FFFFFF" strokeWidth={2} />
+            </Pressable>
+          )}
+        >
+          <Pressable
+            testID={`row-${item.id}`}
+            onLongPress={() => enterSelection(item.id)}
+            onPress={() => (selectedIds.size > 0 ? toggleSelected(item.id) : undefined)}
+            style={[styles.row, isSelected && { backgroundColor: colors.chipBg }]}
+          >
+            <View style={[styles.rowIcon, { backgroundColor: colors.chipBg }, iconShadow]}>
+              <Icon size={20} color={colors.textPrimary} strokeWidth={2} />
+            </View>
+            <View style={styles.rowInfo}>
+              <Text style={[styles.rowTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                {item.description || item.category}
+              </Text>
+              <Text style={[styles.rowMeta, { color: colors.textSecondary }]} numberOfLines={1}>
+                {item.category}
+              </Text>
+            </View>
+            <View style={styles.rowRight}>
+              <Text style={[styles.rowAmount, { color: isIncome ? colors.success : colors.danger }]}>
+                {isIncome ? '+' : '-'}
+                {formatAmount(item.amount)}
+              </Text>
+            </View>
+          </Pressable>
+        </Swipeable>
       </Animated.View>
     );
+  };
+
+  const renderItem = ({ item, index }: ListRenderItemInfo<GroupedRow>) => {
+    if (item.type === 'header') {
+      return (
+        <Text style={[styles.dateHeader, { color: colors.textSecondary }]}>{item.label}</Text>
+      );
+    }
+    return renderRow(item.tx, index);
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.headerSection, { paddingTop: insets.top + 16 }]}>
         <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.headerRow}>
-          <PressableScale
-            onPress={() => navigation.goBack()}
-            style={[styles.backButton, { backgroundColor: colors.chipBg }]}
-          >
-            <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
-          </PressableScale>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Transactions</Text>
+          {selectedIds.size > 0 ? (
+            <>
+              <PressableScale
+                onPress={() => setSelectedIds(new Set())}
+                style={[styles.backButton, { backgroundColor: colors.chipBg }]}
+              >
+                <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+              </PressableScale>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>
+                {selectedIds.size} selected
+              </Text>
+              <Pressable onPress={deleteSelected} style={styles.selectionDeleteButton}>
+                <Text style={{ color: colors.danger, fontFamily: 'Satoshi-Bold', fontSize: 15 }}>
+                  Delete
+                </Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <PressableScale
+                onPress={() => navigation.goBack()}
+                style={[styles.backButton, { backgroundColor: colors.chipBg }]}
+              >
+                <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+              </PressableScale>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Transactions</Text>
+              <PressableScale
+                onPress={() => navigation.navigate('Categories')}
+                style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
+              >
+                <Tag size={18} color={colors.textPrimary} strokeWidth={2.2} />
+              </PressableScale>
+            </>
+          )}
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(50).springify()} style={styles.summaryRow}>
@@ -194,19 +383,32 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             ))}
           </View>
         </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(120).springify()} style={[styles.searchRow, { backgroundColor: colors.inputBg }]}>
+          <Search size={18} color={colors.textSecondary} strokeWidth={2} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.textPrimary }]}
+            placeholder="Search transactions"
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </Animated.View>
       </View>
 
       <View style={styles.content}>
         <FlashList
-          data={filteredTx}
-          keyExtractor={item => item.id}
+          data={grouped}
+          keyExtractor={item => item.key}
           renderItem={renderItem}
+          getItemType={item => item.type}
           contentContainerStyle={{
             paddingHorizontal: 20,
             paddingTop: 4,
             paddingBottom: insets.bottom + 144,
           }}
-          ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: colors.border }]} />}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyState}>
@@ -221,6 +423,20 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
           }
         />
       </View>
+
+      {pendingDelete && (
+        <Animated.View
+          entering={FadeInDown.springify()}
+          style={[styles.undoBanner, { backgroundColor: colors.primaryAccent, bottom: insets.bottom + 24 }]}
+        >
+          <Text style={styles.undoText} numberOfLines={1}>
+            {pendingDelete.description || pendingDelete.category} deleted
+          </Text>
+          <Pressable onPress={undoDelete}>
+            <Text style={styles.undoAction}>Undo</Text>
+          </Pressable>
+        </Animated.View>
+      )}
     </View>
   );
 };
@@ -246,6 +462,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontFamily: 'Satoshi-Black',
+    flex: 1,
+  },
+  categoriesButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
   },
 
   summaryRow: {
@@ -298,8 +523,45 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Bold',
   },
 
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    height: 44,
+    marginBottom: 16,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Satoshi-Medium',
+    padding: 0,
+  },
+
+  selectionDeleteButton: {
+    marginLeft: 'auto',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+
   content: {
     flex: 1,
+  },
+
+  dateHeader: {
+    fontSize: 13,
+    fontFamily: 'Satoshi-Bold',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+
+  swipeDelete: {
+    width: 72,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+    marginBottom: 4,
   },
 
   row: {
@@ -335,10 +597,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Regular',
     marginTop: 3,
   },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-  },
-
   emptyState: {
     flex: 1,
     alignItems: 'center',
@@ -355,6 +613,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Satoshi-Regular',
     marginTop: 2,
+  },
+
+  undoBanner: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  undoText: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontFamily: 'Satoshi-Medium',
+    marginRight: 12,
+  },
+  undoAction: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontFamily: 'Satoshi-Bold',
   },
 });
 

@@ -1,7 +1,38 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
-apply plugin: 'com.google.gms.google-services'
+
+// ── Flavor-scoped Firebase ───────────────────────────────────────────────────
+// The lite flavor ships with no Firebase at all: react-native.config.js drops
+// the native modules from autolinking when CK_CHITFUND != 1, and the
+// google-services plugin is only applied to Pro variants (its config lives in
+// src/pro/google-services.json, matching applicationId com.coinkeeper.finance.pro).
+// Match the flavor in real variant tasks only. A naive contains("pro") also
+// matches `projects`, `properties`, and `processDebugResources`.
+def taskRequests = getGradle().getStartParameter().getTaskRequests().toString()
+def variantTask = /(?i)(assemble|install|bundle|package|generate|compile|connected)(Pro|Lite)/
+def matcher = (taskRequests =~ variantTask)
+def requestedFlavor = matcher ? matcher[0][2].toLowerCase() : null
+
+def chitfundEnv = System.getenv("CK_CHITFUND") == "1"
+
+if (requestedFlavor == "pro") {
+    if (!chitfundEnv) {
+        throw new GradleException(
+            "Pro variant requested without CK_CHITFUND=1.\n" +
+            "Firebase and the chit-fund module would be silently missing from the APK.\n" +
+            "Use `npm run android:pro`, or prefix the command:\n" +
+            "  CK_CHITFUND=1 ./gradlew assembleProDebug"
+        )
+    }
+    apply plugin: 'com.google.gms.google-services'
+} else if (requestedFlavor == "lite" && chitfundEnv) {
+    throw new GradleException(
+        "Lite variant requested with CK_CHITFUND=1.\n" +
+        "This would link Firebase and bundle the chit-fund module into the public APK.\n" +
+        "Unset CK_CHITFUND, or use `npm run android:lite`."
+    )
+}
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -85,6 +116,22 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+    }
+
+    flavorDimensions "version"
+    productFlavors {
+        lite {
+            dimension "version"
+            applicationId "com.coinkeeper.finance"
+            resValue "string", "app_name", "CoinKeeper"
+            buildConfigField "boolean", "INCLUDE_CHITFUND", "false"
+        }
+        pro {
+            dimension "version"
+            applicationId "com.coinkeeper.finance.pro"
+            resValue "string", "app_name", "CoinKeeper Pro"
+            buildConfigField "boolean", "INCLUDE_CHITFUND", "true"
+        }
     }
     signingConfigs {
         debug {

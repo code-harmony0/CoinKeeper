@@ -2,26 +2,75 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Screens
 import { SplashScreen, OnboardingScreen, PrivacyFirstScreen } from '../screens/onboarding';
-import { LoginScreen } from '../screens/auth';
-import { GroupsScreen, AskAiScreen } from '../screens/user';
+import { AskAiScreen } from '../screens/user';
 import { UserTabNavigator } from './UserTabNavigator';
-import { AdminTabNavigator } from './AdminTabNavigator';
-import { MembersStackNavigator } from './MembersStackNavigator';
-import { TransactionsStackNavigator } from './TransactionsStackNavigator';
-import { CollectionsStackNavigator } from './CollectionsStackNavigator';
-import { DrawsStackNavigator } from './DrawsStackNavigator';
-import { PaymentConfirmationsStackNavigator } from './PaymentConfirmationsStackNavigator';
-import { NotificationsStackNavigator } from './NotificationsStackNavigator';
-import { AnalyticsStackNavigator } from './AnalyticsStackNavigator';
-import { AuditLogScreen } from '../screens/admin/settings/AuditLogScreen';
-import { PermissionsRolesScreen } from '../screens/admin/settings/PermissionsRolesScreen';
-import { ChitDetailScreen } from '../screens/user/ChitDetailScreen';
 import { ReportsScreen } from '../screens/user/ReportsScreen';
-import { isModuleEnabled } from '../config/modules';
+import { CategoriesScreen } from '../screens/user/CategoriesScreen';
+import { UnlockScreen } from '../screens/auth/UnlockScreen';
+import { SetupPinScreen } from '../screens/auth/SetupPinScreen';
+import { useAppLock } from '../context/AppLockContext';
+import { hasPinSet } from '../services/pinService';
+import { isBiometricAvailable, promptBiometric } from '../services/biometricService';
+import { setPreference } from '../store/database';
+import { Text } from '../components/ui/Text';
+import { Button } from '../components/ui/Button';
+import { useTheme } from '../hooks/useTheme';
+
+// A single optional, skippable step after PIN setup — reuses promptBiometric
+// directly rather than a whole new screen file (Task 2.5). Only ever shown
+// when isBiometricAvailable() is true; otherwise this branch is skipped
+// entirely and onboarding finishes straight after PIN setup.
+const BiometricEnrollScreen: React.FC<{ onDone: () => void }> = ({ onDone }) => {
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const [busy, setBusy] = useState(false);
+
+  const handleEnable = async () => {
+    setBusy(true);
+    try {
+      const success = await promptBiometric('Enable biometric unlock for CoinKeeper');
+      if (success) {
+        await setPreference('biometric_enabled', 'true');
+      }
+    } finally {
+      setBusy(false);
+      onDone();
+    }
+  };
+
+  return (
+    <View style={[bioStyles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <View style={bioStyles.content}>
+        <Text variant="h1" style={bioStyles.title}>Enable Face ID / Fingerprint?</Text>
+        <Text variant="body" color="secondary" style={bioStyles.subtitle}>
+          Unlock CoinKeeper faster with your device's biometrics, in addition to your PIN.
+        </Text>
+        <Button title="Enable" onPress={handleEnable} disabled={busy} loading={busy} style={bioStyles.button} />
+        <Button title="Skip" variant="ghost" onPress={onDone} disabled={busy} />
+      </View>
+    </View>
+  );
+};
+
+const bioStyles = StyleSheet.create({
+  container: { flex: 1 },
+  content: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
+  title: { marginBottom: 8 },
+  subtitle: { marginBottom: 32 },
+  button: { marginBottom: 12 },
+});
+
+// Every chit-fund route resolves through one guarded require. CHITFUND_ENABLED
+// is inlined as a literal at build time, so Metro drops this branch and the
+// entire src/modules/chitfund tree from the lite bundle.
+const chitFundRoutes = process.env.CK_CHITFUND === '1'
+  ? require('../modules/chitfund/navigation/chitFundRoutes').chitFundRoutes
+  : [];
 
 const Stack = createNativeStackNavigator();
 
@@ -32,6 +81,10 @@ export const RootNavigator = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [showPrivacyScreen, setShowPrivacyScreen] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [showBiometricEnroll, setShowBiometricEnroll] = useState(false);
+  const [pinIsSet, setPinIsSet] = useState(false);
+  const { isLocked, unlock } = useAppLock();
 
   useEffect(() => {
     checkOnboarding();
@@ -41,6 +94,9 @@ export const RootNavigator = () => {
     try {
       const seen = await AsyncStorage.getItem(ONBOARDING_KEY);
       setHasSeenOnboarding(seen === 'true');
+      // A user who hasn't completed onboarding's PIN setup yet shouldn't be
+      // locked out before they've ever created a PIN — see Task 2.5.
+      setPinIsSet(await hasPinSet());
     } catch {
       setHasSeenOnboarding(false);
     } finally {
@@ -52,10 +108,29 @@ export const RootNavigator = () => {
     setShowPrivacyScreen(true);
   };
 
-  const handlePrivacyAccept = async () => {
+  const finishFirstRun = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     setHasSeenOnboarding(true);
+    setPinIsSet(true);
     setShowPrivacyScreen(false);
+    setShowPinSetup(false);
+    setShowBiometricEnroll(false);
+  };
+
+  // Privacy acceptance no longer marks onboarding complete directly — it
+  // transitions into PIN setup first (Task 2.5).
+  const handlePrivacyAccept = () => {
+    setShowPrivacyScreen(false);
+    setShowPinSetup(true);
+  };
+
+  const handlePinSetupComplete = async () => {
+    setShowPinSetup(false);
+    if (await isBiometricAvailable()) {
+      setShowBiometricEnroll(true);
+    } else {
+      await finishFirstRun();
+    }
   };
 
   // Splash screen
@@ -72,13 +147,26 @@ export const RootNavigator = () => {
     );
   }
 
-  const chitFundEnabled = isModuleEnabled('chitFund');
+  // App lock gate. A user who hasn't set a PIN yet (still mid-onboarding,
+  // Task 2.5) is never blocked here — only someone who has already
+  // completed PIN setup sees the unlock screen.
+  if (isLocked && pinIsSet) {
+    return <UnlockScreen onUnlock={unlock} />;
+  }
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         {!hasSeenOnboarding && (
-          showPrivacyScreen ? (
+          showBiometricEnroll ? (
+            <Stack.Screen name="BiometricEnroll">
+              {() => <BiometricEnrollScreen onDone={finishFirstRun} />}
+            </Stack.Screen>
+          ) : showPinSetup ? (
+            <Stack.Screen name="SetupPin">
+              {() => <SetupPinScreen onComplete={handlePinSetupComplete} />}
+            </Stack.Screen>
+          ) : showPrivacyScreen ? (
             <Stack.Screen name="PrivacyFirst">
               {() => <PrivacyFirstScreen onAccept={handlePrivacyAccept} />}
             </Stack.Screen>
@@ -88,26 +176,15 @@ export const RootNavigator = () => {
             </Stack.Screen>
           )
         )}
-        <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="UserTabs" component={UserTabNavigator} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
+        <Stack.Screen name="Categories" component={CategoriesScreen} />
         <Stack.Screen name="AskAi" component={AskAiScreen} />
-        {chitFundEnabled && (
-          <>
-            <Stack.Screen name="Groups" component={GroupsScreen} />
-            <Stack.Screen name="ChitDetail" component={ChitDetailScreen} />
-            <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
-            <Stack.Screen name="MembersStack" component={MembersStackNavigator} />
-            <Stack.Screen name="TransactionsStack" component={TransactionsStackNavigator} />
-            <Stack.Screen name="Collections" component={CollectionsStackNavigator} />
-            <Stack.Screen name="Draws" component={DrawsStackNavigator} />
-            <Stack.Screen name="PaymentConfirmations" component={PaymentConfirmationsStackNavigator} />
-            <Stack.Screen name="Analytics" component={AnalyticsStackNavigator} />
-            <Stack.Screen name="AuditLog" component={AuditLogScreen} />
-            <Stack.Screen name="PermissionsRoles" component={PermissionsRolesScreen} />
-          </>
-        )}
-        <Stack.Screen name="Notifications" component={NotificationsStackNavigator} />
+        {/* Login, admin console, and Notifications are all chit-fund routes —
+            the lite build has no accounts and no server to log into. */}
+        {chitFundRoutes.map((route: { name: string; component: React.ComponentType<any> }) => (
+          <Stack.Screen key={route.name} name={route.name} component={route.component} />
+        ))}
       </Stack.Navigator>
     </NavigationContainer>
   );

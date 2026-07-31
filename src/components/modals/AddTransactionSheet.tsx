@@ -26,8 +26,11 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
+import { PaymentMethodSelector, PaymentMethod } from '../transaction/PaymentMethodSelector';
+import { suggestCategoryForMerchant, recordMerchantCategory } from '../../services/categorizationService';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -66,6 +69,20 @@ export const AddTransactionSheet: React.FC<Props> = ({
   const [type, setType] = useState<'expense' | 'income'>(initialType);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [description, setDescription] = useState('');
+  const [occurredAt, setOccurredAt] = useState(new Date());
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!description.trim()) return;
+    const handle = setTimeout(async () => {
+      const match = await suggestCategoryForMerchant(description.trim());
+      if (match) {
+        setSelectedCategory(match.id);
+      }
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [description]);
 
   useEffect(() => {
     if (visible) {
@@ -105,7 +122,17 @@ export const AddTransactionSheet: React.FC<Props> = ({
   };
 
   const handleSubmit = () => {
-    if (!amount || !selectedCategory) return;
+    setError(null);
+
+    if (!amount || parseFloat(amount) <= 0) {
+      setError('Amount must be greater than zero.');
+      return;
+    }
+    if (!selectedCategory) return;
+    if (type === 'expense' && occurredAt.getTime() > Date.now()) {
+      setError('Expenses cannot be dated in the future.');
+      return;
+    }
 
     ReactNativeHapticFeedback.trigger('notificationSuccess');
     const category = CATEGORIES.find(c => c.id === selectedCategory);
@@ -116,12 +143,20 @@ export const AddTransactionSheet: React.FC<Props> = ({
       category: category?.name || 'Other',
       categoryIcon: category?.icon || 'other',
       description,
+      paymentMethod,
+      occurredAt: occurredAt.toISOString(),
     });
+
+    if (description.trim() && category) {
+      recordMerchantCategory(description.trim(), category.id);
+    }
 
     setAmount('');
     setType(initialType);
     setSelectedCategory(null);
     setDescription('');
+    setOccurredAt(new Date());
+    setPaymentMethod('cash');
     onClose();
   };
 
@@ -194,6 +229,29 @@ export const AddTransactionSheet: React.FC<Props> = ({
               </View>
 
               <View style={styles.section}>
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Date</Text>
+                <View style={[styles.dateRow, { backgroundColor: colors.inputBg }]}>
+                  <DateTimePicker
+                    testID="date-picker"
+                    value={occurredAt}
+                    mode="date"
+                    display="default"
+                    maximumDate={type === 'expense' ? new Date() : undefined}
+                    onChange={(_, date) => {
+                      if (date) setOccurredAt(date);
+                    }}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.section}>
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                  Payment Method
+                </Text>
+                <PaymentMethodSelector selectedMethod={paymentMethod} onSelectMethod={setPaymentMethod} />
+              </View>
+
+              <View style={styles.section}>
                 <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
                   Description (Optional)
                 </Text>
@@ -209,6 +267,10 @@ export const AddTransactionSheet: React.FC<Props> = ({
                   multiline
                 />
               </View>
+
+              {error && (
+                <Text style={{ color: colors.danger, fontSize: 13, marginBottom: 12 }}>{error}</Text>
+              )}
 
               <SubmitButton
                 label={type === 'expense' ? 'Add Expense' : 'Add Income'}
@@ -376,6 +438,9 @@ const styles = StyleSheet.create({
   chipsRow: { flexDirection: 'row', gap: 10, paddingRight: 4 },
   categoryChip: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999 },
   categoryChipText: { fontSize: 14, fontFamily: 'Satoshi-Medium' },
+
+  // Date
+  dateRow: { borderRadius: 16, paddingHorizontal: 8, alignItems: 'flex-start' },
 
   // Description
   descInput: { borderRadius: 16, padding: 16, fontSize: 15, fontFamily: 'Satoshi-Medium', minHeight: 80, textAlignVertical: 'top' },
