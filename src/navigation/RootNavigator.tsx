@@ -9,6 +9,9 @@ import { SplashScreen, OnboardingScreen, PrivacyFirstScreen } from '../screens/o
 import { AskAiScreen } from '../screens/user';
 import { UserTabNavigator } from './UserTabNavigator';
 import { ReportsScreen } from '../screens/user/ReportsScreen';
+import { UnlockScreen } from '../screens/auth/UnlockScreen';
+import { useAppLock } from '../context/AppLockContext';
+import { hasPinSet } from '../services/pinService';
 
 // Every chit-fund route resolves through one guarded require. CHITFUND_ENABLED
 // is inlined as a literal at build time, so Metro drops this branch and the
@@ -26,6 +29,8 @@ export const RootNavigator = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [showPrivacyScreen, setShowPrivacyScreen] = useState(false);
+  const [pinIsSet, setPinIsSet] = useState(false);
+  const { isLocked, unlock } = useAppLock();
 
   useEffect(() => {
     checkOnboarding();
@@ -35,6 +40,9 @@ export const RootNavigator = () => {
     try {
       const seen = await AsyncStorage.getItem(ONBOARDING_KEY);
       setHasSeenOnboarding(seen === 'true');
+      // A user who hasn't completed onboarding's PIN setup yet shouldn't be
+      // locked out before they've ever created a PIN — see Task 2.5.
+      setPinIsSet(await hasPinSet());
     } catch {
       setHasSeenOnboarding(false);
     } finally {
@@ -64,6 +72,13 @@ export const RootNavigator = () => {
         <ActivityIndicator size="large" color="#5B8DEF" />
       </View>
     );
+  }
+
+  // App lock gate. A user who hasn't set a PIN yet (still mid-onboarding,
+  // Task 2.5) is never blocked here — only someone who has already
+  // completed PIN setup sees the unlock screen.
+  if (isLocked && pinIsSet) {
+    return <UnlockScreen onUnlock={unlock} />;
   }
 
   return (

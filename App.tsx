@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './src/hooks/useTheme';
 import { TransactionsProvider } from './src/hooks/useTransactions';
 import { TabBarScrollProvider } from './src/context/TabBarScrollContext';
+import { AppLockProvider } from './src/context/AppLockContext';
 import { RootNavigator } from './src/navigation';
 
 // Firebase init, auth, and chit-fund state are pro-only. These requires sit
@@ -31,10 +32,12 @@ function App() {
           <TransactionsProvider>
             <ChitFundsProvider>
               <TabBarScrollProvider>
-                <StatusBar
-                  barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-                />
-                <RootNavigator />
+                <AppLockProvider>
+                  <StatusBar
+                    barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+                  />
+                  <RootNavigator />
+                </AppLockProvider>
               </TabBarScrollProvider>
             </ChitFundsProvider>
           </TransactionsProvider>
