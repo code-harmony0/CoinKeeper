@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
-import { useTheme } from '../../hooks/useTheme';
+import { useSpecTheme } from '../../theme/specTheme';
 import { clearPin, confirmDeviceIdentity } from '../../services/pinService';
 import { SetupPinScreen } from './SetupPinScreen';
 
@@ -26,7 +26,7 @@ type Step = 'confirming' | 'failed' | 'settingNewPin';
  */
 export const ResetPinScreen: React.FC<ResetPinScreenProps> = ({ onComplete, onCancel }) => {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors } = useSpecTheme();
   const [step, setStep] = useState<Step>('confirming');
 
   const confirmIdentity = useCallback(async () => {
@@ -56,18 +56,30 @@ export const ResetPinScreen: React.FC<ResetPinScreenProps> = ({ onComplete, onCa
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={styles.content}>
-        <Text variant="h1" style={styles.title}>Reset your PIN</Text>
-        <Text variant="body" color="secondary" style={styles.subtitle}>
-          {step === 'confirming'
-            ? 'Confirm your identity to continue. Your data stays safe either way.'
-            : "We couldn't confirm your identity. Try again, or cancel to go back."}
-        </Text>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Reset PIN</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            {step === 'confirming'
+              ? 'Confirm your identity to continue. Your data stays safe either way.'
+              : "We couldn't confirm your identity. Try again, or cancel to go back."}
+          </Text>
+        </View>
 
         {step === 'failed' && (
-          <>
-            <Button title="Try Again" onPress={confirmIdentity} style={styles.button} />
-            <Button title="Cancel" variant="ghost" onPress={onCancel} />
-          </>
+          <View style={styles.actionContainer}>
+            <Button 
+              title="Try Again" 
+              onPress={confirmIdentity} 
+              style={[styles.button, { backgroundColor: colors.primaryAccent }]} 
+              textStyle={{ color: '#FFFFFF' }}
+            />
+            <Button 
+              title="Cancel" 
+              variant="ghost" 
+              onPress={onCancel} 
+              textStyle={{ color: colors.textSecondary }}
+            />
+          </View>
         )}
       </View>
     </View>
@@ -75,21 +87,36 @@ export const ResetPinScreen: React.FC<ResetPinScreenProps> = ({ onComplete, onCa
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   content: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingBottom: 40,
     justifyContent: 'center',
   },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
   title: {
+    fontSize: 28,
+    fontFamily: 'Satoshi-Black',
+    letterSpacing: -0.5,
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
-    marginBottom: 32,
+    fontSize: 16,
+    fontFamily: 'Satoshi-Medium',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    lineHeight: 22,
+  },
+  actionContainer: {
+    marginTop: 24,
   },
   button: {
-    marginBottom: 12,
+    height: 56,
+    marginBottom: 16,
   },
 });

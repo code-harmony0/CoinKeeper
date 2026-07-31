@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TextInput as RNTextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
-import { TextInput } from '../../components/ui/TextInput';
-import { useTheme } from '../../hooks/useTheme';
+import { useSpecTheme } from '../../theme/specTheme';
 import { setPin } from '../../services/pinService';
 
 interface SetupPinScreenProps {
@@ -16,7 +15,7 @@ type Step = 'enter' | 'confirm';
 
 export const SetupPinScreen: React.FC<SetupPinScreenProps> = ({ onComplete }) => {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, inputRadius } = useSpecTheme();
 
   const [step, setStep] = useState<Step>('enter');
   const [firstPin, setFirstPin] = useState('');
@@ -66,27 +65,42 @@ export const SetupPinScreen: React.FC<SetupPinScreenProps> = ({ onComplete }) =>
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={styles.content}>
-        <Text variant="h1" style={styles.title}>
-          {step === 'enter' ? 'Set a PIN' : 'Confirm your PIN'}
-        </Text>
-        <Text variant="body" color="secondary" style={styles.subtitle}>
-          {step === 'enter'
-            ? 'Choose a 4-6 digit PIN to lock the app.'
-            : 'Enter the same PIN again to confirm.'}
-        </Text>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>
+            {step === 'enter' ? 'Set a PIN' : 'Confirm PIN'}
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            {step === 'enter'
+              ? 'Choose a 4-6 digit PIN to lock the app.'
+              : 'Enter the same PIN again to confirm.'}
+          </Text>
+        </View>
 
-        <TextInput
+        <RNTextInput
           value={value}
           onChangeText={setValue}
           keyboardType="number-pad"
           maxLength={6}
           secureTextEntry
           autoFocus
-          error={error ?? undefined}
-          containerStyle={styles.input}
+          style={[
+            styles.pinInput,
+            { 
+              backgroundColor: colors.chipBg, 
+              color: colors.textPrimary,
+              borderRadius: inputRadius,
+              borderColor: error ? colors.danger : 'transparent'
+            }
+          ]}
         />
+        
+        {error && (
+          <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>
+        )}
 
-        <Text variant="caption" color="secondary" style={styles.caption}>
+        <View style={styles.spacer} />
+
+        <Text style={[styles.caption, { color: colors.textSecondary }]}>
           If you forget this PIN, you can reset it using your device's screen
           lock — your data stays safe either way.
         </Text>
@@ -96,7 +110,8 @@ export const SetupPinScreen: React.FC<SetupPinScreenProps> = ({ onComplete }) =>
           onPress={handleContinue}
           disabled={value.length < 4 || saving}
           loading={saving}
-          style={styles.button}
+          style={[styles.button, { backgroundColor: colors.primaryAccent }]}
+          textStyle={{ color: '#FFFFFF' }}
         />
       </View>
     </View>
@@ -104,27 +119,58 @@ export const SetupPinScreen: React.FC<SetupPinScreenProps> = ({ onComplete }) =>
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   content: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingBottom: 40,
     justifyContent: 'center',
   },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
   title: {
+    fontSize: 28,
+    fontFamily: 'Satoshi-Black',
+    letterSpacing: -0.5,
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
-    marginBottom: 32,
+    fontSize: 16,
+    fontFamily: 'Satoshi-Medium',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    lineHeight: 22,
   },
-  input: {
-    marginBottom: 8,
+  pinInput: {
+    height: 72,
+    fontSize: 32,
+    fontFamily: 'Satoshi-Bold',
+    textAlign: 'center',
+    letterSpacing: 16,
+    borderWidth: 1,
+    paddingRight: 16, // offset letterSpacing
+  },
+  error: {
+    fontSize: 14,
+    fontFamily: 'Satoshi-Medium',
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  spacer: {
+    flex: 1,
   },
   caption: {
+    fontSize: 13,
+    fontFamily: 'Satoshi-Medium',
+    textAlign: 'center',
     marginBottom: 24,
+    lineHeight: 18,
+    paddingHorizontal: 16,
   },
   button: {
-    marginTop: 8,
+    height: 56,
   },
 });

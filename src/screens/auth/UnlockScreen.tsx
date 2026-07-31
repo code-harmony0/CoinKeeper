@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TextInput as RNTextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
-import { TextInput } from '../../components/ui/TextInput';
-import { useTheme } from '../../hooks/useTheme';
+import { useSpecTheme } from '../../theme/specTheme';
 import { verifyPin } from '../../services/pinService';
 import { isBiometricAvailable, promptBiometric } from '../../services/biometricService';
 import { getPreference } from '../../store/database';
@@ -17,7 +16,7 @@ interface UnlockScreenProps {
 
 export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock }) => {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, inputRadius } = useSpecTheme();
 
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -33,15 +32,11 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock }) => {
     if (success) {
       onUnlock();
     }
-    // On failure/cancel, fall through silently to the PIN input already
-    // rendered below — never block the user behind the biometric prompt.
   }, [onUnlock]);
 
   useEffect(() => {
     tryBiometricUnlock();
-    // Only attempt automatically once, on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tryBiometricUnlock]);
 
   const handleSubmit = async () => {
     setError(null);
@@ -71,28 +66,44 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock }) => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={styles.content}>
-        <Text variant="h1" style={styles.title}>Enter your PIN</Text>
-        <Text variant="body" color="secondary" style={styles.subtitle}>
-          Unlock CoinKeeper to continue.
-        </Text>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Enter PIN</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Unlock CoinKeeper to continue.
+          </Text>
+        </View>
 
-        <TextInput
+        <RNTextInput
           value={value}
           onChangeText={setValue}
           keyboardType="number-pad"
           maxLength={6}
           secureTextEntry
           autoFocus
-          error={error ?? undefined}
-          containerStyle={styles.input}
+          style={[
+            styles.pinInput,
+            { 
+              backgroundColor: colors.chipBg, 
+              color: colors.textPrimary,
+              borderRadius: inputRadius,
+              borderColor: error ? colors.danger : 'transparent'
+            }
+          ]}
         />
+        
+        {error && (
+          <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>
+        )}
+
+        <View style={styles.spacer} />
 
         <Button
           title="Unlock"
           onPress={handleSubmit}
           disabled={value.length < 4 || verifying}
           loading={verifying}
-          style={styles.button}
+          style={[styles.button, { backgroundColor: colors.primaryAccent }]}
+          textStyle={{ color: '#FFFFFF' }}
         />
 
         <Button
@@ -100,6 +111,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock }) => {
           variant="ghost"
           onPress={() => setShowReset(true)}
           style={styles.forgotButton}
+          textStyle={{ color: colors.textSecondary }}
         />
       </View>
     </View>
@@ -107,25 +119,49 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   content: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingBottom: 40,
     justifyContent: 'center',
   },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
   title: {
+    fontSize: 28,
+    fontFamily: 'Satoshi-Black',
+    letterSpacing: -0.5,
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
-    marginBottom: 32,
+    fontSize: 16,
+    fontFamily: 'Satoshi-Medium',
+    textAlign: 'center',
   },
-  input: {
-    marginBottom: 24,
+  pinInput: {
+    height: 72,
+    fontSize: 32,
+    fontFamily: 'Satoshi-Bold',
+    textAlign: 'center',
+    letterSpacing: 16,
+    borderWidth: 1,
+    paddingRight: 16, // offset letterSpacing
+  },
+  error: {
+    fontSize: 14,
+    fontFamily: 'Satoshi-Medium',
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  spacer: {
+    flex: 1,
   },
   button: {
-    marginTop: 8,
+    height: 56,
   },
   forgotButton: {
     marginTop: 16,
