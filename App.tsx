@@ -1,6 +1,7 @@
 import 'react-native-gesture-handler';
 import React from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './src/hooks/useTheme';
 import { TransactionsProvider } from './src/hooks/useTransactions';
@@ -26,24 +27,26 @@ function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
-    <ThemeProvider>
-      <SafeAreaProvider>
-        <AuthProvider>
-          <TransactionsProvider>
-            <ChitFundsProvider>
-              <TabBarScrollProvider>
-                <AppLockProvider>
-                  <StatusBar
-                    barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-                  />
-                  <RootNavigator />
-                </AppLockProvider>
-              </TabBarScrollProvider>
-            </ChitFundsProvider>
-          </TransactionsProvider>
-        </AuthProvider>
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <TransactionsProvider>
+              <ChitFundsProvider>
+                <TabBarScrollProvider>
+                  <AppLockProvider>
+                    <StatusBar
+                      barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+                    />
+                    <RootNavigator />
+                  </AppLockProvider>
+                </TabBarScrollProvider>
+              </ChitFundsProvider>
+            </TransactionsProvider>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 
