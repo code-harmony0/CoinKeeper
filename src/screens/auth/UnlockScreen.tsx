@@ -9,6 +9,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { verifyPin } from '../../services/pinService';
 import { isBiometricAvailable, promptBiometric } from '../../services/biometricService';
 import { getPreference } from '../../store/database';
+import { ResetPinScreen } from './ResetPinScreen';
 
 interface UnlockScreenProps {
   onUnlock: () => void;
@@ -21,6 +22,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock }) => {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [showReset, setShowReset] = useState(false);
 
   const tryBiometricUnlock = useCallback(async () => {
     const enabled = (await getPreference('biometric_enabled')) === 'true';
@@ -57,6 +59,15 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock }) => {
     }
   };
 
+  if (showReset) {
+    return (
+      <ResetPinScreen
+        onComplete={onUnlock}
+        onCancel={() => setShowReset(false)}
+      />
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={styles.content}>
@@ -83,6 +94,13 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock }) => {
           loading={verifying}
           style={styles.button}
         />
+
+        <Button
+          title="Forgot PIN?"
+          variant="ghost"
+          onPress={() => setShowReset(true)}
+          style={styles.forgotButton}
+        />
       </View>
     </View>
   );
@@ -108,5 +126,8 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 8,
+  },
+  forgotButton: {
+    marginTop: 16,
   },
 });

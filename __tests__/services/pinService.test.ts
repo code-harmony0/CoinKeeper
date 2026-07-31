@@ -46,4 +46,12 @@ describe('pinService', () => {
     expect(await hasPinSet()).toBe(false);
     expect(await verifyPin('4821')).toBe(false);
   });
+
+  it('allows setting a new PIN after clearing, without touching stored transactions', async () => {
+    await setPin('1111');
+    await clearPin();
+    await setPin('2222');
+    expect(await verifyPin('2222')).toBe(true);
+    expect(await verifyPin('1111')).toBe(false);
+  });
 });
