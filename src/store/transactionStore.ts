@@ -22,6 +22,7 @@ interface TransactionStore {
     updates: Partial<Transaction>,
   ) => Promise<void>;
   getMonthlyStats: (month: number, year: number) => MonthlyStats;
+  searchTransactions: (query: string) => Transaction[];
 }
 
 const generateId = (): string =>
@@ -104,6 +105,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       const id = generateId();
       const date = new Date().toISOString();
       const newTx: Transaction = { ...transaction, id, date };
+      const amountPaise = toPaise(String(newTx.amount));
 
       const db = getDb();
       const categoryId = await resolveCategoryId(db, newTx.category, newTx.categoryIcon);
@@ -114,7 +116,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
          VALUES (?, ?, ?, ?, NULL, ?, ?, ?, NULL, NULL);`,
         [
           newTx.id,
-          toPaise(String(newTx.amount)),
+          amountPaise,
           newTx.type,
           categoryId,
           newTx.description ?? null,
@@ -128,6 +130,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       }));
     } catch (error) {
       console.error('[transactionStore] addTransaction error:', error);
+      throw error;
     }
   },
 
@@ -141,6 +144,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       }));
     } catch (error) {
       console.error('[transactionStore] deleteTransaction error:', error);
+      throw error;
     }
   },
 
@@ -176,6 +180,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       }));
     } catch (error) {
       console.error('[transactionStore] updateTransaction error:', error);
+      throw error;
     }
   },
 
@@ -198,6 +203,17 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
         return acc;
       },
       { income: 0, expenses: 0, net: 0 },
+    );
+  },
+
+  searchTransactions: query => {
+    const { transactions } = get();
+    const q = query.trim().toLowerCase();
+    if (!q) return transactions;
+    return transactions.filter(
+      tx =>
+        (tx.description ?? '').toLowerCase().includes(q) ||
+        tx.category.toLowerCase().includes(q),
     );
   },
 }));
