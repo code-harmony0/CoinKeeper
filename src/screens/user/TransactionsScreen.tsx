@@ -2,8 +2,16 @@
  * TransactionsScreen - Spec Theme Design
  * Left-aligned header, income/expense summary, animated segmented filter, list
  */
-import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, Pressable, Text, LayoutChangeEvent } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Text,
+  LayoutChangeEvent,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+} from 'react-native';
 import { FlashList, ListRenderItemInfo } from '@shopify/flash-list';
 import Animated, {
   FadeInDown,
@@ -13,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -57,6 +66,17 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
 export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { colors, cardRadius, spring, iconShadow } = useSpecTheme();
+
+  // Feeds the shared scroll offset the tab bar reads to auto-hide. FlashList
+  // is not a Reanimated component, so this writes the shared value from JS
+  // rather than through useAnimatedScrollHandler.
+  const { scrollY } = useTabBarScroll();
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollY.value = e.nativeEvent.contentOffset.y;
+    },
+    [scrollY],
+  );
   const { transactions } = useTransactions();
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [segmentWidth, setSegmentWidth] = useState(0);
@@ -206,6 +226,8 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             paddingTop: 4,
             paddingBottom: insets.bottom + 144,
           }}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: colors.border }]} />}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={

@@ -7,18 +7,17 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
   Text,
   Dimensions,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { LineChart } from 'react-native-chart-kit';
 import { ChevronRight } from 'lucide-react-native';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useSpecTheme } from '../../theme/specTheme';
 import type { Transaction } from '../../types/transaction';
-import { CHITFUND_ENABLED } from '../../config/buildFlags';
 import { PressableScale, CountUp, BlueRefreshControl } from '../../components/anim';
 import { ChartIllustration } from '../../components/illustrations';
 import { PastelCard } from '../../components/premium';
@@ -129,13 +128,23 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const st = useMemo(() => makeStyles(colors, cardRadius, cardShadow), [colors, cardRadius, cardShadow]);
 
+  // Feeds the shared scroll offset the tab bar reads to auto-hide.
+  const { scrollY } = useTabBarScroll();
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: event => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
   return (
     <View style={st.root}>
-      <ScrollView
+      <Animated.ScrollView
         style={st.scroll}
         contentContainerStyle={[st.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 144 }]}
         refreshControl={<BlueRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
         {/* ═══════════════════ HEADER ═══════════════════ */}
         <Animated.View entering={FadeInDown.delay(0).springify()} style={[st.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
@@ -206,7 +215,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         {DashboardChitsSection ? (
           <DashboardChitsSection navigation={navigation} refreshToken={refreshToken} />
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 };

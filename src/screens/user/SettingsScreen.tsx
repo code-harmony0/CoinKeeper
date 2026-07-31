@@ -2,9 +2,10 @@
  * SettingsScreen - Spec Theme
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Text, Switch, Alert } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { View, StyleSheet, Text, Switch, Alert } from 'react-native';
+import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   User,
@@ -34,6 +35,13 @@ type Props = NativeStackScreenProps<any, 'Settings'>;
 
 export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  // Feeds the shared scroll offset the tab bar reads to auto-hide.
+  const { scrollY } = useTabBarScroll();
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: event => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
   const { colors, cardRadius, cardShadow, isDark: specIsDark } = useSpecTheme();
   const { isDark, toggleTheme } = useTheme();
   const { userProfile, signOut } = useOptionalAuth();
@@ -103,12 +111,14 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Settings</Text>
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: insets.bottom + 144 },
         ]}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
         {/* Profile Card */}
         <Animated.View entering={FadeInDown.springify().delay(50)}>
@@ -195,7 +205,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         <Animated.View entering={FadeInDown.springify().delay(280)}>
           <LogoutButton onPress={handleLogout} />
         </Animated.View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 };

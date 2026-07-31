@@ -30,8 +30,8 @@ export const getBudgetStreak = async (): Promise<number> => {
 
     const dailyResult = await db.execute(`
       SELECT date(date) as day, SUM(amount) as total
-      FROM personal_transactions
-      WHERE type = 'debit'
+      FROM transactions
+      WHERE type = 'expense'
       GROUP BY day
       ORDER BY day DESC
     `);
@@ -90,7 +90,7 @@ export const generateInsights = async (): Promise<Insight[]> => {
     // Get total spent this month
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
     const spentResult = await db.execute(
-      "SELECT SUM(amount) as total FROM personal_transactions WHERE type = 'debit' AND date >= ?",
+      "SELECT SUM(amount) as total FROM transactions WHERE type = 'expense' AND date >= ?",
       [startOfMonth]
     );
     const spent = (spentResult.rows?.[0] as any)?.total || 0;
@@ -122,10 +122,10 @@ export const generateInsights = async (): Promise<Insight[]> => {
       SELECT 
         SUM(CASE WHEN strftime('%w', date) IN ('0', '6') THEN amount ELSE 0 END) as weekend_spend,
         SUM(CASE WHEN strftime('%w', date) NOT IN ('0', '6') THEN amount ELSE 0 END) as weekday_spend
-      FROM personal_transactions 
-      WHERE type = 'debit' AND date >= ?
+      FROM transactions
+      WHERE type = 'expense' AND date >= ?
     `, [startOfMonth]);
-    
+
     const weekendSpend = (weekendResult.rows?.[0] as any)?.weekend_spend || 0;
     const weekdaySpend = (weekendResult.rows?.[0] as any)?.weekday_spend || 0;
     
@@ -142,10 +142,10 @@ export const generateInsights = async (): Promise<Insight[]> => {
     // 3. Duplicate Payment Detection (Last 7 days)
     const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const dupResult = await db.execute(`
-      SELECT merchant, amount, COUNT(*) as count 
-      FROM personal_transactions 
-      WHERE date >= ? AND type = 'debit'
-      GROUP BY merchant, amount 
+      SELECT description AS merchant, amount, COUNT(*) as count
+      FROM transactions
+      WHERE date >= ? AND type = 'expense'
+      GROUP BY description, amount
       HAVING count > 1
     `, [sevenDaysAgo]);
 
@@ -164,8 +164,8 @@ export const generateInsights = async (): Promise<Insight[]> => {
     // Simplified for demo: Just flag any category exceeding 5000
     const catResult = await db.execute(`
       SELECT category, SUM(amount) as total 
-      FROM personal_transactions 
-      WHERE type = 'debit' AND date >= ?
+      FROM transactions
+      WHERE type = 'expense' AND date >= ?
       GROUP BY category
       ORDER BY total DESC LIMIT 1
     `, [startOfMonth]);

@@ -42,7 +42,7 @@ These were settled during the critique. Do not re-litigate them mid-execution.
 
 ### Resolved by code inspection
 
-- **Kaza (missed-prayer tracker) is kept, but demoted out of the tab bar.** `grep -cE "transaction|amount|budget|expense" src/screens/user/KazaScreen.tsx` returns `0` — it is fully self-contained (`kazaStore`, `getPreference`, `specTheme`, shared anim components only), so it is cheap to keep and cheap to relocate. It moves to **Settings → Kaza tracker**, plus a single opt-in during onboarding; when enabled it may surface as a tab. Rationale: the tab bar has five slots and one is the FAB; spending one on a non-finance feature in an app listed as an expense tracker is a category-mismatch signal to Play reviewers and noise for users who don't want it. It gets its own `islamic` flag alongside Zakat — the current gating behind `chitFund` is a bug.
+- **Kaza (missed-prayer tracker) is kept, but demoted out of the tab bar.** `grep -cE "transaction|amount|budget|expense" src/screens/user/KazaScreen.tsx` returns `0` — it is fully self-contained (`kazaStore`, `getPreference`, `specTheme`, shared anim components only), so it is cheap to keep and cheap to relocate. It moves to **Settings → Kaza tracker**, plus a single opt-in during onboarding; when enabled it may surface as a tab. Rationale: the tab bar has five slots and one is the FAB; spending one on a non-finance feature in an app listed as an expense tracker is a category-mismatch signal to Play reviewers and noise for users who don't want it. It gets its own `islamic` flag — the current gating behind `chitFund` is a bug.
 - **`src/screens/user/HomeScreen.tsx` and `ProfileScreen.tsx` are deleted.** `git log` shows HomeScreen has exactly one commit (`5ad5db0 "first commit with half coocked"`) and was never touched again; it imports the older `designTokens` theme. `UserDashboardScreen` has four commits, is a self-described "SpecTheme-driven rewrite", and already wires `insightsEngine`, `SmartInsightCard`, `StreakBanner`, and `GoalTrackerCard`. HomeScreen is the abandoned original, not a newer design — UserDashboardScreen is strictly ahead and is roughly 60% of the §7 dashboard already. It gains Safe-to-Spend, the bills alert, and the quick-action row.
 - **Theme systems must be collapsed to one.** `designTokens` is imported by 27 files, `specTheme` by 17; new work uses specTheme, older screens use designTokens. Until this is resolved, "do not change the UI design" is ambiguous because there are two designs. **specTheme wins**; `designTokens` becomes a compatibility shim retired file-by-file. Do this before Phase 3 or every new screen inherits the fork. (Note: `userFintechTheme.ts` no longer exists and nothing imports it — it appears to have become `specTheme.ts`.)
 
@@ -518,7 +518,9 @@ git commit -m "chore: delete unreferenced HomeScreen and ProfileScreen"
 
 ## Phase 1: Encrypted database and schema
 
-### Task 1.1: Money as integer paise
+### Task 1.1: Money as integer paise ✅ DONE (2026-07-31)
+
+`src/utils/money.ts` implements `toPaise`/`fromPaise`/`formatINR`; `__tests__/utils/money.test.ts` matches the spec below verbatim and passes (5/5). Verified independently: `tsc` clean, `Intl.NumberFormat` output confirmed byte-exact (no hidden non-breaking-space drift), no files touched outside this task's scope, no new dependencies. Not yet committed — not yet wired into `transactionStore.ts` or `database.ts` (that's Task 1.3, migrating the live `amount REAL` schema).
 
 **Files:**
 - Create: `src/utils/money.ts`
@@ -642,7 +644,8 @@ Adopt §5's 13 default categories verbatim — that list is good. Seed inside mi
 - **4.3** Bills + Notifee scheduling with the three-channel setup from §9. Request `SCHEDULE_EXACT_ALARM` on Android 12+ with an inexact fallback.
 - **4.4** Goals, including the auto-calculated Emergency Fund (6× average monthly expenses).
 - **4.5** Subscription detector — the existing `src/services/subscriptionDetector.ts` is a 1.5K stub; rebuild it against §7.10's interval rules.
-- **4.6** Zakat calculator per §7.9. Nisab at 87.48g gold. The gold rate is user-entered (a live rate would require network, breaking the offline guarantee).
+
+**Cut from this plan (2026-07-31, user decision):** Zakat calculator, formerly 4.6. Not needed.
 
 ---
 

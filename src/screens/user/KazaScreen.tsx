@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
   Pressable,
   Text,
   Switch,
@@ -14,7 +13,8 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
+import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import {
@@ -46,6 +46,13 @@ const pad2 = (n: number) => n.toString().padStart(2, '0');
 
 export const KazaScreen: React.FC<any> = () => {
   const insets = useSafeAreaInsets();
+  // Feeds the shared scroll offset the tab bar reads to auto-hide.
+  const { scrollY } = useTabBarScroll();
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: event => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
   const { colors, cardRadius, cardShadow, iconShadow } = useSpecTheme();
   const { prayers, weeklyMadeUp, loadKaza, missedPrayer, makeUpPrayer, undoMakeUp, setInitialPending } =
     useKazaStore();
@@ -185,10 +192,12 @@ export const KazaScreen: React.FC<any> = () => {
 
   return (
     <View style={st.root}>
-      <ScrollView
+      <Animated.ScrollView
         style={st.scroll}
         contentContainerStyle={[st.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 144 }]}
         showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
         {/* ═══════════════════ HEADER ═══════════════════ */}
         <Animated.View entering={FadeInDown.delay(20).springify()} style={st.header}>
@@ -315,7 +324,7 @@ export const KazaScreen: React.FC<any> = () => {
             </View>
           </View>
         </Animated.View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Quick action selector modal */}
       <Modal visible={quickAction !== null} transparent animationType="slide" onRequestClose={() => setQuickAction(null)}>

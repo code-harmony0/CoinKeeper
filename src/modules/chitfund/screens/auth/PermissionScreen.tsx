@@ -135,10 +135,10 @@ const PermissionScreen: React.FC<PermissionScreenProps> = ({ navigation }) => {
       }
 
       // Navigate to main app
-      navigation.replace('UserDashboard');
+      navigation.replace('UserTabs');
     } catch (error) {
       console.error('Error completing onboarding:', error);
-      navigation.replace('UserDashboard');
+      navigation.replace('UserTabs');
     }
   };
 
@@ -163,10 +163,10 @@ const PermissionScreen: React.FC<PermissionScreenProps> = ({ navigation }) => {
                   updatedAt: firestore.FieldValue.serverTimestamp(),
                 });
               }
-              navigation.replace('UserDashboard');
+              navigation.replace('UserTabs');
             } catch (error) {
               console.error('Error skipping permission:', error);
-              navigation.replace('UserDashboard');
+              navigation.replace('UserTabs');
             }
           },
         },

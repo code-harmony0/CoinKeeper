@@ -9,7 +9,6 @@ import { SplashScreen, OnboardingScreen, PrivacyFirstScreen } from '../screens/o
 import { AskAiScreen } from '../screens/user';
 import { UserTabNavigator } from './UserTabNavigator';
 import { ReportsScreen } from '../screens/user/ReportsScreen';
-import { CHITFUND_ENABLED } from '../config/buildFlags';
 
 // Every chit-fund route resolves through one guarded require. CHITFUND_ENABLED
 // is inlined as a literal at build time, so Metro drops this branch and the

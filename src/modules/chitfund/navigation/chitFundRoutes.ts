@@ -8,7 +8,7 @@
  */
 import type { ComponentType } from 'react';
 
-import { LoginScreen } from '../screens/auth';
+import { LoginScreen, RegisterScreen, ForgotPasswordScreen } from '../screens/auth';
 import { GroupsScreen } from '../screens/GroupsScreen';
 import { ChitDetailScreen } from '../screens/ChitDetailScreen';
 import { AdminTabNavigator } from './AdminTabNavigator';
@@ -26,6 +26,10 @@ export type RouteDef = { name: string; component: ComponentType<any> };
 
 export const chitFundRoutes: RouteDef[] = [
   { name: 'Login', component: LoginScreen },
+  // LoginForm navigates to both of these. They were built but never
+  // registered, so the sign-up and password-recovery paths dead-ended.
+  { name: 'Register', component: RegisterScreen },
+  { name: 'ForgotPassword', component: ForgotPasswordScreen },
   { name: 'Groups', component: GroupsScreen },
   { name: 'ChitDetail', component: ChitDetailScreen },
   { name: 'AdminTabs', component: AdminTabNavigator },

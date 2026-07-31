@@ -1,7 +1,7 @@
 export type ModuleFlags = {
   /** Chit fund module — pro flavor only. */
   chitFund: boolean;
-  /** Zakat calculator + Kaza tracker. Flavor-independent, ships in both. */
+  /** Kaza (missed-prayer) tracker. Flavor-independent, ships in both. */
   islamic: boolean;
   /**
    * Whether the user promoted Kaza to a tab. Reads from the `preferences`

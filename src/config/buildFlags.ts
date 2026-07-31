@@ -12,5 +12,5 @@
  */
 export const CHITFUND_ENABLED: boolean = process.env.CK_CHITFUND === '1';
 
-/** Zakat calculator + Kaza tracker. Flavor-independent — ships in both builds. */
+/** Kaza (missed-prayer) tracker. Flavor-independent — ships in both builds. */
 export const ISLAMIC_ENABLED: boolean = true;

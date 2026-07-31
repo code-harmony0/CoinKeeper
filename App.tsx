@@ -6,7 +6,6 @@ import { ThemeProvider } from './src/hooks/useTheme';
 import { TransactionsProvider } from './src/hooks/useTransactions';
 import { TabBarScrollProvider } from './src/context/TabBarScrollContext';
 import { RootNavigator } from './src/navigation';
-import { CHITFUND_ENABLED } from './src/config/buildFlags';
 
 // Firebase init, auth, and chit-fund state are pro-only. These requires sit
 // behind a build-time constant, so Metro eliminates the branch and the lite

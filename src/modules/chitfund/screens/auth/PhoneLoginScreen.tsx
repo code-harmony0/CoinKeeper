@@ -155,11 +155,11 @@ const PhoneLoginScreen: React.FC<PhoneLoginScreenProps> = ({ navigation }) => {
 
         setTimeout(() => {
           if (isAdmin) {
-            navigation.replace('AdminDashboard');
+            navigation.replace('AdminTabs');
           } else {
             // Check if onboarding completed
             if (userData?.onboardingCompleted) {
-              navigation.replace('UserDashboard');
+              navigation.replace('UserTabs');
             } else {
               navigation.replace('Register');
             }
