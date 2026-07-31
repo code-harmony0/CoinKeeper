@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,6 +7,8 @@ import { Button } from '../../components/ui/Button';
 import { TextInput } from '../../components/ui/TextInput';
 import { useTheme } from '../../hooks/useTheme';
 import { verifyPin } from '../../services/pinService';
+import { isBiometricAvailable, promptBiometric } from '../../services/biometricService';
+import { getPreference } from '../../store/database';
 
 interface UnlockScreenProps {
   onUnlock: () => void;
@@ -20,8 +22,24 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock }) => {
   const [error, setError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
 
-  // TODO Task 2.2: on mount, attempt biometric unlock first (if enabled and
-  // available) and fall through to this PIN input on failure/cancel.
+  const tryBiometricUnlock = useCallback(async () => {
+    const enabled = (await getPreference('biometric_enabled')) === 'true';
+    if (!enabled) return;
+    if (!(await isBiometricAvailable())) return;
+
+    const success = await promptBiometric('Unlock CoinKeeper');
+    if (success) {
+      onUnlock();
+    }
+    // On failure/cancel, fall through silently to the PIN input already
+    // rendered below — never block the user behind the biometric prompt.
+  }, [onUnlock]);
+
+  useEffect(() => {
+    tryBiometricUnlock();
+    // Only attempt automatically once, on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async () => {
     setError(null);
