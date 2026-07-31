@@ -1,3 +1,26 @@
+// @op-engineering/op-sqlite is a JSI native module — no JS fallback exists.
+// Even after Babel transpiles its ESM source (jest.config.js allows it through
+// transformIgnorePatterns), NativeModules.OPSQLite will be null in Jest.
+// This mock provides a no-op handle to any test that transitively reaches
+// src/db/index.ts or src/store/database.ts. SQL-level logic is exercised
+// separately in __tests__/db/ with purpose-built fixtures.
+jest.mock('@op-engineering/op-sqlite', () => ({
+  open: jest.fn(() => ({
+    execute: jest.fn(async () => ({ rows: [] })),
+    close: jest.fn(),
+    transaction: jest.fn(async (fn) => fn()),
+  })),
+}));
+
+// react-native-argon2 is a native module (no JS fallback). Used by
+// pinService.ts — now reachable from App.tsx via the auth screen imports.
+jest.mock('react-native-argon2', () =>
+  jest.fn(async (password, salt) => ({
+    rawHash: `raw-${password}-${salt}`,
+    encodedHash: `enc-${password}-${salt}`,
+  })),
+);
+
 // AsyncStorage ships its own official jest mock, but nothing wired it in —
 // any suite that pulls in useTheme.tsx (directly or via specTheme) hit the
 // real native module and failed with "NativeModule: AsyncStorage is null."

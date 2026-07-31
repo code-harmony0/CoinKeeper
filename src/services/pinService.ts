@@ -3,6 +3,10 @@ import argon2 from 'react-native-argon2';
 import * as Keychain from 'react-native-keychain';
 
 const SERVICE = 'coinkeeper.app.pin';
+// The DB key service is already configured with BIOMETRY_ANY_OR_DEVICE_PASSCODE
+// (see src/db/key.ts). Re-reading it forces an OS-level auth prompt — the same
+// gate that already protects the encrypted database.
+const DB_KEY_SERVICE = 'coinkeeper.db.encryptionKey';
 
 interface StoredPin {
   salt: string;
@@ -56,4 +60,30 @@ export const verifyPin = async (pin: string): Promise<boolean> => {
 
 export const clearPin = async (): Promise<void> => {
   await Keychain.resetGenericPassword({ service: SERVICE });
+};
+
+/**
+ * Forces the OS to re-authenticate the device owner via their biometric or
+ * device passcode — the same gate that already protects the DB encryption key.
+ * Returns true on success, false if the user cancels or the prompt fails.
+ *
+ * Re-reads the DB key Keychain entry (not the app PIN entry) so the OS shows
+ * its native prompt instead of our custom PIN screen. The key value is
+ * discarded; this call is a pure identity challenge.
+ */
+export const confirmDeviceIdentity = async (): Promise<boolean> => {
+  try {
+    const result = await Keychain.getGenericPassword({
+      service: DB_KEY_SERVICE,
+      accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
+      authenticationPrompt: {
+        title: 'Confirm your identity',
+        subtitle: 'Required to reset your CoinKeeper PIN',
+        cancel: 'Cancel',
+      },
+    });
+    return result !== false;
+  } catch {
+    return false;
+  }
 };

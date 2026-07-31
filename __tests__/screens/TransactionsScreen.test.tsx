@@ -91,4 +91,31 @@ describe('TransactionsScreen', () => {
     expect(queryByText('Lunch')).toBeNull();
     expect(queryByText('Paycheck')).toBeNull();
   });
+
+  it('commits the first delete immediately when a second swipe arrives inside the window', async () => {
+    jest.useFakeTimers();
+    const { getByTestId } = render(
+      <TransactionsScreen navigation={navigation} route={{} as any} />,
+    );
+
+    // Swipe tx '1'
+    await act(async () => {
+      fireEvent(getByTestId('swipe-delete-1'), 'press');
+    });
+
+    // Swipe tx '2' before the 5-second window for '1' expires
+    await act(async () => {
+      fireEvent(getByTestId('swipe-delete-2'), 'press');
+    });
+
+    // '1' must be committed immediately when the second swipe arrives
+    expect(mockDelete).toHaveBeenCalledWith('1');
+
+    // '2' commits after its own 5-second window
+    act(() => jest.advanceTimersByTime(5000));
+    expect(mockDelete).toHaveBeenCalledWith('2');
+    expect(mockDelete).toHaveBeenCalledTimes(2);
+
+    jest.useRealTimers();
+  });
 });

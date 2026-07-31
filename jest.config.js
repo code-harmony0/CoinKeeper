@@ -13,10 +13,13 @@ module.exports = {
       '(jest-)?@?react-native' +
       '|@react-native-community' +
       '|@react-navigation' +
+      '|@op-engineering/op-sqlite' +
       '|react-native-gesture-handler' +
       '|react-native-reanimated' +
       '|react-native-safe-area-context' +
       '|react-native-screens' +
+      '|react-native-linear-gradient' +
+      '|react-native-chart-kit' +
       '|@shopify/flash-list' +
       ')/)',
   ],

@@ -2,7 +2,7 @@
  * TransactionsScreen - Spec Theme Design
  * Left-aligned header, income/expense summary, animated segmented filter, list
  */
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -99,8 +99,30 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mirrors pendingDelete in a ref so the unmount cleanup can read the
+  // current value without capturing a stale closure.
+  const pendingDeleteRef = useRef<Transaction | null>(null);
 
   const indicatorX = useSharedValue(0);
+
+  // Keep pendingDeleteRef in sync so the unmount cleanup always has the
+  // current value (state in cleanup closures is stale).
+  useEffect(() => {
+    pendingDeleteRef.current = pendingDelete;
+  }, [pendingDelete]);
+
+  // Commit any pending delete when the user navigates away before the
+  // 5-second timer fires — prevents silent data loss on unmount.
+  useEffect(() => {
+    return () => {
+      if (undoTimer.current !== null) {
+        clearTimeout(undoTimer.current);
+        if (pendingDeleteRef.current) {
+          deleteTransaction(pendingDeleteRef.current.id);
+        }
+      }
+    };
+  }, [deleteTransaction]);
 
   const filteredTx = useMemo(
     () => (activeTab === 'all' ? transactions : transactions.filter(t => t.type === activeTab)),
@@ -129,15 +151,34 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     [transactions],
   );
 
-  const requestDelete = (tx: Transaction) => {
-    ReactNativeHapticFeedback.trigger('impactMedium');
-    setPendingDelete(tx);
-    setHiddenIds(prev => new Set(prev).add(tx.id));
-    undoTimer.current = setTimeout(() => {
-      deleteTransaction(tx.id);
-      setPendingDelete(null);
-    }, 5000);
-  };
+  // Material Snackbar pattern: commit the previous pending delete immediately
+  // when a new swipe arrives, then start a fresh 5-second window for the new
+  // one. Prevents the old timer from firing as an orphan and silently deleting
+  // an item the user had no chance to undo.
+  const requestDelete = useCallback(
+    (tx: Transaction) => {
+      ReactNativeHapticFeedback.trigger('impactMedium');
+
+      if (undoTimer.current !== null) {
+        clearTimeout(undoTimer.current);
+        undoTimer.current = null;
+        // Commit whatever was pending before this new swipe arrived:
+        if (pendingDelete) {
+          deleteTransaction(pendingDelete.id);
+        }
+        setPendingDelete(null);
+      }
+
+      setHiddenIds(prev => new Set(prev).add(tx.id));
+      setPendingDelete(tx);
+      undoTimer.current = setTimeout(() => {
+        deleteTransaction(tx.id);
+        setPendingDelete(null);
+        undoTimer.current = null;
+      }, 5000);
+    },
+    [pendingDelete, deleteTransaction],
+  );
 
   const undoDelete = () => {
     if (undoTimer.current) clearTimeout(undoTimer.current);
@@ -148,6 +189,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     });
     setPendingDelete(null);
   };
+
 
   const toggleSelected = (id: string) => {
     setSelectedIds(prev => {

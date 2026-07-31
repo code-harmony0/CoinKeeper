@@ -5,9 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../hooks/useTheme';
-import { clearPin } from '../../services/pinService';
-import { isBiometricAvailable, promptBiometric } from '../../services/biometricService';
-import { getDb } from '../../store/database';
+import { clearPin, confirmDeviceIdentity } from '../../services/pinService';
 import { SetupPinScreen } from './SetupPinScreen';
 
 interface ResetPinScreenProps {
@@ -33,27 +31,16 @@ export const ResetPinScreen: React.FC<ResetPinScreenProps> = ({ onComplete, onCa
 
   const confirmIdentity = useCallback(async () => {
     setStep('confirming');
-
-    if (await isBiometricAvailable()) {
-      const success = await promptBiometric('Confirm your identity to reset your PIN');
-      if (success) {
-        await clearPin();
-        setStep('settingNewPin');
-      } else {
-        setStep('failed');
-      }
-      return;
-    }
-
-    // No biometric enrolled: fall back to the OS's own device-passcode
-    // prompt implicitly via the same Keychain access that already gates the
-    // DB key. If getDb() resolves, the device owner already proved their
-    // identity via the OS lock to get this far in the app, so proceed.
-    try {
-      getDb();
+    // confirmDeviceIdentity() re-reads the DB key Keychain entry which is
+    // already configured with BIOMETRY_ANY_OR_DEVICE_PASSCODE — the OS shows
+    // its own biometric or device-passcode sheet. No branching needed: the OS
+    // decides whether to show a fingerprint, face, or PIN prompt based on
+    // what the device supports. Cancel → returns false → step = 'failed'.
+    const ok = await confirmDeviceIdentity();
+    if (ok) {
       await clearPin();
       setStep('settingNewPin');
-    } catch {
+    } else {
       setStep('failed');
     }
   }, []);
