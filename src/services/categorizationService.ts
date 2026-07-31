@@ -1,60 +1,41 @@
 import { getDb } from '../store/database';
 
-export interface CategoryMapping {
-  merchantPatterns: string[];
-  category: string;
+export interface SuggestedCategory {
+  id: string;
+  name: string;
+  icon: string;
 }
 
-const DEFAULT_MAPPINGS: CategoryMapping[] = [
-  { merchantPatterns: ['swiggy', 'zomato', 'blinkit', 'zepto', 'mcdonald', 'dominos', 'starbucks', 'cafe'], category: 'Food & Dining' },
-  { merchantPatterns: ['uber', 'ola', 'rapido', 'namma yatri', 'irctc', 'makemytrip', 'metro'], category: 'Transport' },
-  { merchantPatterns: ['amazon', 'flipkart', 'myntra', 'ajio', 'nykaa', 'dmart', 'reliance'], category: 'Shopping' },
-  { merchantPatterns: ['netflix', 'spotify', 'prime', 'hotstar', 'youtube', 'apple', 'google'], category: 'Entertainment' },
-  { merchantPatterns: ['airtel', 'jio', 'vi', 'bsnl', 'bescom', 'cesc', 'adani'], category: 'Bills & Utilities' },
-  { merchantPatterns: ['apollo', 'pharmeasy', '1mg', 'hospital', 'clinic', 'health'], category: 'Health & Fitness' }
-];
+export const suggestCategoryForMerchant = async (
+  merchant: string,
+): Promise<SuggestedCategory | null> => {
+  const key = merchant.trim().toLowerCase();
+  if (!key) return null;
 
-export const guessCategory = async (merchantName: string): Promise<string> => {
-  if (!merchantName) return 'Other';
-  
-  const lowerMerchant = merchantName.toLowerCase();
-  
-  // 1. Check if user has explicitly mapped this merchant in local SQLite
-  try {
-    const db = getDb();
-    const result = await db.execute('SELECT defaultCategory FROM merchants WHERE name = ? COLLATE NOCASE LIMIT 1', [lowerMerchant]);
-    
-    if (result.rows && result.rows.length > 0) {
-      const row = result.rows[0] as { defaultCategory: string };
-      if (row.defaultCategory) return row.defaultCategory;
-    }
-  } catch (e) {
-    console.error('Error querying custom merchant category', e);
-  }
-  
-  // 2. Fallback to default regex mappings
-  for (const mapping of DEFAULT_MAPPINGS) {
-    for (const pattern of mapping.merchantPatterns) {
-      if (lowerMerchant.includes(pattern)) {
-        return mapping.category;
-      }
-    }
-  }
-
-  return 'Other';
+  const db = getDb();
+  const result = await db.execute(
+    `SELECT c.id, c.name, c.icon
+     FROM merchant_category_map m
+     JOIN categories c ON c.id = m.category_id
+     WHERE m.merchant = ? LIMIT 1;`,
+    [key],
+  );
+  const row = result.rows?.[0] as unknown as SuggestedCategory | undefined;
+  return row ?? null;
 };
 
-export const updateMerchantCategory = async (merchantName: string, newCategory: string) => {
-  if (!merchantName) return;
-  
-  const lowerMerchant = merchantName.toLowerCase();
-  try {
-    const db = getDb();
-    await db.execute(
-      'INSERT INTO merchants (id, name, defaultCategory, lastSeen) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET defaultCategory = excluded.defaultCategory',
-      [lowerMerchant, lowerMerchant, newCategory, new Date().toISOString()]
-    );
-  } catch (e) {
-    console.error('Error updating merchant category', e);
-  }
+export const recordMerchantCategory = async (
+  merchant: string,
+  categoryId: string,
+): Promise<void> => {
+  const key = merchant.trim().toLowerCase();
+  if (!key) return;
+
+  const db = getDb();
+  await db.execute(
+    `INSERT INTO merchant_category_map (merchant, category_id, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(merchant) DO UPDATE SET category_id = excluded.category_id, updated_at = excluded.updated_at;`,
+    [key, categoryId, Date.now()],
+  );
 };

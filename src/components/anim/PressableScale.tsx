@@ -22,6 +22,7 @@ export interface PressableScaleProps {
   disabled?: boolean;
   hitSlop?: number | Insets;
   children?: React.ReactNode;
+  testID?: string;
 }
 
 const SCALE_SPRING = { damping: 15, stiffness: 300 };
@@ -40,6 +41,7 @@ export const PressableScale: React.FC<PressableScaleProps> = ({
   disabled = false,
   hitSlop,
   children,
+  testID,
 }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -68,6 +70,7 @@ export const PressableScale: React.FC<PressableScaleProps> = ({
 
   return (
     <AnimatedPressable
+      testID={testID}
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}

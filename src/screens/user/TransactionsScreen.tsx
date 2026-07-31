@@ -38,6 +38,7 @@ import {
   MoreHorizontal,
   Search,
   Trash2,
+  Tag,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTransactions } from '../../hooks/useTransactions';
@@ -281,6 +282,12 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
                 <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
               </PressableScale>
               <Text style={[styles.title, { color: colors.textPrimary }]}>Transactions</Text>
+              <PressableScale
+                onPress={() => navigation.navigate('Categories')}
+                style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
+              >
+                <Tag size={18} color={colors.textPrimary} strokeWidth={2.2} />
+              </PressableScale>
             </>
           )}
         </Animated.View>
@@ -413,6 +420,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontFamily: 'Satoshi-Black',
+    flex: 1,
+  },
+  categoriesButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
   },
 
   summaryRow: {

@@ -10,6 +10,7 @@ import { SplashScreen, OnboardingScreen, PrivacyFirstScreen } from '../screens/o
 import { AskAiScreen } from '../screens/user';
 import { UserTabNavigator } from './UserTabNavigator';
 import { ReportsScreen } from '../screens/user/ReportsScreen';
+import { CategoriesScreen } from '../screens/user/CategoriesScreen';
 import { UnlockScreen } from '../screens/auth/UnlockScreen';
 import { SetupPinScreen } from '../screens/auth/SetupPinScreen';
 import { useAppLock } from '../context/AppLockContext';
@@ -177,6 +178,7 @@ export const RootNavigator = () => {
         )}
         <Stack.Screen name="UserTabs" component={UserTabNavigator} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
+        <Stack.Screen name="Categories" component={CategoriesScreen} />
         <Stack.Screen name="AskAi" component={AskAiScreen} />
         {/* Login, admin console, and Notifications are all chit-fund routes —
             the lite build has no accounts and no server to log into. */}
