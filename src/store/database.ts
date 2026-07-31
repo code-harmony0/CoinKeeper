@@ -1,16 +1,10 @@
-import { open, type DB } from '@op-engineering/op-sqlite';
+import { initEncryptedDb, getDb } from '../db';
 
-let db: DB | null = null;
-
-export const getDb = (): DB => {
-  if (!db) {
-    db = open({ name: 'coinkeeper.db' });
-  }
-  return db;
-};
+export { getDb };
 
 export const initDatabase = async (): Promise<void> => {
   try {
+    await initEncryptedDb();
     const database = getDb();
 
     await database.execute(`

@@ -565,11 +565,24 @@ Note the third assertion in the second test — `0.1 + 0.2 === 0.3` is the exact
 
 ---
 
-### Task 1.2: SQLCipher-encrypted database with a hardware-backed key
+### Task 1.2: SQLCipher-encrypted database with a hardware-backed key ✅ DONE (2026-07-31)
+
+Implemented as specified, plus one prerequisite the plan didn't call out: **SQLCipher is an opt-in compilation target in `@op-engineering/op-sqlite`, not automatic.** It's toggled via an `"op-sqlite": {"sqlcipher": true}` key in root `package.json`, read by its `android/build.gradle` at native-build time. That key was absent — the native build was compiling plain SQLite regardless of what `encryptionKey` the JS side passed to `open()`. Added it.
+
+Verified, not assumed:
+- `npx tsc --noEmit` clean, `npx jest` 36/36 (1 pre-existing unrelated `App.test.tsx` failure, see section H of `docs/APP_FLOW_PLAN.md`).
+- `__tests__/db/key.test.ts` — 4/4, mocking `react-native-keychain` (no Jest-safe way to exercise the real Keystore).
+- **Real native build**: `cd android && CK_CHITFUND=1 ./gradlew assembleProDebug` — `BUILD SUCCESSFUL`, confirms `react-native-keychain` and `react-native-get-random-values` autolink and compile cleanly.
+- **SQLCipher actually compiled in, not just configured**: build log shows `[OP-SQLITE] using sqlcipher.`; `strings` on the compiled `libop-sqlite.so` for `arm64-v8a` returns 182 matches for SQLCipher symbols. This is the same evidentiary standard as `verify-bundle-split.sh` — don't trust a flag, check the binary.
+- `npm run verify:split` re-run after these native changes — lite/pro split still holds.
+
+**Not verified, and can't be honestly claimed as verified from this sandbox:** the plan's own suggested integration test (open with the wrong key, expect `SQLITE_NOTADB`) needs a real device/emulator running the actual compiled binary — op-sqlite is a JSI native module with no meaningful Jest mock for this. Tracked as an open manual step, not a passing automated test. Also unverified: `react-native-keychain`'s actual on-device Keystore/biometric prompt behavior.
+
+Two dependencies added beyond the plan's explicit list: `react-native-keychain` (named in the plan, just not pinned) and `react-native-get-random-values@1.11.0` (needed for the CSPRNG generating the key; pinned below latest because `2.0.0` requires RN ≥0.81 and this project is locked to 0.80.2 per the plan's own "do NOT downgrade" decision — `1.11.0` only requires RN ≥0.56).
 
 **Files:**
 - Create: `src/db/key.ts`, `src/db/index.ts`
-- Modify: `src/store/database.ts` (becomes a thin re-export, then is deleted in 1.4)
+- Modify: `src/store/database.ts` — the connection-opening logic (`getDb`) now delegates to `src/db/`; the schema/preference logic (`initDatabase`'s `CREATE TABLE`s, `getPreference`, `setPreference`) was deliberately left untouched here — that's Task 1.3/1.4's job, not this one. (Note: the line below says this file "is deleted in 1.4" — Task 1.4 as written is category seeding, not a deletion. Flagging the mismatch rather than resolving it unilaterally.)
 - Test: `__tests__/db/key.test.ts`
 
 Install `react-native-keychain` (the master spec's §8 code calls `Keychain.*` but never listed it as a dependency).
