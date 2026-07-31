@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { Caption } from '../core/Typography';
-import { COLORS, SPACING, RADIUS } from '../../theme';
+import { useSpecTheme } from '../../theme/specTheme';
 import { CreditCard, Smartphone, Wallet, Landmark, Banknote } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
@@ -15,41 +15,15 @@ export type PaymentMethod = 'cash' | 'card' | 'upi' | 'bank' | 'wallet';
 export interface PaymentMethodOption {
   id: PaymentMethod;
   label: string;
-  icon: React.ReactNode;
-  color: string;
+  icon: (color: string) => React.ReactNode;
 }
 
 export const PAYMENT_METHODS: PaymentMethodOption[] = [
-  {
-    id: 'cash',
-    label: 'Cash',
-    icon: <Banknote size={20} color={COLORS.navyText} strokeWidth={2} />,
-    color: COLORS.mintGreen,
-  },
-  {
-    id: 'card',
-    label: 'Card',
-    icon: <CreditCard size={20} color={COLORS.navyText} strokeWidth={2} />,
-    color: COLORS.babyBlue,
-  },
-  {
-    id: 'upi',
-    label: 'UPI',
-    icon: <Smartphone size={20} color={COLORS.navyText} strokeWidth={2} />,
-    color: COLORS.lavender,
-  },
-  {
-    id: 'bank',
-    label: 'Bank',
-    icon: <Landmark size={20} color={COLORS.navyText} strokeWidth={2} />,
-    color: COLORS.softPeach,
-  },
-  {
-    id: 'wallet',
-    label: 'Wallet',
-    icon: <Wallet size={20} color={COLORS.navyText} strokeWidth={2} />,
-    color: COLORS.warningYellow,
-  },
+  { id: 'cash', label: 'Cash', icon: color => <Banknote size={20} color={color} strokeWidth={2} /> },
+  { id: 'card', label: 'Card', icon: color => <CreditCard size={20} color={color} strokeWidth={2} /> },
+  { id: 'upi', label: 'UPI', icon: color => <Smartphone size={20} color={color} strokeWidth={2} /> },
+  { id: 'bank', label: 'Bank', icon: color => <Landmark size={20} color={color} strokeWidth={2} /> },
+  { id: 'wallet', label: 'Wallet', icon: color => <Wallet size={20} color={color} strokeWidth={2} /> },
 ];
 
 interface PaymentMethodSelectorProps {
@@ -61,13 +35,15 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   selectedMethod,
   onSelectMethod,
 }) => {
+  const { colors } = useSpecTheme();
+
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {PAYMENT_METHODS.map((method) => (
+      {PAYMENT_METHODS.map(method => (
         <PaymentMethodButton
           key={method.id}
           method={method}
@@ -87,6 +63,7 @@ const PaymentMethodButton: React.FC<{
   isSelected: boolean;
   onPress: () => void;
 }> = ({ method, isSelected, onPress }) => {
+  const { colors } = useSpecTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -99,24 +76,24 @@ const PaymentMethodButton: React.FC<{
     onPress();
   };
 
+  const iconColor = isSelected ? '#FFFFFF' : colors.textPrimary;
+
   return (
     <Pressable onPress={handlePress}>
       <Animated.View
         style={[
           styles.button,
-          { backgroundColor: method.color },
-          isSelected && styles.buttonSelected,
+          { backgroundColor: isSelected ? colors.primaryAccent : colors.chipBg },
           animatedStyle,
         ]}
       >
-        <View style={styles.iconContainer}>{method.icon}</View>
+        <View style={styles.iconContainer}>{method.icon(iconColor)}</View>
         <Caption
-          style={[styles.label, isSelected ? styles.labelSelected : undefined]}
+          style={[styles.label, { color: isSelected ? '#FFFFFF' : colors.textPrimary }]}
           numberOfLines={1}
         >
           {method.label}
         </Caption>
-        {isSelected && <View style={styles.selectedIndicator} />}
       </Animated.View>
     </Pressable>
   );
@@ -125,23 +102,17 @@ const PaymentMethodButton: React.FC<{
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.xs,
+    gap: 16,
+    paddingVertical: 8,
   },
   button: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
+    gap: 8,
     minWidth: 90,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  buttonSelected: {
-    borderColor: COLORS.navyText,
-    transform: [{ scale: 1.05 }],
   },
   iconContainer: {
     width: 24,
@@ -151,16 +122,5 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    color: COLORS.navyText,
-  },
-  labelSelected: {
-    fontWeight: '600',
-  },
-  selectedIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.navyText,
-    marginLeft: SPACING.xs,
   },
 });

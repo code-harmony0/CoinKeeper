@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { AddTransactionSheet } from '../../components/modals/AddTransactionSheet';
 import { useTransactions } from '../../hooks/useTransactions';
@@ -27,16 +27,20 @@ export const AddScreen: React.FC = () => {
         visible={visible}
         onClose={closeSheet}
         initialType="expense"
-        onSubmit={(payload) => {
-          addTransaction({
-            amount: payload.amount,
-            type: payload.type,
-            category: payload.category,
-            categoryIcon: payload.categoryIcon || 'other',
-            description: payload.description,
-            paymentMethod: 'Manual',
-          });
-          closeSheet();
+        onSubmit={async (payload) => {
+          try {
+            await addTransaction({
+              amount: payload.amount,
+              type: payload.type,
+              category: payload.category,
+              categoryIcon: payload.categoryIcon || 'other',
+              description: payload.description,
+              paymentMethod: payload.paymentMethod ?? 'Manual',
+            });
+            closeSheet();
+          } catch (error) {
+            Alert.alert('Could not save transaction', error instanceof Error ? error.message : 'Please try again.');
+          }
         }}
       />
     </View>
