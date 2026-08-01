@@ -146,13 +146,14 @@ export interface SpecTheme {
   iconShadow: ShadowStyle;
   spring: { damping: number; stiffness: number; mass: number };
   isDark: boolean;
+  toggleTheme: () => void;
 }
 
 // ============================================
 // HOOK
 // ============================================
 export const useSpecTheme = (): SpecTheme => {
-  const { isDark } = useTheme();
+  const { isDark, toggleTheme } = useTheme();
 
   return {
     colors: isDark ? specDark : specLight,
@@ -166,5 +167,6 @@ export const useSpecTheme = (): SpecTheme => {
     iconShadow,
     spring,
     isDark,
+    toggleTheme,
   };
 };

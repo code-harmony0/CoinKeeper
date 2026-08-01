@@ -17,6 +17,7 @@ export type PressableScaleHaptic = 'impactLight' | 'none';
 
 export interface PressableScaleProps {
   onPress?: (event: GestureResponderEvent) => void;
+  onLongPress?: (event: GestureResponderEvent) => void;
   style?: StyleProp<ViewStyle>;
   haptic?: PressableScaleHaptic;
   disabled?: boolean;
@@ -36,6 +37,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const PressableScale: React.FC<PressableScaleProps> = ({
   onPress,
+  onLongPress,
   style,
   haptic = 'impactLight',
   disabled = false,
@@ -68,10 +70,18 @@ export const PressableScale: React.FC<PressableScaleProps> = ({
     onPress?.(event);
   };
 
+  const handleLongPress = (event: GestureResponderEvent) => {
+    if (haptic !== 'none') {
+      ReactNativeHapticFeedback.trigger(haptic);
+    }
+    onLongPress?.(event);
+  };
+
   return (
     <AnimatedPressable
       testID={testID}
       onPress={handlePress}
+      onLongPress={handleLongPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled}

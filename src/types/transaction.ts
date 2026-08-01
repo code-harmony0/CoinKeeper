@@ -1,3 +1,5 @@
+import { IncomeType } from './income';
+
 export interface Transaction {
   id: string;
   amount: number;
@@ -7,6 +9,8 @@ export interface Transaction {
   description?: string;
   date: string;
   paymentMethod?: string;
+  incomeType?: IncomeType;
+  incomeSourceId?: string;
 }
 
 /**

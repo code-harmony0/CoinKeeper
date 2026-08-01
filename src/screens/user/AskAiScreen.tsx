@@ -1,229 +1,161 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text as RNText, TextInput as RNTextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, TextInput, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '../../components/ui/Button';
 import { useSpecTheme } from '../../theme/specTheme';
-import { Cloud, Lock, Send, Bot } from 'lucide-react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { BrainCircuit, Send, Sparkles } from 'lucide-react-native';
+import { PressableScale } from '../../components/anim';
+import { InsightEngine, FinancialInsight } from '../../services/InsightEngine';
+import { InsightCard } from '../../components/insights/InsightCard';
+import { AIProvider } from '../../services/AIProvider';
 
-interface Message {
+interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
-  content: string;
+  role: 'user' | 'ai';
+  content?: string;
+  structuredData?: any;
 }
 
-export const AskAiScreen: React.FC = () => {
+export const AskAiScreen: React.FC<any> = () => {
   const insets = useSafeAreaInsets();
-  const { colors, space, cardRadius, iconShadow, inputRadius, cardShadow } = useSpecTheme();
-  
-  const [prompt, setPrompt] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: 'Hi! I am your Premium AI Coach. I can analyze your spending patterns, explain why you overspent this month, or help you plan for a big purchase. What would you like to know?',
-    }
-  ]);
+  const { colors, cardRadius, iconShadow } = useSpecTheme();
+
+  const [insights, setInsights] = useState<FinancialInsight[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSend = () => {
-    if (!prompt.trim()) return;
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  const loadDashboard = async () => {
+    // Generate (mock) daily insights then fetch
+    await InsightEngine.generateDailyInsights();
+    const data = await InsightEngine.getCachedInsights();
+    setInsights(data);
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
     
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: prompt };
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: input.trim() };
     setMessages(prev => [...prev, userMsg]);
-    setPrompt('');
+    setInput('');
     setIsLoading(true);
 
-    // Mock AI response
-    setTimeout(() => {
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'Based on your recent transactions, you spent ₹4,200 on food delivery this month. That is 38% higher than last month. Saving just ₹140/day would cover the difference next month!',
+    try {
+      const response = await AIProvider.askQuestion(userMsg.content!);
+      const aiMsg: ChatMessage = { 
+        id: (Date.now() + 1).toString(), 
+        role: 'ai', 
+        structuredData: response.structuredReply 
       };
       setMessages(prev => [...prev, aiMsg]);
+    } catch (e) {
+      console.error(e);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={[styles.header, { paddingTop: insets.top + space.md }]}>
-        <RNText style={[styles.title, { color: colors.textPrimary }]}>Ask AI</RNText>
-      </View>
-
-      <View style={[styles.disclaimer, { backgroundColor: colors.surfaceSunken, borderRadius: cardRadius }]}>
-        <View style={styles.disclaimerIcon}>
-          <Cloud size={16} color={colors.textSecondary} />
-          <Lock size={12} color={colors.textSecondary} style={{ position: 'absolute', bottom: -2, right: -2 }} />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <View style={styles.headerLeft}>
+          <BrainCircuit color={colors.primaryAccent} size={28} />
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Intelligence</Text>
         </View>
-        <RNText style={[styles.disclaimerText, { color: colors.textSecondary }]}>
-          Privacy Notice: Messages sent here are processed in the cloud to generate insights. 
-          Your raw bank details are NEVER shared.
-        </RNText>
       </View>
 
-      <ScrollView 
-        style={styles.chatArea} 
-        contentContainerStyle={[styles.chatContent, { padding: space.md, gap: space.md }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {messages.map((msg) => (
-          <Animated.View 
-            key={msg.id} 
-            entering={FadeInDown.springify()}
-            style={[
-              styles.messageBubble,
-              { borderRadius: cardRadius, padding: space.md, gap: space.sm },
-              msg.role === 'user' 
-                ? [styles.userBubble, { backgroundColor: colors.primaryAccent }] 
-                : [styles.aiBubble, { backgroundColor: colors.card }, cardShadow]
-            ]}
-          >
-            {msg.role === 'assistant' && (
-              <View style={[styles.aiAvatar, { backgroundColor: colors.chipBg }, iconShadow]}>
-                <Bot size={16} color={colors.primaryAccent} />
+      <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={100}>
+        <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 40 }]} showsVerticalScrollIndicator={false}>
+          
+          {/* Proactive Insights Dashboard */}
+          {messages.length === 0 && (
+            <View style={styles.dashboard}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Today's Overview</Text>
+              {insights.map((insight, idx) => (
+                <InsightCard key={insight.id} insight={insight} index={idx} />
+              ))}
+            </View>
+          )}
+
+          {/* Chat History */}
+          <View style={styles.chatArea}>
+            {messages.map((msg) => (
+              <View key={msg.id} style={[
+                styles.bubbleWrap, 
+                msg.role === 'user' ? styles.bubbleUserWrap : styles.bubbleAiWrap
+              ]}>
+                {msg.role === 'user' ? (
+                  <View style={[styles.bubbleUser, { backgroundColor: colors.textPrimary, borderRadius: cardRadius }]}>
+                    <Text style={[styles.bubbleUserText, { color: colors.background }]}>{msg.content}</Text>
+                  </View>
+                ) : (
+                  <View style={[styles.bubbleAi, { backgroundColor: colors.chipBg, borderRadius: cardRadius }]}>
+                    <View style={styles.aiHeader}>
+                      <Sparkles size={16} color={colors.primaryAccent} />
+                      <Text style={[styles.aiTitle, { color: colors.primaryAccent }]}>
+                        {msg.structuredData?.title || 'Response'}
+                      </Text>
+                    </View>
+                    <Text style={[styles.aiBody, { color: colors.textPrimary }]}>
+                      {msg.structuredData?.body}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ))}
+            {isLoading && (
+              <View style={[styles.bubbleAiWrap, { marginTop: 12 }]}>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium' }}>Analyzing...</Text>
               </View>
             )}
-            <RNText 
-              style={[
-                styles.messageText,
-                msg.role === 'user' ? { color: '#FFFFFF' } : { color: colors.textPrimary }
-              ]}
-            >
-              {msg.content}
-            </RNText>
-          </Animated.View>
-        ))}
-        {isLoading && (
-          <View style={[styles.messageBubble, styles.aiBubble, { backgroundColor: colors.card, borderRadius: cardRadius, padding: space.md }, cardShadow]}>
-            <RNText style={[styles.messageText, { color: colors.textSecondary }]}>Thinking...</RNText>
           </View>
-        )}
-      </ScrollView>
+        </ScrollView>
 
-      <View style={[
-        styles.inputArea, 
-        { 
-          paddingBottom: Math.max(insets.bottom, space.md), 
-          backgroundColor: colors.card,
-          padding: space.sm,
-          gap: space.sm
-        },
-        cardShadow
-      ]}>
-        <RNTextInput
-          value={prompt}
-          onChangeText={setPrompt}
-          placeholder="Ask me about your spending..."
-          placeholderTextColor={colors.textSecondary}
-          style={[styles.input, { backgroundColor: colors.inputBg, color: colors.textPrimary, borderRadius: inputRadius }]}
-          multiline
-        />
-        <Button
-          title=""
-          icon={<Send size={20} color="#FFFFFF" />}
-          onPress={handleSend}
-          disabled={isLoading || !prompt.trim()}
-          style={[styles.sendButton, { backgroundColor: colors.primaryAccent }]}
-        />
-      </View>
-    </KeyboardAvoidingView>
+        {/* Deep Dive Input */}
+        <View style={[styles.inputContainer, { paddingBottom: insets.bottom || 24 }]}>
+          <View style={[styles.inputBox, { backgroundColor: colors.chipBg, borderRadius: 100 }]}>
+            <TextInput
+              style={[styles.input, { color: colors.textPrimary }]}
+              placeholder="Ask anything about your money..."
+              placeholderTextColor={colors.textSecondary}
+              value={input}
+              onChangeText={setInput}
+              onSubmitEditing={handleSend}
+            />
+            <PressableScale onPress={handleSend} style={[styles.sendBtn, { backgroundColor: input.trim() ? colors.primaryAccent : colors.textSecondary }]}>
+              <Send size={16} color="#fff" />
+            </PressableScale>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-  },
-  title: {
-    fontFamily: 'Satoshi-Black',
-    fontSize: 28,
-    letterSpacing: -0.3,
-  },
-  disclaimer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 24,
-    padding: 16,
-    gap: 16,
-    marginBottom: 16,
-  },
-  disclaimerIcon: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  disclaimerText: {
-    flex: 1,
-    fontSize: 13,
-    fontFamily: 'Satoshi-Medium',
-    lineHeight: 18,
-  },
-  chatArea: {
-    flex: 1,
-  },
-  chatContent: {
-    // Dynamic padding set inline
-  },
-  messageBubble: {
-    maxWidth: '85%',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  userBubble: {
-    alignSelf: 'flex-end',
-    borderBottomRightRadius: 4,
-  },
-  aiBubble: {
-    alignSelf: 'flex-start',
-    borderBottomLeftRadius: 4,
-  },
-  aiAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  messageText: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: 'Satoshi-Medium',
-    lineHeight: 22,
-  },
-  inputArea: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-  },
-  input: {
-    flex: 1,
-    maxHeight: 120,
-    minHeight: 48,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-    fontSize: 15,
-    fontFamily: 'Satoshi-Medium',
-  },
-  sendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    paddingHorizontal: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  root: { flex: 1 },
+  flex1: { flex: 1 },
+  header: { paddingHorizontal: 24, paddingBottom: 20 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  title: { fontSize: 28, fontFamily: 'Satoshi-Black', letterSpacing: -0.5 },
+  scroll: { paddingHorizontal: 24, paddingVertical: 16 },
+  dashboard: { marginBottom: 32 },
+  sectionTitle: { fontSize: 18, fontFamily: 'Satoshi-Bold', marginBottom: 16 },
+  chatArea: { gap: 16 },
+  bubbleWrap: { maxWidth: '85%' },
+  bubbleUserWrap: { alignSelf: 'flex-end' },
+  bubbleAiWrap: { alignSelf: 'flex-start' },
+  bubbleUser: { paddingHorizontal: 16, paddingVertical: 12 },
+  bubbleUserText: { fontSize: 15, fontFamily: 'Satoshi-Medium' },
+  bubbleAi: { padding: 16 },
+  aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  aiTitle: { fontSize: 14, fontFamily: 'Satoshi-Bold' },
+  aiBody: { fontSize: 15, fontFamily: 'Satoshi-Medium', lineHeight: 22 },
+  inputContainer: { paddingHorizontal: 24, paddingTop: 16 },
+  inputBox: { flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 8, height: 56 },
+  input: { flex: 1, fontSize: 15, fontFamily: 'Satoshi-Medium' },
+  sendBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }
 });
-
-export default AskAiScreen;

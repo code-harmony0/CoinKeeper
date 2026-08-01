@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { AddTransactionSheet } from '../../components/modals/AddTransactionSheet';
-import { useTransactions } from '../../hooks/useTransactions';
+import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
 
 export const AddScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -26,16 +26,16 @@ export const AddScreen: React.FC = () => {
       <AddTransactionSheet
         visible={visible}
         onClose={closeSheet}
-        initialType="expense"
-        onSubmit={async (payload) => {
+        onSubmit={async (draft) => {
           try {
             await addTransaction({
-              amount: payload.amount,
-              type: payload.type,
-              category: payload.category,
-              categoryIcon: payload.categoryIcon || 'other',
-              description: payload.description,
-              paymentMethod: payload.paymentMethod ?? 'Manual',
+              amount: (draft.amount_paise || 0) / 100, // App stores rupees externally in Context still
+              type: 'expense',
+              category: draft.category_id || 'unknown',
+              categoryIcon: 'other',
+              description: draft.merchant_name || 'Unknown',
+              paymentMethod: draft.payment_method ?? 'Manual',
+              date: draft.date || new Date().toISOString(),
             });
             closeSheet();
           } catch (error) {

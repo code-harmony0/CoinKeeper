@@ -11,6 +11,9 @@
     <!-- SMS permission for auto-fill transactions -->
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    
+    <!-- Exact alarm permission for bill reminders -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 
     <application
       android:name=".MainApplication"

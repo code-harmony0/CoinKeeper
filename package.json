@@ -8,8 +8,8 @@
   "scripts": {
     "_clean:autolink": "rm -rf android/build/generated/autolinking",
     "android": "npm run android:pro",
-    "android:lite": "npm run _clean:autolink && react-native run-android --mode=liteDebug",
-    "android:pro": "npm run _clean:autolink && CK_CHITFUND=1 react-native run-android --mode=proDebug",
+    "android:lite": "npm run _clean:autolink && react-native run-android --mode=liteDebug --appId=com.coinkeeper.finance",
+    "android:pro": "npm run _clean:autolink && CK_CHITFUND=1 react-native run-android --mode=proDebug --appId=com.coinkeeper.finance.pro",
     "build:lite": "npm run _clean:autolink && cd android && ./gradlew assembleLiteRelease",
     "build:pro": "npm run _clean:autolink && cd android && CK_CHITFUND=1 ./gradlew assembleProRelease",
     "ios": "react-native run-ios",
@@ -19,6 +19,7 @@
     "verify:split": "./scripts/verify-bundle-split.sh"
   },
   "dependencies": {
+    "@notifee/react-native": "^9.1.8",
     "@op-engineering/op-sqlite": "^17.1.2",
     "@react-native-async-storage/async-storage": "^1.24.0",
     "@react-native-community/blur": "^4.4.1",

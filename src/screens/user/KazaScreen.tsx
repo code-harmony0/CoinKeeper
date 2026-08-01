@@ -549,7 +549,7 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 24,
+      marginBottom: 32,
     },
     title: { fontSize: 26, fontFamily: 'Satoshi-Black', color: colors.textPrimary },
     infoButton: {
@@ -565,7 +565,7 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
       backgroundColor: colors.card,
       borderRadius: cardRadius,
       padding: 20,
-      marginBottom: 24,
+      marginBottom: 32,
       alignItems: 'center',
       ...cardShadow,
     },
@@ -588,7 +588,7 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
       textAlign: 'center',
     },
 
-    section: { marginBottom: 24 },
+    section: { marginBottom: 32 },
     prayerCard: {
       backgroundColor: colors.card,
       borderRadius: cardRadius,
@@ -621,7 +621,7 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
       backgroundColor: colors.card,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      paddingHorizontal: 20,
+      paddingHorizontal: 24,
       paddingTop: 20,
       paddingBottom: 32,
     },
@@ -681,7 +681,7 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 24,
+      marginBottom: 32,
     },
     stepperGroup: {
       flexDirection: 'row',

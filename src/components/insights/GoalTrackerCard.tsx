@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '../ui/Text';
-import { useTheme } from '../../hooks/useTheme';
-import { spacing, radii } from '../../theme/designTokens';
+import { useSpecTheme } from '../../theme/specTheme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 interface GoalTrackerCardProps {
@@ -12,53 +11,56 @@ interface GoalTrackerCardProps {
 }
 
 export const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ name, targetAmount, currentAmount }) => {
-  const { colors } = useTheme();
-
-  const percentage = Math.min(Math.max((currentAmount / targetAmount) * 100, 0), 100);
+  const { colors, cardRadius, cardShadow } = useSpecTheme();
+  
+  const progress = Math.min(Math.max(currentAmount / targetAmount, 0), 1);
+  const percentage = Math.round(progress * 100);
 
   return (
-    <Animated.View entering={FadeInDown.springify()} style={[styles.container, { backgroundColor: colors.card, shadowColor: colors.text }]}>
+    <Animated.View entering={FadeInDown.springify()} style={[styles.card, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}>
       <View style={styles.header}>
-        <Text variant="h2">{name}</Text>
-        <Text variant="h2" color="primary">{percentage.toFixed(0)}%</Text>
+        <Text variant="h3" style={{ color: colors.textPrimary }}>{name}</Text>
+        <Text variant="h3" style={{ color: colors.primaryAccent }}>{percentage}%</Text>
       </View>
-
-      <View style={[styles.track, { backgroundColor: colors.surfaceSecondary }]}>
-        <View style={[styles.fill, { width: `${percentage}%`, backgroundColor: colors.primary }]} />
+      
+      <View style={[styles.progressBarBg, { backgroundColor: colors.surfaceSunken }]}>
+        <View style={[styles.progressBarFill, { width: `${percentage}%`, backgroundColor: colors.primaryAccent }]} />
       </View>
-
+      
       <View style={styles.footer}>
-        <Text variant="caption" color="secondary">Saved: ₹{currentAmount.toLocaleString()}</Text>
-        <Text variant="caption" color="secondary">Goal: ₹{targetAmount.toLocaleString()}</Text>
+        <Text variant="caption" style={{ color: colors.textSecondary }}>
+          ₹{currentAmount.toLocaleString()} saved
+        </Text>
+        <Text variant="caption" style={{ color: colors.textSecondary }}>
+          Target: ₹{targetAmount.toLocaleString()}
+        </Text>
       </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: spacing.m,
-    borderRadius: radii.card,
-    elevation: 4,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
+  card: {
+    padding: 20,
+    width: '100%',
+    marginBottom: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.s,
+    marginBottom: 12,
   },
-  track: {
-    height: 12,
-    borderRadius: 6,
+  progressBarBg: {
+    height: 8,
+    borderRadius: 4,
+    width: '100%',
     overflow: 'hidden',
-    marginBottom: spacing.s,
+    marginBottom: 12,
   },
-  fill: {
+  progressBarFill: {
     height: '100%',
-    borderRadius: 6,
+    borderRadius: 4,
   },
   footer: {
     flexDirection: 'row',

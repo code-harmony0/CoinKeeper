@@ -1,4 +1,8 @@
 import { NativeModules } from 'react-native';
+import { MerchantLearningService } from './MerchantLearningService';
+import { TransactionDraftService } from './TransactionDraftService';
+import { TransactionDraft } from '../types/transactionDraft';
+import { TransactionPredictionService } from './TransactionPredictionService';
 
 const { SmsModule } = NativeModules;
 
@@ -8,14 +12,6 @@ export interface SmsMessage {
   date: string;
   body: string;
   type: string;
-}
-
-export interface ParsedTransaction {
-  amount: number;
-  merchant: string;
-  type: 'debit' | 'credit';
-  originalSms: string;
-  date: string;
 }
 
 const debitRegexList = [
@@ -41,39 +37,64 @@ export const fetchRecentSms = async (limit: number = 500): Promise<SmsMessage[]>
 
 const cleanAmount = (amountStr: string) => parseFloat(amountStr.replace(/,/g, ''));
 
-export const parseSmsToTransaction = (sms: string): ParsedTransaction | null => {
-  // Ignore OTPs and promotional messages early
+export const parseSmsToDraft = async (message: SmsMessage): Promise<TransactionDraft | null> => {
+  const sms = message.body;
+  const messageDate = new Date(Number(message.date) || Date.now()).toISOString();
+  
   if (/otp|verification code|password|promotional/i.test(sms)) {
     return null;
   }
 
-  // Check debit patterns
+  let extractedAmount = 0;
+  let extractedMerchant = '';
+  let txType: 'debit' | 'credit' | null = null;
+  let regexConfidence = 0;
+
   for (const regex of debitRegexList) {
     const match = sms.match(regex);
     if (match) {
-      return {
-        amount: cleanAmount(match[1]),
-        merchant: match[2]?.trim().substring(0, 30), // Limit length
-        type: 'debit',
-        originalSms: sms,
-        date: new Date().toISOString(), // In real app, parse from sms date
-      };
+      extractedAmount = cleanAmount(match[1]);
+      extractedMerchant = match[2]?.trim().substring(0, 30);
+      txType = 'debit';
+      regexConfidence = 80;
+      break;
     }
   }
 
-  // Check credit patterns
-  for (const regex of creditRegexList) {
-    const match = sms.match(regex);
-    if (match) {
-      return {
-        amount: cleanAmount(match[1]),
-        merchant: match[2]?.trim().substring(0, 30),
-        type: 'credit',
-        originalSms: sms,
-        date: new Date().toISOString(),
-      };
+  if (!txType) {
+    for (const regex of creditRegexList) {
+      const match = sms.match(regex);
+      if (match) {
+        extractedAmount = cleanAmount(match[1]);
+        extractedMerchant = match[2]?.trim().substring(0, 30);
+        txType = 'credit';
+        regexConfidence = 80;
+        break;
+      }
     }
   }
 
-  return null;
+  if (!txType) return null;
+
+  // Predict Category
+  const mlPred = await MerchantLearningService.predictCategory(extractedMerchant);
+  
+  // Create Draft
+  const draft = TransactionDraftService.createDraft('sms', {
+    amount_paise: extractedAmount * 100, // convert to paise
+    merchant_name: extractedMerchant,
+    category_id: mlPred.categoryId || undefined,
+    date: messageDate,
+    sms_id: message.id,
+    confidence: Math.min(regexConfidence + (mlPred.confidence * 0.2), 100),
+    draft_status: 'reviewing',
+  });
+
+  // Run duplicate & budget prediction against the draft
+  const predictionRes = await TransactionPredictionService.predict(draft);
+  
+  draft.is_duplicate = predictionRes.isDuplicate;
+  draft.prediction_reason = predictionRes.predictionReason || undefined;
+
+  return draft;
 };

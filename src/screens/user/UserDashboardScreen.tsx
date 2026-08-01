@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { LineChart } from 'react-native-chart-kit';
 import { ChevronRight } from 'lucide-react-native';
-import { useTransactions } from '../../hooks/useTransactions';
+import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
 import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useSpecTheme } from '../../theme/specTheme';
 import type { Transaction } from '../../types/transaction';
@@ -26,6 +26,14 @@ import { generateInsights, getBudgetStreak, getPrimaryGoal, type Insight, type G
 import { SmartInsightCard } from '../../components/insights/SmartInsightCard';
 import { StreakBanner } from '../../components/insights/StreakBanner';
 import { GoalTrackerCard } from '../../components/insights/GoalTrackerCard';
+import { NextSalaryWidget } from '../../components/income/NextSalaryWidget';
+import { IncomeHealthWidget } from '../../components/income/IncomeHealthWidget';
+import { IncomeInsightsWidget } from '../../components/income/IncomeInsightsWidget';
+import { IncomeTransactionFlow } from '../../components/modals/IncomeTransactionFlow';
+import { getDb } from '../../store/database';
+import { TransactionDraft } from '../../types/transactionDraft';
+import { IncomeDistribution } from '../../services/income/IncomeRoutingEngine';
+import { IncomeEngine } from '../../services/income/IncomeEngine';
 
 const SCREEN_W = Dimensions.get('window').width;
 
@@ -72,6 +80,17 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [streakDays, setStreakDays] = useState(0);
   const [goal, setGoal] = useState<Goal | null>(null);
+  const [isIncomeFlowVisible, setIncomeFlowVisible] = useState(false);
+
+  const handleIncomeSubmit = async (draft: TransactionDraft, distribution: IncomeDistribution[]) => {
+    try {
+      await IncomeEngine.processConfirmedIncome(draft);
+      setIncomeFlowVisible(false);
+      onRefresh();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadInsights = useCallback(async () => {
     const [insightData, streak, primaryGoal] = await Promise.all([
@@ -151,9 +170,14 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         {/* ═══════════════════ HEADER ═══════════════════ */}
         <Animated.View entering={FadeInDown.delay(0).springify()} style={[st.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
           <Text style={st.title}>Overview</Text>
-          <PressableScale onPress={() => navigation.navigate('AskAi')} style={{ backgroundColor: colors.lavender, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.lavenderDeep }}>Ask AI</Text>
-          </PressableScale>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <PressableScale onPress={() => setIncomeFlowVisible(true)} style={{ backgroundColor: colors.success + '20', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.success }}>+ Income</Text>
+            </PressableScale>
+            <PressableScale onPress={() => navigation.navigate('AskAi')} style={{ backgroundColor: colors.chipBg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.textPrimary }}>Ask AI</Text>
+            </PressableScale>
+          </View>
         </Animated.View>
 
         {/* ═══════════════════ GAMIFICATION & INSIGHTS ═══════════════════ */}
@@ -166,6 +190,15 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         {insights.map((insight, index) => (
           <SmartInsightCard key={insight.id} insight={insight} delay={20 + index * 20} />
         ))}
+
+        {/* ═══════════════════ INCOME INTELLIGENCE ═══════════════════ */}
+        <Animated.View entering={FadeInDown.delay(50).springify()}>
+          <NextSalaryWidget />
+          <View style={{ flexDirection: 'row', gap: 16 }}>
+            <View style={{ flex: 1 }}><IncomeHealthWidget /></View>
+            <View style={{ flex: 1 }}><IncomeInsightsWidget /></View>
+          </View>
+        </Animated.View>
         
         {/* ═══════════════════ SPENDING CHART CARD ═══════════════════ */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={st.chartCard}>
@@ -208,7 +241,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
         {/* ═══════════════════ GOALS ═══════════════════ */}
         {goal && (
-          <View style={{ marginBottom: 24 }}>
+          <View style={{ marginBottom: 32 }}>
             <GoalTrackerCard name={goal.name} targetAmount={goal.targetAmount} currentAmount={goal.currentAmount} />
           </View>
         )}
@@ -218,6 +251,12 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
           <DashboardChitsSection navigation={navigation} refreshToken={refreshToken} />
         ) : null}
       </Animated.ScrollView>
+
+      <IncomeTransactionFlow
+        visible={isIncomeFlowVisible}
+        onClose={() => setIncomeFlowVisible(false)}
+        onSubmit={handleIncomeSubmit}
+      />
     </View>
   );
 };
@@ -227,14 +266,14 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.background },
     scroll: { flex: 1 },
-    content: { paddingHorizontal: 20 },
+    content: { paddingHorizontal: 24 },
     header: { marginBottom: 16 },
-    title: { fontSize: 26, fontFamily: 'Satoshi-Black', color: colors.textPrimary },
+    title: { fontSize: 28, fontFamily: 'Satoshi-Black', color: colors.textPrimary },
     chartCard: {
       backgroundColor: colors.card,
       borderRadius: cardRadius,
       padding: 20,
-      marginBottom: 24,
+      marginBottom: 32,
       ...cardShadow,
     },
     chart: { borderRadius: cardRadius, marginLeft: -12 },
@@ -255,13 +294,13 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
     emptySubtitle: { fontSize: 13, fontFamily: 'Satoshi-Regular', color: colors.textSecondary, marginTop: 4 },
     emptyCta: {
       marginTop: 16,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
       borderRadius: 999,
       backgroundColor: colors.primaryAccent,
     },
     emptyCtaText: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: colors.background },
-    section: { marginBottom: 24 },
+    section: { marginBottom: 32 },
     sectionRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -270,7 +309,7 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
     },
     sectionTitle: { fontSize: 17, fontFamily: 'Satoshi-Bold', color: colors.textPrimary },
     linkText: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: colors.lavenderDeep },
-    moreLink: { alignItems: 'center', paddingVertical: 10 },
+    moreLink: { alignItems: 'center', paddingVertical: 12 },
     moreLinkText: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: colors.lavenderDeep },
   });
 

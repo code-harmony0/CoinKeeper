@@ -4,7 +4,7 @@ import { StatusBar, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './src/hooks/useTheme';
-import { TransactionsProvider } from './src/hooks/useTransactions';
+import { TransactionsProvider } from './src/context/TransactionsContext';
 import { TabBarScrollProvider } from './src/context/TabBarScrollContext';
 import { AppLockProvider } from './src/context/AppLockContext';
 import { RootNavigator } from './src/navigation';

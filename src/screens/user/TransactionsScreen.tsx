@@ -39,9 +39,10 @@ import {
   Search,
   Trash2,
   Tag,
+  MessageSquare,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import { useTransactions } from '../../hooks/useTransactions';
+import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
 import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useSpecTheme } from '../../theme/specTheme';
 import { Transaction } from '../../types/transaction';
@@ -53,7 +54,7 @@ type Props = NativeStackScreenProps<any, 'Transactions'>;
 
 type FilterTab = 'all' | 'income' | 'expense';
 const TABS: FilterTab[] = ['all', 'income', 'expense'];
-const TAB_LABELS: Record<FilterTab, string> = {
+const TAB_LABELS = {
   all: 'All',
   income: 'Income',
   expense: 'Expense',
@@ -150,6 +151,16 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     () => transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
     [transactions],
   );
+  
+  const incomeCount = transactions.filter(t => t.type === 'income').length;
+  const expenseCount = transactions.filter(t => t.type === 'expense').length;
+  const allCount = transactions.length;
+
+  const tabCounts = {
+    all: allCount,
+    income: incomeCount,
+    expense: expenseCount,
+  };
 
   // Material Snackbar pattern: commit the previous pending delete immediately
   // when a new swipe arrives, then start a fresh 5-second window for the new
@@ -324,12 +335,20 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
                 <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
               </PressableScale>
               <Text style={[styles.title, { color: colors.textPrimary }]}>Transactions</Text>
-              <PressableScale
-                onPress={() => navigation.navigate('Categories')}
-                style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
-              >
-                <Tag size={18} color={colors.textPrimary} strokeWidth={2.2} />
-              </PressableScale>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <PressableScale
+                  onPress={() => navigation.navigate('SmsReview')}
+                  style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
+                >
+                  <MessageSquare size={18} color={colors.textPrimary} strokeWidth={2.2} />
+                </PressableScale>
+                <PressableScale
+                  onPress={() => navigation.navigate('Categories')}
+                  style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
+                >
+                  <Tag size={18} color={colors.textPrimary} strokeWidth={2.2} />
+                </PressableScale>
+              </View>
             </>
           )}
         </Animated.View>
@@ -377,7 +396,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
                     { color: activeTab === tab ? colors.segmentActiveText : colors.segmentInactiveText },
                   ]}
                 >
-                  {TAB_LABELS[tab]}
+                  {TAB_LABELS[tab]} ({tabCounts[tab]})
                 </Text>
               </Pressable>
             ))}
@@ -403,7 +422,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
           renderItem={renderItem}
           getItemType={item => item.type}
           contentContainerStyle={{
-            paddingHorizontal: 20,
+            paddingHorizontal: 24,
             paddingTop: 4,
             paddingBottom: insets.bottom + 144,
           }}
@@ -416,9 +435,12 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.emptyText, { color: colors.textPrimary }]}>
                 No transactions yet
               </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
                 Add your first expense to get started
               </Text>
+              <PressableScale onPress={() => navigation.navigate('Add')} style={[styles.quickAddBtn, { backgroundColor: colors.primaryAccent, borderRadius: cardRadius }]}>
+                <Text style={[styles.quickAddText, { color: '#FFF' }]}>Quick Add</Text>
+              </PressableScale>
             </View>
           }
         />
@@ -444,12 +466,12 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   headerSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   backButton: {
     width: 40,
@@ -476,7 +498,7 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     gap: 16,
-    marginBottom: 24,
+    marginBottom: 32,
   },
   summaryCard: {
     flex: 1,
@@ -567,7 +589,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
   rowIcon: {
     width: 44,
@@ -605,20 +627,31 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 18,
     fontFamily: 'Satoshi-Bold',
-    marginTop: 4,
+    marginTop: 24,
   },
   emptySubtitle: {
-    fontSize: 13,
-    fontFamily: 'Satoshi-Regular',
-    marginTop: 2,
+    fontSize: 14,
+    fontFamily: 'Satoshi-Medium',
+    marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 32,
+  },
+  quickAddBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  quickAddText: {
+    fontSize: 14,
+    fontFamily: 'Satoshi-Bold',
   },
 
   undoBanner: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 24,
+    right: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

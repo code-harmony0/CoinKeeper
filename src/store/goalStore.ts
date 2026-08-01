@@ -1,0 +1,166 @@
+import { create } from 'zustand';
+import { getDb } from './database';
+
+export interface Goal {
+  id: string;
+  name: string;
+  /** Note: Goals store amounts in whole INR (Rupees), NOT paise! (Legacy table schema) */
+  targetAmount: number;
+  /** Note: Goals store amounts in whole INR (Rupees), NOT paise! (Legacy table schema) */
+  currentAmount: number;
+  deadline?: string;
+}
+
+interface GoalStoreState {
+  goals: Goal[];
+  isLoading: boolean;
+  error: string | null;
+  loadGoals: () => Promise<void>;
+  addGoal: (goal: Omit<Goal, 'id'>) => Promise<string>;
+  updateGoalProgress: (id: string, amount: number) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+  getEmergencyFundTarget: () => Promise<void>;
+}
+
+let idCounter = 0;
+const generateId = (): string =>
+  `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}${idCounter++}`;
+
+export const useGoalStore = create<GoalStoreState>((set, get) => ({
+  goals: [],
+  isLoading: false,
+  error: null,
+
+  loadGoals: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const db = getDb();
+      const result = await db.execute('SELECT * FROM goals ORDER BY rowid ASC;');
+      const goals = (result.rows || []).map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        targetAmount: row.targetAmount,
+        currentAmount: row.currentAmount,
+        deadline: row.deadline || undefined,
+      }));
+      set({ goals });
+    } catch (e: any) {
+      console.error('[goalStore] Failed to load goals', e);
+      set({ error: e.message || 'Failed to load goals' });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  addGoal: async (goalData) => {
+    const id = generateId();
+    set({ isLoading: true, error: null });
+    try {
+      const db = getDb();
+      await db.execute(
+        `INSERT INTO goals (id, name, targetAmount, currentAmount, deadline)
+         VALUES (?, ?, ?, ?, ?);`,
+        [
+          id,
+          goalData.name,
+          goalData.targetAmount,
+          goalData.currentAmount,
+          goalData.deadline || null,
+        ]
+      );
+      
+      set((state) => ({
+        goals: [...state.goals, { ...goalData, id }],
+      }));
+      return id;
+    } catch (e: any) {
+      console.error('[goalStore] Failed to add goal', e);
+      set({ error: e.message || 'Failed to add goal' });
+      throw e;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  updateGoalProgress: async (id, amount) => {
+    set({ isLoading: true, error: null });
+    try {
+      const db = getDb();
+      const targetGoal = get().goals.find(g => g.id === id);
+      if (!targetGoal) throw new Error('Goal not found');
+      
+      const newAmount = targetGoal.currentAmount + amount;
+      
+      await db.execute('UPDATE goals SET currentAmount = ? WHERE id = ?;', [newAmount, id]);
+      
+      set((state) => ({
+        goals: state.goals.map(g => g.id === id ? { ...g, currentAmount: newAmount } : g),
+      }));
+    } catch (e: any) {
+      console.error('[goalStore] Failed to update goal', e);
+      set({ error: e.message || 'Failed to update goal' });
+      throw e;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  deleteGoal: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const db = getDb();
+      await db.execute('DELETE FROM goals WHERE id = ?;', [id]);
+      
+      set((state) => ({
+        goals: state.goals.filter(g => g.id !== id),
+      }));
+    } catch (e: any) {
+      console.error('[goalStore] Failed to delete goal', e);
+      set({ error: e.message || 'Failed to delete goal' });
+      throw e;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  getEmergencyFundTarget: async () => {
+    try {
+      const db = getDb();
+      
+      // Calculate average monthly expenses over the last 6 months
+      const now = new Date();
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1).getTime();
+      
+      const expenseResult = await db.execute(
+        "SELECT SUM(amount_paise) as total FROM transactions WHERE type = 'expense' AND occurred_at >= ?",
+        [sixMonthsAgo]
+      );
+      
+      const totalPaise = (expenseResult.rows?.[0] as any)?.total || 0;
+      // Convert to rupees and divide by 6 months, then multiply by 6 for the fund
+      // Which essentially just means the total spent in last 6 months is the target!
+      const targetAmount = Math.max(totalPaise / 100, 50000); // Floor of 50k
+      
+      // Find or create emergency fund goal
+      const efGoal = get().goals.find(g => g.name === 'Emergency Fund');
+      if (efGoal) {
+        await db.execute('UPDATE goals SET targetAmount = ? WHERE id = ?', [targetAmount, efGoal.id]);
+        set((state) => ({
+          goals: state.goals.map(g => g.id === efGoal.id ? { ...g, targetAmount } : g)
+        }));
+      } else {
+        // Only auto-create if no goals exist at all
+        if (get().goals.length === 0) {
+          await get().addGoal({
+            name: 'Emergency Fund',
+            targetAmount,
+            currentAmount: 0,
+          });
+        }
+      }
+      
+    } catch (e: any) {
+      console.error('[goalStore] Failed to calculate emergency fund target', e);
+    }
+  }
+}));

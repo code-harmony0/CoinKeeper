@@ -66,3 +66,15 @@ jest.mock('./src/hooks/useTheme', () => {
     ThemeProvider: ({ children }) => children,
   };
 });
+
+jest.mock('@notifee/react-native', () => ({
+  __esModule: true,
+  default: {
+    requestPermission: jest.fn(async () => ({ authorizationStatus: 1 })),
+    createChannel: jest.fn(async () => 'channel-id'),
+    createTriggerNotification: jest.fn(async () => 'notification-id'),
+    cancelNotification: jest.fn(async () => undefined),
+  },
+  AndroidImportance: { HIGH: 4 },
+  TriggerType: { TIMESTAMP: 0 },
+}));

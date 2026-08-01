@@ -21,9 +21,8 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import LinearGradient from 'react-native-linear-gradient';
+import { useSpecTheme } from '../../theme/specTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { THEME_SHADOWS, THEME_ANIMATION } from '../../theme/blobTheme';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import Svg, { Path, Circle } from 'react-native-svg';
 
@@ -42,6 +41,8 @@ export const CreateGroupSheet: React.FC<CreateGroupSheetProps> = ({
   onSubmit,
 }) => {
   const insets = useSafeAreaInsets();
+  const { colors, cardRadius, cardShadow, spring: springConfig } = useSpecTheme();
+  
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const opacity = useSharedValue(0);
 
@@ -53,7 +54,7 @@ export const CreateGroupSheet: React.FC<CreateGroupSheetProps> = ({
   useEffect(() => {
     if (visible) {
       opacity.value = withTiming(1, { duration: 250 });
-      translateY.value = withSpring(0, THEME_ANIMATION.spring);
+      translateY.value = withSpring(0, springConfig);
       ReactNativeHapticFeedback.trigger('impactLight');
     } else {
       opacity.value = withTiming(0, { duration: 200 });
@@ -93,16 +94,14 @@ export const CreateGroupSheet: React.FC<CreateGroupSheetProps> = ({
           <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         </Animated.View>
 
-        <Animated.View style={[styles.sheet, sheetStyle]}>
-          <LinearGradient colors={['#FFFFFF', '#FAFBFD']} style={StyleSheet.absoluteFill} />
-          
+        <Animated.View style={[styles.sheet, { backgroundColor: colors.card, borderTopLeftRadius: 30, borderTopRightRadius: 30 }, sheetStyle]}>
           <View style={styles.content}>
             <View style={styles.header}>
-              <View style={styles.handle} />
+              <View style={[styles.handle, { backgroundColor: colors.chipBg }]} />
               <View style={styles.headerRow}>
-                <Text style={styles.headerTitle}>Create Group</Text>
-                <Pressable onPress={handleClose} style={styles.closeBtn}>
-                  <CloseIcon />
+                <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Create Group</Text>
+                <Pressable onPress={handleClose} style={[styles.closeBtn, { backgroundColor: colors.chipBg }]}>
+                  <CloseIcon color={colors.textSecondary} />
                 </Pressable>
               </View>
             </View>
@@ -112,31 +111,31 @@ export const CreateGroupSheet: React.FC<CreateGroupSheetProps> = ({
                 
                 {/* Group Name */}
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Group Name</Text>
-                  <View style={styles.inputRow}>
-                    <UsersIcon />
+                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Group Name</Text>
+                  <View style={[styles.inputRow, { backgroundColor: colors.inputBg }]}>
+                    <UsersIcon color={colors.textSecondary} />
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: colors.textPrimary }]}
                       value={name}
                       onChangeText={setName}
                       placeholder="e.g. Family Savings"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textSecondary}
                     />
                   </View>
                 </View>
 
                 {/* Monthly Contribution */}
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Monthly Contribution</Text>
-                  <View style={styles.inputRow}>
-                    <WalletIcon />
-                    <Text style={styles.currencyPrefix}>₹</Text>
+                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Monthly Contribution</Text>
+                  <View style={[styles.inputRow, { backgroundColor: colors.inputBg }]}>
+                    <WalletIcon color={colors.textSecondary} />
+                    <Text style={[styles.currencyPrefix, { color: colors.textPrimary }]}>₹</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: colors.textPrimary }]}
                       value={amount}
                       onChangeText={text => setAmount(text.replace(/[^0-9]/g, ''))}
                       placeholder="5,000"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textSecondary}
                       keyboardType="number-pad"
                     />
                   </View>
@@ -144,15 +143,15 @@ export const CreateGroupSheet: React.FC<CreateGroupSheetProps> = ({
 
                 {/* Total Members */}
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Total Members</Text>
-                  <View style={styles.inputRow}>
-                    <GroupIcon />
+                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Total Members</Text>
+                  <View style={[styles.inputRow, { backgroundColor: colors.inputBg }]}>
+                    <GroupIcon color={colors.textSecondary} />
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: colors.textPrimary }]}
                       value={members}
                       onChangeText={text => setMembers(text.replace(/[^0-9]/g, ''))}
                       placeholder="12"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textSecondary}
                       keyboardType="number-pad"
                     />
                   </View>
@@ -160,15 +159,18 @@ export const CreateGroupSheet: React.FC<CreateGroupSheetProps> = ({
 
                 {/* Duration */}
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Duration (months)</Text>
+                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Duration (months)</Text>
                   <View style={styles.durationRow}>
                     {['6', '12', '18', '24'].map(d => (
                       <Pressable
                         key={d}
                         onPress={() => { ReactNativeHapticFeedback.trigger('impactLight'); setDuration(d); }}
-                        style={[styles.durationChip, duration === d && styles.durationChipActive]}
+                        style={[
+                          styles.durationChip, 
+                          { backgroundColor: duration === d ? colors.primaryAccent : colors.chipBg }
+                        ]}
                       >
-                        <Text style={[styles.durationText, duration === d && styles.durationTextActive]}>{d}</Text>
+                        <Text style={[styles.durationText, { color: duration === d ? '#FFFFFF' : colors.textSecondary }]}>{d}</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -178,9 +180,8 @@ export const CreateGroupSheet: React.FC<CreateGroupSheetProps> = ({
                 <Pressable
                   onPress={handleSubmit}
                   disabled={!isValid}
-                  style={[styles.submitButton, !isValid && styles.submitButtonDisabled]}
+                  style={[styles.submitButton, { backgroundColor: colors.primaryAccent }, !isValid && styles.submitButtonDisabled]}
                 >
-                  <LinearGradient colors={['#5B8DEF', '#6B9CF0']} style={StyleSheet.absoluteFill} />
                   <Text style={styles.submitButtonText}>Create Group</Text>
                 </Pressable>
               </ScrollView>
@@ -193,33 +194,32 @@ export const CreateGroupSheet: React.FC<CreateGroupSheetProps> = ({
 };
 
 // Icons
-const ICON_CLR = '#64748B';
 const SW = 2;
 
-const CloseIcon = () => (
+const CloseIcon = ({ color = '#475569' }) => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path d="M18 6L6 18M6 6l12 12" stroke="#475569" strokeWidth={2} strokeLinecap="round" />
+    <Path d="M18 6L6 18M6 6l12 12" stroke={color} strokeWidth={2} strokeLinecap="round" />
   </Svg>
 );
 
-const UsersIcon = () => (
+const UsersIcon = ({ color = '#64748B' }) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Circle cx={9} cy={7} r={3} stroke={ICON_CLR} strokeWidth={SW} fill="none" />
-    <Path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" stroke={ICON_CLR} strokeWidth={SW} strokeLinecap="round" fill="none" />
+    <Circle cx={9} cy={7} r={3} stroke={color} strokeWidth={SW} fill="none" />
+    <Path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" stroke={color} strokeWidth={SW} strokeLinecap="round" fill="none" />
   </Svg>
 );
 
-const WalletIcon = () => (
+const WalletIcon = ({ color = '#64748B' }) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M21 8V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2v-1" stroke={ICON_CLR} strokeWidth={SW} strokeLinecap="round" fill="none" />
-    <Circle cx={17} cy={12} r={2} stroke={ICON_CLR} strokeWidth={SW} fill="none" />
+    <Path d="M21 8V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2v-1" stroke={color} strokeWidth={SW} strokeLinecap="round" fill="none" />
+    <Circle cx={17} cy={12} r={2} stroke={color} strokeWidth={SW} fill="none" />
   </Svg>
 );
 
-const GroupIcon = () => (
+const GroupIcon = ({ color = '#64748B' }) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Circle cx={9} cy={7} r={3} stroke={ICON_CLR} strokeWidth={SW} fill="none" />
-    <Path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2M16 3.13a4 4 0 010 7.75M21 21v-2a4 4 0 00-3-3.87" stroke={ICON_CLR} strokeWidth={SW} strokeLinecap="round" fill="none" />
+    <Circle cx={9} cy={7} r={3} stroke={color} strokeWidth={SW} fill="none" />
+    <Path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2M16 3.13a4 4 0 010 7.75M21 21v-2a4 4 0 00-3-3.87" stroke={color} strokeWidth={SW} strokeLinecap="round" fill="none" />
   </Svg>
 );
 
@@ -232,38 +232,33 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: SHEET_HEIGHT,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
     overflow: 'hidden',
-    ...THEME_SHADOWS.elevated,
   },
   content: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
-  handle: { width: 40, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  header: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16 },
+  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: '#1E293B' },
-  closeBtn: { width: 40, height: 40, borderRadius: 14, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 20, fontFamily: 'Satoshi-Bold' },
+  closeBtn: { width: 40, height: 40, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   scrollWrapper: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20 },
+  scrollContent: { paddingHorizontal: 24 },
 
   // Input groups
   inputGroup: { marginBottom: 20 },
-  inputLabel: { fontSize: 13, fontWeight: '600', color: '#64748B', marginBottom: 8 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 16, paddingHorizontal: 16, height: 56, gap: 12 },
-  currencyPrefix: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
-  input: { flex: 1, fontSize: 16, fontWeight: '500', color: '#1E293B' },
+  inputLabel: { fontSize: 13, fontFamily: 'Satoshi-Bold', marginBottom: 8 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, paddingHorizontal: 16, height: 56, gap: 12 },
+  currencyPrefix: { fontSize: 16, fontFamily: 'Satoshi-Bold' },
+  input: { flex: 1, fontSize: 16, fontFamily: 'Satoshi-Medium' },
 
   // Duration
   durationRow: { flexDirection: 'row', gap: 10 },
-  durationChip: { flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: '#F1F5F9', alignItems: 'center' },
-  durationChipActive: { backgroundColor: '#EEF2FF', borderWidth: 2, borderColor: '#5B8DEF' },
-  durationText: { fontSize: 15, fontWeight: '600', color: '#64748B' },
-  durationTextActive: { color: '#1E293B' },
+  durationChip: { flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
+  durationText: { fontSize: 15, fontFamily: 'Satoshi-Bold' },
 
   // Submit
-  submitButton: { height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginTop: 8, ...THEME_SHADOWS.elevated },
+  submitButton: { height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
   submitButtonDisabled: { opacity: 0.5 },
-  submitButtonText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  submitButtonText: { fontSize: 16, fontFamily: 'Satoshi-Bold', color: '#FFF' },
 });
 
 export default CreateGroupSheet;

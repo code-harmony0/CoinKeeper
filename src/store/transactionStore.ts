@@ -14,7 +14,7 @@ interface TransactionStore {
   loading: boolean;
   loadTransactions: () => Promise<void>;
   addTransaction: (
-    transaction: Omit<Transaction, 'id' | 'date'>,
+    transaction: Omit<Transaction, 'id' | 'date'> & { date?: string },
   ) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   updateTransaction: (
@@ -103,7 +103,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
   addTransaction: async transaction => {
     try {
       const id = generateId();
-      const date = new Date().toISOString();
+      const date = transaction.date || new Date().toISOString();
       const newTx: Transaction = { ...transaction, id, date };
       const amountPaise = toPaise(String(newTx.amount));
 

@@ -1,5 +1,6 @@
-import { getDb } from '../store/database';
+import { getDb, getPreference, setPreference } from '../store/database';
 import { fromPaise } from '../utils/money';
+import { detectSubscriptions } from './subscriptionDetector';
 
 export interface Insight {
   id: string;
@@ -31,20 +32,39 @@ export const getBudgetStreak = async (): Promise<number> => {
   const db = getDb();
 
   try {
-    const budgetStr = await db.execute('SELECT value FROM preferences WHERE key = ?', ['monthly_budget']);
-    const budget = budgetStr.rows && budgetStr.rows.length > 0 ? parseFloat(budgetStr.rows[0].value as string) : 30000;
     const today = new Date();
-    const dailyBudget = budget / getDaysInMonth(today.getFullYear(), today.getMonth() + 1);
+    const budgetStr = await db.execute('SELECT wants_percent, needs_percent, savings_percent FROM budget_settings WHERE id = 1');
+    const budgetPct = budgetStr.rows && budgetStr.rows.length > 0 ? (budgetStr.rows[0].wants_percent as number) + (budgetStr.rows[0].needs_percent as number) : 80;
+    
+    // We estimate daily budget from previous month income for streak
+    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1).getTime();
+    const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
+    
+    const lastMonthIncome = await db.execute(
+      "SELECT SUM(amount_paise) as total FROM transactions WHERE type = 'income' AND occurred_at >= ? AND occurred_at < ?",
+      [lastMonthStart, thisMonthStart]
+    );
+    const prevIncome = fromPaise((lastMonthIncome.rows?.[0] as any)?.total || 0);
+    
+    // If no real income data, streak calculation is meaningless. Return 0.
+    if (prevIncome === 0) return 0;
+    
+    const estimatedBudget = prevIncome * (budgetPct / 100);
+    
+    const dailyBudget = estimatedBudget / getDaysInMonth(today.getFullYear(), today.getMonth() + 1);
 
+    const sixtyDaysAgo = today.getTime() - (60 * 24 * 60 * 60 * 1000);
     const dailyResult = await db.execute(`
       SELECT date(occurred_at / 1000, 'unixepoch') as day, SUM(amount_paise) as total_paise
       FROM transactions
-      WHERE type = 'expense'
+      WHERE type = 'expense' AND occurred_at >= ?
       GROUP BY day
       ORDER BY day DESC
-    `);
+    `, [sixtyDaysAgo]);
 
     const rows = (dailyResult.rows ?? []) as { day: string; total_paise: number }[];
+    if (rows.length === 0) return 0;
+    
     const spendByDay = new Map(rows.map((r) => [r.day, fromPaise(r.total_paise)]));
 
     let streak = 0;
@@ -69,7 +89,14 @@ export const getPrimaryGoal = async (): Promise<Goal | null> => {
   const db = getDb();
 
   try {
-    const result = await db.execute('SELECT id, name, targetAmount, currentAmount FROM goals ORDER BY rowid LIMIT 1');
+    const result = await db.execute(`
+      SELECT id, name, targetAmount, currentAmount 
+      FROM goals 
+      ORDER BY 
+        CASE WHEN name = 'Emergency Fund' THEN 0 ELSE 1 END,
+        (currentAmount * 1.0 / NULLIF(targetAmount, 0)) DESC 
+      LIMIT 1
+    `);
     if (!result.rows || result.rows.length === 0) return null;
 
     const row = result.rows[0] as any;
@@ -91,36 +118,50 @@ export const generateInsights = async (): Promise<Insight[]> => {
   const today = new Date();
 
   try {
-    // 1. Daily Safe Spending
-    const budgetStr = await db.execute('SELECT value FROM preferences WHERE key = ?', ['monthly_budget']);
-    const budget = budgetStr.rows && budgetStr.rows.length > 0 ? parseFloat(budgetStr.rows[0].value as string) : 30000;
+    // 1. Daily Safe Spending (Task 4.2)
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
+    
+    // Get total income this month
+    const incomeResult = await db.execute(
+      "SELECT SUM(amount_paise) as total_paise FROM transactions WHERE type = 'income' AND occurred_at >= ?",
+      [startOfMonth]
+    );
+    const monthlyIncome = fromPaise((incomeResult.rows?.[0] as any)?.total_paise || 0);
 
     // Get total spent this month
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
     const spentResult = await db.execute(
       "SELECT SUM(amount_paise) as total_paise FROM transactions WHERE type = 'expense' AND occurred_at >= ?",
       [startOfMonth]
     );
-    const spent = fromPaise((spentResult.rows?.[0] as any)?.total_paise || 0);
+    const monthlyExpenses = fromPaise((spentResult.rows?.[0] as any)?.total_paise || 0);
 
-    const daysLeft = getDaysInMonth(today.getFullYear(), today.getMonth() + 1) - today.getDate() + 1;
-    const remaining = budget - spent;
+    const daysInMonth = getDaysInMonth(today.getFullYear(), today.getMonth() + 1);
+    const daysLeft = Math.max(1, daysInMonth - today.getDate() + 1);
 
-    if (remaining > 0) {
-      const safeDaily = Math.floor(remaining / daysLeft);
+    if (monthlyIncome === 0) {
       insights.push({
-        id: 'safe-spending',
+        id: 'no-income',
         type: 'info',
-        title: 'Daily Safe Spending',
-        message: `Budget Left: ₹${remaining.toLocaleString()}\nDays Left: ${daysLeft}`,
-        value: `₹${safeDaily.toLocaleString()}`,
+        title: 'No Income Recorded',
+        message: 'Add your income to see your daily safe-to-spend limit.',
+        actionable: true,
       });
-    } else {
+    } else if (monthlyExpenses > monthlyIncome) {
       insights.push({
         id: 'over-budget',
         type: 'alert',
-        title: 'Budget Exceeded',
-        message: `You have exceeded your monthly budget of ₹${budget.toLocaleString()}.`,
+        title: 'Over Budget',
+        message: `You have exceeded your monthly income by ₹${(monthlyExpenses - monthlyIncome).toLocaleString()}.`,
+      });
+    } else {
+      const remaining = monthlyIncome - monthlyExpenses;
+      const safeDaily = Math.floor(remaining / daysLeft);
+      insights.push({
+        id: 'safe-spending',
+        type: 'success',
+        title: 'Daily Safe Spending',
+        message: `Income Left: ₹${remaining.toLocaleString()}\nDays Left: ${daysLeft}`,
+        value: `₹${safeDaily.toLocaleString()}`,
       });
     }
 
@@ -182,13 +223,62 @@ export const generateInsights = async (): Promise<Insight[]> => {
     if (catResult.rows && catResult.rows.length > 0) {
       const topCat = catResult.rows[0] as any;
       const topCatTotal = fromPaise(topCat.total_paise);
-      if (topCatTotal > 5000 && topCat.category !== 'Other') {
+      if (topCatTotal > 5000 && topCat.category !== 'Other' && topCat.category !== null) {
         insights.push({
           id: 'category-overspend',
           type: 'alert',
           title: `${topCat.category} Alert`,
           message: `You've spent ₹${topCatTotal.toLocaleString()} on ${topCat.category} this month.`,
         });
+      }
+    }
+
+    // 5. Detected Subscriptions (Task 4.5 & Product Audit Fix)
+    const todayStr = today.toISOString().slice(0, 10);
+    const lastSubScan = await getPreference('last_subscription_scan');
+    
+    if (lastSubScan !== todayStr) {
+      const subs = await detectSubscriptions();
+      if (subs.length > 0) {
+        insights.push({
+          id: 'new-subscriptions',
+          type: 'info',
+          title: 'Subscriptions Detected',
+          message: `Found ${subs.length} recurring payments (e.g. ${subs[0].merchant}). Consider adding them to your Bills to track them.`,
+        });
+      }
+      await setPreference('last_subscription_scan', todayStr);
+    } else {
+      // If we already scanned today, we can just query the subscriptions table for any autodetected ones
+      const recentSubsResult = await db.execute('SELECT * FROM subscriptions LIMIT 1');
+      if (recentSubsResult.rows && recentSubsResult.rows.length > 0) {
+         insights.push({
+          id: 'new-subscriptions',
+          type: 'info',
+          title: 'Subscriptions Detected',
+          message: `Found recurring payments. Consider adding them to your Bills to track them.`,
+        });
+      }
+    }
+
+    // 6. Goal Progress Notifications
+    const primaryGoal = await getPrimaryGoal();
+    if (primaryGoal && primaryGoal.targetAmount > 0) {
+      const progress = (primaryGoal.currentAmount / primaryGoal.targetAmount) * 100;
+      if (progress >= 50 && progress < 100) {
+        // Only show if not recently shown to avoid spamming
+        const lastGoalNotif = await getPreference(`goal_notif_${primaryGoal.id}`);
+        const currentMilestone = Math.floor(progress / 25) * 25; // 50 or 75
+        
+        if (lastGoalNotif !== currentMilestone.toString()) {
+          insights.push({
+            id: 'goal-progress',
+            type: 'success',
+            title: 'Goal Milestone!',
+            message: `You are ${currentMilestone}% of the way to your ${primaryGoal.name} goal! Keep it up.`,
+          });
+          await setPreference(`goal_notif_${primaryGoal.id}`, currentMilestone.toString());
+        }
       }
     }
 

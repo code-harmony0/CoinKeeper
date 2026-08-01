@@ -15,10 +15,12 @@ import {
   HelpCircle,
   ChevronRight,
   Moon,
+  PieChart,
+  Receipt,
+  Target,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSpecTheme } from '../../theme/specTheme';
-import { useTheme } from '../../hooks/useTheme';
 import { useOptionalAuth } from '../../hooks/useOptionalAuth';
 import { getPreference, setPreference } from '../../store/database';
 import { PressableScale } from '../../components/anim';
@@ -42,8 +44,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       scrollY.value = event.contentOffset.y;
     },
   });
-  const { colors, cardRadius, cardShadow, isDark: specIsDark } = useSpecTheme();
-  const { isDark, toggleTheme } = useTheme();
+  const { colors, cardRadius, cardShadow, isDark, toggleTheme } = useSpecTheme();
   const { userProfile, signOut } = useOptionalAuth();
   const [notifications, setNotifications] = useState(true);
 
@@ -103,7 +104,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
     // No-op placeholder for unimplemented rows; SettingsRow provides the tap feedback.
   }, []);
 
-  const profileIconPair = SETTINGS_TINTS.blue[specIsDark ? 'dark' : 'light'];
+  const profileIconPair = SETTINGS_TINTS.blue[isDark ? 'dark' : 'light'];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -190,6 +191,27 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
                 />
               }
             />
+            <SettingsDivider />
+            <SettingsRow 
+              icon={PieChart} 
+              tint="green" 
+              label="Budget Rule" 
+              onPress={() => navigation.navigate('Budget')} 
+            />
+            <SettingsDivider />
+            <SettingsRow 
+              icon={Receipt} 
+              tint="orange" 
+              label="Upcoming Bills" 
+              onPress={() => navigation.navigate('Bills')} 
+            />
+            <SettingsDivider />
+            <SettingsRow 
+              icon={Target} 
+              tint="purple" 
+              label="Savings Goals" 
+              onPress={() => navigation.navigate('Goals')} 
+            />
           </SettingsCard>
         </Animated.View>
 
@@ -256,7 +278,7 @@ const styles = StyleSheet.create({
 
   // Groups
   groupCard: {
-    marginBottom: 24,
+    marginBottom: 32,
   },
 });
 

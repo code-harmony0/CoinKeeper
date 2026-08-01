@@ -44,10 +44,10 @@ const SLIDES = [
   },
   {
     id: '2',
-    headline: 'Manage Chit Funds\nTogether',
-    subtext: 'Create groups, track contributions, and never miss a draw date.',
+    headline: 'Budget & Goals',
+    subtext: 'Set monthly budgets and track savings goals automatically.',
     accent: '#ECFDF5',
-    icon: 'group',
+    icon: 'budget',
   },
   {
     id: '3',
@@ -192,23 +192,15 @@ const SlideIllustration: React.FC<{ type: string }> = ({ type }) => {
     );
   }
 
-  if (type === 'group') {
+  if (type === 'budget') {
     return (
       <Svg width={140} height={140} viewBox="0 0 140 140" fill="none">
-        {/* Connected avatars */}
-        <Circle cx={45} cy={50} r={22} fill="#6EE7B7" opacity={0.4} />
-        <Circle cx={45} cy={50} r={14} stroke="#059669" strokeWidth={2.5} fill="none" />
-        <Circle cx={95} cy={50} r={22} fill="#93C5FD" opacity={0.4} />
-        <Circle cx={95} cy={50} r={14} stroke="#3B82F6" strokeWidth={2.5} fill="none" />
-        <Circle cx={70} cy={95} r={22} fill="#C4B5FD" opacity={0.4} />
-        <Circle cx={70} cy={95} r={14} stroke="#7C3AED" strokeWidth={2.5} fill="none" />
-        {/* Connection lines */}
-        <Path d="M55 60 L62 80" stroke="#CBD5E1" strokeWidth={2} strokeLinecap="round" />
-        <Path d="M85 60 L78 80" stroke="#CBD5E1" strokeWidth={2} strokeLinecap="round" />
-        <Path d="M55 48 L85 48" stroke="#CBD5E1" strokeWidth={2} strokeLinecap="round" />
-        {/* Center rupee */}
-        <Circle cx={70} cy={55} r={12} fill="#FEF3E2" stroke="#F59E0B" strokeWidth={2} />
-        <Path d="M66 52h8M66 58h8" stroke="#F59E0B" strokeWidth={1.5} strokeLinecap="round" />
+        {/* Shield/Goal shape */}
+        <Path d="M70 20 L110 35 L110 70 C110 100, 70 120, 70 120 C70 120, 30 100, 30 70 L30 35 Z" fill="#6EE7B7" opacity={0.4} />
+        <Path d="M70 20 L110 35 L110 70 C110 100, 70 120, 70 120 C70 120, 30 100, 30 70 L30 35 Z" stroke="#059669" strokeWidth={2.5} />
+        {/* Center check or star */}
+        <Circle cx={70} cy={65} r={15} fill="#FEF3E2" />
+        <Path d="M63 65 L68 70 L78 60" stroke="#059669" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
       </Svg>
     );
   }
