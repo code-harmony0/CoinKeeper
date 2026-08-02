@@ -1,3 +1,5 @@
+import { BudgetBucket } from '../utils/budgetBucket';
+
 export type CategoryHealth = 'healthy' | 'unused' | 'over_budget' | 'attention';
 
 export interface CategoryData {
@@ -5,6 +7,7 @@ export interface CategoryData {
   name: string;
   icon: string;
   color?: string;
+  budgetBucket?: BudgetBucket;
   usageCount: number;
   monthlySpend: number;
   trailingAverageSpend: number;

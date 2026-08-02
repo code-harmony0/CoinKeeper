@@ -43,6 +43,7 @@ export const useCategoryIntelligence = () => {
         c.name,
         c.icon,
         c.color,
+        c.budget_bucket,
         COUNT(t.id) as usageCount,
         SUM(CASE WHEN t.type = 'expense' AND t.occurred_at >= ? THEN t.amount_paise ELSE 0 END) as currentMonthSpendPaise
       FROM categories c
@@ -101,6 +102,7 @@ export const useCategoryIntelligence = () => {
           name: row.name,
           icon: row.icon || 'MoreHorizontal',
           color: row.color ?? undefined,
+          budgetBucket: row.budget_bucket ?? undefined,
           usageCount,
           monthlySpend,
           trailingAverageSpend,

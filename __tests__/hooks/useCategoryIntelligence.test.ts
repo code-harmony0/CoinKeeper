@@ -52,4 +52,17 @@ describe('useCategoryIntelligence', () => {
     expect(result.current.mergeSuggestions[0].categoryId).toBe('grocery');
     expect(result.current.mergeSuggestions[0].suggestedWithName).toBe('Groceries');
   });
+
+  it('passes through the category\'s budget bucket', async () => {
+    mockExecute
+      .mockResolvedValueOnce({ rows: [{ id: 'rent', name: 'Rent', icon: 'Home', color: null, budget_bucket: 'needs', usageCount: 1, currentMonthSpendPaise: 100000 }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ avgSpendPaise: 0 }] });
+
+    const { result } = renderHook(() => useCategoryIntelligence());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.categories[0].budgetBucket).toBe('needs');
+  });
 });

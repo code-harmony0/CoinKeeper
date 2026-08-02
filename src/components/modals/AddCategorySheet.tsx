@@ -24,6 +24,7 @@ import { PressableScale } from '../anim';
 import { getDb } from '../../store/database';
 import { v4 as uuidv4 } from 'uuid';
 import { CategoryData } from '../../types/category';
+import { BudgetBucket, classifyBudgetBucket } from '../../utils/budgetBucket';
 
 import * as Icons from 'lucide-react-native';
 
@@ -35,8 +36,14 @@ const ICON_GROUPS = [
 ];
 
 const COLORS = [
-  '#4F46E5', '#10B981', '#F59E0B', '#EF4444', 
+  '#4F46E5', '#10B981', '#F59E0B', '#EF4444',
   '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'
+];
+
+const BUCKET_OPTIONS: { id: BudgetBucket; label: string }[] = [
+  { id: 'needs', label: 'Needs' },
+  { id: 'wants', label: 'Wants' },
+  { id: 'savings', label: 'Savings' },
 ];
 
 interface Props {
@@ -58,6 +65,7 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess,
   const [name, setName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('MoreHorizontal');
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+  const [selectedBucket, setSelectedBucket] = useState<BudgetBucket>('wants');
   const [isAiSuggesting, setIsAiSuggesting] = useState(false);
 
   useEffect(() => {
@@ -67,6 +75,7 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess,
       setName(editing?.name ?? '');
       setSelectedIcon(editing?.icon ?? 'MoreHorizontal');
       setSelectedColor(editing?.color ?? COLORS[0]);
+      setSelectedBucket(editing?.budgetBucket ?? classifyBudgetBucket(editing?.name ?? ''));
     } else {
       backdropOpacity.value = withTiming(0, { duration: 200 });
       translateY.value = withSpring(800, SHEET_SPRING);
@@ -107,14 +116,14 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess,
     try {
       if (editing) {
         await db.execute(
-          'UPDATE categories SET name = ?, icon = ?, color = ? WHERE id = ?',
-          [name.trim(), selectedIcon, selectedColor, editing.id],
+          'UPDATE categories SET name = ?, icon = ?, color = ?, budget_bucket = ? WHERE id = ?',
+          [name.trim(), selectedIcon, selectedColor, selectedBucket, editing.id],
         );
       } else {
         const id = uuidv4();
         await db.execute(
-          'INSERT INTO categories (id, name, icon, color) VALUES (?, ?, ?, ?)',
-          [id, name.trim(), selectedIcon, selectedColor],
+          'INSERT INTO categories (id, name, icon, color, budget_bucket) VALUES (?, ?, ?, ?, ?)',
+          [id, name.trim(), selectedIcon, selectedColor, selectedBucket],
         );
       }
     } catch (e) {
@@ -198,6 +207,31 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess,
               />
             </View>
 
+            {/* Budget Bucket */}
+            <View>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Budget Bucket</Text>
+              <View style={styles.bucketRow}>
+                {BUCKET_OPTIONS.map(opt => {
+                  const isSelected = selectedBucket === opt.id;
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      testID={`bucket-option-${opt.id}`}
+                      onPress={() => setSelectedBucket(opt.id)}
+                      style={[
+                        styles.bucketOption,
+                        { backgroundColor: isSelected ? selectedColor : colors.chipBg, borderRadius: cardRadius },
+                      ]}
+                    >
+                      <Text style={{ color: isSelected ? '#fff' : colors.textPrimary, fontFamily: 'Satoshi-Bold', fontSize: 13 }}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
             {/* Icons */}
             <View>
               <Text style={[styles.label, { color: colors.textSecondary }]}>Icon</Text>
@@ -259,6 +293,9 @@ const styles = StyleSheet.create({
   
   colorOption: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   colorDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#FFF' },
+
+  bucketRow: { flexDirection: 'row', gap: 8 },
+  bucketOption: { flex: 1, height: 44, justifyContent: 'center', alignItems: 'center' },
   
   iconGroup: { marginBottom: 16 },
   groupTitle: { fontSize: 12, fontFamily: 'Satoshi-Bold', textTransform: 'uppercase', marginBottom: 8, opacity: 0.7 },
