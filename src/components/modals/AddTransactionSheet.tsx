@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Keyboard,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useSpecTheme } from '../../theme/specTheme';
 import { getDb } from '../../store/database';
@@ -16,7 +17,7 @@ import { TransactionPredictionService, PredictionResult } from '../../services/T
 import { EcosystemIntegrationService } from '../../services/EcosystemIntegrationService';
 import { ReceiptScanService } from '../../services/ReceiptScanService';
 import { EntrySource, TransactionDraft } from '../../types/transactionDraft';
-import { launchCamera } from 'react-native-image-picker';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import Animated, { FadeInUp, FadeOutUp, Layout } from 'react-native-reanimated';
 
 // UI Components
@@ -147,11 +148,20 @@ export const AddTransactionSheet: React.FC<Props> = ({
     
     if (mode === 'scan') {
       try {
-        const result = await launchCamera({
+        let result = await launchCamera({
           mediaType: 'photo',
           cameraType: 'back',
           quality: 0.8,
         });
+
+        // Fallback for simulators without a camera
+        if (result.errorCode === 'camera_unavailable') {
+          Alert.alert('Camera Unavailable', 'Falling back to photo library.');
+          result = await launchImageLibrary({
+            mediaType: 'photo',
+            quality: 0.8,
+          });
+        }
 
         if (result.assets && result.assets.length > 0 && result.assets[0].uri) {
           setIsSaving(true);
@@ -168,7 +178,8 @@ export const AddTransactionSheet: React.FC<Props> = ({
             if (scannedDraft.merchant_name) setMerchantInput(scannedDraft.merchant_name);
           } catch (e) {
             console.error(e);
-            // Optionally set some error state
+            Alert.alert('Scan Failed', 'Could not process the receipt.');
+            setActiveMode('manual');
           } finally {
             setIsSaving(false);
           }
@@ -176,8 +187,9 @@ export const AddTransactionSheet: React.FC<Props> = ({
           // If cancelled, maybe revert to manual
           setActiveMode('manual');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        Alert.alert('Error', err?.message || 'Could not launch camera.');
         setActiveMode('manual');
       }
     }

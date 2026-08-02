@@ -33,6 +33,10 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string/>
+	<key>NSCameraUsageDescription</key>
+	<string>CoinKeeper needs camera access to scan and digitize your receipts for automatic expense tracking.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CoinKeeper needs photo library access so you can upload existing receipts for automatic expense tracking.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>
