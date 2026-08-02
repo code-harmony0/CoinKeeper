@@ -1,4 +1,5 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import { CategoriesScreen } from '../../src/screens/user/CategoriesScreen';
 
@@ -7,18 +8,33 @@ jest.mock('../../src/store/database', () => ({
   getDb: () => ({ execute: mockExecute }),
 }));
 
+// CategoryIntelligenceShell's delete confirmation runs the actual DELETE from
+// the destructive button's onPress — auto-press it here so the confirm flow
+// can be exercised without a real native Alert UI.
+jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
+  const destructive = buttons?.find(b => b.style === 'destructive');
+  destructive?.onPress?.();
+});
+
 const navigation = { goBack: jest.fn() } as any;
+
+const rowFor = (overrides: Partial<Record<string, any>>) => ({
+  id: 'food',
+  name: 'Food',
+  icon: 'Utensils',
+  color: null,
+  usageCount: 0,
+  currentMonthSpendPaise: 0,
+  ...overrides,
+});
 
 describe('CategoriesScreen', () => {
   beforeEach(() => mockExecute.mockReset());
 
   it('lists categories with their transaction counts', async () => {
-    mockExecute.mockResolvedValueOnce({
-      rows: [
-        { id: 'food', name: 'Food', icon: 'food', usageCount: 12 },
-        { id: 'transport', name: 'Transport', icon: 'car', usageCount: 0 },
-      ],
-    });
+    mockExecute
+      .mockResolvedValueOnce({ rows: [rowFor({ id: 'food', name: 'Food', usageCount: 12 }), rowFor({ id: 'transport', name: 'Transport', icon: 'Car' })] })
+      .mockResolvedValue({ rows: [] });
 
     const { findByText } = render(<CategoriesScreen navigation={navigation} route={{} as any} />);
 
@@ -28,19 +44,15 @@ describe('CategoriesScreen', () => {
 
   it('blocks deleting a category still in use, allows deleting an unused one', async () => {
     mockExecute
-      .mockResolvedValueOnce({
-        rows: [
-          { id: 'food', name: 'Food', icon: 'food', usageCount: 12 },
-          { id: 'transport', name: 'Transport', icon: 'car', usageCount: 0 },
-        ],
-      })
-      .mockResolvedValueOnce({}); // the DELETE for the unused one
+      .mockResolvedValueOnce({ rows: [rowFor({ id: 'food', name: 'Food', usageCount: 12 }), rowFor({ id: 'transport', name: 'Transport', icon: 'Car' })] })
+      .mockResolvedValue({ rows: [] });
 
     const { findByTestId } = render(<CategoriesScreen navigation={navigation} route={{} as any} />);
 
     const deleteUsed = await findByTestId('delete-category-food');
     await act(async () => fireEvent.press(deleteUsed));
-    expect(mockExecute).toHaveBeenCalledTimes(1); // only the initial SELECT — DELETE was blocked
+    // usageCount 12 -> blocked, no DELETE call issued
+    expect(mockExecute.mock.calls.some(c => String(c[0]).includes('DELETE FROM categories'))).toBe(false);
 
     const deleteUnused = await findByTestId('delete-category-transport');
     await act(async () => fireEvent.press(deleteUnused));
