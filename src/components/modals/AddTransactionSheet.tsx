@@ -8,6 +8,8 @@ import {
   Keyboard,
   ScrollView,
   Alert,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import { useSpecTheme } from '../../theme/specTheme';
 import { getDb } from '../../store/database';
@@ -148,6 +150,24 @@ export const AddTransactionSheet: React.FC<Props> = ({
     
     if (mode === 'scan') {
       try {
+        if (Platform.OS === 'android') {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.CAMERA,
+            {
+              title: 'Camera Permission',
+              message: 'CoinKeeper needs camera access to scan your receipts.',
+              buttonNeutral: 'Ask Me Later',
+              buttonNegative: 'Cancel',
+              buttonPositive: 'OK',
+            }
+          );
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+            Alert.alert('Permission Denied', 'Camera permission is required to scan receipts.');
+            setActiveMode('manual');
+            return;
+          }
+        }
+
         let result = await launchCamera({
           mediaType: 'photo',
           cameraType: 'back',
