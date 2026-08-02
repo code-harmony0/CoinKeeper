@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSpecTheme } from '../../theme/specTheme';
 import { TransactionDraft } from '../../types/transactionDraft';
-import { CheckCircle2, AlertTriangle, MessageSquare, Camera } from 'lucide-react-native';
+import { MessageSquare, Camera } from 'lucide-react-native';
 
 interface Props {
   draft: TransactionDraft;
@@ -11,9 +11,7 @@ interface Props {
 
 export const TransactionPreviewCard: React.FC<Props> = ({ draft, mode }) => {
   const { colors, cardRadius } = useSpecTheme();
-  
-  const confidence = draft.confidence || 0;
-  
+
   let Icon = mode === 'sms' ? MessageSquare : Camera;
 
   return (
@@ -77,28 +75,6 @@ export const TransactionPreviewCard: React.FC<Props> = ({ draft, mode }) => {
           )}
         </View>
       )}
-
-      <View style={[styles.footer, { borderTopColor: colors.border }]}>
-        <View style={styles.confidenceRow}>
-          {confidence >= 80 ? (
-            <CheckCircle2 size={16} color={colors.success} />
-          ) : (
-            <AlertTriangle size={16} color={(colors as any).warning || '#F59E0B'} />
-          )}
-          <Text style={[
-            styles.confidenceText, 
-            { color: confidence >= 80 ? colors.success : ((colors as any).warning || '#F59E0B') }
-          ]}>
-            {confidence}% Confidence
-          </Text>
-        </View>
-        
-        {draft.is_duplicate && (
-          <View style={[styles.badge, { backgroundColor: colors.danger + '20' }]}>
-            <Text style={[styles.badgeText, { color: colors.danger }]}>Duplicate Risk</Text>
-          </View>
-        )}
-      </View>
     </View>
   );
 };
@@ -174,30 +150,4 @@ const styles = StyleSheet.create({
   lineItemsContainer: {
     marginTop: 4,
   },
-  footer: {
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  confidenceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  confidenceText: {
-    fontFamily: 'Satoshi-Bold',
-    fontSize: 14,
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 100,
-  },
-  badgeText: {
-    fontFamily: 'Satoshi-Bold',
-    fontSize: 12,
-  }
 });
