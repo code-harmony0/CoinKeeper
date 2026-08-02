@@ -9,14 +9,16 @@ import { classifyBudgetBucket } from '../../utils/budgetBucket';
  * guess (see classifyBudgetBucket) so nothing is left NULL after upgrade.
  */
 export const migrate009BudgetBucket = async (db: DB): Promise<void> => {
-  await db.execute('ALTER TABLE categories ADD COLUMN budget_bucket TEXT DEFAULT NULL;');
+  await db.transaction(async tx => {
+    await tx.execute('ALTER TABLE categories ADD COLUMN budget_bucket TEXT DEFAULT NULL;');
 
-  const result = await db.execute('SELECT id, name FROM categories;');
-  const rows = (result.rows ?? []) as { id: string; name: string }[];
-  for (const row of rows) {
-    await db.execute('UPDATE categories SET budget_bucket = ? WHERE id = ?;', [
-      classifyBudgetBucket(row.name),
-      row.id,
-    ]);
-  }
+    const result = await tx.execute('SELECT id, name FROM categories;');
+    const rows = (result.rows ?? []) as { id: string; name: string }[];
+    for (const row of rows) {
+      await tx.execute('UPDATE categories SET budget_bucket = ? WHERE id = ?;', [
+        classifyBudgetBucket(row.name),
+        row.id,
+      ]);
+    }
+  });
 };
