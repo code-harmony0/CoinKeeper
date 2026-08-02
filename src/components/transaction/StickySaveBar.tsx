@@ -12,18 +12,20 @@ interface Props {
   isSuccess?: boolean;
   budgetImpact?: { exceedsBudget: boolean; remainingAfter: number } | null;
   predictionReason?: string;
+  isRecurring?: boolean;
   category?: string;
   amount?: number;
   customLabel?: string;
   customSubLabel?: string;
 }
 
-export const StickySaveBar: React.FC<Props> = ({ 
-  onSave, 
-  isValid, 
-  isLoading, 
+export const StickySaveBar: React.FC<Props> = ({
+  onSave,
+  isValid,
+  isLoading,
   isSuccess,
   budgetImpact,
+  isRecurring,
   category,
   amount,
   customLabel,
@@ -39,6 +41,10 @@ export const StickySaveBar: React.FC<Props> = ({
     btnColor = (colors as any).warning || '#F59E0B';
     label = 'Save Anyway';
     subLabel = 'Budget Alert';
+  }
+
+  if (isRecurring && !budgetImpact?.exceedsBudget) {
+    subLabel = 'Looks Recurring';
   }
 
   if (isSuccess) {
