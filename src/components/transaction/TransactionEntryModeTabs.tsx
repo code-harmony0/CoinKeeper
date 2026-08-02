@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useSpecTheme } from '../../theme/specTheme';
 import { EntrySource } from '../../types/transactionDraft';
-import { Plus, Camera, MessageSquare, Clock } from 'lucide-react-native';
+import { Plus, Camera, MessageSquare } from 'lucide-react-native';
 
 interface Props {
   activeMode: EntrySource;
@@ -15,9 +15,8 @@ export const TransactionEntryModeTabs: React.FC<Props> = ({ activeMode, onModeCh
 
   const TABS = [
     { id: 'manual', label: 'Type', Icon: Plus },
-    { id: 'scan', label: 'Scan', Icon: Camera },
     { id: 'sms', label: 'SMS', Icon: MessageSquare },
-    { id: 'recent', label: 'Recent', Icon: Clock },
+    { id: 'scan', label: 'Scan', Icon: Camera },
   ] as const;
 
   return (
