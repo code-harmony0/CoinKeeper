@@ -23,6 +23,7 @@ import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
 import { getDb } from '../../store/database';
 import { v4 as uuidv4 } from 'uuid';
+import { CategoryData } from '../../types/category';
 
 import * as Icons from 'lucide-react-native';
 
@@ -42,11 +43,12 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  editing?: CategoryData;
 }
 
 const SHEET_SPRING = { damping: 15, stiffness: 300 };
 
-export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess }) => {
+export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess, editing }) => {
   const { colors, cardRadius, iconShadow } = useSpecTheme();
   const insets = useSafeAreaInsets();
 
@@ -62,14 +64,14 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess 
     if (visible) {
       backdropOpacity.value = withTiming(1, { duration: 200 });
       translateY.value = withSpring(0, SHEET_SPRING);
-      setName('');
-      setSelectedIcon('MoreHorizontal');
-      setSelectedColor(COLORS[0]);
+      setName(editing?.name ?? '');
+      setSelectedIcon(editing?.icon ?? 'MoreHorizontal');
+      setSelectedColor(editing?.color ?? COLORS[0]);
     } else {
       backdropOpacity.value = withTiming(0, { duration: 200 });
       translateY.value = withSpring(800, SHEET_SPRING);
     }
-  }, [visible, translateY, backdropOpacity]);
+  }, [visible, translateY, backdropOpacity, editing]);
 
   // AI icon mapping heuristic
   useEffect(() => {
@@ -101,15 +103,23 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess 
   const handleSave = async () => {
     if (!name.trim()) return;
     const db = getDb();
-    const id = uuidv4();
-    // Assuming schema allows color. If not, color is skipped or stored in metadata. We'll try to add it.
+
     try {
-      await db.execute(
-        'INSERT INTO categories (id, name, icon) VALUES (?, ?, ?)',
-        [id, name.trim(), selectedIcon] // Skipping color insert to avoid schema error if column not present
-      );
+      if (editing) {
+        await db.execute(
+          'UPDATE categories SET name = ?, icon = ?, color = ? WHERE id = ?',
+          [name.trim(), selectedIcon, selectedColor, editing.id],
+        );
+      } else {
+        const id = uuidv4();
+        await db.execute(
+          'INSERT INTO categories (id, name, icon, color) VALUES (?, ?, ?, ?)',
+          [id, name.trim(), selectedIcon, selectedColor],
+        );
+      }
     } catch (e) {
-      console.warn('Failed to insert category', e);
+      console.warn('Failed to save category', e);
+      return;
     }
     onSuccess();
     onClose();
@@ -132,7 +142,9 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess 
         <Animated.View style={[styles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + 16 }, animatedSheet]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.textPrimary }]}>New Category</Text>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>
+              {editing ? 'Edit Category' : 'New Category'}
+            </Text>
             <PressableScale onPress={onClose} style={[styles.closeBtn, { backgroundColor: colors.chipBg }]}>
               <X size={20} color={colors.textPrimary} />
             </PressableScale>
@@ -216,7 +228,9 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess 
               style={[styles.saveBtn, { backgroundColor: name.trim() ? selectedColor : colors.chipBg, borderRadius: cardRadius }]}
               disabled={!name.trim()}
             >
-              <Text style={[styles.saveText, { color: name.trim() ? '#FFF' : colors.textSecondary }]}>Save Category</Text>
+              <Text style={[styles.saveText, { color: name.trim() ? '#FFF' : colors.textSecondary }]}>
+                {editing ? 'Save Changes' : 'Save Category'}
+              </Text>
             </PressableScale>
 
           </ScrollView>
