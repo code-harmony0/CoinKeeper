@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
   PermissionsAndroid,
+  ActivityIndicator,
 } from 'react-native';
 import { useSpecTheme } from '../../theme/specTheme';
 import { getDb } from '../../store/database';
@@ -18,6 +19,7 @@ import { TransactionDraftService } from '../../services/TransactionDraftService'
 import { TransactionPredictionService, PredictionResult } from '../../services/TransactionPredictionService';
 import { EcosystemIntegrationService } from '../../services/EcosystemIntegrationService';
 import { ReceiptScanService } from '../../services/ReceiptScanService';
+import { fetchRecentSms, parseSmsToDraft, SmsMessage } from '../../services/smsParserService';
 import { EntrySource, TransactionDraft } from '../../types/transactionDraft';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import Animated, { FadeInUp, FadeOutUp, Layout } from 'react-native-reanimated';
@@ -25,16 +27,24 @@ import Animated, { FadeInUp, FadeOutUp, Layout } from 'react-native-reanimated';
 // UI Components
 import { TransactionEntryShell } from '../transaction/TransactionEntryShell';
 import { TransactionEntryModeTabs } from '../transaction/TransactionEntryModeTabs';
-import { AiAssistantCard } from '../transaction/AiAssistantCard';
-import { TimelineSuggestions } from '../transaction/TimelineSuggestions';
+import { PredictionBanner } from '../transaction/PredictionBanner';
+import { SmartSuggestionsSection } from '../transaction/SmartSuggestionsSection';
 import { TransactionPreviewCard } from '../transaction/TransactionPreviewCard';
+import { ReceiptPreviewCard } from '../transaction/ReceiptPreviewCard';
+import { SmsInboxRow } from '../transaction/SmsInboxRow';
 import { StickySaveBar } from '../transaction/StickySaveBar';
-import * as Icons from 'lucide-react-native';
+
+const SMS_INBOX_LIMIT = 5;
 
 interface Props {
   visible: boolean;
   onClose: () => void;
   onSubmit: (draft: TransactionDraft) => void;
+}
+
+interface MerchantItem {
+  merchant_name: string;
+  category_id: string;
 }
 
 export const AddTransactionSheet: React.FC<Props> = ({
@@ -46,48 +56,54 @@ export const AddTransactionSheet: React.FC<Props> = ({
 
   const [draft, setDraft] = useState<TransactionDraft>(() => TransactionDraftService.createDraft('manual'));
   const [activeMode, setActiveMode] = useState<EntrySource>('manual');
-  
+
   const [amountInput, setAmountInput] = useState('');
   const [merchantInput, setMerchantInput] = useState('');
   const [autocompleteResults, setAutocompleteResults] = useState<{ merchant_name: string; category_id: string }[]>([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
-  
+
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [budgetImpact, setBudgetImpact] = useState<{ exceedsBudget: boolean; remainingAfter: number, budgetTotal: number } | null>(null);
-  
-  const [timelineSuggestions, setTimelineSuggestions] = useState<any[]>([]);
+
+  // Manual mode: SmartSuggestionsSection data
+  const [favorites, setFavorites] = useState<MerchantItem[]>([]);
+  const [recents, setRecents] = useState<MerchantItem[]>([]);
+  const [quickAmounts, setQuickAmounts] = useState<number[]>([]);
+
+  // SMS mode
+  const [smsDrafts, setSmsDrafts] = useState<TransactionDraft[]>([]);
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [smsError, setSmsError] = useState<string | null>(null);
+  const [selectedSmsId, setSelectedSmsId] = useState<string | null>(null);
+
+  // Scan mode
+  const [receiptImageUri, setReceiptImageUri] = useState<string | undefined>(undefined);
+  const [isScanningReceipt, setIsScanningReceipt] = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
   const amountRef = useRef<TextInput>(null);
 
-  // Load Timeline Suggestions
+  // Load SmartSuggestionsSection data (Manual mode)
   useEffect(() => {
-    const loadData = async () => {
-      const suggestions: any[] = [];
-      const favs = await MerchantLearningService.getFavorites(3);
-      favs.forEach(f => suggestions.push({ ...f, label: 'Favorite', amount_paise: 0 })); // amount 0 means it just sets merchant
+    const loadSuggestions = async () => {
+      const [favs, recs] = await Promise.all([
+        MerchantLearningService.getFavorites(3),
+        MerchantLearningService.getRecent(5),
+      ]);
+      setFavorites(favs);
+      setRecents(recs);
 
       const db = getDb();
-      const recRes = await db.execute(`
-        SELECT merchant_name, category_id, amount_paise, occurred_at 
-        FROM transactions 
-        ORDER BY occurred_at DESC LIMIT 5
-      `);
-      if (recRes?.rows) {
-        (recRes.rows as any[]).forEach(r => {
-          const isToday = new Date(r.occurred_at).toDateString() === new Date().toDateString();
-          suggestions.push({
-            merchant_name: r.merchant_name,
-            category_id: r.category_id,
-            amount_paise: r.amount_paise,
-            label: isToday ? 'Today' : 'Earlier',
-          });
-        });
+      const res = await db.execute(
+        `SELECT DISTINCT amount FROM transactions ORDER BY date DESC LIMIT 4`
+      );
+      if (res?.rows) {
+        setQuickAmounts((res.rows as any[]).map(r => Math.round(r.amount * 100)));
       }
-      setTimelineSuggestions(suggestions);
     };
-    if (visible) loadData();
+    if (visible) loadSuggestions();
   }, [visible]);
 
   // Autofocus amount on manual mode
@@ -97,15 +113,17 @@ export const AddTransactionSheet: React.FC<Props> = ({
     }
   }, [visible, activeMode]);
 
-  // Prediction Engine hook
+  // Prediction Engine hook — manual mode only (SMS/scan drafts already carry their own prediction)
   useEffect(() => {
+    if (activeMode !== 'manual') return;
+
     const runPredictions = async () => {
       const numAmount = parseFloat(amountInput) || 0;
       const updatedDraft = {
         ...draft,
         amount_paise: numAmount * 100,
         merchant_name: merchantInput.trim() || undefined,
-        source: activeMode
+        source: activeMode,
       };
       setDraft(updatedDraft);
 
@@ -144,11 +162,33 @@ export const AddTransactionSheet: React.FC<Props> = ({
     search();
   }, [merchantInput, showAutocomplete]);
 
+  const loadSmsInbox = useCallback(async () => {
+    setSmsLoading(true);
+    setSmsError(null);
+    try {
+      const messages: SmsMessage[] = await fetchRecentSms(SMS_INBOX_LIMIT);
+      const parsed: TransactionDraft[] = [];
+      for (const m of messages) {
+        const result = await parseSmsToDraft(m);
+        if (result) parsed.push(result);
+      }
+      setSmsDrafts(parsed);
+    } catch (e) {
+      setSmsError('Could not read SMS inbox.');
+    } finally {
+      setSmsLoading(false);
+    }
+  }, []);
+
   const handleModeChange = async (mode: EntrySource) => {
     setActiveMode(mode);
     setDraft(prev => ({ ...prev, source: mode }));
-    
-    if (mode === 'scan') {
+
+    if (mode === 'sms' && smsDrafts.length === 0 && !smsLoading) {
+      loadSmsInbox();
+    }
+
+    if (mode === 'scan' && !receiptImageUri) {
       try {
         if (Platform.OS === 'android') {
           const granted = await PermissionsAndroid.request(
@@ -184,16 +224,13 @@ export const AddTransactionSheet: React.FC<Props> = ({
         }
 
         if (result.assets && result.assets.length > 0 && result.assets[0].uri) {
-          setIsSaving(true);
           const uri = result.assets[0].uri;
-          
+          setReceiptImageUri(uri);
+          setIsScanningReceipt(true);
+
           try {
             const scannedDraft = await ReceiptScanService.processReceiptImage(uri);
-            setDraft({
-              ...scannedDraft,
-              source: 'scan'
-            });
-            // Update fields manually if they are empty so the user sees them in UI
+            setDraft({ ...scannedDraft, source: 'scan' });
             if (scannedDraft.amount_paise) setAmountInput((scannedDraft.amount_paise / 100).toString());
             if (scannedDraft.merchant_name) setMerchantInput(scannedDraft.merchant_name);
           } catch (e) {
@@ -201,10 +238,9 @@ export const AddTransactionSheet: React.FC<Props> = ({
             Alert.alert('Scan Failed', 'Could not process the receipt.');
             setActiveMode('manual');
           } finally {
-            setIsSaving(false);
+            setIsScanningReceipt(false);
           }
         } else {
-          // If cancelled, maybe revert to manual
           setActiveMode('manual');
         }
       } catch (err: any) {
@@ -215,30 +251,48 @@ export const AddTransactionSheet: React.FC<Props> = ({
     }
   };
 
-  const applySuggestion = (s: any) => {
-    if (s.amount_paise) setAmountInput((s.amount_paise / 100).toString());
-    setMerchantInput(s.merchant_name);
+  const applySuggestionMerchant = (item: MerchantItem) => {
+    setMerchantInput(item.merchant_name);
     setShowAutocomplete(false);
   };
 
-  const applyMerchant = (merchant: string, categoryId?: string) => {
+  const applySuggestionAmount = (amountPaise: number) => {
+    setAmountInput((amountPaise / 100).toString());
+  };
+
+  const applyMerchant = (merchant: string) => {
     setMerchantInput(merchant);
     setShowAutocomplete(false);
+  };
+
+  const selectSmsDraft = (item: TransactionDraft) => {
+    setSelectedSmsId(item.id);
+    setDraft({ ...item, source: 'sms' });
+    setAmountInput(((item.amount_paise || 0) / 100).toString());
+    setMerchantInput(item.merchant_name || '');
+    setPrediction({
+      categoryId: item.category_id || null,
+      accountId: null,
+      isRecurring: !!item.is_recurring_candidate,
+      isDuplicate: !!item.is_duplicate,
+      predictionReason: item.prediction_reason || null,
+      confidence: item.confidence || 0,
+    });
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     Keyboard.dismiss();
-    
-    // Finalize Draft
+
     const finalCategory = prediction?.categoryId || draft.category_id || 'unknown';
-    const finalDraft = {
+    const finalDraft: TransactionDraft = {
       ...draft,
       amount_paise: (parseFloat(amountInput) || 0) * 100,
       merchant_name: merchantInput.trim() || undefined,
       category_id: finalCategory,
       is_duplicate: prediction?.isDuplicate || false,
       prediction_reason: prediction?.predictionReason || undefined,
+      receipt_image_uri: receiptImageUri || draft.receipt_image_uri,
     };
 
     if (finalDraft.merchant_name) {
@@ -264,6 +318,10 @@ export const AddTransactionSheet: React.FC<Props> = ({
     setDraft(TransactionDraftService.createDraft('manual'));
     setPrediction(null);
     setBudgetImpact(null);
+    setActiveMode('manual');
+    setSmsDrafts([]);
+    setSelectedSmsId(null);
+    setReceiptImageUri(undefined);
   };
 
   const amountIsEmpty = parseFloat(amountInput) === 0 || amountInput === '';
@@ -273,12 +331,13 @@ export const AddTransactionSheet: React.FC<Props> = ({
   const headerContext = `Add Expense • ${new Date().toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })}`;
 
   const footer = (
-    <StickySaveBar 
-      onSave={handleSave} 
-      isValid={isValid} 
-      isLoading={isSaving} 
+    <StickySaveBar
+      onSave={handleSave}
+      isValid={isValid}
+      isLoading={isSaving}
       isSuccess={isSuccess}
       budgetImpact={budgetImpact}
+      isRecurring={prediction?.isRecurring}
       category={prediction?.categoryId || draft.category_id}
       amount={parseFloat(amountInput) || 0}
     />
@@ -286,80 +345,145 @@ export const AddTransactionSheet: React.FC<Props> = ({
 
   return (
     <TransactionEntryShell visible={visible} onClose={onClose} footer={footer} headerContext={headerContext}>
-      
+
       <TransactionEntryModeTabs activeMode={activeMode} onModeChange={handleModeChange} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        
-        {/* STEP 1: HERO AMOUNT */}
-        <Animated.View layout={Layout.springify()} style={styles.heroAmountContainer}>
-          <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>₹</Text>
-          <TextInput
-            ref={amountRef}
-            style={[styles.heroAmountInput, { color: colors.textPrimary }]}
-            placeholder="0"
-            placeholderTextColor={colors.textSecondary}
-            value={amountInput}
-            onChangeText={setAmountInput}
-            keyboardType="decimal-pad"
-            maxLength={9}
-          />
-        </Animated.View>
 
-        {/* TIMELINE SUGGESTIONS (Only when amount is empty) */}
-        {activeMode === 'manual' && amountIsEmpty && (
-          <TimelineSuggestions suggestions={timelineSuggestions} onSelect={applySuggestion} />
-        )}
-
-        {/* STEP 2: MERCHANT */}
-        {activeMode === 'manual' && !amountIsEmpty && (
-          <Animated.View entering={FadeInUp} exiting={FadeOutUp} layout={Layout.springify()} style={styles.dynamicContent}>
-            <View style={[styles.inputGroup, { backgroundColor: colors.chipBg, borderRadius: cardRadius }]}>
+        {activeMode === 'manual' && (
+          <>
+            {/* STEP 1: HERO AMOUNT */}
+            <Animated.View layout={Layout.springify()} style={styles.heroAmountContainer}>
+              <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>₹</Text>
               <TextInput
-                style={[styles.merchantInput, { color: colors.textPrimary }]}
-                placeholder="Where did you spend?"
+                ref={amountRef}
+                style={[styles.heroAmountInput, { color: colors.textPrimary }]}
+                placeholder="0"
                 placeholderTextColor={colors.textSecondary}
-                value={merchantInput}
-                onChangeText={(text) => {
-                  setMerchantInput(text);
-                  setShowAutocomplete(true);
-                }}
-                onFocus={() => setShowAutocomplete(true)}
+                value={amountInput}
+                onChangeText={setAmountInput}
+                keyboardType="decimal-pad"
+                maxLength={9}
               />
-            </View>
+            </Animated.View>
 
-            {showAutocomplete && autocompleteResults.length > 0 && (
-              <View style={[styles.autocompleteContainer, { backgroundColor: colors.surfaceElevated, borderRadius: cardRadius }]}>
-                {autocompleteResults.map((res, i) => (
-                  <TouchableOpacity
-                    key={i}
-                    style={styles.autocompleteRow}
-                    onPress={() => applyMerchant(res.merchant_name, res.category_id)}
-                  >
-                    <Text style={[styles.autocompleteText, { color: colors.textPrimary }]}>{res.merchant_name}</Text>
-                  </TouchableOpacity>
-                ))}
+            {amountIsEmpty && (
+              <SmartSuggestionsSection
+                favorites={favorites}
+                recents={recents}
+                quickAmounts={quickAmounts}
+                onSelectMerchant={applySuggestionMerchant}
+                onSelectAmount={applySuggestionAmount}
+              />
+            )}
+
+            {!amountIsEmpty && (
+              <Animated.View entering={FadeInUp} exiting={FadeOutUp} layout={Layout.springify()} style={styles.dynamicContent}>
+                <View style={[styles.inputGroup, { backgroundColor: colors.chipBg, borderRadius: cardRadius }]}>
+                  <TextInput
+                    style={[styles.merchantInput, { color: colors.textPrimary }]}
+                    placeholder="Where did you spend?"
+                    placeholderTextColor={colors.textSecondary}
+                    value={merchantInput}
+                    onChangeText={(text) => {
+                      setMerchantInput(text);
+                      setShowAutocomplete(true);
+                    }}
+                    onFocus={() => setShowAutocomplete(true)}
+                  />
+                </View>
+
+                {showAutocomplete && autocompleteResults.length > 0 && (
+                  <View style={[styles.autocompleteContainer, { backgroundColor: colors.surfaceElevated, borderRadius: cardRadius }]}>
+                    {autocompleteResults.map((res, i) => (
+                      <TouchableOpacity
+                        key={i}
+                        style={styles.autocompleteRow}
+                        onPress={() => applyMerchant(res.merchant_name)}
+                      >
+                        <Text style={[styles.autocompleteText, { color: colors.textPrimary }]}>{res.merchant_name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </Animated.View>
+            )}
+
+            {!merchantIsEmpty && prediction?.categoryId && (
+              <View style={styles.dynamicContent}>
+                <PredictionBanner
+                  variant="manual"
+                  category={prediction.categoryId}
+                  exceedsBudget={budgetImpact?.exceedsBudget}
+                  budgetUsagePercent={budgetImpact ? ((budgetImpact.budgetTotal - budgetImpact.remainingAfter) / budgetImpact.budgetTotal) * 100 : undefined}
+                  isDuplicate={prediction.isDuplicate}
+                  isRecurring={prediction.isRecurring}
+                />
               </View>
             )}
-          </Animated.View>
+          </>
         )}
 
-        {/* STEP 3: PREDICTION (AI INSIGHT) */}
-        {activeMode === 'manual' && !merchantIsEmpty && prediction?.categoryId && (
+        {activeMode === 'sms' && (
           <View style={styles.dynamicContent}>
-            <AiAssistantCard 
-              predictedCategory={prediction.categoryId}
-              confidence={prediction.confidence}
-              exceedsBudget={budgetImpact?.exceedsBudget}
-              budgetUsagePercent={budgetImpact ? ((budgetImpact.budgetTotal - budgetImpact.remainingAfter) / budgetImpact.budgetTotal) * 100 : undefined}
-            />
+            {selectedSmsId ? (
+              <>
+                <TransactionPreviewCard draft={draft} mode="sms" />
+                <PredictionBanner
+                  variant="inbox"
+                  category={prediction?.categoryId}
+                  confidence={prediction?.confidence}
+                  isDuplicate={prediction?.isDuplicate}
+                  isRecurring={prediction?.isRecurring}
+                />
+                <TouchableOpacity onPress={() => setSelectedSmsId(null)} style={styles.backToInbox}>
+                  <Text style={{ color: colors.primaryAccent, fontFamily: 'Satoshi-Bold' }}>← Back to inbox</Text>
+                </TouchableOpacity>
+              </>
+            ) : smsLoading ? (
+              <View style={styles.centerState}>
+                <ActivityIndicator color={colors.primaryAccent} />
+                <Text style={[styles.centerStateText, { color: colors.textSecondary }]}>Reading messages…</Text>
+              </View>
+            ) : smsError ? (
+              <View style={styles.centerState}>
+                <Text style={[styles.centerStateText, { color: colors.textSecondary }]}>{smsError}</Text>
+              </View>
+            ) : smsDrafts.length === 0 ? (
+              <View style={styles.centerState}>
+                <Text style={[styles.centerStateText, { color: colors.textSecondary }]}>
+                  No transaction-like messages found. You can still add this manually.
+                </Text>
+              </View>
+            ) : (
+              smsDrafts.map((item) => (
+                <SmsInboxRow
+                  key={item.id}
+                  item={item}
+                  onApprove={() => selectSmsDraft(item)}
+                  onReject={() => setSmsDrafts(prev => prev.filter(d => d.id !== item.id))}
+                  onChangeCategory={() => selectSmsDraft(item)}
+                />
+              ))
+            )}
           </View>
         )}
 
-        {/* SMS / SCAN MODES */}
-        {(activeMode === 'sms' || activeMode === 'scan') && (
-          <Animated.View layout={Layout.springify()} style={{ marginTop: 24 }}>
-            <TransactionPreviewCard draft={draft} mode={activeMode} />
+        {activeMode === 'scan' && (
+          <Animated.View layout={Layout.springify()} style={styles.dynamicContent}>
+            <ReceiptPreviewCard imageUri={receiptImageUri} isScanning={isScanningReceipt} confidence={draft.confidence} />
+            {!isScanningReceipt && receiptImageUri && (
+              <>
+                <TransactionPreviewCard draft={draft} mode="scan" />
+                <PredictionBanner
+                  variant="inbox"
+                  category={draft.category_id}
+                  confidence={draft.confidence}
+                  isDuplicate={draft.is_duplicate}
+                  isRecurring={draft.is_recurring_candidate}
+                />
+              </>
+            )}
           </Animated.View>
         )}
 
@@ -421,5 +545,19 @@ const styles = StyleSheet.create({
   autocompleteText: {
     fontFamily: 'Satoshi-Bold',
     fontSize: 16,
+  },
+  centerState: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    gap: 12,
+  },
+  centerStateText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  backToInbox: {
+    paddingVertical: 12,
+    alignItems: 'center',
   },
 });
