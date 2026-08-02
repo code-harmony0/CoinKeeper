@@ -6,6 +6,7 @@ import { migrate004BillsAdvanced } from './004_bills_advanced';
 import { migrate005Ecosystem } from './005_ecosystem';
 import { migrate006IntakeEngine } from './006_intake_engine';
 import { migrate007IncomeIntelligence } from './007_income_intelligence';
+import { migrate008CategoryColor } from './008_category_color';
 
 /**
  * Versioned via PRAGMA user_version — the plan called for migration tests
@@ -50,5 +51,10 @@ export const runMigrations = async (db: DB): Promise<void> => {
   if (currentVersion < 7) {
     await migrate007IncomeIntelligence(db);
     await db.execute('PRAGMA user_version = 7;');
+  }
+
+  if (currentVersion < 8) {
+    await migrate008CategoryColor(db);
+    await db.execute('PRAGMA user_version = 8;');
   }
 };
