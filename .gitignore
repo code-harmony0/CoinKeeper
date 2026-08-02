@@ -100,3 +100,6 @@ firebase-debug.log
 CLAUDE.md
 GEMINI.md
 .mcp.json
+
+# Git worktrees
+.worktrees/
