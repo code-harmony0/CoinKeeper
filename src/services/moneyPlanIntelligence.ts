@@ -67,3 +67,79 @@ export const computeMoneyPlanScore = (input: MoneyPlanScoreInput): MoneyPlanScor
     recommendations: criteria.filter(c => !c.met).map(c => c.recommendation),
   };
 };
+
+export interface PresetOutcomeInput {
+  income: number;
+  needsPercent: number;
+  wantsPercent: number;
+  savingsPercent: number;
+}
+
+export interface PresetOutcome {
+  safeToSpend: number;
+  monthlySavings: number;
+  emergencyFundMonths: number | null;
+}
+
+const EMERGENCY_FUND_TARGET = 100000;
+
+export const computePresetOutcome = (input: PresetOutcomeInput): PresetOutcome => {
+  const monthlySavings = Math.round(input.income * (input.savingsPercent / 100));
+  return {
+    safeToSpend: Math.round(input.income * ((input.needsPercent + input.wantsPercent) / 100)),
+    monthlySavings,
+    emergencyFundMonths: monthlySavings > 0 ? Math.ceil(EMERGENCY_FUND_TARGET / monthlySavings) : null,
+  };
+};
+
+export interface ProjectionInput {
+  income: number;
+  savingsPercent: number;
+  months: number[];
+}
+
+export interface ProjectionPoint {
+  months: number;
+  cumulativeSavings: number;
+}
+
+export const computeProjection = (input: ProjectionInput): ProjectionPoint[] => {
+  const monthlySavings = Math.round(input.income * (input.savingsPercent / 100));
+  return input.months.map(months => ({ months, cumulativeSavings: monthlySavings * months }));
+};
+
+export interface BucketTrend {
+  direction: 'up' | 'down' | 'flat';
+  pct: number;
+}
+
+const TREND_FLAT_THRESHOLD_PCT = 2;
+
+/**
+ * previousSpend <= 0 short-circuits to flat rather than treating any spend as an
+ * infinite increase — there's no meaningful "trend" when there's nothing to compare against.
+ */
+export const computeBucketTrend = (currentSpend: number, previousSpend: number): BucketTrend => {
+  if (previousSpend <= 0) return { direction: 'flat', pct: 0 };
+  const pct = Math.round(((currentSpend - previousSpend) / previousSpend) * 100);
+  if (pct > TREND_FLAT_THRESHOLD_PCT) return { direction: 'up', pct };
+  if (pct < -TREND_FLAT_THRESHOLD_PCT) return { direction: 'down', pct };
+  return { direction: 'flat', pct };
+};
+
+export interface PaceInput {
+  spendSoFar: number;
+  daysElapsed: number;
+  daysInMonth: number;
+  budget: number;
+}
+
+export interface PacePrediction {
+  projectedTotal: number;
+  onTrack: boolean;
+}
+
+export const predictBucketPace = (input: PaceInput): PacePrediction => {
+  const projectedTotal = input.daysElapsed > 0 ? Math.round((input.spendSoFar / input.daysElapsed) * input.daysInMonth) : 0;
+  return { projectedTotal, onTrack: projectedTotal <= input.budget };
+};
