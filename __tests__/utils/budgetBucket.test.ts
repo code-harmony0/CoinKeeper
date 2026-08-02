@@ -20,4 +20,12 @@ describe('classifyBudgetBucket', () => {
   it('is case-insensitive', () => {
     expect(classifyBudgetBucket('RENT')).toBe('needs');
   });
+
+  it('does not misclassify "Coffee" as needs via the "fee" substring', () => {
+    expect(classifyBudgetBucket('Coffee')).toBe('wants');
+  });
+
+  it('defaults empty input to wants', () => {
+    expect(classifyBudgetBucket('')).toBe('wants');
+  });
 });
