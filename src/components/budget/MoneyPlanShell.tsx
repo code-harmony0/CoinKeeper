@@ -24,14 +24,14 @@ const { width } = Dimensions.get('window');
 
 const PRESETS = [
   { id: 'starter', name: 'Starter', n: 50, w: 30, s: 20, icon: <Home size={18} color="#FFF" />, desc: 'The golden rule of personal finance.' },
-  { id: 'wealth', name: 'Wealth Builder', n: 50, w: 20, s: 30, icon: <Briefcase size={18} color="#FFF" />, desc: 'Accelerate your investments.' },
+  { id: 'wealth', name: 'Wealth Builder', n: 50, w: 20, s: 30, icon: <Briefcase size={18} color="#FFF" />, desc: 'Accelerate your investments.', recommended: true },
   { id: 'fire', name: 'FIRE', n: 40, w: 10, s: 50, icon: <Flame size={18} color="#FFF" />, desc: 'Financial Independence, Retire Early.' },
   { id: 'family', name: 'Family', n: 60, w: 20, s: 20, icon: <Users size={18} color="#FFF" />, desc: 'Balanced for household stability.' }
 ];
 
 export const MoneyPlanShell = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
-  const { colors, cardRadius } = useSpecTheme();
+  const { colors, cardRadius, iconShadow, cardShadow } = useSpecTheme();
   const styles = React.useMemo(() => makeStyles(colors, cardRadius), [colors, cardRadius]);
 
   const { settings, loadBudget, saveBudget, isLoading } = useBudgetStore();
@@ -150,7 +150,9 @@ export const MoneyPlanShell = ({ navigation }: any) => {
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
 
           <MoneyPlanHero
+            income={income}
             safeToSpend={safeToSpend}
+            monthlySavings={estimatedSavings}
             hasIncome={income > 0}
             score={scoreResult.score}
             topRecommendation={scoreResult.recommendations[0] ?? null}
@@ -191,11 +193,11 @@ export const MoneyPlanShell = ({ navigation }: any) => {
             />
 
             <ExpandableCategoryCard
-              icon={<Briefcase color={colors.primaryAccent} size={24} />}
+              icon={<Briefcase color={colors.skyDeep} size={24} />}
               name="Savings"
               percentage={savings}
               rupees={income * (savings / 100)}
-              color={colors.primaryAccent}
+              color={colors.skyDeep}
               recommendedRange="20%+"
               includedExpenses="Emergency fund, investments, goals"
               insights={savings < 20 ? "Try to push this to 20% to accelerate your wealth building." : "Excellent savings rate!"}
@@ -211,7 +213,7 @@ export const MoneyPlanShell = ({ navigation }: any) => {
             activeOpacity={0.7}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={[styles.gearIcon, { backgroundColor: colors.chipBg }]}>
+              <View style={[styles.gearIcon, { backgroundColor: colors.chipBg }, iconShadow]}>
                 <ChevronDown color={colors.textSecondary} size={16} style={{ transform: [{ rotate: showAdvanced ? '180deg' : '0deg' }] }} />
               </View>
               <Text variant="h3" style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Bold' }}>Advanced Settings</Text>
@@ -278,7 +280,7 @@ export const MoneyPlanShell = ({ navigation }: any) => {
             <Text style={{ fontFamily: 'Satoshi-Black', fontSize: 32, color: colors.textPrimary, marginBottom: 8 }}>Plan Locked</Text>
             <Text variant="body" style={{ color: colors.textSecondary, marginBottom: 48, textAlign: 'center' }}>Your financial strategy is set for the month.</Text>
 
-            <View style={[styles.successStats, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.textPrimary }]}>
+            <View style={[styles.successStats, { backgroundColor: colors.card }, cardShadow]}>
               <View style={styles.simRow}>
                 <Text variant="caption" style={{ color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 }}>Safe To Spend</Text>
                 <Text variant="h3" style={{ color: colors.textPrimary }}>₹{safeToSpend.toLocaleString('en-IN')}</Text>
@@ -334,7 +336,7 @@ const makeStyles = (colors: any, cardRadius: number) =>
       marginTop: 24,
       paddingVertical: 20,
       borderTopWidth: 1,
-      borderTopColor: 'rgba(150,150,150,0.1)',
+      borderTopColor: colors.border,
     },
     gearIcon: {
       width: 32,
@@ -365,7 +367,7 @@ const makeStyles = (colors: any, cardRadius: number) =>
     },
     simDivider: {
       height: 1,
-      backgroundColor: 'rgba(150,150,150,0.1)',
+      backgroundColor: colors.border,
       marginVertical: 16,
     },
     successContent: {
@@ -387,10 +389,5 @@ const makeStyles = (colors: any, cardRadius: number) =>
       width: '100%',
       padding: 24,
       borderRadius: 24,
-      borderWidth: 1,
-      shadowOffset: { width: 0, height: 16 },
-      shadowOpacity: 0.05,
-      shadowRadius: 24,
-      elevation: 8,
     },
   });

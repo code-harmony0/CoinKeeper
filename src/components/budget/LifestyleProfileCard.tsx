@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '../ui/Text';
 import { computePresetOutcome } from '../../services/moneyPlanIntelligence';
+import { useSpecTheme } from '../../theme/specTheme';
 
 interface Preset {
   id: string;
@@ -10,6 +11,7 @@ interface Preset {
   w: number;
   s: number;
   icon: React.ReactNode;
+  recommended?: boolean;
 }
 
 interface Props {
@@ -21,6 +23,7 @@ interface Props {
 }
 
 export const LifestyleProfileCard: React.FC<Props> = ({ preset, income, onSelect, colors, cardRadius }) => {
+  const { cardShadow, iconShadow } = useSpecTheme();
   const outcome = computePresetOutcome({
     income,
     needsPercent: preset.n,
@@ -30,11 +33,20 @@ export const LifestyleProfileCard: React.FC<Props> = ({ preset, income, onSelect
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: cardRadius }]}
+      style={[
+        styles.card,
+        { backgroundColor: colors.card, borderRadius: cardRadius },
+        preset.recommended ? { borderColor: colors.primaryAccent, borderWidth: 1.5 } : cardShadow,
+      ]}
       onPress={() => onSelect(preset.n, preset.w, preset.s)}
       activeOpacity={0.8}
     >
-      <View style={[styles.icon, { backgroundColor: colors.primaryAccent }]}>{preset.icon}</View>
+      {preset.recommended && (
+        <View style={[styles.badge, { backgroundColor: colors.primaryAccent }]}>
+          <Text style={{ color: '#FFF', fontFamily: 'Satoshi-Bold', fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase' }}>Recommended</Text>
+        </View>
+      )}
+      <View style={[styles.icon, { backgroundColor: colors.primaryAccent }, iconShadow]}>{preset.icon}</View>
       <Text variant="h3" style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Bold', marginBottom: 12 }}>{preset.name}</Text>
 
       <View style={styles.outcomeRow}>
@@ -63,13 +75,16 @@ const styles = StyleSheet.create({
   card: {
     width: 160,
     padding: 20,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
+    position: 'relative',
   },
-  icon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  badge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  icon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   outcomeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
 });

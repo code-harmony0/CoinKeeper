@@ -42,7 +42,7 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
   trend,
   pacePrediction,
 }) => {
-  const { colors, cardRadius } = useSpecTheme();
+  const { colors, cardRadius, cardShadow, iconShadow } = useSpecTheme();
   const [expanded, setExpanded] = useState(false);
   
   const contentHeight = useSharedValue(0);
@@ -111,18 +111,12 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
 
   return (
     <Animated.View style={[
-      styles.card, 
-      { 
-        backgroundColor: colors.card, 
-        borderRadius: cardRadius, 
-        borderColor: `${color}30`, 
-        borderWidth: 1,
-        shadowColor: color,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.05,
-        shadowRadius: 16,
-        elevation: 4
-      }, 
+      styles.card,
+      {
+        backgroundColor: colors.card,
+        borderRadius: cardRadius,
+        ...cardShadow,
+      },
       rStyle
     ]}>
       <TouchableOpacity 
@@ -130,7 +124,7 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
         activeOpacity={0.7} 
         onPress={() => setExpanded(!expanded)}
       >
-        <View style={[styles.iconBox, { backgroundColor: `${color}15`, borderColor: `${color}30`, borderWidth: 1 }]}>
+        <View style={[styles.iconBox, { backgroundColor: `${color}15` }, iconShadow]}>
           {icon}
         </View>
         <View style={styles.headerInfo}>
@@ -146,18 +140,18 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
         style={[styles.expandedContent, { position: 'absolute', top: 88, left: 0, right: 0 }]}
         onLayout={(e) => { contentHeight.value = e.nativeEvent.layout.height; }}
       >
-        <View style={[styles.unifiedTrack, { backgroundColor: colors.inputBg }]}>
-          <TouchableOpacity onPress={handleMinus} style={styles.ctrlBtn} hitSlop={{top:10, bottom:10, left:10, right:10}}>
+        <View style={[styles.unifiedTrack, { backgroundColor: colors.surfaceSunken }]}>
+          <TouchableOpacity onPress={handleMinus} style={[styles.ctrlBtn, { backgroundColor: colors.chipBg }]} hitSlop={{top:10, bottom:10, left:10, right:10}}>
             <Minus color={colors.textPrimary} size={18} />
           </TouchableOpacity>
-          
+
           <PanGestureHandler onGestureEvent={gestureHandler}>
-            <Animated.View style={[styles.sliderTrack, animatedTrackStyle]}>
+            <Animated.View style={[styles.sliderTrack, { backgroundColor: colors.chipBg }, animatedTrackStyle]}>
               <Animated.View style={[styles.sliderFill, animatedFillStyle]} />
             </Animated.View>
           </PanGestureHandler>
 
-          <TouchableOpacity onPress={handlePlus} style={styles.ctrlBtn} hitSlop={{top:10, bottom:10, left:10, right:10}}>
+          <TouchableOpacity onPress={handlePlus} style={[styles.ctrlBtn, { backgroundColor: colors.chipBg }]} hitSlop={{top:10, bottom:10, left:10, right:10}}>
             <Plus color={colors.textPrimary} size={18} />
           </TouchableOpacity>
         </View>
@@ -239,7 +233,7 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 52,
     height: 52,
-    borderRadius: 16, // squircle approximation
+    borderRadius: 26, // circle, per DESIGN.md §6
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -269,12 +263,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   sliderTrack: {
     flex: 1,
     height: 12,
-    backgroundColor: 'rgba(0,0,0,0.05)',
     borderRadius: 6,
     marginHorizontal: 12,
     overflow: 'hidden',

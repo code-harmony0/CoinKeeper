@@ -4,7 +4,9 @@ import { Text } from '../ui/Text';
 import { PressableScale } from '../anim/PressableScale';
 
 interface Props {
+  income: number;
   safeToSpend: number;
+  monthlySavings: number;
   hasIncome: boolean;
   score: number;
   topRecommendation: string | null;
@@ -14,16 +16,28 @@ interface Props {
 }
 
 export const MoneyPlanHero: React.FC<Props> = ({
-  safeToSpend, hasIncome, score, topRecommendation, isBalanced, onAddIncome, colors,
+  income, safeToSpend, monthlySavings, hasIncome, score, topRecommendation, isBalanced, onAddIncome, colors,
 }) => {
   return (
     <View style={styles.wrapper}>
       <Text variant="caption" style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium', letterSpacing: 1, textTransform: 'uppercase' }}>
         Safe To Spend
       </Text>
-      <Text style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Black', fontSize: 44, letterSpacing: -1, marginTop: 4 }}>
+      <Text style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Black', fontSize: 40, letterSpacing: -0.5, marginTop: 4 }}>
         ₹{safeToSpend.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
       </Text>
+
+      {hasIncome && (
+        <View style={styles.incomeRow}>
+          <Text variant="caption" style={{ color: colors.textSecondary }}>
+            of ₹{income.toLocaleString('en-IN', { maximumFractionDigits: 0 })} income
+          </Text>
+          <View style={[styles.dot, { backgroundColor: colors.border }]} />
+          <Text variant="caption" style={{ color: colors.success, fontFamily: 'Satoshi-Bold' }}>
+            +₹{monthlySavings.toLocaleString('en-IN', { maximumFractionDigits: 0 })} saved/mo
+          </Text>
+        </View>
+      )}
 
       {!hasIncome ? (
         <View style={{ marginTop: 16 }}>
@@ -43,7 +57,7 @@ export const MoneyPlanHero: React.FC<Props> = ({
             <Text variant="body" style={{ color: colors.textSecondary, marginLeft: 8 }}>Optimized</Text>
           </View>
           {topRecommendation ? (
-            <Text variant="caption" style={{ color: isBalanced ? colors.primaryAccent : colors.danger, fontFamily: 'Satoshi-Bold', marginTop: 4 }}>
+            <Text variant="caption" style={{ color: isBalanced ? colors.success : colors.danger, fontFamily: 'Satoshi-Bold', marginTop: 4 }}>
               {topRecommendation}
             </Text>
           ) : (
@@ -59,6 +73,8 @@ export const MoneyPlanHero: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   wrapper: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
+  incomeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 8 },
+  dot: { width: 3, height: 3, borderRadius: 1.5 },
   scoreRow: { flexDirection: 'row', alignItems: 'baseline' },
   addIncomeBtn: { paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16, alignSelf: 'flex-start' },
 });

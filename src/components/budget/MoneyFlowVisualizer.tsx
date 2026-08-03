@@ -24,7 +24,7 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({ income, needs, wants, sav
     { label: 'Income', amount: income, color: colors.textPrimary, widthPercent: 100 },
     { label: 'Needs', amount: Math.round(income * (needs / 100)), color: colors.mintDeep, widthPercent: needs },
     { label: 'Wants', amount: Math.round(income * (wants / 100)), color: colors.peachDeep, widthPercent: wants },
-    { label: 'Savings', amount: Math.round(income * (savings / 100)), color: colors.primaryAccent, widthPercent: savings },
+    { label: 'Savings', amount: Math.round(income * (savings / 100)), color: colors.skyDeep, widthPercent: savings },
     { label: 'Safe To Spend', amount: safeToSpend, color: colors.success, widthPercent: Math.min(100, needs + wants) },
   ];
 
@@ -49,7 +49,7 @@ const FlowRow: React.FC<{ stage: Stage; colors: any }> = ({ stage, colors }) => 
           ₹{stage.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
         </Text>
       </View>
-      <View style={[styles.track, { backgroundColor: colors.inputBg }]}>
+      <View style={[styles.track, { backgroundColor: colors.surfaceSunken }]}>
         <Animated.View style={[styles.fill, { backgroundColor: stage.color }, barStyle]} />
       </View>
     </View>
