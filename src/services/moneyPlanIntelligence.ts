@@ -127,6 +127,27 @@ export const computeBucketTrend = (currentSpend: number, previousSpend: number):
   return { direction: 'flat', pct };
 };
 
+export interface EmergencyFundReadinessInput {
+  target: number;
+  current: number;
+  monthlySavings: number;
+}
+
+export interface EmergencyFundReadiness {
+  remaining: number;
+  label: string;
+}
+
+/**
+ * monthlySavings <= 0 has no meaningful "ready in N months" — there's nothing
+ * accruing toward the target, so we surface a prompt to start saving instead.
+ */
+export const computeEmergencyFundReadiness = (input: EmergencyFundReadinessInput): EmergencyFundReadiness => {
+  const remaining = Math.max(0, input.target - input.current);
+  const label = input.monthlySavings > 0 ? `Ready in ${Math.ceil(remaining / input.monthlySavings)} mos` : 'Add savings to start';
+  return { remaining, label };
+};
+
 export interface PaceInput {
   spendSoFar: number;
   daysElapsed: number;

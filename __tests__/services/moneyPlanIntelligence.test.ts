@@ -1,4 +1,4 @@
-import { computeMoneyPlanScore, computePresetOutcome, computeProjection, computeBucketTrend, predictBucketPace } from '../../src/services/moneyPlanIntelligence';
+import { computeMoneyPlanScore, computePresetOutcome, computeProjection, computeBucketTrend, predictBucketPace, computeEmergencyFundReadiness } from '../../src/services/moneyPlanIntelligence';
 
 describe('computeMoneyPlanScore', () => {
   it('returns 0 with a single recommendation when no income is set', () => {
@@ -74,6 +74,25 @@ describe('computeBucketTrend', () => {
   });
   it('is flat when there is no prior spend to compare against', () => {
     expect(computeBucketTrend(500, 0)).toEqual({ direction: 'flat', pct: 0 });
+  });
+});
+
+describe('computeEmergencyFundReadiness', () => {
+  it('computes remaining amount and a ready-in-N-months label', () => {
+    const result = computeEmergencyFundReadiness({ target: 100000, current: 40000, monthlySavings: 10000 });
+    expect(result.remaining).toBe(60000);
+    expect(result.label).toBe('Ready in 6 mos');
+  });
+
+  it('clamps remaining to 0 when current already meets or exceeds target', () => {
+    const result = computeEmergencyFundReadiness({ target: 100000, current: 150000, monthlySavings: 10000 });
+    expect(result.remaining).toBe(0);
+    expect(result.label).toBe('Ready in 0 mos');
+  });
+
+  it('falls back to a start-saving prompt when monthlySavings is zero', () => {
+    const result = computeEmergencyFundReadiness({ target: 100000, current: 40000, monthlySavings: 0 });
+    expect(result.label).toBe('Add savings to start');
   });
 });
 
