@@ -60,7 +60,17 @@ export const LifestyleProfileCard: React.FC<Props> = ({ preset, income, onSelect
 };
 
 const styles = StyleSheet.create({
-  card: { width: 180, padding: 20, borderWidth: 1, marginRight: 16 },
+  card: {
+    width: 160,
+    padding: 20,
+    borderWidth: 1,
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
   icon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   outcomeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
 });
