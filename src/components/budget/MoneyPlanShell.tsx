@@ -90,7 +90,7 @@ export const MoneyPlanShell = ({ navigation }: any) => {
         savingsPercent: savings,
       });
       setShowSuccess(true);
-      reloadIntelligence();
+      await reloadIntelligence().catch(() => {});
       setTimeout(() => {
         setShowSuccess(false);
         navigation.goBack();
