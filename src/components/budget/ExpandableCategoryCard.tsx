@@ -208,7 +208,7 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
                 Prediction
               </Text>
               <Text variant="caption" style={{ color: pacePrediction.onTrack ? colors.success : colors.danger, flex: 1, textAlign: 'right', marginLeft: 16 }}>
-                {pacePrediction.onTrack ? 'On track to finish ' : "Trending over pace to "}
+                {pacePrediction.onTrack ? 'On track to finish ' : 'Projected to exceed budget: '}
                 ₹{pacePrediction.projectedTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })} this month
               </Text>
             </View>
