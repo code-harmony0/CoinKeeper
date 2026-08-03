@@ -23,6 +23,9 @@ interface Props {
   onChange: (newPercent: number) => void;
   insights: string;
   includedExpenses: string;
+  topCategories?: string[];
+  trend?: { direction: 'up' | 'down' | 'flat'; pct: number };
+  pacePrediction?: { projectedTotal: number; onTrack: boolean } | null;
 }
 
 export const ExpandableCategoryCard: React.FC<Props> = ({
@@ -35,6 +38,9 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
   onChange,
   insights,
   includedExpenses,
+  topCategories,
+  trend,
+  pacePrediction,
 }) => {
   const { colors, cardRadius } = useSpecTheme();
   const [expanded, setExpanded] = useState(false);
@@ -174,6 +180,40 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
             </Text>
           </View>
           
+          {topCategories && topCategories.length > 0 && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text variant="caption" style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium', letterSpacing: 1, textTransform: 'uppercase', fontSize: 10 }}>
+                Top Spending
+              </Text>
+              <Text variant="caption" style={{ color: colors.textPrimary, flex: 1, textAlign: 'right', marginLeft: 16 }}>
+                {topCategories.join(', ')}
+              </Text>
+            </View>
+          )}
+
+          {trend && trend.direction !== 'flat' && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text variant="caption" style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium', letterSpacing: 1, textTransform: 'uppercase', fontSize: 10 }}>
+                Trend
+              </Text>
+              <Text variant="caption" style={{ color: trend.direction === 'up' ? colors.danger : colors.success, fontFamily: 'Satoshi-Bold' }}>
+                {trend.direction === 'up' ? '▲' : '▼'} {Math.abs(trend.pct)}% vs last month
+              </Text>
+            </View>
+          )}
+
+          {pacePrediction && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
+              <Text variant="caption" style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium', letterSpacing: 1, textTransform: 'uppercase', fontSize: 10 }}>
+                Prediction
+              </Text>
+              <Text variant="caption" style={{ color: pacePrediction.onTrack ? colors.success : colors.danger, flex: 1, textAlign: 'right', marginLeft: 16 }}>
+                {pacePrediction.onTrack ? 'On track to finish ' : "Trending over pace to "}
+                ₹{pacePrediction.projectedTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })} this month
+              </Text>
+            </View>
+          )}
+
           <View style={[styles.aiTip, { backgroundColor: `${color}10`, borderLeftColor: color, borderLeftWidth: 3 }]}>
             <Text variant="caption" style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Medium', lineHeight: 18 }}>
               <Text style={{ fontFamily: 'Satoshi-Bold', color }}>Insight: </Text>{insights}
