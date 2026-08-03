@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Transaction } from '../types/transaction';
 import { getDb } from './database';
 import { toPaise, fromPaise } from '../utils/money';
+import { classifyBudgetBucket } from '../utils/budgetBucket';
 
 interface MonthlyStats {
   income: number;
@@ -56,10 +57,11 @@ const resolveCategoryId = async (
   }
 
   const id = generateId();
-  await db.execute('INSERT INTO categories (id, name, icon) VALUES (?, ?, ?);', [
+  await db.execute('INSERT INTO categories (id, name, icon, budget_bucket) VALUES (?, ?, ?, ?);', [
     id,
     normalized,
     icon ?? null,
+    classifyBudgetBucket(normalized),
   ]);
   return id;
 };

@@ -57,25 +57,27 @@ export const useMoneyPlanIntelligence = (): MoneyPlanIntelligence => {
     };
 
     for (const bucket of BUCKETS) {
-      const currentRes = await db.execute(
-        `SELECT SUM(t.amount_paise) as total FROM transactions t
-         JOIN categories c ON c.id = t.category_id
-         WHERE c.budget_bucket = ? AND t.type = 'expense' AND t.occurred_at >= ?`,
-        [bucket, monthStart],
-      );
-      const previousRes = await db.execute(
-        `SELECT SUM(t.amount_paise) as total FROM transactions t
-         JOIN categories c ON c.id = t.category_id
-         WHERE c.budget_bucket = ? AND t.type = 'expense' AND t.occurred_at >= ? AND t.occurred_at < ?`,
-        [bucket, lastMonthStart, monthStart],
-      );
-      const topRes = await db.execute(
-        `SELECT c.name as name, SUM(t.amount_paise) as total FROM transactions t
-         JOIN categories c ON c.id = t.category_id
-         WHERE c.budget_bucket = ? AND t.type = 'expense' AND t.occurred_at >= ?
-         GROUP BY c.id ORDER BY total DESC LIMIT 3`,
-        [bucket, monthStart],
-      );
+      const [currentRes, previousRes, topRes] = await Promise.all([
+        db.execute(
+          `SELECT SUM(t.amount_paise) as total FROM transactions t
+           JOIN categories c ON c.id = t.category_id
+           WHERE c.budget_bucket = ? AND t.type = 'expense' AND t.occurred_at >= ?`,
+          [bucket, monthStart],
+        ),
+        db.execute(
+          `SELECT SUM(t.amount_paise) as total FROM transactions t
+           JOIN categories c ON c.id = t.category_id
+           WHERE c.budget_bucket = ? AND t.type = 'expense' AND t.occurred_at >= ? AND t.occurred_at < ?`,
+          [bucket, lastMonthStart, monthStart],
+        ),
+        db.execute(
+          `SELECT c.name as name, SUM(t.amount_paise) as total FROM transactions t
+           JOIN categories c ON c.id = t.category_id
+           WHERE c.budget_bucket = ? AND t.type = 'expense' AND t.occurred_at >= ?
+           GROUP BY c.id ORDER BY total DESC LIMIT 3`,
+          [bucket, monthStart],
+        ),
+      ]);
 
       nextBuckets[bucket] = {
         currentSpend: fromPaise((currentRes?.rows?.[0] as any)?.total || 0),

@@ -41,6 +41,29 @@ describe('transactionStore', () => {
     ).rejects.toThrow('disk full');
   });
 
+  it('addTransaction classifies a newly auto-created category with a budget_bucket', async () => {
+    let insertedArgs: unknown[] = [];
+    mockExecute.mockImplementation((sql: string, args: unknown[] = []) => {
+      if (sql.startsWith('SELECT id, icon FROM categories')) return Promise.resolve({ rows: [] });
+      if (sql.startsWith('INSERT INTO categories')) {
+        insertedArgs = args;
+        return Promise.resolve({});
+      }
+      if (sql.startsWith('INSERT INTO transactions')) return Promise.resolve({});
+      return Promise.resolve({ rows: [] });
+    });
+
+    await useTransactionStore.getState().addTransaction({
+      amount: 100,
+      type: 'expense',
+      category: 'Rent',
+      categoryIcon: 'home',
+    });
+
+    // args: [id, normalized, icon, budget_bucket] — 'Rent' should classify as 'needs'
+    expect(insertedArgs[3]).toBe('needs');
+  });
+
   it('deleteTransaction propagates a DB failure', async () => {
     mockExecute.mockRejectedValue(new Error('locked'));
     await expect(useTransactionStore.getState().deleteTransaction('tx1')).rejects.toThrow('locked');
