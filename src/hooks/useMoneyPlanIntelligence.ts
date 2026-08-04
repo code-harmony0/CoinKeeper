@@ -42,11 +42,15 @@ export const useMoneyPlanIntelligence = (): MoneyPlanIntelligence => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
 
+    // Income is scoped to the CURRENT month, matching the expense window below.
+    // This previously read [lastMonthStart, monthStart) — last month — so income
+    // logged today never appeared and the plan showed "No income set" / ₹0.
     const incomeResult = await db.execute(
       `SELECT SUM(amount_paise) as total FROM transactions
        WHERE type = 'income' AND occurred_at >= ? AND occurred_at < ?`,
-      [lastMonthStart, monthStart],
+      [monthStart, nextMonthStart],
     );
     setIncome(fromPaise((incomeResult?.rows?.[0] as any)?.total || 0));
 
@@ -61,8 +65,9 @@ export const useMoneyPlanIntelligence = (): MoneyPlanIntelligence => {
         db.execute(
           `SELECT SUM(t.amount_paise) as total FROM transactions t
            JOIN categories c ON c.id = t.category_id
-           WHERE c.budget_bucket = ? AND t.type = 'expense' AND t.occurred_at >= ?`,
-          [bucket, monthStart],
+           WHERE c.budget_bucket = ? AND t.type = 'expense'
+             AND t.occurred_at >= ? AND t.occurred_at < ?`,
+          [bucket, monthStart, nextMonthStart],
         ),
         db.execute(
           `SELECT SUM(t.amount_paise) as total FROM transactions t
@@ -73,9 +78,10 @@ export const useMoneyPlanIntelligence = (): MoneyPlanIntelligence => {
         db.execute(
           `SELECT c.name as name, SUM(t.amount_paise) as total FROM transactions t
            JOIN categories c ON c.id = t.category_id
-           WHERE c.budget_bucket = ? AND t.type = 'expense' AND t.occurred_at >= ?
+           WHERE c.budget_bucket = ? AND t.type = 'expense'
+             AND t.occurred_at >= ? AND t.occurred_at < ?
            GROUP BY c.id ORDER BY total DESC LIMIT 3`,
-          [bucket, monthStart],
+          [bucket, monthStart, nextMonthStart],
         ),
       ]);
 
@@ -88,8 +94,11 @@ export const useMoneyPlanIntelligence = (): MoneyPlanIntelligence => {
 
     setBuckets(nextBuckets);
 
+    // is_emergency_fund, not a name match — "Emergency fund" (lowercase f)
+    // previously matched nothing here and the Money Plan silently showed no
+    // emergency fund progress at all.
     const goalResult = await db.execute(
-      `SELECT targetAmount, currentAmount FROM goals WHERE name = 'Emergency Fund' LIMIT 1`,
+      `SELECT targetAmount, currentAmount FROM goals WHERE is_emergency_fund = 1 LIMIT 1`,
     );
     const goalRow = goalResult?.rows?.[0] as any;
     setEmergencyFundGoal(

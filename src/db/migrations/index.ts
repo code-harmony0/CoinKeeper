@@ -8,6 +8,9 @@ import { migrate006IntakeEngine } from './006_intake_engine';
 import { migrate007IncomeIntelligence } from './007_income_intelligence';
 import { migrate008CategoryColor } from './008_category_color';
 import { migrate009BudgetBucket } from './009_budget_bucket';
+import { migrate010BillPaymentLink } from './010_bill_payment_link';
+import { migrate011RecurringIncome } from './011_recurring_income';
+import { migrate012GoalEmergencyFundFlag } from './012_goal_emergency_fund_flag';
 
 /**
  * Versioned via PRAGMA user_version — the plan called for migration tests
@@ -62,5 +65,20 @@ export const runMigrations = async (db: DB): Promise<void> => {
   if (currentVersion < 9) {
     await migrate009BudgetBucket(db);
     await db.execute('PRAGMA user_version = 9;');
+  }
+
+  if (currentVersion < 10) {
+    await migrate010BillPaymentLink(db);
+    await db.execute('PRAGMA user_version = 10;');
+  }
+
+  if (currentVersion < 11) {
+    await migrate011RecurringIncome(db);
+    await db.execute('PRAGMA user_version = 11;');
+  }
+
+  if (currentVersion < 12) {
+    await migrate012GoalEmergencyFundFlag(db);
+    await db.execute('PRAGMA user_version = 12;');
   }
 };

@@ -45,8 +45,12 @@ describe('goalStore', () => {
   });
 
   it('updates existing emergency fund target', async () => {
+    // isEmergencyFund is what getEmergencyFundTarget actually keys off of now
+    // (is_emergency_fund in the DB, populated by loadGoals/addGoal) — the old
+    // name === 'Emergency Fund' match this replaced was case-sensitive and
+    // silently invisible to a goal named e.g. "Emergency fund".
     useGoalStore.setState({
-      goals: [{ id: 'ef1', name: 'Emergency Fund', targetAmount: 100000, currentAmount: 0 }],
+      goals: [{ id: 'ef1', name: 'Emergency Fund', targetAmount: 100000, currentAmount: 0, isEmergencyFund: true }],
     });
 
     mockExecute.mockResolvedValueOnce({

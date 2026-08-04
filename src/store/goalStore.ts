@@ -9,6 +9,11 @@ export interface Goal {
   /** Note: Goals store amounts in whole INR (Rupees), NOT paise! (Legacy table schema) */
   currentAmount: number;
   deadline?: string;
+  /**
+   * Optional on input to addGoal — omitted, it's derived case-insensitively
+   * from `name`. Always a real boolean on goals loaded from the DB.
+   */
+  isEmergencyFund?: boolean;
 }
 
 interface GoalStoreState {
@@ -42,6 +47,7 @@ export const useGoalStore = create<GoalStoreState>((set, get) => ({
         targetAmount: row.targetAmount,
         currentAmount: row.currentAmount,
         deadline: row.deadline || undefined,
+        isEmergencyFund: row.is_emergency_fund === 1,
       }));
       set({ goals });
     } catch (e: any) {
@@ -54,23 +60,31 @@ export const useGoalStore = create<GoalStoreState>((set, get) => ({
 
   addGoal: async (goalData) => {
     const id = generateId();
+    // Case-insensitive by design — "Emergency fund" and "EMERGENCY FUND" were
+    // previously invisible to every read site that string-matched the exact
+    // capitalization "Emergency Fund". isEmergencyFund lets a caller force it
+    // either way; when omitted it falls back to the name check, so nothing
+    // that already relies on typing that name to get special treatment breaks.
+    const isEmergencyFund =
+      goalData.isEmergencyFund ?? goalData.name.trim().toLowerCase() === 'emergency fund';
     set({ isLoading: true, error: null });
     try {
       const db = getDb();
       await db.execute(
-        `INSERT INTO goals (id, name, targetAmount, currentAmount, deadline)
-         VALUES (?, ?, ?, ?, ?);`,
+        `INSERT INTO goals (id, name, targetAmount, currentAmount, deadline, is_emergency_fund)
+         VALUES (?, ?, ?, ?, ?, ?);`,
         [
           id,
           goalData.name,
           goalData.targetAmount,
           goalData.currentAmount,
           goalData.deadline || null,
+          isEmergencyFund ? 1 : 0,
         ]
       );
-      
+
       set((state) => ({
-        goals: [...state.goals, { ...goalData, id }],
+        goals: [...state.goals, { ...goalData, id, isEmergencyFund }],
       }));
       return id;
     } catch (e: any) {
@@ -142,7 +156,7 @@ export const useGoalStore = create<GoalStoreState>((set, get) => ({
       const targetAmount = Math.max(totalPaise / 100, 50000); // Floor of 50k
       
       // Find or create emergency fund goal
-      const efGoal = get().goals.find(g => g.name === 'Emergency Fund');
+      const efGoal = get().goals.find(g => g.isEmergencyFund);
       if (efGoal) {
         await db.execute('UPDATE goals SET targetAmount = ? WHERE id = ?', [targetAmount, efGoal.id]);
         set((state) => ({
@@ -155,6 +169,7 @@ export const useGoalStore = create<GoalStoreState>((set, get) => ({
             name: 'Emergency Fund',
             targetAmount,
             currentAmount: 0,
+            isEmergencyFund: true,
           });
         }
       }

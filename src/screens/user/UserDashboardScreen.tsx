@@ -9,11 +9,12 @@ import {
   StyleSheet,
   Text,
   Dimensions,
+  Alert,
 } from 'react-native';
 import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
-import { LineChart } from 'react-native-chart-kit';
+import { SkiaSpendingChart } from '../../components/insights/SkiaSpendingChart';
 import { ChevronRight } from 'lucide-react-native';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
 import { useSecureScreen } from '../../hooks/useSecureScreen';
@@ -88,7 +89,14 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
       setIncomeFlowVisible(false);
       onRefresh();
     } catch (e) {
-      console.error(e);
+      // Previously this only console.error'd, so a failed insert looked to the
+      // user exactly like a successful one — the sheet stayed open and nothing
+      // was saved, with no explanation.
+      console.error('[handleIncomeSubmit]', e);
+      Alert.alert(
+        'Could not save income',
+        e instanceof Error ? e.message : 'Please try again.',
+      );
     }
   };
 
@@ -119,25 +127,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const weekly = useMemo(() => buildWeeklyExpenses(transactions), [transactions]);
 
-  const chartConfig = useMemo(
-    () => ({
-      backgroundColor: colors.card,
-      backgroundGradientFrom: colors.card,
-      backgroundGradientTo: colors.card,
-      decimalPlaces: 0,
-      color: () => colors.lavenderDeep,
-      labelColor: () => colors.textSecondary,
-      strokeWidth: 3,
-      fillShadowGradientFrom: colors.lavenderDeep,
-      fillShadowGradientFromOpacity: 0.12,
-      fillShadowGradientTo: colors.lavenderDeep,
-      fillShadowGradientToOpacity: 0.01,
-      propsForBackgroundLines: { stroke: colors.chipBg, strokeWidth: 0.5 },
-      propsForDots: { r: '3', strokeWidth: '2', stroke: colors.lavenderDeep, fill: colors.card },
-      propsForLabels: { fontSize: 11 },
-    }),
-    [colors],
-  );
+  // chartConfig no longer needed with Skia
 
   const navigateToAdd = useCallback(() => {
     navigation.navigate('Add');
@@ -212,19 +202,14 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
                 <Text style={st.heroLabel}>Spent this month</Text>
                 <CountUp value={weekly.monthTotal} prefix="₹" style={st.heroValue} />
               </View>
-              <LineChart
-                data={{
-                  labels: weekly.labels,
-                  datasets: [{ data: weekly.values }],
-                }}
+              <SkiaSpendingChart
+                data={weekly.values}
+                labels={weekly.labels}
                 width={Math.max(SCREEN_W - 112, 260)}
                 height={180}
-                chartConfig={chartConfig}
-                bezier
-                withInnerLines={false}
-                withOuterLines={false}
-                style={st.chart}
-                formatYLabel={(v) => `${Math.round(Number(v) / 1000)}k`}
+                color={colors.lavenderDeep}
+                textColor={colors.textSecondary}
+                gridColor={colors.chipBg}
               />
             </PressableScale>
           ) : (

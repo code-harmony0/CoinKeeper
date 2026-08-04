@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import Animated, { FadeIn, FadeOut, Layout } from 'react-native-reanimated';
 import { useSpecTheme } from '../../theme/specTheme';
 import { THEME_TYPOGRAPHY, THEME_SPACING } from '../../theme/blobTheme';
@@ -10,6 +10,8 @@ import * as Icons from 'lucide-react-native';
 import { IncomeRuleEngine } from '../../services/income/IncomeRuleEngine';
 import { IncomeRoutingEngine, IncomeDistribution } from '../../services/income/IncomeRoutingEngine';
 import { getDb } from '../../store/database';
+import { toPaise } from '../../utils/money';
+import { RecurringIncomeService } from '../../services/income/RecurringIncomeService';
 import { StickySaveBar } from '../transaction/StickySaveBar';
 import { TransactionEntryShell } from '../transaction/TransactionEntryShell';
 
@@ -35,6 +37,7 @@ export const IncomeTransactionFlow: React.FC<Props> = ({ visible, onClose, onSub
   const [selectedType, setSelectedType] = useState<IncomeType>('salary');
   const [sourceName, setSourceName] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [isRecurring, setIsRecurring] = useState(false);
   const [accounts, setAccounts] = useState<IncomeAccount[]>([]);
   const [previewDistribution, setPreviewDistribution] = useState<IncomeDistribution[]>([]);
 
@@ -51,7 +54,7 @@ export const IncomeTransactionFlow: React.FC<Props> = ({ visible, onClose, onSub
   }, [visible]);
 
   const handleGeneratePreview = async () => {
-    const amountPaise = (parseFloat(amountInput) || 0) * 100;
+    const amountPaise = toPaise(amountInput);
     const db = getDb();
     const rules = await IncomeRuleEngine.getRulesForSource(db as any, draft.income_source_id || null);
     
@@ -75,15 +78,50 @@ export const IncomeTransactionFlow: React.FC<Props> = ({ visible, onClose, onSub
     setStep(4);
   };
 
-  const handleSave = () => {
+  // The account step is complete when an account is picked, or when there are
+  // no accounts to pick from (income then routes to the default).
+  const accountStepDone = accounts.length === 0 || selectedAccountId !== '';
+  const canContinue =
+    parseFloat(amountInput) > 0 && sourceName.trim().length > 0 && accountStepDone;
+
+  const handleSave = async () => {
     const finalDraft: TransactionDraft = {
       ...draft,
-      amount_paise: (parseFloat(amountInput) || 0) * 100,
+      // toPaise parses the string exactly; `parseFloat(x) * 100` produces
+      // fractional paise for values like 20.15 (2014.9999…) in an INTEGER column.
+      amount_paise: toPaise(amountInput),
       merchant_name: sourceName,
       income_type: selectedType,
-      account_id: selectedAccountId,
+      account_id: selectedAccountId || undefined,
       draft_status: 'saving'
     };
+
+    if (isRecurring) {
+      // The template covers NEXT month onward — this month's row is the one
+      // onSubmit is about to create through the normal manual path below, with
+      // the exact routing the user just previewed. Starting the template here
+      // instead would need IncomeEngine's dedupe-by-id to suppress that manual
+      // insert to avoid a double deposit; scoping it to future months means
+      // there's never a race between the two paths.
+      const now = new Date();
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const startMonth = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+      try {
+        await RecurringIncomeService.createTemplate({
+          label: sourceName,
+          amountPaise: finalDraft.amount_paise!,
+          dayOfMonth: now.getDate(),
+          startMonth,
+        });
+      } catch (e) {
+        console.error('[IncomeTransactionFlow] Failed to create recurring template', e);
+        Alert.alert(
+          'Income saved, but recurring setup failed',
+          'This income was recorded, but it will not repeat automatically. You can try marking it recurring again next month.',
+        );
+      }
+    }
+
     onSubmit(finalDraft, previewDistribution);
   };
 
@@ -120,6 +158,32 @@ export const IncomeTransactionFlow: React.FC<Props> = ({ visible, onClose, onSub
               </TouchableOpacity>
             ))}
           </View>
+
+          <TouchableOpacity
+            onPress={() => setIsRecurring(v => !v)}
+            style={[
+              styles.recurringRow,
+              { backgroundColor: isRecurring ? `${colors.success}15` : colors.card, borderRadius: cardRadius },
+            ]}
+          >
+            <View
+              style={[
+                styles.checkbox,
+                {
+                  borderColor: isRecurring ? colors.success : colors.border,
+                  backgroundColor: isRecurring ? colors.success : 'transparent',
+                },
+              ]}
+            >
+              {isRecurring && <Icons.Check color="#FFF" size={14} strokeWidth={3} />}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.textPrimary }]}>Repeats monthly</Text>
+              <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>
+                Same amount, same day each month — starting next month
+              </Text>
+            </View>
+          </TouchableOpacity>
         </Animated.View>
 
         {/* STEP 2: Source */}
@@ -182,8 +246,13 @@ export const IncomeTransactionFlow: React.FC<Props> = ({ visible, onClose, onSub
 
       </ScrollView>
 
-      {/* Save / Preview Bar */}
-      {selectedAccountId !== '' && step < 4 && (
+      {/* Save / Preview Bar.
+          Gating this on `selectedAccountId !== ''` was a dead end: when the user
+          has no accounts the list renders "will route to default" and there is
+          no control that can ever set an id, so the bar never appeared and the
+          flow could not be completed. Treat the account step as satisfied when
+          there is nothing to choose. */}
+      {canContinue && step < 4 && (
         <StickySaveBar 
           onSave={handleGeneratePreview} 
           isValid={true} 
@@ -217,5 +286,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-  }
+  },
+  recurringRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    marginTop: 20,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

@@ -74,8 +74,8 @@ export const GoalsScreen = () => {
 
   // Sort: Emergency Fund first
   const sortedGoals = [...goals].sort((a, b) => {
-    if (a.name === 'Emergency Fund') return -1;
-    if (b.name === 'Emergency Fund') return 1;
+    if (a.isEmergencyFund) return -1;
+    if (b.isEmergencyFund) return 1;
     return 0;
   });
 

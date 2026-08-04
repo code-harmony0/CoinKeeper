@@ -90,11 +90,11 @@ export const getPrimaryGoal = async (): Promise<Goal | null> => {
 
   try {
     const result = await db.execute(`
-      SELECT id, name, targetAmount, currentAmount 
-      FROM goals 
-      ORDER BY 
-        CASE WHEN name = 'Emergency Fund' THEN 0 ELSE 1 END,
-        (currentAmount * 1.0 / NULLIF(targetAmount, 0)) DESC 
+      SELECT id, name, targetAmount, currentAmount
+      FROM goals
+      ORDER BY
+        CASE WHEN is_emergency_fund = 1 THEN 0 ELSE 1 END,
+        (currentAmount * 1.0 / NULLIF(targetAmount, 0)) DESC
       LIMIT 1
     `);
     if (!result.rows || result.rows.length === 0) return null;

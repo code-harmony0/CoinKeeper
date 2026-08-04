@@ -36,8 +36,18 @@ const generateId = (): string =>
  * the only place that translation happens — every screen, hook, and service
  * that already consumes Transaction keeps working unchanged.
  */
-const resolveCategoryId = async (
-  db: ReturnType<typeof getDb>,
+/**
+ * The subset of the db handle this needs. Typing it structurally lets the same
+ * resolver run against a plain handle *or* an open transaction, so IncomeEngine
+ * can categorise income inside its atomic tx instead of duplicating this logic
+ * (and its budget_bucket classification) a second time.
+ */
+export interface SqlExecutor {
+  execute: (sql: string, params?: any[]) => Promise<any>;
+}
+
+export const resolveCategoryId = async (
+  db: SqlExecutor,
   name: string,
   icon: string | undefined,
 ): Promise<string> => {

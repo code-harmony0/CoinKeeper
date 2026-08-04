@@ -1,5 +1,9 @@
 import { create } from 'zustand';
 import { getDb } from './database';
+import { resolveCategoryId } from './transactionStore';
+
+const generateTxId = (): string =>
+  `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 export interface Bill {
   id: string;
@@ -15,6 +19,7 @@ export interface Bill {
   icon?: string;
   autoPayEnabled?: boolean;
   lastPaidAt?: number;
+  lastPaidTransactionId?: string;
   notificationId?: string;
 }
 
@@ -57,6 +62,7 @@ export const useBillStore = create<BillStoreState>((set) => ({
         icon: row.icon || undefined,
         autoPayEnabled: row.auto_pay_enabled === 1,
         lastPaidAt: row.last_paid_at || undefined,
+        lastPaidTransactionId: row.last_paid_transaction_id || undefined,
         notificationId: row.notification_id || undefined,
       }));
       set({ bills });
@@ -107,14 +113,58 @@ export const useBillStore = create<BillStoreState>((set) => ({
     }
   },
 
+  // markPaid previously only stamped last_paid_at on the bill row — paying a
+  // bill never touched `transactions`, so it counted as spending nowhere: not
+  // in the Needs bucket, not in reports, not in the Money Plan. Paying now
+  // inserts a linked expense; unpaying (timestamp === 0, the existing
+  // convention) deletes exactly that row via last_paid_transaction_id, so
+  // toggling paid/unpaid repeatedly never leaves orphaned transactions.
   markPaid: async (id, timestamp) => {
     set({ isLoading: true, error: null });
     try {
       const db = getDb();
-      await db.execute('UPDATE bills SET last_paid_at = ? WHERE id = ?;', [timestamp, id]);
-      
+      const isUnpaying = timestamp === 0;
+      const newTransactionId = isUnpaying ? undefined : generateTxId();
+
+      await db.transaction(async (tx: any) => {
+        const billRow = await tx.execute('SELECT * FROM bills WHERE id = ?;', [id]);
+        const bill = billRow.rows?.[0] as any;
+        if (!bill) throw new Error('Bill not found');
+
+        if (isUnpaying) {
+          if (bill.last_paid_transaction_id) {
+            await tx.execute('DELETE FROM transactions WHERE id = ?;', [bill.last_paid_transaction_id]);
+          }
+          await tx.execute(
+            'UPDATE bills SET last_paid_at = ?, last_paid_transaction_id = NULL WHERE id = ?;',
+            [timestamp, id],
+          );
+        } else {
+          // AddBillSheet has no category picker, so category_id is null on
+          // almost every bill in practice. useMoneyPlanIntelligence's bucket
+          // queries INNER JOIN categories — a null category_id expense would
+          // match none of them and silently vanish from Needs/Wants/Savings,
+          // which defeats the point of linking bills to spending at all.
+          const categoryId = bill.category_id || (await resolveCategoryId(tx, bill.name, undefined));
+          await tx.execute(
+            `INSERT INTO transactions
+               (id, amount_paise, type, category_id, account_id, description, occurred_at, payment_method, upi_ref, sms_hash)
+             VALUES (?, ?, 'expense', ?, NULL, ?, ?, NULL, NULL, NULL)`,
+            [newTransactionId, bill.amount_paise, categoryId, bill.name, timestamp],
+          );
+          await tx.execute(
+            'UPDATE bills SET last_paid_at = ?, last_paid_transaction_id = ? WHERE id = ?;',
+            [timestamp, newTransactionId, id],
+          );
+        }
+      });
+
       set((state) => ({
-        bills: state.bills.map(b => b.id === id ? { ...b, lastPaidAt: timestamp } : b),
+        bills: state.bills.map(b =>
+          b.id === id
+            ? { ...b, lastPaidAt: timestamp || undefined, lastPaidTransactionId: newTransactionId }
+            : b
+        ),
       }));
     } catch (e: any) {
       console.error('[billStore] Failed to mark bill as paid', e);

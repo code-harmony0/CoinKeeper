@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Transaction } from '../types/transaction';
 import { initDatabase } from '../store/database';
 import { useTransactionStore } from '../store/transactionStore';
+import { RecurringIncomeService } from '../services/income/RecurringIncomeService';
 
 interface TransactionsContextType {
   transactions: Transaction[];
@@ -57,6 +58,7 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [isDbReady, setIsDbReady] = useState(false);
+  const [dbError, setDbError] = useState<Error | null>(null);
   const transactions = useTransactionStore(state => state.transactions);
   const loading = useTransactionStore(state => state.loading);
   const loadTransactions = useTransactionStore(
@@ -70,18 +72,55 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({
     state => state.updateTransaction,
   );
 
-  useEffect(() => {
-    (async () => {
+  const initializeApp = async () => {
+    setDbError(null);
+    setIsDbReady(false);
+    try {
+      await initDatabase();
+      // Rolls any active recurring-income template forward to the current
+      // month before the first load, so a salary due this month shows up
+      // without the user having to open the income flow first. Failures here
+      // must not block the app from opening — recurring income is additive,
+      // not load-bearing for basic use.
       try {
-        await initDatabase();
-        await loadTransactions();
-      } catch (error) {
-        console.error('[TransactionsContext] Init error:', error);
-      } finally {
-        setIsDbReady(true);
+        await RecurringIncomeService.syncRecurringIncome();
+      } catch (e) {
+        console.error('[TransactionsContext] syncRecurringIncome error:', e);
       }
-    })();
+      await loadTransactions();
+      setIsDbReady(true);
+    } catch (error: any) {
+      console.error('[TransactionsContext] Init error:', error);
+      setDbError(error);
+    }
+  };
+
+  useEffect(() => {
+    initializeApp();
   }, [loadTransactions]);
+
+  if (dbError) {
+    return (
+      <View style={loadingStyles.root}>
+        <Text style={[loadingStyles.logo, { fontSize: 20, marginBottom: 16, textAlign: 'center', paddingHorizontal: 32 }]}>
+          Unable to unlock database
+        </Text>
+        <Text style={{ color: '#C2DFF7', opacity: 0.7, marginBottom: 32, textAlign: 'center', paddingHorizontal: 32 }}>
+          {dbError.message?.includes('canceled') 
+            ? 'Authentication was canceled. CoinKeeper needs to verify your identity to decrypt your data.'
+            : dbError.message || 'An unknown error occurred'}
+        </Text>
+        <View style={{ backgroundColor: '#1E2536', borderRadius: 12, overflow: 'hidden' }}>
+          <Text 
+            style={{ color: '#C2DFF7', paddingHorizontal: 24, paddingVertical: 14, fontFamily: 'Satoshi-Bold' }}
+            onPress={initializeApp}
+          >
+            Try Again
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   if (!isDbReady) {
     return <DbLoadingScreen />;

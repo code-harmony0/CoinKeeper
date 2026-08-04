@@ -78,6 +78,10 @@ export const BillsScreen = () => {
     try {
       const bill = bills.find(b => b.id === id);
       await markPaid(id, isUnpaying ? 0 : Date.now());
+      // markPaid now inserts/removes a transaction under the hood; without this
+      // the dashboard, reports, and Money Plan keep showing stale totals until
+      // some other screen happens to reload the transaction list.
+      await loadTransactions();
       if (currentNotifId) {
         await cancelBillReminder(currentNotifId);
       }
