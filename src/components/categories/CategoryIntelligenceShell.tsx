@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { ArrowLeft, Plus, Search, SlidersHorizontal } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSpecTheme } from '../../theme/specTheme';
@@ -21,7 +22,7 @@ type SortBy = 'name' | 'spend' | 'usage';
 
 export const CategoryIntelligenceShell: React.FC<Props> = ({ onGoBack }) => {
   const insets = useSafeAreaInsets();
-  const { colors, cardRadius } = useSpecTheme();
+  const { colors, inputRadius, chipRadius } = useSpecTheme();
   const { categories, mergeSuggestions, reload } = useCategoryIntelligence();
 
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -132,7 +133,7 @@ export const CategoryIntelligenceShell: React.FC<Props> = ({ onGoBack }) => {
       />
 
       <View style={styles.toolsRow}>
-        <View style={[styles.searchBox, { backgroundColor: colors.chipBg, borderRadius: cardRadius }]}>
+        <View style={[styles.searchBox, { backgroundColor: colors.chipBg, borderRadius: inputRadius }]}>
           <Search size={18} color={colors.textSecondary} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
@@ -142,13 +143,13 @@ export const CategoryIntelligenceShell: React.FC<Props> = ({ onGoBack }) => {
             onChangeText={setSearchQuery}
           />
         </View>
-        <TouchableOpacity onPress={toggleSort} style={[styles.sortBtn, { backgroundColor: colors.chipBg, borderRadius: cardRadius }]}>
+        <TouchableOpacity onPress={toggleSort} style={[styles.sortBtn, { backgroundColor: colors.chipBg, borderRadius: chipRadius }]}>
           <SlidersHorizontal size={18} color={colors.textPrimary} />
           <Text style={[styles.sortText, { color: colors.textPrimary }]}>{sortBy}</Text>
         </TouchableOpacity>
       </View>
 
-      <FlatList
+      <FlashList
         data={filteredAndSorted}
         keyExtractor={item => item.id}
         contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 32, paddingTop: 16 }}
@@ -162,6 +163,7 @@ export const CategoryIntelligenceShell: React.FC<Props> = ({ onGoBack }) => {
             onDelete={handleDelete}
           />
         )}
+        estimatedItemSize={120}
         showsVerticalScrollIndicator={false}
       />
 

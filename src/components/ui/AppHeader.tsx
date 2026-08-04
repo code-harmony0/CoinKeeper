@@ -1,0 +1,60 @@
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
+import { Text } from './Text';
+import { PressableScale } from '../anim/PressableScale';
+import { useSpecTheme } from '../../theme/specTheme';
+
+interface Props {
+  title: string;
+  onBack: () => void;
+  rightActions?: React.ReactNode;
+}
+
+/**
+ * Single source of truth for screen headers — back button, title, and an
+ * optional right-side actions slot. Mirrors TransactionsScreen's original
+ * header exactly so every screen shares one back-button/title language.
+ */
+export const AppHeader: React.FC<Props> = ({ title, onBack, rightActions }) => {
+  const { colors } = useSpecTheme();
+
+  return (
+    <View style={styles.headerRow}>
+      <PressableScale
+        onPress={onBack}
+        style={[styles.backButton, { backgroundColor: colors.chipBg }]}
+      >
+        <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+      </PressableScale>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+      {rightActions ? <View style={styles.rightActions}>{rightActions}</View> : null}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  title: {
+    fontSize: 28,
+    fontFamily: 'Satoshi-Black',
+    flex: 1,
+  },
+  rightActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+});
+
+export default AppHeader;

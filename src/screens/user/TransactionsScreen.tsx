@@ -48,6 +48,7 @@ import { useSpecTheme } from '../../theme/specTheme';
 import { Transaction } from '../../types/transaction';
 import { CountUp, PressableScale } from '../../components/anim';
 import { PiggyBankIllustration } from '../../components/illustrations';
+import { AppHeader } from '../../components/ui/AppHeader';
 import { groupTransactionsByDate, GroupedRow } from '../../utils/groupTransactionsByDate';
 
 type Props = NativeStackScreenProps<any, 'Transactions'>;
@@ -327,29 +328,26 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
               </Pressable>
             </>
           ) : (
-            <>
-              <PressableScale
-                onPress={() => navigation.goBack()}
-                style={[styles.backButton, { backgroundColor: colors.chipBg }]}
-              >
-                <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
-              </PressableScale>
-              <Text style={[styles.title, { color: colors.textPrimary }]}>Transactions</Text>
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <PressableScale
-                  onPress={() => navigation.navigate('SmsReview')}
-                  style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
-                >
-                  <MessageSquare size={18} color={colors.textPrimary} strokeWidth={2.2} />
-                </PressableScale>
-                <PressableScale
-                  onPress={() => navigation.navigate('Categories')}
-                  style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
-                >
-                  <Tag size={18} color={colors.textPrimary} strokeWidth={2.2} />
-                </PressableScale>
-              </View>
-            </>
+            <AppHeader
+              title="Transactions"
+              onBack={() => navigation.goBack()}
+              rightActions={
+                <>
+                  <PressableScale
+                    onPress={() => navigation.navigate('SmsReview')}
+                    style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
+                  >
+                    <MessageSquare size={18} color={colors.textPrimary} strokeWidth={2.2} />
+                  </PressableScale>
+                  <PressableScale
+                    onPress={() => navigation.navigate('Categories')}
+                    style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
+                  >
+                    <Tag size={18} color={colors.textPrimary} strokeWidth={2.2} />
+                  </PressableScale>
+                </>
+              }
+            />
           )}
         </Animated.View>
 

@@ -49,7 +49,7 @@ type ThemeColors = {
 };
 
 const lightColors: ThemeColors = {
-  primary: '#007AFF',
+  primary: '#121723',
   secondary: '#5856D6',
   error: '#FF3B30',
   success: '#34C759',
@@ -84,7 +84,7 @@ const lightColors: ThemeColors = {
 };
 
 const darkColors: ThemeColors = {
-  primary: '#4DA2FF',
+  primary: '#F5F7FA',
   secondary: '#7B7AEA',
   error: '#FF6B6B',
   success: '#4CAF50',

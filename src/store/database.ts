@@ -14,6 +14,7 @@ export const initDatabase = async (): Promise<void> => {
     await initEncryptedDb();
   } catch (error) {
     console.error('[database] initDatabase error:', error);
+    throw error;
   }
 };
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { Canvas, Path, Skia } from '@shopify/react-native-skia';
 import { useSpecTheme } from '../../theme/specTheme';
 
 export type StatRingTint = 'lavender' | 'mint' | 'peach' | 'accent';
@@ -50,31 +50,21 @@ export const StatRing: React.FC<StatRingProps> = ({
       ? colors.peachDeep
       : colors.primaryAccent;
 
+  const path = Skia.Path.Make();
+  path.addCircle(size / 2, size / 2, radius);
+
+  const start = 270;
+  const end = progress * 360;
+
+  const progressPath = Skia.Path.Make();
+  progressPath.addArc({ x: strokeWidth / 2, y: strokeWidth / 2, width: size - strokeWidth, height: size - strokeWidth }, start, end);
+
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>
-      <Svg width={size} height={size}>
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={colors.chipBg}
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={fillColor}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={`${circumference}, ${circumference}`}
-          strokeDashoffset={circumference * (1 - progress)}
-          rotation="-90"
-          origin={`${size / 2}, ${size / 2}`}
-        />
-      </Svg>
+      <Canvas style={{ width: size, height: size }}>
+        <Path path={path} style="stroke" strokeWidth={strokeWidth} color={colors.chipBg} />
+        <Path path={progressPath} style="stroke" strokeWidth={strokeWidth} color={fillColor} strokeCap="round" />
+      </Canvas>
       <View style={styles.center}>
         {centerValue ? (
           <Text style={[styles.centerValue, { color: colors.textPrimary }]}>{centerValue}</Text>

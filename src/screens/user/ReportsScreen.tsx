@@ -238,6 +238,15 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
               </Text>
             </View>
           </View>
+          
+          {/* Projection text */}
+          {activeTab === 'budget' && totalIncome > 0 && (
+            <View style={[styles.projectionWrap, { backgroundColor: colors.chipBg }]}>
+              <Text style={[styles.projectionText, { color: colors.textSecondary }]}>
+                At this rate, you'll save <Text style={{ color: colors.mintDeep, fontFamily: 'Satoshi-Bold' }}>₹{Math.max(0, totalIncome - totalExpense * 1.2).toLocaleString('en-IN')}</Text> by month end
+              </Text>
+            </View>
+          )}
         </Animated.View>
 
         {/* Category Breakdown Header */}
@@ -473,16 +482,20 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontFamily: 'Satoshi-Black',
   },
-  heroEmpty: {
-    fontSize: 15,
-    fontFamily: 'Satoshi-Medium',
-    paddingVertical: 40,
-  },
-  inlineStatsRow: {
-    flexDirection: 'row',
-    gap: 24,
+  heroEmpty: { marginTop: 40, marginBottom: 20, fontSize: 16, fontFamily: 'Satoshi-Medium' },
+  projectionWrap: {
     marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    width: '100%',
   },
+  projectionText: {
+    fontSize: 13,
+    fontFamily: 'Satoshi-Medium',
+  },
+  inlineStatsRow: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginTop: 24 },
   inlineStat: {
     flexDirection: 'row',
     alignItems: 'center',

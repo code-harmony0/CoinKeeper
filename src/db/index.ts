@@ -42,7 +42,10 @@ export const initEncryptedDb = async (): Promise<DB> => {
 
       db = connection;
       return connection;
-    })();
+    })().catch((error) => {
+      initPromise = null;
+      throw error;
+    });
   }
   return initPromise;
 };

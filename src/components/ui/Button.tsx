@@ -55,11 +55,15 @@ export const Button: React.FC<ButtonProps> = ({
           backgroundColor: 'transparent',
           borderWidth: 1.5,
           borderColor: disabled ? colors.disabled : '#121723',
+          elevation: 0,
+          shadowOpacity: 0,
         };
       case 'ghost':
         return {
           backgroundColor: 'transparent',
           borderWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
         };
       case 'danger':
         return {

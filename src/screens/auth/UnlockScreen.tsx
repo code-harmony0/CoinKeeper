@@ -102,8 +102,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock }) => {
           onPress={handleSubmit}
           disabled={value.length < 4 || verifying}
           loading={verifying}
-          style={[styles.button, { backgroundColor: colors.primaryAccent }]}
-          textStyle={{ color: '#FFFFFF' }}
+          style={styles.button}
         />
 
         <Button

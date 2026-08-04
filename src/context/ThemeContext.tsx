@@ -23,7 +23,7 @@ const LIGHT_COLORS = {
   textOnPrimary: '#FFFFFF',
 
   // Primary
-  primary: '#007AFF',
+  primary: '#121723',
   primaryDark: '#0051D5',
   primaryLight: '#4DA2FF',
 
@@ -74,7 +74,7 @@ const DARK_COLORS = {
   textOnPrimary: '#FFFFFF',
 
   // Primary
-  primary: '#4DA2FF',
+  primary: '#F5F7FA',
   primaryDark: '#007AFF',
   primaryLight: '#7AB8FF',
 
