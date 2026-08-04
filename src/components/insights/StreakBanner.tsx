@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '../ui/Text';
-import { useTheme } from '../../hooks/useTheme';
-import { spacing, radii } from '../../theme/designTokens';
+import { useSpecTheme } from '../../theme/specTheme';
 import { Flame } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -12,14 +11,14 @@ interface StreakBannerProps {
 }
 
 export const StreakBanner: React.FC<StreakBannerProps> = ({ days, message }) => {
-  const { colors } = useTheme();
+  const { colors, cardRadius, space } = useSpecTheme();
 
   if (days <= 0) return null;
 
   return (
-    <Animated.View entering={FadeInDown.springify()} style={[styles.container, { backgroundColor: colors.accent4 }]}>
+    <Animated.View entering={FadeInDown.springify()} style={[styles.container, { backgroundColor: colors.peach, borderRadius: cardRadius, padding: space.sm, gap: space.sm }]}>
       <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
-        <Flame size={20} color={colors.warning} strokeWidth={2.5} />
+        <Flame size={20} color={colors.peachDeep} strokeWidth={2.5} />
       </View>
       <View style={styles.textContainer}>
         <Text variant="body" style={styles.title}>{days} Day Streak!</Text>
@@ -33,9 +32,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.s,
-    borderRadius: radii.card,
-    gap: spacing.s,
   },
   iconContainer: {
     width: 40,
