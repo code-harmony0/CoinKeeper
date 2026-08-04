@@ -163,7 +163,6 @@ export const CategoryIntelligenceShell: React.FC<Props> = ({ onGoBack }) => {
             onDelete={handleDelete}
           />
         )}
-        estimatedItemSize={120}
         showsVerticalScrollIndicator={false}
       />
 

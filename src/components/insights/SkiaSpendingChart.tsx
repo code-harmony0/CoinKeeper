@@ -67,7 +67,7 @@ export const SkiaSpendingChart: React.FC<Props> = ({
     <View style={{ width, height }}>
       <Canvas style={{ width, height }}>
         {/* Fill Gradient */}
-        <Path d={fillPathStr}>
+        <Path path={fillPathStr}>
           <LinearGradient
             start={vec(0, PADDING_TOP)}
             end={vec(0, PADDING_TOP + innerHeight)}
@@ -77,7 +77,7 @@ export const SkiaSpendingChart: React.FC<Props> = ({
 
         {/* Line */}
         <Path
-          d={pathStr}
+          path={pathStr}
           style="stroke"
           strokeWidth={3}
           color={color}

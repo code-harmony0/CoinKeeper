@@ -18,8 +18,8 @@ jest.mock('../../src/context/TabBarScrollContext', () => ({
 }));
 
 const mockDelete = jest.fn(async () => {});
-jest.mock('../../src/hooks/useTransactions', () => ({
-  useTransactions: () => ({
+jest.mock('../../src/context/TransactionsContext', () => ({
+  useTransactionsContext: () => ({
     transactions: [
       { id: '1', amount: 100, type: 'expense', category: 'Food', categoryIcon: 'food', description: 'Lunch', date: '2026-07-31T09:00:00.000Z' },
       { id: '2', amount: 5000, type: 'income', category: 'Salary', categoryIcon: 'salary', description: 'Paycheck', date: '2026-07-30T09:00:00.000Z' },

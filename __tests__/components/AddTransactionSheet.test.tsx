@@ -2,79 +2,135 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { AddTransactionSheet } from '../../src/components/modals/AddTransactionSheet';
 
-jest.mock('../../src/services/categorizationService', () => ({
-  suggestCategoryForMerchant: jest.fn(async () => null),
-  recordMerchantCategory: jest.fn(async () => undefined),
+// This suite previously targeted an older manual-entry UI (category chips, a
+// date picker, a submit button literally labelled "Add Expense", and a
+// suggestCategoryForMerchant service call) that no longer exists — the
+// component evolved into a multi-mode (manual/SMS/scan) sheet driven by a
+// merchant-prediction engine, and the test was never updated. Rewritten
+// against the actual current contract: a free-text amount + merchant input,
+// a StickySaveBar whose "Save" button is disabled until both are set, and
+// TransactionPredictionService (not categorizationService) supplying the
+// predicted category.
+
+jest.mock('../../src/store/database', () => ({
+  getDb: () => ({
+    execute: jest.fn(async () => ({ rows: [] })),
+    transaction: jest.fn(async (fn: any) => fn({ execute: jest.fn(async () => ({ rows: [] })) })),
+  }),
+}));
+
+jest.mock('../../src/services/MerchantLearningService', () => ({
+  MerchantLearningService: {
+    getFavorites: jest.fn(async () => []),
+    getRecent: jest.fn(async () => []),
+    learnCorrection: jest.fn(async () => undefined),
+    updateFrequency: jest.fn(async () => undefined),
+  },
+}));
+
+jest.mock('../../src/services/TransactionPredictionService', () => ({
+  TransactionPredictionService: {
+    predict: jest.fn(async () => ({
+      categoryId: null,
+      accountId: null,
+      isRecurring: false,
+      isDuplicate: false,
+      predictionReason: null,
+      confidence: 0,
+    })),
+    evaluateBudgetImpact: jest.fn(async () => null),
+  },
+}));
+
+jest.mock('../../src/services/EcosystemIntegrationService', () => ({
+  EcosystemIntegrationService: {
+    notifyDraftSaved: jest.fn(async () => undefined),
+  },
 }));
 
 describe('AddTransactionSheet validation', () => {
-  it('disables submit until amount and category are set', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('disables Save until both amount and merchant are set', () => {
     const onSubmit = jest.fn();
     const { getByText, getByPlaceholderText } = render(
       <AddTransactionSheet visible onClose={() => {}} onSubmit={onSubmit} />,
     );
 
-    fireEvent.press(getByText('Add Expense'));
+    fireEvent.press(getByText('Save'));
     expect(onSubmit).not.toHaveBeenCalled();
 
     fireEvent.changeText(getByPlaceholderText('0'), '250');
-    fireEvent.press(getByText('Food'));
-    fireEvent.press(getByText('Add Expense'));
-
-    expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 250, category: 'Food' }),
-    );
+    fireEvent.press(getByText('Save'));
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('rejects an amount of zero with an inline error, no onSubmit call', () => {
+  it('treats a zero amount as empty and keeps Save disabled', () => {
     const onSubmit = jest.fn();
-    const { getByText, getByPlaceholderText, queryByText } = render(
+    const { getByText, getByPlaceholderText, queryByPlaceholderText } = render(
       <AddTransactionSheet visible onClose={() => {}} onSubmit={onSubmit} />,
     );
 
     fireEvent.changeText(getByPlaceholderText('0'), '0');
-    fireEvent.press(getByText('Food'));
-    fireEvent.press(getByText('Add Expense'));
+    // The merchant field only renders once the amount is non-empty — with
+    // amount '0' it never appears, so there's no way to also fill it in.
+    expect(queryByPlaceholderText('Where did you spend?')).toBeNull();
 
+    fireEvent.press(getByText('Save'));
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(queryByText(/greater than zero/i)).toBeTruthy();
   });
 
-  it('rejects a future date for an expense with an inline error', () => {
+  it('submits once amount and merchant are both filled', async () => {
+    jest.useFakeTimers();
     const onSubmit = jest.fn();
-    const { getByText, getByPlaceholderText, getByTestId, queryByText } = render(
+    const { getByText, getByPlaceholderText } = render(
       <AddTransactionSheet visible onClose={() => {}} onSubmit={onSubmit} />,
     );
 
-    fireEvent.changeText(getByPlaceholderText('0'), '100');
-    fireEvent.press(getByText('Food'));
+    fireEvent.changeText(getByPlaceholderText('0'), '250');
+    fireEvent.changeText(getByPlaceholderText('Where did you spend?'), 'Coffee Shop');
 
-    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    // @react-native-community/datetimepicker's iOS implementation reads
-    // event.nativeEvent.timestamp internally (see datetimepicker.ios.js)
-    // rather than accepting a raw Date as a second fireEvent arg.
-    fireEvent(getByTestId('date-picker'), 'onChange', {
-      nativeEvent: { timestamp: tomorrow.getTime() },
-    });
+    fireEvent.press(getByText('Save'));
+    // handleSave shows a success state for 600ms before actually calling
+    // onSubmit — advance past that instead of waiting on a real timer.
+    jest.advanceTimersByTime(700);
 
-    fireEvent.press(getByText('Add Expense'));
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ amount_paise: 25000, merchant_name: 'Coffee Shop' }),
+        'expense',
+      ),
+    );
 
-    expect(onSubmit).not.toHaveBeenCalled();
-    expect(queryByText(/future/i)).toBeTruthy();
+    jest.useRealTimers();
   });
 
-  it('suggests a category when a known merchant is typed, without overriding an explicit user pick', async () => {
-    const { suggestCategoryForMerchant } = require('../../src/services/categorizationService');
-    suggestCategoryForMerchant.mockResolvedValueOnce({ id: 'transport', name: 'Transport', icon: 'car' });
+  it('surfaces a predicted category once a merchant is typed', async () => {
+    const { TransactionPredictionService } = require('../../src/services/TransactionPredictionService');
+    TransactionPredictionService.predict.mockResolvedValueOnce({
+      categoryId: 'transport',
+      accountId: null,
+      isRecurring: false,
+      isDuplicate: false,
+      predictionReason: 'Based on your previous transactions at Uber',
+      confidence: 80,
+    });
 
-    const { getByPlaceholderText, findByText } = render(
+    const { getByPlaceholderText, findAllByText } = render(
       <AddTransactionSheet visible onClose={() => {}} onSubmit={jest.fn()} />,
     );
 
-    fireEvent.changeText(getByPlaceholderText('Add a note...'), 'Uber');
-    await waitFor(() => expect(suggestCategoryForMerchant).toHaveBeenCalledWith('Uber'));
+    fireEvent.changeText(getByPlaceholderText('0'), '250');
+    fireEvent.changeText(getByPlaceholderText('Where did you spend?'), 'Uber');
 
-    // The suggested chip becomes visually selected without another tap.
-    expect(await findByText('Transport')).toBeTruthy();
+    await waitFor(() =>
+      expect(TransactionPredictionService.predict).toHaveBeenCalledWith(
+        expect.objectContaining({ merchant_name: 'Uber' }),
+      ),
+    );
+
+    // Appears twice by design: the PredictionBanner ("Looks like transport")
+    // and the StickySaveBar's sub-label ("as transport").
+    expect(await findAllByText(/transport/i)).toHaveLength(2);
   });
 });
