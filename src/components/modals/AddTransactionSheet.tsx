@@ -38,8 +38,9 @@ const SMS_INBOX_LIMIT = 5;
 
 interface Props {
   visible: boolean;
+  initialType?: 'expense' | 'income';
   onClose: () => void;
-  onSubmit: (draft: TransactionDraft) => void;
+  onSubmit: (draft: TransactionDraft, type: 'expense' | 'income') => void;
 }
 
 interface MerchantItem {
@@ -49,10 +50,20 @@ interface MerchantItem {
 
 export const AddTransactionSheet: React.FC<Props> = ({
   visible,
+  initialType = 'expense',
   onClose,
   onSubmit,
 }) => {
   const { colors, cardRadius } = useSpecTheme();
+
+  const [transactionType, setTransactionType] = useState<'expense' | 'income'>(initialType);
+
+  // This component stays mounted across navigations, so useState's initial
+  // value alone would ignore a later initialType change. Re-sync on each open
+  // so "Add Income" actually lands on the Income tab.
+  useEffect(() => {
+    if (visible) setTransactionType(initialType);
+  }, [visible, initialType]);
 
   const [draft, setDraft] = useState<TransactionDraft>(() => TransactionDraftService.createDraft('manual'));
   const [activeMode, setActiveMode] = useState<EntrySource>('manual');
@@ -304,7 +315,7 @@ export const AddTransactionSheet: React.FC<Props> = ({
 
     setIsSuccess(true);
     setTimeout(() => {
-      onSubmit(finalDraft);
+      onSubmit(finalDraft, transactionType);
       setIsSuccess(false);
       setIsSaving(false);
       resetState();
@@ -345,10 +356,25 @@ export const AddTransactionSheet: React.FC<Props> = ({
 
   return (
     <TransactionEntryShell visible={visible} onClose={onClose} footer={footer} headerContext={headerContext}>
+      <View style={[styles.typeToggleRow, { backgroundColor: colors.chipBg, borderRadius: cardRadius }]}>
+        <TouchableOpacity
+          style={[styles.typeToggleBtn, transactionType === 'expense' && { backgroundColor: colors.card, borderRadius: cardRadius - 4 }]}
+          onPress={() => setTransactionType('expense')}
+        >
+          <Text style={[styles.typeToggleText, { color: transactionType === 'expense' ? colors.textPrimary : colors.textSecondary }]}>Expense</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.typeToggleBtn, transactionType === 'income' && { backgroundColor: colors.card, borderRadius: cardRadius - 4 }]}
+          onPress={() => setTransactionType('income')}
+        >
+          <Text style={[styles.typeToggleText, { color: transactionType === 'income' ? colors.textPrimary : colors.textSecondary }]}>Income</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
       <TransactionEntryModeTabs activeMode={activeMode} onModeChange={handleModeChange} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {activeMode === 'manual' && (
           <>
@@ -495,6 +521,22 @@ export const AddTransactionSheet: React.FC<Props> = ({
 const styles = StyleSheet.create({
   scroll: {
     paddingTop: 16,
+  },
+  typeToggleRow: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    padding: 4,
+    marginVertical: 12,
+    width: 200,
+  },
+  typeToggleBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  typeToggleText: {
+    fontFamily: 'Satoshi-Bold',
+    fontSize: 14,
   },
   heroAmountContainer: {
     flexDirection: 'row',

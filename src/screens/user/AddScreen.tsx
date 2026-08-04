@@ -1,19 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
 import { AddTransactionSheet } from '../../components/modals/AddTransactionSheet';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
+import { useSpecTheme } from '../../theme/specTheme';
 
 export const AddScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const isFocused = useIsFocused();
+  const { colors } = useSpecTheme();
   const { addTransaction } = useTransactions();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (isFocused) {
-      setVisible(true);
+      // Delay mounting the bottom sheet to ensure React Navigation
+      // stack transitions have completed. This fixes the blank screen
+      // bug when navigating to this tab from deeply nested stack screens.
+      timer = setTimeout(() => {
+        setVisible(true);
+      }, 150);
+    } else {
+      setVisible(false);
     }
+    return () => clearTimeout(timer);
   }, [isFocused]);
 
   const closeSheet = () => {
@@ -22,15 +34,16 @@ export const AddScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <AddTransactionSheet
         visible={visible}
+        initialType={route.params?.type === 'income' ? 'income' : 'expense'}
         onClose={closeSheet}
-        onSubmit={async (draft) => {
+        onSubmit={async (draft, type) => {
           try {
             await addTransaction({
               amount: (draft.amount_paise || 0) / 100, // App stores rupees externally in Context still
-              type: 'expense',
+              type: type || 'expense',
               category: draft.category_id || 'unknown',
               categoryIcon: 'other',
               description: draft.merchant_name || 'Unknown',

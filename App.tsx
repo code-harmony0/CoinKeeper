@@ -8,7 +8,12 @@ import { TransactionsProvider } from './src/context/TransactionsContext';
 import { TabBarScrollProvider } from './src/context/TabBarScrollContext';
 import { AppLockProvider } from './src/context/AppLockContext';
 import { RootNavigator } from './src/navigation';
+import { LogBox } from 'react-native';
 
+LogBox.ignoreLogs([
+  'forwardRef render functions accept exactly two parameters',
+  'Mock sign-in anonymously failed'
+]);
 // Firebase init, auth, and chit-fund state are pro-only. These requires sit
 // behind a build-time constant, so Metro eliminates the branch and the lite
 // bundle performs no Firebase initialisation at all.
