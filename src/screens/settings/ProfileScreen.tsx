@@ -12,11 +12,13 @@ export const ProfileScreen: React.FC<any> = ({ navigation }) => {
   const { colors, inputRadius } = useSpecTheme();
   const [name, setName] = useState('');
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nameRef = useRef('');
 
   useEffect(() => {
     getPreference('profile_name').then(value => {
       if (value !== null) {
         setName(value);
+        nameRef.current = value;
       }
     });
   }, []);
@@ -25,12 +27,16 @@ export const ProfileScreen: React.FC<any> = ({ navigation }) => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+        setPreference('profile_name', nameRef.current).catch(error => {
+          console.error('[ProfileScreen] Error saving profile_name preference:', error);
+        });
       }
     };
   }, []);
 
   const handleChangeName = useCallback((value: string) => {
     setName(value);
+    nameRef.current = value;
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
