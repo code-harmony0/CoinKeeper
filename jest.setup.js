@@ -67,6 +67,37 @@ jest.mock('./src/hooks/useTheme', () => {
   };
 });
 
+// @shopify/react-native-skia is a JSI native module (RNSkiaModule) with no JS
+// fallback — even once its ESM source is allowed through babel (jest.config.js
+// transformIgnorePatterns), TurboModuleRegistry.getEnforcing throws in Jest's
+// Node environment since there's no native binary to find it in. Canvas
+// renders as a plain View so components asserting on its children (text,
+// labels) still work; the drawing primitives (Path/Circle/Rect/etc.) are
+// only ever nested inside a Canvas in this codebase and are never queried by
+// a test directly, so they render nothing.
+jest.mock('@shopify/react-native-skia', () => {
+  const RN = require('react-native');
+  const stub = (name) => {
+    const Stub = (props) => null;
+    Stub.displayName = name;
+    return Stub;
+  };
+  return {
+    Canvas: RN.View,
+    Path: stub('Path'),
+    Circle: stub('Circle'),
+    Rect: stub('Rect'),
+    RoundedRect: stub('RoundedRect'),
+    Group: ({ children }) => children ?? null,
+    LinearGradient: stub('LinearGradient'),
+    Skia: { Path: { Make: () => ({ addArc: jest.fn() }) } },
+    rect: (x, y, width, height) => ({ x, y, width, height }),
+    rrect: (r, rx, ry) => ({ rect: r, rx, ry }),
+    vec: (x, y) => ({ x, y }),
+    useFont: () => null,
+  };
+});
+
 jest.mock('@notifee/react-native', () => ({
   __esModule: true,
   default: {

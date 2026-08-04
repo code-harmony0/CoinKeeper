@@ -21,6 +21,8 @@ module.exports = {
       '|react-native-linear-gradient' +
       '|react-native-chart-kit' +
       '|@shopify/flash-list' +
+      '|@shopify/react-native-skia' +
+      '|react-native-image-picker' +
       '|uuid' +
       ')/)',
   ],
