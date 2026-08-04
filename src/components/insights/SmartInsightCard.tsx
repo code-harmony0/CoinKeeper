@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '../ui/Text';
-import { useTheme } from '../../hooks/useTheme';
-import { spacing, radii } from '../../theme/designTokens';
+import { useSpecTheme } from '../../theme/specTheme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ShieldAlert, Info, AlertTriangle, TrendingDown } from 'lucide-react-native';
 import type { Insight } from '../../services/insightsEngine';
@@ -13,7 +12,7 @@ interface SmartInsightCardProps {
 }
 
 export const SmartInsightCard: React.FC<SmartInsightCardProps> = ({ insight, delay = 0 }) => {
-  const { colors } = useTheme();
+  const { colors, cardRadius, cardShadow, space } = useSpecTheme();
 
   let icon;
   let bgTint;
@@ -21,14 +20,14 @@ export const SmartInsightCard: React.FC<SmartInsightCardProps> = ({ insight, del
 
   switch (insight.type) {
     case 'alert':
-      icon = <ShieldAlert size={20} color={colors.error} />;
+      icon = <ShieldAlert size={20} color={colors.danger} />;
       bgTint = 'rgba(255,59,48,0.1)';
-      fgTint = colors.error;
+      fgTint = colors.danger;
       break;
     case 'warning':
-      icon = <AlertTriangle size={20} color={colors.warning} />;
+      icon = <AlertTriangle size={20} color={colors.peachDeep} />;
       bgTint = 'rgba(255,149,0,0.1)';
-      fgTint = colors.warning;
+      fgTint = colors.peachDeep;
       break;
     case 'success':
       icon = <TrendingDown size={20} color={colors.success} />;
@@ -37,16 +36,16 @@ export const SmartInsightCard: React.FC<SmartInsightCardProps> = ({ insight, del
       break;
     case 'info':
     default:
-      icon = <Info size={20} color={colors.primary} />;
+      icon = <Info size={20} color={colors.primaryAccent} />;
       bgTint = 'rgba(0,122,255,0.1)';
-      fgTint = colors.primary;
+      fgTint = colors.primaryAccent;
       break;
   }
 
   return (
-    <Animated.View entering={FadeInDown.delay(delay).springify()} style={[styles.container, { backgroundColor: colors.card, shadowColor: colors.text }]}>
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
+    <Animated.View entering={FadeInDown.delay(delay).springify()} style={[styles.container, { backgroundColor: colors.card, borderRadius: cardRadius, padding: space.sm, marginBottom: space.sm }, cardShadow]}>
+      <View style={[styles.header, { marginBottom: space.xs }]}>
+        <View style={[styles.titleRow, { gap: space.xs }]}>
           <View style={[styles.iconBox, { backgroundColor: bgTint }]}>{icon}</View>
           <Text variant="h2" style={styles.title}>{insight.title}</Text>
         </View>
@@ -62,25 +61,15 @@ export const SmartInsightCard: React.FC<SmartInsightCardProps> = ({ insight, del
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: spacing.m,
-    borderRadius: radii.card,
-    elevation: 4,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    marginBottom: spacing.m,
-  },
+  container: {},
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.s,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.s,
   },
   iconBox: {
     width: 32,

@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '../ui/Text';
-import { useTheme } from '../../hooks/useTheme';
-import { spacing, radii } from '../../theme/designTokens';
+import { useSpecTheme } from '../../theme/specTheme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 interface SpendingHeatmapProps {
@@ -10,23 +9,23 @@ interface SpendingHeatmapProps {
 }
 
 export const SpendingHeatmap: React.FC<SpendingHeatmapProps> = ({ data }) => {
-  const { colors } = useTheme();
+  const { colors, cardRadius, cardShadow, space } = useSpecTheme();
 
   if (!data || data.length === 0) return null;
 
   const maxAmount = Math.max(...data.map(d => d.amount));
 
   return (
-    <Animated.View entering={FadeInDown.springify()} style={[styles.container, { backgroundColor: colors.card, shadowColor: colors.text }]}>
-      <Text variant="h2" style={styles.title}>Weekly Heatmap</Text>
+    <Animated.View entering={FadeInDown.springify()} style={[styles.container, { backgroundColor: colors.card, borderRadius: cardRadius, padding: space.sm }, cardShadow]}>
+      <Text variant="h2" style={{ marginBottom: space.sm }}>Weekly Heatmap</Text>
       <View style={styles.chart}>
         {data.map((item, index) => {
           const intensity = maxAmount > 0 ? (item.amount / maxAmount) : 0;
-          const barColor = intensity > 0.7 ? colors.accent2 : (intensity > 0.3 ? colors.accent4 : colors.surfaceSecondary);
+          const barColor = intensity > 0.7 ? colors.pink : (intensity > 0.3 ? colors.peach : colors.surfaceSunken);
 
           return (
-            <View key={index} style={styles.barContainer}>
-              <View style={[styles.track, { backgroundColor: colors.surfaceSecondary }]}>
+            <View key={index} style={[styles.barContainer, { gap: space.xs }]}>
+              <View style={[styles.track, { backgroundColor: colors.surfaceSunken }]}>
                 <View style={[styles.fill, { height: `${intensity * 100}%`, backgroundColor: barColor }]} />
               </View>
               <Text variant="caption" color="secondary" style={styles.label}>{item.day[0]}</Text>
@@ -39,17 +38,7 @@ export const SpendingHeatmap: React.FC<SpendingHeatmapProps> = ({ data }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: spacing.m,
-    borderRadius: radii.card,
-    elevation: 4,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-  },
-  title: {
-    marginBottom: spacing.m,
-  },
+  container: {},
   chart: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -58,7 +47,6 @@ const styles = StyleSheet.create({
   },
   barContainer: {
     alignItems: 'center',
-    gap: spacing.xs,
   },
   track: {
     width: 24,
