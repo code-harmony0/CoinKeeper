@@ -47,6 +47,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { colors, cardRadius, cardShadow, isDark, toggleTheme } = useSpecTheme();
   const { userProfile, signOut } = useOptionalAuth();
   const [notifications, setNotifications] = useState(true);
+  const [profileName, setProfileName] = useState<string | null>(null);
 
   // Hydrate notifications preference from local SQLite
   useEffect(() => {
@@ -57,6 +58,17 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       }
     };
     loadPref();
+  }, []);
+
+  // Hydrate profile name preference from local SQLite
+  useEffect(() => {
+    const loadProfileName = async () => {
+      const value = await getPreference('profile_name');
+      if (value !== null) {
+        setProfileName(value);
+      }
+    };
+    loadProfileName();
   }, []);
 
   const handleToggleNotifications = useCallback(async (val: boolean) => {
@@ -125,7 +137,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         <Animated.View entering={FadeInDown.springify().delay(50)}>
           <View>
             <PressableScale
-              onPress={handleInertPress}
+              onPress={() => navigation.navigate('Profile')}
               style={[
                 styles.profileCard,
                 { backgroundColor: colors.card, borderRadius: cardRadius },
@@ -137,7 +149,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
               </View>
               <View style={styles.profileInfo}>
                 <Text style={[styles.profileName, { color: colors.textPrimary }]}>
-                  {userProfile?.name || 'User'}
+                  {userProfile?.name || profileName || 'User'}
                 </Text>
                 <Text style={[styles.profilePhone, { color: colors.textSecondary }]}>
                   {userProfile?.phoneNumber || ''}
@@ -152,7 +164,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         <Animated.View entering={FadeInDown.springify().delay(100)}>
           <SettingsSectionTitle>ACCOUNT</SettingsSectionTitle>
           <SettingsCard style={styles.groupCard}>
-            <SettingsRow icon={User} tint="blue" label="Profile" onPress={handleInertPress} />
+            <SettingsRow icon={User} tint="blue" label="Profile" onPress={() => navigation.navigate('Profile')} />
             <SettingsDivider />
             <SettingsRow icon={CreditCard} tint="green" label="Payment Methods" onPress={handleInertPress} />
             <SettingsDivider />
