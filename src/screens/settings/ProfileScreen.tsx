@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, TextInput } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronLeft } from 'lucide-react-native';
 import { Text } from '../../components/ui/Text';
+import { PressableScale } from '../../components/anim';
 import { useSpecTheme } from '../../theme/specTheme';
 import { getPreference, setPreference } from '../../store/database';
 
-export const ProfileScreen: React.FC = () => {
+export const ProfileScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { colors, inputRadius } = useSpecTheme();
   const [name, setName] = useState('');
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     getPreference('profile_name').then(value => {
@@ -18,16 +21,37 @@ export const ProfileScreen: React.FC = () => {
     });
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleChangeName = useCallback((value: string) => {
     setName(value);
-    setPreference('profile_name', value).catch(error => {
-      console.error('[ProfileScreen] Error saving profile_name preference:', error);
-    });
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      setPreference('profile_name', value).catch(error => {
+        console.error('[ProfileScreen] Error saving profile_name preference:', error);
+      });
+    }, 300);
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <Text style={[styles.title, { color: colors.textPrimary }]}>Profile</Text>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <PressableScale onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.chipBg }]}>
+          <ChevronLeft color={colors.textPrimary} size={24} />
+        </PressableScale>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>Profile</Text>
+      </View>
       <TextInput
         value={name}
         onChangeText={handleChangeName}
@@ -42,12 +66,14 @@ export const ProfileScreen: React.FC = () => {
           },
         ]}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 24 },
-  title: { fontSize: 28, fontFamily: 'Satoshi-Black', marginBottom: 24 },
+  header: { marginBottom: 24 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  title: { fontSize: 28, fontFamily: 'Satoshi-Black' },
   input: { height: 56, paddingHorizontal: 16, fontSize: 16, fontFamily: 'Satoshi-Medium' },
 });
