@@ -15,21 +15,30 @@ import { FocusGoalHeroCard } from '../../components/insights/FocusGoalHeroCard';
 import { SecondaryGoalCard } from '../../components/insights/SecondaryGoalCard';
 import { GoalsHeroDashboard } from '../../components/insights/GoalsHeroDashboard';
 import { Money } from '../../utils/money';
+import { useGoalIntelligence } from '../../hooks/useGoalIntelligence';
+
+const isInMonth = (dateStr: string, monthsAgo: number): boolean => {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const target = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
+  return d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth();
+};
 
 export const GoalsScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { colors, cardRadius, cardShadow } = useSpecTheme();
   const styles = React.useMemo(() => makeStyles(colors), [colors]);
-  
-  const { goals, loadGoals, addGoal, getEmergencyFundTarget, updateGoalProgress, deleteGoal } = useGoalStore();
+
+  const { addGoal, getEmergencyFundTarget, updateGoalProgress, deleteGoal } = useGoalStore();
   const { transactions } = useTransactionStore();
-  
+  const { rankedGoals, savingsBudgetRemainingPaise } = useGoalIntelligence();
+
   const [showAdd, setShowAdd] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<{ id: string, name: string } | null>(null);
 
   useEffect(() => {
-    loadGoals().then(() => {
+    useGoalStore.getState().loadGoals().then(() => {
       getEmergencyFundTarget();
     });
   }, []);
@@ -75,14 +84,11 @@ export const GoalsScreen = () => {
     ]);
   };
 
-  // Sort: Emergency Fund first
-  const sortedGoals = [...goals].sort((a, b) => {
-    if (a.isEmergencyFund) return -1;
-    if (b.isEmergencyFund) return 1;
-    return 0;
-  });
-
   const goalTransfers = transactions.filter(t => t.type === 'transfer_to_goal').slice(0, 5);
+
+  const allGoalTransfers = transactions.filter(t => t.type === 'transfer_to_goal');
+  const contributedThisMonthPaise = allGoalTransfers.filter(t => isInMonth(t.date, 0)).reduce((sum, t) => sum + t.amountPaise, 0);
+  const contributedLastMonthPaise = allGoalTransfers.filter(t => isInMonth(t.date, 1)).reduce((sum, t) => sum + t.amountPaise, 0);
 
   // Fixed accent rotation order (lavender → pink → mint → peach → sky) — see DESIGN.md §2.
   const goalTints = [colors.lavender, colors.pink, colors.mint, colors.peach, colors.sky];
@@ -104,7 +110,7 @@ export const GoalsScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {goals.length === 0 ? (
+        {rankedGoals.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={[styles.emptyIcon, { backgroundColor: `${colors.primaryAccent}15` }]}>
               <Target color={colors.primaryAccent} size={48} />
@@ -121,35 +127,42 @@ export const GoalsScreen = () => {
           </View>
         ) : (
           <>
-            <GoalsHeroDashboard goals={goals} />
-            
+            <GoalsHeroDashboard
+              rankedGoals={rankedGoals}
+              contributedThisMonthPaise={contributedThisMonthPaise}
+              contributedLastMonthPaise={contributedLastMonthPaise}
+            />
+
             <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
-              {sortedGoals.length > 0 && (
+              {rankedGoals.length > 0 && (
                 <View style={{ marginBottom: 32 }}>
                   <FocusGoalHeroCard
-                    name={sortedGoals[0].name}
-                    currentAmount={sortedGoals[0].currentAmount}
-                    targetAmount={sortedGoals[0].targetAmount}
+                    name={rankedGoals[0].goal.name}
+                    currentAmount={rankedGoals[0].goal.currentAmount}
+                    targetAmount={rankedGoals[0].goal.targetAmount}
+                    health={rankedGoals[0].health}
+                    priorityRank={rankedGoals[0].priorityRank}
                     tint={goalTints[0]}
                     deep={goalDeeps[0]}
-                    onPress={() => setSelectedGoal({ id: sortedGoals[0].id, name: sortedGoals[0].name })}
-                    onAddFunds={() => setSelectedGoal({ id: sortedGoals[0].id, name: sortedGoals[0].name })}
+                    onPress={() => setSelectedGoal({ id: rankedGoals[0].goal.id, name: rankedGoals[0].goal.name })}
+                    onAddFunds={() => setSelectedGoal({ id: rankedGoals[0].goal.id, name: rankedGoals[0].goal.name })}
                   />
                 </View>
               )}
 
-              {sortedGoals.length > 1 && (
+              {rankedGoals.length > 1 && (
                 <>
                   <Text variant="caption" style={[styles.eyebrow, { marginBottom: 16 }]}>Other Active Goals</Text>
-                  {sortedGoals.slice(1).map((goal, index) => (
+                  {rankedGoals.slice(1).map((ranked, index) => (
                     <SecondaryGoalCard
-                      key={goal.id}
-                      name={goal.name}
-                      currentAmount={goal.currentAmount}
-                      targetAmount={goal.targetAmount}
+                      key={ranked.goal.id}
+                      name={ranked.goal.name}
+                      currentAmount={ranked.goal.currentAmount}
+                      targetAmount={ranked.goal.targetAmount}
+                      health={ranked.health}
                       themeColor={goalDeeps[(index + 1) % goalDeeps.length]}
-                      onPress={() => setSelectedGoal({ id: goal.id, name: goal.name })}
-                      onLongPress={() => handleDelete(goal.id)}
+                      onPress={() => setSelectedGoal({ id: ranked.goal.id, name: ranked.goal.name })}
+                      onLongPress={() => handleDelete(ranked.goal.id)}
                     />
                   ))}
                 </>
@@ -200,9 +213,9 @@ export const GoalsScreen = () => {
       <AddFundsSheet
         visible={!!selectedGoal}
         goalName={selectedGoal?.name}
-        goal={undefined}
-        health={undefined}
-        savingsBudgetRemainingPaise={undefined}
+        goal={rankedGoals.find(r => r.goal.id === selectedGoal?.id)?.goal}
+        health={rankedGoals.find(r => r.goal.id === selectedGoal?.id)?.health}
+        savingsBudgetRemainingPaise={savingsBudgetRemainingPaise}
         onClose={() => setSelectedGoal(null)}
         onSubmit={handleAddProgress}
       />
