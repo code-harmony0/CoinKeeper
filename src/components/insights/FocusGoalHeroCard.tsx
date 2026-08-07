@@ -5,11 +5,12 @@ import Animated, {
   useAnimatedStyle, 
   withSpring
 } from 'react-native-reanimated';
-import { Target, Plus } from 'lucide-react-native';
+import { Target, Plus, AlertTriangle } from 'lucide-react-native';
 import { Text } from '../ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim/PressableScale';
 import { Money } from '../../utils/money';
+import { GoalHealth } from '../../services/goalIntelligence';
 
 interface Props {
   name: string;
@@ -19,6 +20,8 @@ interface Props {
   deep: string;
   onAddFunds: () => void;
   onPress: () => void;
+  health: GoalHealth;
+  priorityRank: number;
 }
 
 export const FocusGoalHeroCard: React.FC<Props> = ({
@@ -28,12 +31,14 @@ export const FocusGoalHeroCard: React.FC<Props> = ({
   tint,
   deep,
   onAddFunds,
-  onPress
+  onPress,
+  health,
+  priorityRank
 }) => {
   const { colors, cardRadius, cardShadow, iconShadow, iconContainerRadius, space, spring } = useSpecTheme();
-  
-  const percentage = Math.min(100, Math.round((currentAmount / targetAmount) * 100)) || 0;
-  const isComplete = currentAmount >= targetAmount;
+
+  const percentage = health.progressPercent;
+  const isComplete = health.state === 'completed';
   
   const fillWidth = useSharedValue(0);
   
@@ -69,9 +74,11 @@ export const FocusGoalHeroCard: React.FC<Props> = ({
             ]}>
               <Target color={isComplete ? '#FFFFFF' : deep} size={20} />
             </View>
-            <View style={[styles.priorityBadge, { backgroundColor: colors.chipBg }]}>
-              <Text variant="label" style={{ color: colors.textSecondary }}>Focus Goal</Text>
-            </View>
+            {priorityRank === 1 && (
+              <View style={[styles.priorityBadge, { backgroundColor: colors.chipBg }]}>
+                <Text variant="label" style={{ color: colors.primaryAccent, fontFamily: 'Satoshi-Bold' }}>#1 Priority</Text>
+              </View>
+            )}
           </View>
           
           <Text variant="h2" style={{ color: colors.textPrimary, marginTop: space.sm }}>{name}</Text>
@@ -109,12 +116,30 @@ export const FocusGoalHeroCard: React.FC<Props> = ({
             </View>
           ) : (
             <>
-              <Text variant="caption" style={{ color: colors.textSecondary }}>
-                <Text style={{ color: deep, fontFamily: 'Satoshi-Bold' }}>{percentage}% </Text>
-                completed
-              </Text>
-              
-              <TouchableOpacity 
+              {health.state === 'stalled' && (
+                <Text variant="caption" style={{ color: colors.textSecondary }}>
+                  No contribution in {Number.isFinite(health.daysSinceLastContribution) ? `${health.daysSinceLastContribution} days` : 'a while'}
+                </Text>
+              )}
+              {health.state === 'at_risk' && (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AlertTriangle color={colors.danger} size={14} />
+                  <Text variant="caption" style={{ color: colors.danger, marginLeft: 4 }}>Behind pace for its deadline</Text>
+                </View>
+              )}
+              {health.state === 'overdue' && (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AlertTriangle color={colors.danger} size={14} />
+                  <Text variant="caption" style={{ color: colors.danger, marginLeft: 4 }}>Past deadline</Text>
+                </View>
+              )}
+              {health.state === 'healthy' && (
+                <Text variant="caption" style={{ color: colors.textSecondary }}>
+                  {health.etaLabel ? health.etaLabel : `${percentage}% completed`}
+                </Text>
+              )}
+
+              <TouchableOpacity
                 style={[styles.addBtn, { backgroundColor: colors.primaryAccent }]} 
                 onPress={onAddFunds}
                 activeOpacity={0.8}
