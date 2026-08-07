@@ -26,35 +26,40 @@ describe('goalStore', () => {
     jest.clearAllMocks();
   });
 
-  it('calculates emergency fund target from last 6 months of expenses', async () => {
+  it('calculates emergency fund target from last 6 months of expenses, staying in paise', async () => {
     mockExecute.mockResolvedValueOnce({
-      rows: [{ total: 60000000 }] // ₹600,000 paise
+      rows: [{ total: 60000000 }] // ₹6,00,000 in paise
     });
     mockExecute.mockResolvedValueOnce({}); // INSERT
 
     await useGoalStore.getState().getEmergencyFundTarget();
 
-    // The average is 1,00,000 per month.
-    // The target is 6 * 1,00,000 = 6,00,000.
-    // In our simplified logic we just take the 6 months sum directly.
+    // targetAmount must stay in paise, like currentAmount — no /100 anywhere.
     expect(useGoalStore.getState().goals[0]).toEqual(expect.objectContaining({
       name: 'Emergency Fund',
-      targetAmount: 600000,
+      targetAmount: 60000000,
       currentAmount: 0,
     }));
   });
 
-  it('updates existing emergency fund target', async () => {
-    // isEmergencyFund is what getEmergencyFundTarget actually keys off of now
-    // (is_emergency_fund in the DB, populated by loadGoals/addGoal) — the old
-    // name === 'Emergency Fund' match this replaced was case-sensitive and
-    // silently invisible to a goal named e.g. "Emergency fund".
+  it('floors the target at ₹50,000 (5000000 paise) when expenses are low', async () => {
+    mockExecute.mockResolvedValueOnce({
+      rows: [{ total: 1200000 }] // ₹12,000 in paise — below the floor
+    });
+    mockExecute.mockResolvedValueOnce({}); // INSERT
+
+    await useGoalStore.getState().getEmergencyFundTarget();
+
+    expect(useGoalStore.getState().goals[0].targetAmount).toBe(5000000);
+  });
+
+  it('updates existing emergency fund target, staying in paise', async () => {
     useGoalStore.setState({
-      goals: [{ id: 'ef1', name: 'Emergency Fund', targetAmount: 100000, currentAmount: 0, isEmergencyFund: true }],
+      goals: [{ id: 'ef1', name: 'Emergency Fund', targetAmount: 10000000, currentAmount: 0, isEmergencyFund: true }],
     });
 
     mockExecute.mockResolvedValueOnce({
-      rows: [{ total: 120000000 }] // ₹1,200,000 paise
+      rows: [{ total: 120000000 }] // ₹12,00,000 in paise
     });
     mockExecute.mockResolvedValueOnce({}); // UPDATE
 
@@ -62,11 +67,11 @@ describe('goalStore', () => {
 
     expect(useGoalStore.getState().goals[0]).toEqual(expect.objectContaining({
       name: 'Emergency Fund',
-      targetAmount: 1200000,
+      targetAmount: 120000000,
     }));
     expect(mockExecute).toHaveBeenCalledWith(
       'UPDATE goals SET targetAmount = ? WHERE id = ?',
-      [1200000, 'ef1']
+      [120000000, 'ef1']
     );
   });
 

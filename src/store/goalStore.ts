@@ -151,9 +151,10 @@ export const useGoalStore = create<GoalStoreState>((set, get) => ({
       );
       
       const totalPaise = (expenseResult.rows?.[0] as any)?.total || 0;
-      // Convert to rupees and divide by 6 months, then multiply by 6 for the fund
-      // Which essentially just means the total spent in last 6 months is the target!
-      const targetAmount = Math.max(totalPaise / 100, 50000); // Floor of 50k
+      // targetAmount stays in paise, same unit as currentAmount — this used to
+      // divide by 100 (rupees) while currentAmount stayed in paise, silently
+      // making every emergency fund's progress math 100x wrong.
+      const targetAmount = Math.max(totalPaise, 5000000); // Floor of ₹50,000
       
       // Find or create emergency fund goal
       const efGoal = get().goals.find(g => g.isEmergencyFund);
