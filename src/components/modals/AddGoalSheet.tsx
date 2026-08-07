@@ -22,6 +22,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Target } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
 
@@ -31,7 +32,7 @@ const SHEET_SPRING = { damping: 15, stiffness: 300 };
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (name: string, targetAmount: string) => Promise<void>;
+  onSubmit: (name: string, targetAmount: string, deadline?: string) => Promise<void>;
 }
 
 export const AddGoalSheet: React.FC<Props> = ({
@@ -47,6 +48,8 @@ export const AddGoalSheet: React.FC<Props> = ({
 
   const [name, setName] = useState('');
   const [target, setTarget] = useState('');
+  const [deadline, setDeadline] = useState<Date | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -79,10 +82,11 @@ export const AddGoalSheet: React.FC<Props> = ({
     
     setIsSubmitting(true);
     try {
-      await onSubmit(name, target);
+      await onSubmit(name, target, deadline ? deadline.toISOString() : undefined);
       ReactNativeHapticFeedback.trigger('notificationSuccess');
       setName('');
       setTarget('');
+      setDeadline(null);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -149,8 +153,25 @@ export const AddGoalSheet: React.FC<Props> = ({
                 </View>
               </View>
 
-              <PressableScale 
-                onPress={handleSubmit} 
+              <PressableScale onPress={() => setShowPicker(true)} style={[styles.deadlineRow, { backgroundColor: colors.inputBg, borderRadius: 16 }]}>
+                <Text style={{ color: deadline ? colors.textPrimary : colors.textSecondary, fontFamily: 'Satoshi-Medium', fontSize: 15 }}>
+                  {deadline ? deadline.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Set a deadline (optional)'}
+                </Text>
+              </PressableScale>
+              {showPicker && (
+                <DateTimePicker
+                  value={deadline || new Date()}
+                  mode="date"
+                  minimumDate={new Date()}
+                  onChange={(_event, selectedDate) => {
+                    setShowPicker(false);
+                    if (selectedDate) setDeadline(selectedDate);
+                  }}
+                />
+              )}
+
+              <PressableScale
+                onPress={handleSubmit}
                 disabled={isDisabled} 
                 haptic="none"
               >
@@ -227,6 +248,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Satoshi-Medium',
   },
+
+  deadlineRow: { paddingHorizontal: 16, paddingVertical: 14, marginTop: 12 },
 
   // Submit
   submitButton: { height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 8 },

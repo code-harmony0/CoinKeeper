@@ -34,7 +34,7 @@ export const GoalsScreen = () => {
     });
   }, []);
 
-  const handleAddGoal = async (goalName: string, targetStr: string) => {
+  const handleAddGoal = async (goalName: string, targetStr: string, deadline?: string) => {
     const targetAmountPaise = Money.toPaise(targetStr);
     if (targetAmountPaise <= 0) {
       throw new Error('Invalid amount');
@@ -44,6 +44,7 @@ export const GoalsScreen = () => {
       name: goalName,
       targetAmount: targetAmountPaise,
       currentAmount: 0,
+      deadline,
     });
 
     setShowAdd(false);
