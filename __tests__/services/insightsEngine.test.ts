@@ -1,8 +1,12 @@
-import { generateInsights, getBudgetStreak } from '../../src/services/insightsEngine';
+import { generateInsights, getBudgetStreak, getPrimaryGoal } from '../../src/services/insightsEngine';
 import { getDb } from '../../src/store/database';
 
 jest.mock('../../src/store/database', () => ({
   getDb: jest.fn(),
+}));
+
+jest.mock('../../src/services/FinancialLedgerService', () => ({
+  FinancialLedgerService: { getGoalContributions: jest.fn().mockResolvedValue([]) },
 }));
 
 describe('insightsEngine', () => {
@@ -78,5 +82,40 @@ describe('insightsEngine', () => {
     expect(overBudgetInsight).toBeDefined();
     expect(overBudgetInsight?.title).toBe('Over Budget');
     expect(overBudgetInsight?.message).toContain('₹10,000');
+  });
+});
+
+describe('getPrimaryGoal', () => {
+  let mockExecute: jest.Mock;
+
+  beforeEach(() => {
+    mockExecute = jest.fn();
+    (getDb as jest.Mock).mockReturnValue({
+      execute: mockExecute,
+    });
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-31T12:00:00Z').getTime());
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
+  });
+
+  it('returns the emergency fund even when another goal is closer to completion', async () => {
+    mockExecute.mockResolvedValueOnce({
+      rows: [
+        { id: 'car', name: 'Car', targetAmount: 100000, currentAmount: 90000, is_emergency_fund: 0 },
+        { id: 'ef', name: 'Emergency Fund', targetAmount: 100000, currentAmount: 1000, is_emergency_fund: 1 },
+      ],
+    });
+
+    const result = await getPrimaryGoal();
+
+    expect(result?.id).toBe('ef');
+  });
+
+  it('returns null when there are no goals', async () => {
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+    expect(await getPrimaryGoal()).toBeNull();
   });
 });

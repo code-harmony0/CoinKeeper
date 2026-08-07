@@ -1,6 +1,8 @@
 import { getDb, getPreference, setPreference } from '../store/database';
 import { fromPaise } from '../utils/money';
 import { detectSubscriptions } from './subscriptionDetector';
+import { computeGoalHealth, rankGoalPriority } from './goalIntelligence';
+import { FinancialLedgerService } from './FinancialLedgerService';
 
 export interface Insight {
   id: string;
@@ -16,6 +18,8 @@ export interface Goal {
   name: string;
   targetAmount: number;
   currentAmount: number;
+  deadline?: string;
+  isEmergencyFund?: boolean;
 }
 
 const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
@@ -89,23 +93,30 @@ export const getPrimaryGoal = async (): Promise<Goal | null> => {
   const db = getDb();
 
   try {
-    const result = await db.execute(`
-      SELECT id, name, targetAmount, currentAmount
-      FROM goals
-      ORDER BY
-        CASE WHEN is_emergency_fund = 1 THEN 0 ELSE 1 END,
-        (currentAmount * 1.0 / NULLIF(targetAmount, 0)) DESC
-      LIMIT 1
-    `);
-    if (!result.rows || result.rows.length === 0) return null;
+    const result = await db.execute(
+      'SELECT id, name, targetAmount, currentAmount, deadline, is_emergency_fund FROM goals;',
+    );
+    const rows = (result.rows || []) as any[];
+    if (rows.length === 0) return null;
 
-    const row = result.rows[0] as any;
-    return {
+    const goals: Goal[] = rows.map(row => ({
       id: row.id,
       name: row.name,
       targetAmount: row.targetAmount,
       currentAmount: row.currentAmount,
-    };
+      deadline: row.deadline || undefined,
+      isEmergencyFund: row.is_emergency_fund === 1,
+    }));
+
+    const now = Date.now();
+    const entries = await Promise.all(
+      goals.map(async goal => ({
+        goal,
+        health: computeGoalHealth(goal, await FinancialLedgerService.getGoalContributions(goal.id), now),
+      })),
+    );
+
+    return rankGoalPriority(entries)[0]?.goal ?? null;
   } catch (error) {
     console.error('Goal fetch error:', error);
     return null;
