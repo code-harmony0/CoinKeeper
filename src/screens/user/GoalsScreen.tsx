@@ -197,9 +197,12 @@ export const GoalsScreen = () => {
         onSubmit={handleAddGoal} 
       />
 
-      <AddFundsSheet 
+      <AddFundsSheet
         visible={!!selectedGoal}
         goalName={selectedGoal?.name}
+        goal={undefined}
+        health={undefined}
+        savingsBudgetRemainingPaise={undefined}
         onClose={() => setSelectedGoal(null)}
         onSubmit={handleAddProgress}
       />

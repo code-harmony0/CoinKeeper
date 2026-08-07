@@ -24,6 +24,9 @@ import { X } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
+import { Goal } from '../../store/goalStore';
+import { GoalHealth, checkAffordability, simulateWhatIf } from '../../services/goalIntelligence';
+import { Money } from '../../utils/money';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_SPRING = { damping: 15, stiffness: 300 };
@@ -31,6 +34,9 @@ const SHEET_SPRING = { damping: 15, stiffness: 300 };
 interface Props {
   visible: boolean;
   goalName?: string;
+  goal?: Goal;
+  health?: GoalHealth;
+  savingsBudgetRemainingPaise?: number;
   onClose: () => void;
   onSubmit: (amount: string) => Promise<void>;
 }
@@ -38,6 +44,9 @@ interface Props {
 export const AddFundsSheet: React.FC<Props> = ({
   visible,
   goalName,
+  goal,
+  health,
+  savingsBudgetRemainingPaise,
   onClose,
   onSubmit,
 }) => {
@@ -49,6 +58,16 @@ export const AddFundsSheet: React.FC<Props> = ({
 
   const [amount, setAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const amountPaise = Money.toPaise(amount || '0');
+  // NOTE: savingsBudgetRemainingPaise (from useGoalIntelligence) is already net
+  // of this month's contributions, so monthlyContributedSoFarPaise is 0 here —
+  // passing a non-zero value would double-subtract. See task notes.
+  const affordability = goal && health && savingsBudgetRemainingPaise !== undefined
+    ? checkAffordability(amountPaise, 0, savingsBudgetRemainingPaise)
+    : null;
+
+  const whatIfChips = [50000, 100000, 200000]; // ₹500 / ₹1,000 / ₹2,000, in paise
 
   useEffect(() => {
     if (visible) {
@@ -136,8 +155,34 @@ export const AddFundsSheet: React.FC<Props> = ({
                 </View>
               </View>
 
-              <PressableScale 
-                onPress={handleSubmit} 
+              {affordability && (
+                <Text
+                  style={{ color: affordability.affordable ? colors.textSecondary : colors.danger, marginTop: 8, fontFamily: 'Satoshi-Medium', fontSize: 13 }}
+                >
+                  {affordability.message}
+                </Text>
+              )}
+
+              {goal && health && (
+                <View style={{ flexDirection: 'row', marginTop: 16, gap: 8 }}>
+                  {whatIfChips.map(extraPaise => {
+                    const preview = simulateWhatIf(goal, health, extraPaise);
+                    if (!preview.etaLabel) return null;
+                    return (
+                      <PressableScale key={extraPaise} onPress={() => setAmount(String(extraPaise / 100))}>
+                        <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.chipBg }}>
+                          <Text style={{ fontSize: 12, fontFamily: 'Satoshi-Medium', color: colors.textPrimary }}>
+                            +₹{extraPaise / 100} → {preview.etaLabel}
+                          </Text>
+                        </View>
+                      </PressableScale>
+                    );
+                  })}
+                </View>
+              )}
+
+              <PressableScale
+                onPress={handleSubmit}
                 disabled={isDisabled} 
                 haptic="none"
               >
