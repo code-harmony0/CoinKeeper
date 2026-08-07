@@ -10,6 +10,7 @@ import { Text } from '../ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim/PressableScale';
 import { Money } from '../../utils/money';
+import { GoalHealth } from '../../services/goalIntelligence';
 
 interface Props {
   name: string;
@@ -18,6 +19,7 @@ interface Props {
   themeColor: string;
   onPress: () => void;
   onLongPress?: () => void;
+  health: GoalHealth;
 }
 
 export const SecondaryGoalCard: React.FC<Props> = ({
@@ -26,13 +28,14 @@ export const SecondaryGoalCard: React.FC<Props> = ({
   currentAmount,
   themeColor,
   onPress,
-  onLongPress
+  onLongPress,
+  health,
 }) => {
   const { colors, cardRadius, cardShadow, iconShadow, iconContainerRadius } = useSpecTheme();
-  
-  const percentage = Math.min(100, Math.round((currentAmount / targetAmount) * 100)) || 0;
-  const isComplete = currentAmount >= targetAmount;
-  
+
+  const percentage = health.progressPercent;
+  const isComplete = health.state === 'completed';
+
   const fillWidth = useSharedValue(0);
   
   useEffect(() => {
@@ -72,6 +75,20 @@ export const SecondaryGoalCard: React.FC<Props> = ({
             <Text variant="h3" style={{ color: accentColor, fontFamily: 'Satoshi-Black' }}>{percentage}%</Text>
           </View>
         </View>
+
+        {health.state === 'completed' ? (
+          <View style={[styles.completeBadge, { backgroundColor: colors.success }]}>
+            <Text variant="label" style={{ color: '#FFFFFF' }}>Complete</Text>
+          </View>
+        ) : health.state === 'stalled' ? (
+          <Text variant="caption" style={{ color: colors.textSecondary, marginTop: 4 }}>
+            No contribution in {Number.isFinite(health.daysSinceLastContribution) ? `${health.daysSinceLastContribution} days` : 'a while'}
+          </Text>
+        ) : (health.state === 'at_risk' || health.state === 'overdue') ? (
+          <Text variant="caption" style={{ color: colors.danger, marginTop: 4 }}>
+            {health.state === 'overdue' ? 'Past deadline' : 'Behind pace'}
+          </Text>
+        ) : null}
 
         <View style={[styles.track, { backgroundColor: colors.chipBg }]}>
           <Animated.View style={[
@@ -120,5 +137,12 @@ const styles = StyleSheet.create({
   fill: {
     height: '100%',
     borderRadius: 3,
+  },
+  completeBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginTop: 4,
   },
 });
