@@ -38,3 +38,29 @@ describe('FinancialLedgerService.fundGoal', () => {
     expect(args).toContain('g1');
   });
 });
+
+describe('FinancialLedgerService.getGoalContributions', () => {
+  beforeEach(() => {
+    mockExecute.mockReset();
+  });
+
+  it('returns contributions ordered oldest to newest, mapped to amount/date pairs', async () => {
+    mockExecute.mockResolvedValueOnce({
+      rows: [
+        { amount_paise: 5000, occurred_at: 1000 },
+        { amount_paise: 3000, occurred_at: 2000 },
+      ],
+    });
+
+    const result = await FinancialLedgerService.getGoalContributions('g1');
+
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE goal_id = ?'),
+      ['g1'],
+    );
+    expect(result).toEqual([
+      { amountPaise: 5000, occurredAtMs: 1000 },
+      { amountPaise: 3000, occurredAtMs: 2000 },
+    ]);
+  });
+});

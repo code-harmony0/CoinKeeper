@@ -120,5 +120,20 @@ export const FinancialLedgerService = {
     });
 
     financialEventBus.emit();
-  }
+  },
+
+  /** Ordered oldest-to-newest — goalIntelligence's velocity/ETA math reads it front-to-back. */
+  async getGoalContributions(goalId: string): Promise<{ amountPaise: number; occurredAtMs: number }[]> {
+    const db = getDb();
+    const result = await db.execute(
+      `SELECT amount_paise, occurred_at FROM transactions
+       WHERE goal_id = ? AND type = 'transfer_to_goal'
+       ORDER BY occurred_at ASC;`,
+      [goalId],
+    );
+    return ((result.rows || []) as any[]).map(row => ({
+      amountPaise: row.amount_paise,
+      occurredAtMs: row.occurred_at,
+    }));
+  },
 };

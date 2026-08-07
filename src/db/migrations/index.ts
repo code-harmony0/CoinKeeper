@@ -12,6 +12,7 @@ import { migrate010BillPaymentLink } from './010_bill_payment_link';
 import { migrate011RecurringIncome } from './011_recurring_income';
 import { migrate012GoalEmergencyFundFlag } from './012_goal_emergency_fund_flag';
 import { migrate015GoalContributionLink } from './015_goal_contribution_link';
+import { migrate016GoalIdIndex } from './016_goal_id_index';
 
 /**
  * Versioned via PRAGMA user_version — the plan called for migration tests
@@ -86,5 +87,10 @@ export const runMigrations = async (db: DB): Promise<void> => {
   if (currentVersion < 15) {
     await migrate015GoalContributionLink(db);
     await db.execute('PRAGMA user_version = 15;');
+  }
+
+  if (currentVersion < 16) {
+    await migrate016GoalIdIndex(db);
+    await db.execute('PRAGMA user_version = 16;');
   }
 };
