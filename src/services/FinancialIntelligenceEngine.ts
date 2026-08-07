@@ -232,7 +232,7 @@ export const FinancialIntelligenceEngine = {
       db.execute(
         `SELECT t.id, t.amount_paise, t.occurred_at, g.name as goalName, g.targetAmount, g.currentAmount, g.deadline
          FROM transactions t
-         LEFT JOIN goals g ON t.description = 'Transfer to ' || g.name
+         LEFT JOIN goals g ON t.goal_id = g.id
          WHERE t.type = 'transfer_to_goal' AND t.occurred_at >= ? AND t.occurred_at < ?
          ORDER BY t.occurred_at DESC`,
         [monthStart, nextMonthStart]
