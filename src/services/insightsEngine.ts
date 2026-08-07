@@ -1,6 +1,7 @@
 import { getDb, getPreference, setPreference } from '../store/database';
-import { fromPaise } from '../utils/money';
+import { Money } from '../utils/money';
 import { detectSubscriptions } from './subscriptionDetector';
+import { FinancialIntelligenceEngine } from './FinancialIntelligenceEngine';
 import { computeGoalHealth, rankGoalPriority } from './goalIntelligence';
 import { FinancialLedgerService } from './FinancialLedgerService';
 import type { Goal } from '../store/goalStore';
@@ -27,8 +28,7 @@ const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0)
 /**
  * All queries here read `transactions` in its post-Task-1.3 shape:
  * amount_paise (integer), occurred_at (unix ms), category_id (FK). Every sum
- * is converted back to rupees via fromPaise() immediately after querying, so
- * the arithmetic below stays in the same units it always was.
+ * uses paise logic.
  */
 
 /** Count consecutive days (ending today) where spend stayed under the daily budget */
@@ -37,25 +37,14 @@ export const getBudgetStreak = async (): Promise<number> => {
 
   try {
     const today = new Date();
-    const budgetStr = await db.execute('SELECT wants_percent, needs_percent, savings_percent FROM budget_settings WHERE id = 1');
-    const budgetPct = budgetStr.rows && budgetStr.rows.length > 0 ? (budgetStr.rows[0].wants_percent as number) + (budgetStr.rows[0].needs_percent as number) : 80;
-    
-    // We estimate daily budget from previous month income for streak
-    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1).getTime();
-    const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
-    
-    const lastMonthIncome = await db.execute(
-      "SELECT SUM(amount_paise) as total FROM transactions WHERE type = 'income' AND occurred_at >= ? AND occurred_at < ?",
-      [lastMonthStart, thisMonthStart]
-    );
-    const prevIncome = fromPaise((lastMonthIncome.rows?.[0] as any)?.total || 0);
+    const snapshot = await FinancialIntelligenceEngine.getCurrentSnapshot();
     
     // If no real income data, streak calculation is meaningless. Return 0.
-    if (prevIncome === 0) return 0;
+    if (snapshot.income === 0) return 0;
     
-    const estimatedBudget = prevIncome * (budgetPct / 100);
-    
-    const dailyBudget = estimatedBudget / getDaysInMonth(today.getFullYear(), today.getMonth() + 1);
+    // Calculate expected daily safe spend based on the snapshot
+    const daysInMonth = getDaysInMonth(today.getFullYear(), today.getMonth() + 1);
+    const safeDailyPaise = Math.floor(snapshot.safeToSpend / daysInMonth);
 
     const sixtyDaysAgo = today.getTime() - (60 * 24 * 60 * 60 * 1000);
     const dailyResult = await db.execute(`
@@ -69,14 +58,14 @@ export const getBudgetStreak = async (): Promise<number> => {
     const rows = (dailyResult.rows ?? []) as { day: string; total_paise: number }[];
     if (rows.length === 0) return 0;
     
-    const spendByDay = new Map(rows.map((r) => [r.day, fromPaise(r.total_paise)]));
+    const spendByDay = new Map(rows.map((r) => [r.day, r.total_paise]));
 
     let streak = 0;
     const cursor = new Date(today);
     for (let i = 0; i < 60; i++) {
       const key = cursor.toISOString().slice(0, 10);
-      const spent = spendByDay.get(key) ?? 0;
-      if (spent > dailyBudget) break;
+      const spentPaise = spendByDay.get(key) ?? 0;
+      if (spentPaise > safeDailyPaise) break;
       streak++;
       cursor.setDate(cursor.getDate() - 1);
     }
@@ -130,50 +119,39 @@ export const generateInsights = async (): Promise<Insight[]> => {
 
   try {
     // 1. Daily Safe Spending (Task 4.2)
+    const snapshot = await FinancialIntelligenceEngine.getCurrentSnapshot();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
-    
-    // Get total income this month
-    const incomeResult = await db.execute(
-      "SELECT SUM(amount_paise) as total_paise FROM transactions WHERE type = 'income' AND occurred_at >= ?",
-      [startOfMonth]
-    );
-    const monthlyIncome = fromPaise((incomeResult.rows?.[0] as any)?.total_paise || 0);
 
-    // Get total spent this month
-    const spentResult = await db.execute(
-      "SELECT SUM(amount_paise) as total_paise FROM transactions WHERE type = 'expense' AND occurred_at >= ?",
-      [startOfMonth]
-    );
-    const monthlyExpenses = fromPaise((spentResult.rows?.[0] as any)?.total_paise || 0);
-
-    const daysInMonth = getDaysInMonth(today.getFullYear(), today.getMonth() + 1);
-    const daysLeft = Math.max(1, daysInMonth - today.getDate() + 1);
-
-    if (monthlyIncome === 0) {
+    if (snapshot.income === 0) {
       insights.push({
         id: 'no-income',
         type: 'info',
         title: 'No Income Recorded',
-        message: 'Add your income to see your daily safe-to-spend limit.',
+        message: 'Add your income to see your plan-based safe-to-spend limit.',
         actionable: true,
       });
-    } else if (monthlyExpenses > monthlyIncome) {
-      insights.push({
-        id: 'over-budget',
-        type: 'alert',
-        title: 'Over Budget',
-        message: `You have exceeded your monthly income by ₹${(monthlyExpenses - monthlyIncome).toLocaleString()}.`,
-      });
     } else {
-      const remaining = monthlyIncome - monthlyExpenses;
-      const safeDaily = Math.floor(remaining / daysLeft);
-      insights.push({
-        id: 'safe-spending',
-        type: 'success',
-        title: 'Daily Safe Spending',
-        message: `Income Left: ₹${remaining.toLocaleString()}\nDays Left: ${daysLeft}`,
-        value: `₹${safeDaily.toLocaleString()}`,
-      });
+      const spentOnNeedsWants = snapshot.buckets.needs.currentSpend + snapshot.buckets.wants.currentSpend;
+      
+      if (spentOnNeedsWants > snapshot.safeToSpend) {
+        insights.push({
+          id: 'over-budget',
+          type: 'alert',
+          title: 'Over Budget',
+          message: `You have exceeded your plan's monthly limit by ${Money.format(spentOnNeedsWants - snapshot.safeToSpend, { zeroDecimals: true })}.`,
+        });
+      } else {
+        const daysInMonth = getDaysInMonth(today.getFullYear(), today.getMonth() + 1);
+        const daysLeft = Math.max(1, daysInMonth - today.getDate() + 1);
+        
+        insights.push({
+          id: 'safe-spending',
+          type: 'success',
+          title: "Today's Plan Limit",
+          message: `Budget Left: ${Money.format(snapshot.monthlyRemaining, { zeroDecimals: true })}\nDays Left: ${daysLeft}`,
+          value: `${Money.format(snapshot.safeToSpendToday, { zeroDecimals: true })}`,
+        });
+      }
     }
 
     // 2. Weekend vs Weekday Spend
@@ -186,11 +164,11 @@ export const generateInsights = async (): Promise<Insight[]> => {
       WHERE type = 'expense' AND occurred_at >= ?
     `, [startOfMonth]);
 
-    const weekendSpend = fromPaise((weekendResult.rows?.[0] as any)?.weekend_paise || 0);
-    const weekdaySpend = fromPaise((weekendResult.rows?.[0] as any)?.weekday_paise || 0);
+    const weekendSpendPaise = (weekendResult.rows?.[0] as any)?.weekend_paise || 0;
+    const weekdaySpendPaise = (weekendResult?.rows?.[0] as any)?.weekday_paise || 0;
 
-    if (weekendSpend > weekdaySpend && weekendSpend > 2000) {
-      const pct = Math.round(((weekendSpend - weekdaySpend) / weekdaySpend) * 100);
+    if (weekendSpendPaise > weekdaySpendPaise && weekendSpendPaise > 200000) {
+      const pct = Math.round(((weekendSpendPaise - weekdaySpendPaise) / weekdaySpendPaise) * 100);
       insights.push({
         id: 'weekend-high',
         type: 'warning',
@@ -215,7 +193,7 @@ export const generateInsights = async (): Promise<Insight[]> => {
         id: 'duplicate-payment',
         type: 'warning',
         title: 'Duplicate Payment?',
-        message: `Looks like you paid ₹${fromPaise(dup.amount_paise)} twice to ${dup.merchant} recently.`,
+        message: `Looks like you paid ${Money.format(dup.amount_paise, { zeroDecimals: true })} twice to ${dup.merchant} recently.`,
         actionable: true,
       });
     }
@@ -233,13 +211,13 @@ export const generateInsights = async (): Promise<Insight[]> => {
 
     if (catResult.rows && catResult.rows.length > 0) {
       const topCat = catResult.rows[0] as any;
-      const topCatTotal = fromPaise(topCat.total_paise);
-      if (topCatTotal > 5000 && topCat.category !== 'Other' && topCat.category !== null) {
+      const topCatTotalPaise = topCat.total_paise;
+      if (topCatTotalPaise > 500000 && topCat.category !== 'Other' && topCat.category !== null) {
         insights.push({
           id: 'category-overspend',
           type: 'alert',
           title: `${topCat.category} Alert`,
-          message: `You've spent ₹${topCatTotal.toLocaleString()} on ${topCat.category} this month.`,
+          message: `You've spent ${Money.format(topCatTotalPaise, { zeroDecimals: true })} on ${topCat.category} this month.`,
         });
       }
     }

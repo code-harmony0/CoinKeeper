@@ -40,70 +40,18 @@ import { MoneyPlanSaveBar } from './MoneyPlanSaveBar';
 import { PressableScale } from '../anim/PressableScale';
 import { CountUp } from '../anim/CountUp';
 
-import { useMoneyPlanIntelligence } from '../../hooks/useMoneyPlanIntelligence';
+import { useIntelligenceStore } from '../../store/intelligenceStore';
+import { financialEventBus } from '../../services/EventBus';
 import {
   computeMoneyPlanScore,
   computeBucketTrend,
   predictBucketPace,
+  computePresetOutcome,
 } from '../../services/moneyPlanIntelligence';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Preset definitions — outcome-first copy
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PRESETS = [
-  {
-    id: 'starter',
-    name: 'Balanced',
-    n: 50,
-    w: 30,
-    s: 20,
-    // Icon colour must match iconFgColor below — these circles use a pale
-    // pastel background, so a white glyph is effectively invisible.
-    icon: <Home size={18} color="#2E7D32" />,
-    outcomeStory: 'The golden rule. Spend freely, save steadily.',
-    iconBgColor: '#E8F5E9',
-    iconFgColor: '#2E7D32',
-  },
-  {
-    id: 'wealth',
-    name: 'Wealth Builder',
-    n: 50,
-    w: 20,
-    s: 30,
-    icon: <Briefcase size={18} color="#1565C0" />,
-    outcomeStory: 'Save 50% more. Retire years earlier.',
-    recommended: true,
-    iconBgColor: '#E3F2FD',
-    iconFgColor: '#1565C0',
-  },
-  {
-    id: 'fire',
-    name: 'FIRE',
-    n: 40,
-    w: 10,
-    s: 50,
-    icon: <Flame size={18} color="#E65100" />,
-    outcomeStory: 'Financial independence. Retire early. Live freely.',
-    iconBgColor: '#FFF3E0',
-    iconFgColor: '#E65100',
-  },
-  {
-    id: 'family',
-    name: 'Family First',
-    n: 60,
-    w: 20,
-    s: 20,
-    icon: <Users size={18} color="#AD1457" />,
-    outcomeStory: 'Stable household. Cover every family need.',
-    iconBgColor: '#FCE4EC',
-    iconFgColor: '#AD1457',
-  },
-];
-
-// Identify which preset matches the current saved percentages
-const matchPreset = (n: number, w: number, s: number): string | null => {
-  const match = PRESETS.find(p => p.n === n && p.w === w && p.s === s);
+// Identifier matcher
+const matchPresetId = (n: number, w: number, s: number, presetsList: any[]): string | null => {
+  const match = presetsList.find(p => p.n === n && p.w === w && p.s === s);
   return match ? match.id : null;
 };
 
@@ -115,8 +63,8 @@ export const MoneyPlanShell = ({ navigation }: any) => {
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const { settings, loadBudget, saveBudget, isLoading } = useBudgetStore();
-  const { income, buckets, emergencyFundGoal, reload: reloadIntelligence } =
-    useMoneyPlanIntelligence();
+  const { income, buckets, emergencyFundGoal, loadIntelligence: reloadIntelligence } =
+    useIntelligenceStore();
 
   const [needs, setNeeds] = useState(settings.needsPercent);
   const [wants, setWants] = useState(settings.wantsPercent);
@@ -137,10 +85,58 @@ export const MoneyPlanShell = ({ navigation }: any) => {
   const total = needs + wants + savings;
   const isBalanced = total === 100;
 
+  const PRESETS = useMemo(() => [
+    {
+      id: 'starter',
+      name: 'Balanced',
+      n: 50,
+      w: 30,
+      s: 20,
+      icon: <Home size={18} color={colors.mintDeep} />,
+      outcomeStory: 'The golden rule. Spend freely, save steadily.',
+      iconBgColor: `${colors.mintDeep}15`,
+      iconFgColor: colors.mintDeep,
+    },
+    {
+      id: 'wealth',
+      name: 'Wealth Builder',
+      n: 50,
+      w: 20,
+      s: 30,
+      icon: <Briefcase size={18} color={colors.textPrimary} />,
+      outcomeStory: 'Save 50% more. Retire years earlier.',
+      recommended: true,
+      iconBgColor: colors.chipBg,
+      iconFgColor: colors.textPrimary,
+    },
+    {
+      id: 'fire',
+      name: 'FIRE',
+      n: 40,
+      w: 10,
+      s: 50,
+      icon: <Flame size={18} color={colors.peachDeep} />,
+      outcomeStory: 'Financial independence. Retire early. Live freely.',
+      iconBgColor: `${colors.peachDeep}15`,
+      iconFgColor: colors.peachDeep,
+    },
+    {
+      id: 'family',
+      name: 'Family First',
+      n: 60,
+      w: 20,
+      s: 20,
+      icon: <Users size={18} color={colors.textSecondary} />,
+      outcomeStory: 'Stable household. Cover every family need.',
+      iconBgColor: colors.surfaceSunken,
+      iconFgColor: colors.textSecondary,
+    },
+  ], [colors]);
+
   // The preset id of the plan currently saved in DB.
   const activePlanId = useMemo(
-    () => matchPreset(settings.needsPercent, settings.wantsPercent, settings.savingsPercent),
-    [settings.needsPercent, settings.wantsPercent, settings.savingsPercent]
+    () => matchPresetId(settings.needsPercent, settings.wantsPercent, settings.savingsPercent, PRESETS),
+    [settings.needsPercent, settings.wantsPercent, settings.savingsPercent, PRESETS]
   );
 
   // The preset matching the *unsaved draft*. This is what drives the immediate
@@ -148,8 +144,8 @@ export const MoneyPlanShell = ({ navigation }: any) => {
   // once the plan is persisted, leaving a tapped card with no feedback at all.
   // Null when the user has dragged the sliders to a custom split.
   const selectedPlanId = useMemo(
-    () => matchPreset(needs, wants, savings),
-    [needs, wants, savings]
+    () => matchPresetId(needs, wants, savings, PRESETS),
+    [needs, wants, savings, PRESETS]
   );
 
   const applyPreset = (n: number, w: number, s: number) => {
@@ -168,6 +164,7 @@ export const MoneyPlanShell = ({ navigation }: any) => {
       });
       setShowSuccess(true);
       await reloadIntelligence().catch(() => {});
+      financialEventBus.emit(); // Inform entire app that limits changed
       setTimeout(() => {
         setShowSuccess(false);
         navigation.goBack();
@@ -177,20 +174,16 @@ export const MoneyPlanShell = ({ navigation }: any) => {
     }
   };
 
-  const safeToSpend = Math.round(income * ((needs + wants) / 100));
-  const estimatedSavings = Math.round(income * (savings / 100));
-
-  const today = new Date();
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  const daysElapsed = today.getDate();
-
-  const scoreResult = computeMoneyPlanScore({
+  const previewOutcome = computePresetOutcome({
     income,
     needsPercent: needs,
     wantsPercent: wants,
     savingsPercent: savings,
-    emergencyFundStarted: emergencyFundGoal ? emergencyFundGoal.currentAmount > 0 : null,
   });
+
+  const today = new Date();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysElapsed = today.getDate();
 
   const bucketView = (bucket: 'needs' | 'wants' | 'savings', percent: number) => {
     const data = buckets[bucket];
@@ -221,7 +214,7 @@ export const MoneyPlanShell = ({ navigation }: any) => {
           rightActions={
             <PressableScale
               onPress={() => navigation.navigate('UserTabs', { screen: 'Add' })}
-              style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.chipBg }}
+              style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.chipBg }}
             >
               <Plus size={20} color={colors.textPrimary} strokeWidth={2.2} />
             </PressableScale>
@@ -243,11 +236,8 @@ export const MoneyPlanShell = ({ navigation }: any) => {
           {/* HERO */}
           <MoneyPlanHero
             income={income}
-            safeToSpend={safeToSpend}
-            monthlySavings={estimatedSavings}
+            previewOutcome={previewOutcome}
             hasIncome={income > 0}
-            score={scoreResult.score}
-            topRecommendation={scoreResult.recommendations[0] ?? null}
             isBalanced={isBalanced}
             onAddIncome={() => navigation.navigate('UserTabs', { screen: 'Add', params: { type: 'income' } })}
             colors={colors}
@@ -259,7 +249,7 @@ export const MoneyPlanShell = ({ navigation }: any) => {
             needs={needs}
             wants={wants}
             savings={savings}
-            safeToSpend={safeToSpend}
+            safeToSpend={previewOutcome.safeToSpend}
             colors={colors}
           />
 
@@ -269,7 +259,7 @@ export const MoneyPlanShell = ({ navigation }: any) => {
               icon={<Heart color={colors.mintDeep} size={22} />}
               name="Needs"
               percentage={needs}
-              rupees={income * (needs / 100)}
+              amountPaise={income * (needs / 100)}
               color={colors.mintDeep}
               tint={colors.mint}
               recommendedRange="50–60%"
@@ -287,7 +277,7 @@ export const MoneyPlanShell = ({ navigation }: any) => {
               icon={<Flame color={colors.peachDeep} size={22} />}
               name="Wants"
               percentage={wants}
-              rupees={income * (wants / 100)}
+              amountPaise={income * (wants / 100)}
               color={colors.peachDeep}
               tint={colors.peach}
               recommendedRange="20–30%"
@@ -302,12 +292,12 @@ export const MoneyPlanShell = ({ navigation }: any) => {
             />
 
             <ExpandableCategoryCard
-              icon={<Briefcase color={colors.skyDeep} size={22} />}
+              icon={<Briefcase color={colors.textPrimary} size={22} />}
               name="Savings"
               percentage={savings}
-              rupees={income * (savings / 100)}
-              color={colors.skyDeep}
-              tint={colors.sky}
+              amountPaise={income * (savings / 100)}
+              color={colors.textPrimary}
+              tint={colors.chipBg}
               recommendedRange="20%+"
               includedExpenses="Emergency fund, investments, goals"
               insights={
@@ -392,8 +382,13 @@ export const MoneyPlanShell = ({ navigation }: any) => {
               </Text>
 
               <MoneyPlanProjection
-                income={income}
-                savingsPercent={savings}
+                currentOutcome={computePresetOutcome({
+                  income,
+                  needsPercent: settings.needsPercent,
+                  wantsPercent: settings.wantsPercent,
+                  savingsPercent: settings.savingsPercent
+                })}
+                newOutcome={previewOutcome}
                 emergencyFundTarget={emergencyFundGoal?.targetAmount ?? 100000}
                 emergencyFundCurrent={emergencyFundGoal?.currentAmount ?? 0}
                 colors={colors}
@@ -414,10 +409,10 @@ export const MoneyPlanShell = ({ navigation }: any) => {
         }
         isBalanced={isBalanced}
         isLoading={isLoading}
-        safeToSpend={safeToSpend}
-        monthlySavings={estimatedSavings}
-        previousSafeToSpend={Math.round(income * ((settings.needsPercent + settings.wantsPercent) / 100))}
-        previousMonthlySavings={Math.round(income * (settings.savingsPercent / 100))}
+        safeToSpend={previewOutcome.safeToSpend}
+        monthlySavings={previewOutcome.monthlySavings}
+        previousSafeToSpend={computePresetOutcome({ income, needsPercent: settings.needsPercent, wantsPercent: settings.wantsPercent, savingsPercent: settings.savingsPercent }).safeToSpend}
+        previousMonthlySavings={computePresetOutcome({ income, needsPercent: settings.needsPercent, wantsPercent: settings.wantsPercent, savingsPercent: settings.savingsPercent }).monthlySavings}
         onApply={handleSave}
         colors={colors}
         paddingBottom={insets.bottom + 16}
@@ -467,8 +462,9 @@ export const MoneyPlanShell = ({ navigation }: any) => {
                   Safe To Spend
                 </Text>
                 <CountUp
-                  value={safeToSpend}
+                  value={previewOutcome.safeToSpend}
                   prefix="₹"
+                  isPaise
                   style={{ fontFamily: 'Satoshi-Black', fontSize: 18, color: colors.textPrimary }}
                 />
               </View>
@@ -481,8 +477,9 @@ export const MoneyPlanShell = ({ navigation }: any) => {
                   Monthly Savings
                 </Text>
                 <CountUp
-                  value={estimatedSavings}
+                  value={previewOutcome.monthlySavings}
                   prefix="₹"
+                  isPaise
                   style={{ fontFamily: 'Satoshi-Black', fontSize: 18, color: colors.mintDeep }}
                 />
               </View>

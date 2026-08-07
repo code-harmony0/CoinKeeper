@@ -23,8 +23,8 @@ const isPaidThisMonth = (lastPaidAt?: number) => {
 export const BillsScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { colors, cardRadius, cardShadow } = useSpecTheme();
-  const styles = React.useMemo(() => makeStyles(colors, cardRadius, cardShadow), [colors, cardRadius, cardShadow]);
+  const { colors, cardRadius, cardShadow, chipRadius, iconContainerRadius } = useSpecTheme();
+  const styles = React.useMemo(() => makeStyles(cardRadius), [cardRadius]);
   
   const { bills, loadBills, addBill, markPaid, deleteBill, updateNotificationId } = useBillStore();
   const { getMonthlyStats, loadTransactions } = useTransactionStore();
@@ -36,9 +36,12 @@ export const BillsScreen = () => {
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
+  const [snapshot, setSnapshot] = useState<any>(null);
+
   useEffect(() => {
     loadBills();
     loadTransactions();
+    import('../../services/FinancialIntelligenceEngine').then(m => m.FinancialIntelligenceEngine.getCurrentSnapshot().then(setSnapshot));
   }, []);
 
   const handleAddBill = async (billData: { name: string; amount: string; dueDay: string; isRecurring: boolean; repeatInterval?: string; reminderDaysBefore?: number; notes?: string; autoPayEnabled?: boolean }) => {
@@ -134,9 +137,9 @@ export const BillsScreen = () => {
 
   // 2. Safe to Spend Calculation
   const stats = getMonthlyStats(currentMonth, currentYear);
-  const incomeRupees = stats.income || 0;
+  const incomeRupees = snapshot ? snapshot.income / 100 : stats.income || 0;
   const totalBillsAmountRupees = bills.reduce((acc, b) => acc + fromPaise(b.amountPaise), 0);
-  const safeToSpendRupees = Math.max(0, incomeRupees - totalBillsAmountRupees);
+  const safeToSpendRupees = snapshot ? snapshot.safeToSpend / 100 : 0;
 
   return (
     <KeyboardAvoidingView 
@@ -156,23 +159,23 @@ export const BillsScreen = () => {
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           
           {/* ZONE 1: Safe to Spend Dashboard */}
-          <View style={[styles.safeToSpendCard, { backgroundColor: colors.card, borderColor: colors.border }, cardShadow]}>
+          <View style={[styles.safeToSpendCard, { backgroundColor: colors.card }, cardShadow]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
               <ShieldCheck color={colors.success} size={20} style={{ marginRight: 8 }} />
-              <Text variant="caption" style={{ color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'Satoshi-Bold' }}>Safe to Spend</Text>
+              <Text variant="caption" style={{ color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, fontFamily: 'Satoshi-Bold', fontSize: 11 }}>Plan-Based Safe Spend</Text>
             </View>
-            
+
             <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: 8 }}>
-              <Text variant="h1" style={{ color: colors.textPrimary, fontSize: 36 }}>₹{safeToSpendRupees.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</Text>
+              <Text variant="h1" style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Black', fontSize: 40, letterSpacing: -0.5 }}>₹{safeToSpendRupees.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</Text>
             </View>
-            <Text variant="caption" style={{ color: colors.textSecondary }}>Remaining after all bills & goals this month.</Text>
-            
+            <Text variant="caption" style={{ color: colors.textSecondary }}>Target monthly limit from your Money Plan.</Text>
+
             <View style={[styles.incomeRow, { backgroundColor: colors.chipBg }]}>
               <View style={styles.incomeItem}>
                 <Text style={[styles.incomeLabel, { color: colors.textSecondary }]}>Income</Text>
                 <Text style={[styles.incomeValue, { color: colors.textPrimary }]}>₹{incomeRupees.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</Text>
               </View>
-              <View style={styles.incomeDivider} />
+              <View style={[styles.incomeDivider, { backgroundColor: colors.border }]} />
               <View style={styles.incomeItem}>
                 <Text style={[styles.incomeLabel, { color: colors.textSecondary }]}>Bills</Text>
                 <Text style={[styles.incomeValue, { color: colors.textPrimary }]}>₹{totalBillsAmountRupees.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</Text>
@@ -195,6 +198,8 @@ export const BillsScreen = () => {
                   isOverdue={b.dueDay < today}
                   colors={colors}
                   cardRadius={cardRadius}
+                  cardShadow={cardShadow}
+                  iconContainerRadius={iconContainerRadius}
                   onMarkPaid={() => handleMarkPaid(b.id)}
                   onMenu={() => handleMenu(b)}
                 />
@@ -223,7 +228,7 @@ export const BillsScreen = () => {
                   else if (hasBills) dotColor = colors.primaryAccent;
 
                   return (
-                    <View key={day} style={[styles.calendarDay, day === today && { backgroundColor: colors.chipBg, borderRadius: 12 }]}>
+                    <View key={day} style={[styles.calendarDay, day === today && { backgroundColor: colors.chipBg, borderRadius: chipRadius }]}>
                       <Text style={[styles.calendarDayText, { color: day === today ? colors.textPrimary : colors.textSecondary }]}>{day}</Text>
                       <View style={[styles.calendarDot, { backgroundColor: dotColor }]} />
                     </View>
@@ -245,6 +250,8 @@ export const BillsScreen = () => {
                   isOverdue={false}
                   colors={colors}
                   cardRadius={cardRadius}
+                  cardShadow={cardShadow}
+                  iconContainerRadius={iconContainerRadius}
                   onMarkPaid={() => handleMarkPaid(b.id)}
                   onMenu={() => handleMenu(b)}
                 />
@@ -264,6 +271,8 @@ export const BillsScreen = () => {
                   isOverdue={false}
                   colors={colors}
                   cardRadius={cardRadius}
+                  cardShadow={cardShadow}
+                  iconContainerRadius={iconContainerRadius}
                   onMarkPaid={() => handleMarkPaid(b.id)}
                   onMenu={() => handleMenu(b)}
                 />
@@ -289,7 +298,7 @@ export const BillsScreen = () => {
   );
 };
 
-const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
+const makeStyles = (cardRadius: number) =>
   StyleSheet.create({
     root: { flex: 1 },
     header: {
@@ -300,10 +309,11 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
       paddingBottom: 16,
     },
     backBtn: {
-      width: 40,
-      height: 40,
+      width: 48,
+      height: 48,
       alignItems: 'center',
       justifyContent: 'center',
+      marginHorizontal: -4,
     },
     scrollContent: {
       paddingBottom: 40,
@@ -313,7 +323,6 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
       marginBottom: 32,
       padding: 24,
       borderRadius: cardRadius,
-      borderWidth: 1,
     },
     incomeRow: {
       flexDirection: 'row',
@@ -328,7 +337,6 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
     incomeDivider: {
       width: 1,
       height: 32,
-      backgroundColor: 'rgba(150,150,150,0.2)',
       marginHorizontal: 16,
     },
     incomeLabel: {

@@ -16,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Text } from '../ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
+import { Money } from '../../utils/money';
 
 
 interface Props {
@@ -130,7 +131,7 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
             variant="caption"
             style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium' }}
           >
-            ₹{income.toLocaleString('en-IN', { maximumFractionDigits: 0 })} / mo
+            {Money.format(income, { zeroDecimals: true })} / mo
           </Text>
         ) : (
           <Text variant="caption" style={{ color: colors.danger, fontFamily: 'Satoshi-Medium' }}>
@@ -186,7 +187,7 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
                 style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Bold', fontSize: 13 }}
               >
                 {hasIncome
-                  ? `₹${seg.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+                  ? `${Money.format(seg.amount, { zeroDecimals: true })}`
                   : `${seg.percent}%`}
               </Text>
             </View>
@@ -216,7 +217,7 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
           style={{ color: colors.mintDeep, fontFamily: 'Satoshi-Black', fontSize: 15 }}
         >
           {hasIncome
-            ? `₹${safeToSpend.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+            ? `${Money.format(safeToSpend, { zeroDecimals: true })}`
             : '—'}
         </Text>
       </View>
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: 'Satoshi-Bold',
-    fontSize: 11,
+    fontSize: 10,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },

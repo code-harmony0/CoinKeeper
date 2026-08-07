@@ -79,16 +79,39 @@ export interface PresetOutcome {
   safeToSpend: number;
   monthlySavings: number;
   emergencyFundMonths: number | null;
+  budgetHealthScore: number;
+  grade: string;
+  safeToSpendToday: number;
+  monthlyRemaining: number;
 }
 
 const EMERGENCY_FUND_TARGET = 100000;
 
 export const computePresetOutcome = (input: PresetOutcomeInput): PresetOutcome => {
   const monthlySavings = Math.round(input.income * (input.savingsPercent / 100));
+  
+  let budgetHealthScore = 100;
+  if (input.savingsPercent < 20) budgetHealthScore -= 10;
+  if (input.needsPercent > 60) budgetHealthScore -= 20;
+  if (input.needsPercent + input.wantsPercent + input.savingsPercent !== 100) budgetHealthScore = 0;
+
+  const grade = budgetHealthScore >= 90 ? 'A' : budgetHealthScore >= 70 ? 'B' : budgetHealthScore >= 50 ? 'C' : 'D';
+
+  const safeToSpend = Math.round(input.income * ((input.needsPercent + input.wantsPercent) / 100));
+
+  // Compute a preview for daily limits assuming 0 spent (as it's a theoretical preview)
+  const today = new Date();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysLeft = Math.max(1, daysInMonth - today.getDate());
+  
   return {
-    safeToSpend: Math.round(input.income * ((input.needsPercent + input.wantsPercent) / 100)),
+    safeToSpend,
     monthlySavings,
     emergencyFundMonths: monthlySavings > 0 ? Math.ceil(EMERGENCY_FUND_TARGET / monthlySavings) : null,
+    budgetHealthScore: Math.max(0, budgetHealthScore),
+    grade,
+    monthlyRemaining: safeToSpend,
+    safeToSpendToday: Math.floor(safeToSpend / daysInMonth), // Provide full month daily average for preview
   };
 };
 

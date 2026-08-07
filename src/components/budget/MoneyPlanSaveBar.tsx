@@ -9,7 +9,8 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from 'react-native-reanimated';
-import { ArrowDown, LockKeyhole } from 'lucide-react-native';
+import { ArrowDown, LockKeyhole, ShieldCheck, Info } from 'lucide-react-native';
+import { Money } from '../../utils/money';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { Text } from '../ui/Text';
 import { PressableScale } from '../anim/PressableScale';
@@ -29,7 +30,7 @@ interface Props {
 }
 
 const fmt = (v: number) =>
-  `₹${Math.abs(v).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  `${Money.format(Math.abs(v), { zeroDecimals: true })}`;
 
 const fmtDelta = (v: number) => `${v >= 0 ? '+' : '-'}${fmt(v)}`;
 
@@ -89,95 +90,41 @@ export const MoneyPlanSaveBar: React.FC<Props> = ({
           {/* Hairline border top */}
           <View style={[styles.topBorder, { backgroundColor: colors.border }]} />
 
-          {/* ── Before → After comparison ── */}
-          <View style={styles.diffCard}>
-            {/* Savings row */}
-            <View style={styles.comparisonRow}>
-              <View style={styles.compCell}>
-                <Text variant="caption" style={[styles.compLabel, { color: colors.textSecondary }]}>
-                  Monthly savings (before)
-                </Text>
-                <Text style={[styles.compValue, { color: colors.textSecondary }]}>
-                  {fmt(previousMonthlySavings)}
-                </Text>
-              </View>
-
-              <ArrowDown color={colors.textSecondary} size={14} style={{ marginHorizontal: 8, marginTop: 18 }} />
-
-              <View style={[styles.compCell, styles.compCellRight]}>
-                <Text variant="caption" style={[styles.compLabel, { color: colors.textSecondary }]}>
-                  Monthly savings (after)
-                </Text>
-                <View style={styles.deltaRow}>
-                  <Text style={[styles.compValue, { color: colors.textPrimary }]}>
-                    {fmt(monthlySavings)}
-                  </Text>
-                  {savingsDelta !== 0 && (
-                    <View
-                      style={[
-                        styles.deltaBadge,
-                        { backgroundColor: `${deltaColor(savingsSign)}15` },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color: deltaColor(savingsSign),
-                          fontFamily: 'Satoshi-Bold',
-                          fontSize: 11,
-                        }}
-                      >
-                        {fmtDelta(savingsDelta)}/mo
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
+          {/* ── Impact Checklist ── */}
+          <View style={styles.checklistCard}>
+            <Text variant="caption" style={[styles.checklistTitle, { color: colors.textSecondary }]}>AFTER SAVING:</Text>
+            
+            <View style={styles.checkItem}>
+              <ShieldCheck size={14} color={colors.mintDeep} />
+              <Text style={[styles.checkText, { color: colors.textPrimary }]}>Dashboard updates</Text>
+            </View>
+            <View style={styles.checkItem}>
+              <ShieldCheck size={14} color={colors.mintDeep} />
+              <Text style={[styles.checkText, { color: colors.textPrimary }]}>AI recommendations update</Text>
+            </View>
+            <View style={styles.checkItem}>
+              <ShieldCheck size={14} color={colors.mintDeep} />
+              <Text style={[styles.checkText, { color: colors.textPrimary }]}>Reports update</Text>
+            </View>
+            <View style={styles.checkItem}>
+              <ShieldCheck size={14} color={colors.mintDeep} />
+              <Text style={[styles.checkText, { color: colors.textPrimary }]}>Spending limits update</Text>
             </View>
 
-            <View style={[styles.innerDivider, { backgroundColor: colors.border }]} />
-
-            {/* Safe to spend row */}
-            <View style={styles.comparisonRow}>
-              <View style={styles.compCell}>
-                <Text variant="caption" style={[styles.compLabel, { color: colors.textSecondary }]}>
-                  Safe to spend (before)
-                </Text>
-                <Text style={[styles.compValue, { color: colors.textSecondary }]}>
-                  {fmt(previousSafeToSpend)}
+            {savingsDelta > 0 && (
+              <View style={[styles.impactBox, { backgroundColor: `${colors.mintDeep}10` }]}>
+                <Text style={[styles.impactText, { color: colors.mintDeep }]}>
+                  Estimated monthly impact: +{fmt(savingsDelta)} saved
                 </Text>
               </View>
-
-              <ArrowDown color={colors.textSecondary} size={14} style={{ marginHorizontal: 8, marginTop: 18 }} />
-
-              <View style={[styles.compCell, styles.compCellRight]}>
-                <Text variant="caption" style={[styles.compLabel, { color: colors.textSecondary }]}>
-                  Safe to spend (after)
+            )}
+            {savingsDelta < 0 && (
+              <View style={[styles.impactBox, { backgroundColor: `${colors.peachDeep}10` }]}>
+                <Text style={[styles.impactText, { color: colors.peachDeep }]}>
+                  Estimated monthly impact: -{fmt(Math.abs(savingsDelta))} saved
                 </Text>
-                <View style={styles.deltaRow}>
-                  <Text style={[styles.compValue, { color: colors.textPrimary }]}>
-                    {fmt(safeToSpend)}
-                  </Text>
-                  {spendDelta !== 0 && (
-                    <View
-                      style={[
-                        styles.deltaBadge,
-                        { backgroundColor: `${deltaColor(spendSign)}15` },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color: deltaColor(spendSign),
-                          fontFamily: 'Satoshi-Bold',
-                          fontSize: 11,
-                        }}
-                      >
-                        {fmtDelta(spendDelta)}/mo
-                      </Text>
-                    </View>
-                  )}
-                </View>
               </View>
-            </View>
+            )}
           </View>
 
           {/* Unbalanced warning */}
@@ -232,46 +179,34 @@ const styles = StyleSheet.create({
     height: 1,
     marginBottom: 16,
   },
-  diffCard: {
-    marginBottom: 12,
-    gap: 0,
+  checklistCard: {
+    marginBottom: 16,
+    gap: 8,
   },
-  comparisonRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 10,
+  checklistTitle: {
+    fontFamily: 'Satoshi-Bold',
+    fontSize: 10,
+    letterSpacing: 1.2,
+    marginBottom: 4,
   },
-  compCell: {
-    flex: 1,
-    gap: 4,
-  },
-  compCellRight: {
-    alignItems: 'flex-end',
-  },
-  compLabel: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 11,
-    letterSpacing: 0.2,
-  },
-  compValue: {
-    fontFamily: 'Satoshi-Black',
-    fontSize: 17,
-    letterSpacing: -0.3,
-  },
-  deltaRow: {
+  checkItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
+    gap: 8,
   },
-  deltaBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+  checkText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 13,
   },
-  innerDivider: {
-    height: 1,
+  impactBox: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 8,
+  },
+  impactText: {
+    fontFamily: 'Satoshi-Bold',
+    fontSize: 12,
+    textAlign: 'center',
   },
   warningBar: {
     borderWidth: 1,

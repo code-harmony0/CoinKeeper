@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getDb } from '../store/database';
 import { fromPaise } from '../utils/money';
 import { BudgetBucket } from '../utils/budgetBucket';
+import { financialEventBus } from '../services/EventBus';
 
 export interface BucketIntelligence {
   currentSpend: number;
@@ -65,20 +66,20 @@ export const useMoneyPlanIntelligence = (): MoneyPlanIntelligence => {
         db.execute(
           `SELECT SUM(t.amount_paise) as total FROM transactions t
            JOIN categories c ON c.id = t.category_id
-           WHERE c.budget_bucket = ? AND t.type = 'expense'
+           WHERE c.budget_bucket = ? AND t.type IN ('expense', 'transfer_to_goal')
              AND t.occurred_at >= ? AND t.occurred_at < ?`,
           [bucket, monthStart, nextMonthStart],
         ),
         db.execute(
           `SELECT SUM(t.amount_paise) as total FROM transactions t
            JOIN categories c ON c.id = t.category_id
-           WHERE c.budget_bucket = ? AND t.type = 'expense' AND t.occurred_at >= ? AND t.occurred_at < ?`,
+           WHERE c.budget_bucket = ? AND t.type IN ('expense', 'transfer_to_goal') AND t.occurred_at >= ? AND t.occurred_at < ?`,
           [bucket, lastMonthStart, monthStart],
         ),
         db.execute(
           `SELECT c.name as name, SUM(t.amount_paise) as total FROM transactions t
            JOIN categories c ON c.id = t.category_id
-           WHERE c.budget_bucket = ? AND t.type = 'expense'
+           WHERE c.budget_bucket = ? AND t.type IN ('expense', 'transfer_to_goal')
              AND t.occurred_at >= ? AND t.occurred_at < ?
            GROUP BY c.id ORDER BY total DESC LIMIT 3`,
           [bucket, monthStart, nextMonthStart],
@@ -110,6 +111,10 @@ export const useMoneyPlanIntelligence = (): MoneyPlanIntelligence => {
 
   useEffect(() => {
     load();
+    const unsubscribe = financialEventBus.subscribe(() => {
+      load();
+    });
+    return unsubscribe;
   }, [load]);
 
   return { income, buckets, emergencyFundGoal, loading, reload: load };

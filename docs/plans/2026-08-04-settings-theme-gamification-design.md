@@ -22,15 +22,16 @@ A full-app audit (graphify + targeted research, 2026-08-04) found the Money Plan
 ## Non-goals (this design)
 
 - Chit-fund "reliable member" progression is scoped conceptually here (§5) but is a separate implementation plan, since it touches the chit-fund data model directly and needs its own design pass.
-- Real PIN/biometric enforcement — Security screen ships as groundwork (toggle stub), not a working auth gate.
 - Payment Methods — removed, not built. CoinKeeper never holds or moves funds, so this row shouldn't exist.
+
+**Correction during planning:** real PIN infrastructure already exists — `src/services/pinService.ts` (argon2 hashing via Keychain, `hasPinSet`/`setPin`/`verifyPin`/`clearPin`/`confirmDeviceIdentity`), plus `SetupPinScreen.tsx` and `ResetPinScreen.tsx` — but all of it is only reachable from the first-run onboarding flow (`RootNavigator`'s `showPinSetup`/`showBiometricEnroll` gate). None of it is reachable post-onboarding. So Security is not a stub build — it's a wiring task: surface real PIN status and let a returning user set/change/remove their PIN via the screens that already exist.
 
 ## 1. Settings completion
 
 | Screen | Scope |
 |---|---|
-| `ProfileScreen` | Name, avatar, currency, monthly income. Also fills the onboarding gap noted in `APP_FLOW_PLAN.md` §A (no income-capture step exists anywhere today) — income lives here as the single source of truth, read by `FinancialIntelligenceEngine` wherever it currently needs an income figure. |
-| `SecurityScreen` | PIN + biometric toggle UI only; no enforcement logic wired yet. Ships as a real screen so the row stops being a lie, with a clear "coming soon" state on the toggle if PIN storage isn't implemented in this pass. |
+| `ProfileScreen` | Name + avatar, stored via `getPreference`/`setPreference` (same mechanism as the existing `notifications` toggle) since the lite build has no account system — `useOptionalAuth()` returns `userProfile: null` unconditionally outside the chit-fund module, so "User" is currently a hardcoded fallback with no way to change it. **Correction during planning:** dropped currency and monthly-income fields from scope — `Money.format()` hardcodes `currency: 'INR'` with no reader for a stored preference, and `FinancialIntelligenceEngine` derives income from real transaction sums, not a stored figure. Adding fields nothing reads would be speculative. |
+| `SecurityScreen` | Reads `hasPinSet()` from the existing `pinService`. If no PIN: "Set a PIN" row navigates to the existing `SetupPinScreen`. If a PIN exists: shows "Change PIN" (→ `ResetPinScreen`, which already calls `confirmDeviceIdentity()` before allowing a reset) and "Remove PIN" (→ `confirmDeviceIdentity()` then `clearPin()`). No new PIN logic — this screen is a router onto infrastructure that already works. |
 | `HelpCenterScreen` | Static FAQ list + mailto/contact link. No backend needed. |
 | Payment Methods row | Removed from `SettingsScreen.tsx`. |
 

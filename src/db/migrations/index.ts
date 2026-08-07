@@ -11,6 +11,8 @@ import { migrate009BudgetBucket } from './009_budget_bucket';
 import { migrate010BillPaymentLink } from './010_bill_payment_link';
 import { migrate011RecurringIncome } from './011_recurring_income';
 import { migrate012GoalEmergencyFundFlag } from './012_goal_emergency_fund_flag';
+import { migrate013LedgerFoundation } from './013_ledger_foundation';
+import { migrate014LedgerTransfers } from './014_ledger_transfers';
 import { migrate015GoalContributionLink } from './015_goal_contribution_link';
 import { migrate016GoalIdIndex } from './016_goal_id_index';
 
@@ -82,6 +84,16 @@ export const runMigrations = async (db: DB): Promise<void> => {
   if (currentVersion < 12) {
     await migrate012GoalEmergencyFundFlag(db);
     await db.execute('PRAGMA user_version = 12;');
+  }
+
+  if (currentVersion < 13) {
+    await migrate013LedgerFoundation(db);
+    await db.execute('PRAGMA user_version = 13;');
+  }
+
+  if (currentVersion < 14) {
+    await migrate014LedgerTransfers(db);
+    await db.execute('PRAGMA user_version = 14;');
   }
 
   if (currentVersion < 15) {

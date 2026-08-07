@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getDb } from '../store/database';
+import { financialEventBus } from '../services/EventBus';
 import { CategoryData, MergeSuggestion } from '../types/category';
 import { findMergeCandidates } from '../utils/categorySimilarity';
 
@@ -128,6 +129,10 @@ export const useCategoryIntelligence = () => {
 
   useEffect(() => {
     load();
+    const unsubscribe = financialEventBus.subscribe(() => {
+      load();
+    });
+    return unsubscribe;
   }, [load]);
 
   return { categories, mergeSuggestions, loading, reload: load };

@@ -17,12 +17,13 @@ import { Text } from '../ui/Text';
 import { PressableScale } from '../anim/PressableScale';
 import { ChevronDown, ChevronUp, TrendingDown, TrendingUp, Minus, Plus } from 'lucide-react-native';
 import { useSpecTheme } from '../../theme/specTheme';
+import { Money } from '../../utils/money';
 
 interface Props {
   icon: React.ReactNode;
   name: string;
   percentage: number;
-  rupees: number;
+  amountPaise: number;
   recommendedRange: string;
   color: string;
   /**
@@ -48,7 +49,7 @@ const triggerHaptic = () =>
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 // Track width: screen - (24 outer pad × 2) - (20 card pad × 2) - (stepper × 2 + gap)
-const TRACK_CONTAINER_WIDTH = SCREEN_WIDTH - 48 - 40 - 96;
+const TRACK_CONTAINER_WIDTH = SCREEN_WIDTH - 48 - 40 - 112;
 
 const TRACK_H_COLLAPSED = 10;
 const TRACK_H_ACTIVE = 14;
@@ -60,7 +61,7 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
   icon,
   name,
   percentage,
-  rupees,
+  amountPaise,
   recommendedRange,
   color,
   tint,
@@ -189,7 +190,7 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
 
   // ── Pace bar ──────────────────────────────────────────────────────────────
   const pacePct = pacePrediction
-    ? Math.min(100, (pacePrediction.projectedTotal / (rupees || 1)) * 100)
+    ? Math.min(100, (pacePrediction.projectedTotal / (amountPaise || 1)) * 100)
     : 0;
 
   return (
@@ -220,7 +221,7 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
             variant="caption"
             style={{ color, fontFamily: 'Satoshi-Bold', marginTop: 3 }}
           >
-            {percentage}% · ₹{rupees.toLocaleString('en-IN', { maximumFractionDigits: 0 })}/mo
+            {percentage}% · {Money.format(amountPaise, { zeroDecimals: true })}/mo
           </Text>
         </View>
         <View style={[styles.chevronBox, { backgroundColor: colors.chipBg }]}>
@@ -404,7 +405,7 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
                 variant="caption"
                 style={{ color: colors.textSecondary, fontSize: 11, marginTop: 4 }}
               >
-                Projected: ₹{pacePrediction.projectedTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })} this month
+                Projected: {Money.format(pacePrediction.projectedTotal, { zeroDecimals: true })} this month
               </Text>
             </View>
           )}
@@ -413,7 +414,7 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
           <View
             style={[
               styles.insightBlock,
-              { backgroundColor: `${color}08`, borderLeftColor: color },
+              { backgroundColor: `${color}08` },
             ]}
           >
             <Text
@@ -489,9 +490,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   stepBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -542,11 +543,9 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   insightBlock: {
-    borderLeftWidth: 3,
-    paddingLeft: 12,
+    paddingHorizontal: 12,
     paddingVertical: 10,
-    paddingRight: 8,
-    borderRadius: 4,
+    borderRadius: 8,
     marginTop: 4,
   },
 });

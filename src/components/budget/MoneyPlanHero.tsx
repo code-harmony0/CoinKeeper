@@ -13,14 +13,14 @@ import { Text } from '../ui/Text';
 import { CountUp } from '../anim/CountUp';
 import { PressableScale } from '../anim/PressableScale';
 import { useSpecTheme } from '../../theme/specTheme';
+import { Money } from '../../utils/money';
+
+import { PresetOutcome } from '../../services/moneyPlanIntelligence';
 
 interface Props {
   income: number;
-  safeToSpend: number;
-  monthlySavings: number;
+  previewOutcome: PresetOutcome;
   hasIncome: boolean;
-  score: number;
-  topRecommendation: string | null;
   isBalanced: boolean;
   onAddIncome: () => void;
   colors: any;
@@ -47,17 +47,14 @@ const deg2rad = (d: number) => (d * Math.PI) / 180;
 
 export const MoneyPlanHero: React.FC<Props> = ({
   income,
-  safeToSpend,
-  monthlySavings,
+  previewOutcome,
   hasIncome,
-  score,
-  topRecommendation,
   isBalanced,
   onAddIncome,
   colors,
 }) => {
   const { cardRadius, cardShadow, iconShadow } = useSpecTheme();
-  const { label: scoreLabel, color: scoreColor, confidence } = getScoreState(score, colors);
+  const { label: scoreLabel, color: scoreColor, confidence } = getScoreState(previewOutcome.budgetHealthScore, colors);
 
   // ── Arc animation ─────────────────────────────────────────────────────────
   const arcProgress = useSharedValue(0);
@@ -66,9 +63,9 @@ export const MoneyPlanHero: React.FC<Props> = ({
     // Entrance animation: arc draws in from 0 → score
     arcProgress.value = withDelay(
       300,
-      withSpring(hasIncome ? score / 100 : 0, { damping: 18, stiffness: 80 })
+      withSpring(hasIncome ? previewOutcome.budgetHealthScore / 100 : 0, { damping: 18, stiffness: 80 })
     );
-  }, [score, hasIncome]);
+  }, [previewOutcome.budgetHealthScore, hasIncome]);
 
   const sweepAngle = useDerivedValue(
     () => arcProgress.value * SWEEP_TOTAL
@@ -95,39 +92,40 @@ export const MoneyPlanHero: React.FC<Props> = ({
               variant="caption"
               style={[styles.overline, { color: colors.textSecondary }]}
             >
-              SAFE TO SPEND
+              TODAY'S PLAN LIMIT
             </Text>
-            <CountUp
-              value={safeToSpend}
-              prefix="₹"
-              style={[styles.bigNumber, { color: colors.textPrimary }]}
-            />
-            <View style={styles.savingsRow}>
-              <View style={[styles.savingsDot, { backgroundColor: colors.mintDeep }]} />
-              <CountUp
-                value={monthlySavings}
-                prefix="+₹"
-                style={[styles.savingsText, { color: colors.mintDeep }]}
-              />
-              <Text style={[styles.savingsText, { color: colors.mintDeep }]}> saved/mo</Text>
+            <CountUp value={previewOutcome.safeToSpendToday} prefix="₹" isPaise style={[styles.bigNumber, { color: colors.textPrimary }]} />
+            
+            <View style={styles.metricsGrid}>
+              <View style={styles.metricItem}>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Monthly Remaining</Text>
+                <CountUp value={previewOutcome.monthlyRemaining} prefix="₹" isPaise style={[styles.metricValue, { color: colors.skyDeep }]} />
+              </View>
+              <View style={styles.metricItem}>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Savings Goal</Text>
+                <CountUp value={previewOutcome.monthlySavings} prefix="₹" isPaise style={[styles.metricValue, { color: colors.mintDeep }]} />
+              </View>
+              <View style={styles.metricItem}>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Budget Health</Text>
+                <Text style={[styles.metricValue, { color: scoreColor }]}>{previewOutcome.budgetHealthScore}/100 (Grade {previewOutcome.grade})</Text>
+              </View>
+              <View style={styles.metricItem}>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Freedom Progress</Text>
+                <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
+                  {previewOutcome.emergencyFundMonths ? `E-Fund in ${previewOutcome.emergencyFundMonths} mos` : 'No E-Fund'}
+                </Text>
+              </View>
             </View>
 
-            <Text
-              variant="caption"
-              style={[styles.incomeLabel, { color: colors.textSecondary }]}
-            >
-              of ₹{income.toLocaleString('en-IN', { maximumFractionDigits: 0 })} income
-            </Text>
-
             {/* Recommendation / confidence line */}
-            <View style={[styles.insightChip, { backgroundColor: `${scoreColor}12`, borderColor: `${scoreColor}30` }]}>
+            <View style={[styles.insightChip, { backgroundColor: `${scoreColor}12`, borderColor: `${scoreColor}30`, marginTop: 12 }]}>
               <Text
                 variant="caption"
                 style={{ color: scoreColor, fontFamily: 'Satoshi-Bold', fontSize: 11, lineHeight: 16 }}
                 numberOfLines={2}
               >
                 {isBalanced
-                  ? (topRecommendation ?? confidence)
+                  ? confidence
                   : 'Allocation must total 100%'}
               </Text>
             </View>
@@ -136,7 +134,7 @@ export const MoneyPlanHero: React.FC<Props> = ({
           {/* ── Right: Skia arc ── */}
           <View style={styles.rightBlock}>
             {ARC_SIZE > 0 && (
-              <Canvas style={{ width: ARC_SIZE, height: ARC_SIZE }}>
+              <Canvas style={{ width: ARC_SIZE, height: ARC_SIZE, alignSelf: 'center' }}>
                 {/* Track (background ring) */}
                 <ArcPath
                   cx={ARC_CX}
@@ -172,15 +170,10 @@ export const MoneyPlanHero: React.FC<Props> = ({
 
             {/* Score label below arc */}
             <View style={styles.scoreLabelWrap}>
-              <Text
-                style={[styles.scorePercent, { color: scoreColor }]}
-              >
-                {score}%
+              <Text style={[styles.scorePercent, { color: scoreColor }]}>
+                {previewOutcome.grade}
               </Text>
-              <Text
-                variant="caption"
-                style={[styles.scoreLabel, { color: colors.textSecondary }]}
-              >
+              <Text variant="caption" style={[styles.scoreLabel, { color: colors.textSecondary }]}>
                 {scoreLabel}
               </Text>
             </View>
@@ -319,18 +312,21 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     marginBottom: 6,
   },
-  savingsRow: {
+  metricsGrid: {
+    marginTop: 8,
+    gap: 8,
+  },
+  metricItem: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
+    paddingRight: 12,
   },
-  savingsDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  metricLabel: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 12,
   },
-  savingsText: {
+  metricValue: {
     fontFamily: 'Satoshi-Bold',
     fontSize: 13,
   },

@@ -6,6 +6,7 @@ import { Text } from '../ui/Text';
 import { PressableScale } from '../anim/PressableScale';
 import { computePresetOutcome } from '../../services/moneyPlanIntelligence';
 import { useSpecTheme } from '../../theme/specTheme';
+import { Money } from '../../utils/money';
 
 interface Preset {
   id: string;
@@ -79,17 +80,17 @@ export const LifestyleProfileCard: React.FC<Props> = ({
   // Exactly one badge, by priority. Ordering matters: a pending change must
   // outrank "best fit", or the card the user just tapped stays unacknowledged.
   const badge = isSelected && isActive
-    ? { label: 'ACTIVE', bg: colors.textPrimary, fg: '#FFFFFF', check: true, outline: false }
+    ? { label: 'SAVED & ACTIVE', bg: colors.textPrimary, fg: colors.background, check: true, outline: false }
     : isPending
-    ? { label: 'SELECTED', bg: iconFgColor, fg: '#FFFFFF', check: true, outline: false }
+    ? { label: 'DRAFT SELECTED', bg: colors.primaryAccent, fg: '#FFFFFF', check: true, outline: false }
     : isSavedButChanged
-    ? { label: 'CURRENT', bg: 'transparent', fg: colors.textSecondary, check: false, outline: true }
+    ? { label: 'PREVIOUSLY SAVED', bg: 'transparent', fg: colors.textSecondary, check: false, outline: true }
     : isRecommended
-    ? { label: 'BEST FIT', bg: iconFgColor, fg: '#FFFFFF', check: false, outline: false }
+    ? { label: 'BEST FIT', bg: colors.textSecondary, fg: '#FFFFFF', check: false, outline: false }
     : null;
 
   const monthlySavingsFormatted = income > 0
-    ? `₹${outcome.monthlySavings.toLocaleString('en-IN', { maximumFractionDigits: 0 })}/mo`
+    ? `${Money.format(outcome.monthlySavings, { zeroDecimals: true })}/mo`
     : `${preset.s}% saved`;
 
   const efMonths = outcome.emergencyFundMonths;
@@ -112,13 +113,13 @@ export const LifestyleProfileCard: React.FC<Props> = ({
             ...(isSelected
               ? {
                   borderWidth: 2,
-                  borderColor: isActive ? colors.textPrimary : iconFgColor,
+                  borderColor: isActive ? colors.textPrimary : colors.primaryAccent,
                   ...cardShadow,
                 }
               : isSavedButChanged
               ? { borderWidth: 1.5, borderColor: `${colors.textPrimary}33`, ...cardShadow }
               : isRecommended
-              ? { borderWidth: 1.5, borderColor: `${iconFgColor}50`, ...cardShadow }
+              ? { borderWidth: 1.5, borderColor: `${colors.textSecondary}33`, ...cardShadow }
               : cardShadow),
           },
         ]}
@@ -162,43 +163,47 @@ export const LifestyleProfileCard: React.FC<Props> = ({
           {preset.name}
         </Text>
 
-        {/* Primary outcome — THIS is what users buy */}
-        <Text
-          style={[styles.savingsHeadline, { color: iconFgColor }]}
-        >
-          {monthlySavingsFormatted}
-        </Text>
-
-        {/* Outcome story */}
-        <Text
-          variant="caption"
-          style={[styles.story, { color: colors.textSecondary }]}
-          numberOfLines={2}
-        >
-          {preset.outcomeStory}
-        </Text>
-
-        {/* Divider */}
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-        {/* Supporting stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statBlock}>
-            <Text variant="caption" style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Spend
-            </Text>
-            <Text style={[styles.statValue, { color: colors.textPrimary }]}>
-              {income > 0
-                ? `₹${outcome.safeToSpend.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
-                : `${preset.n + preset.w}%`}
+        <View style={styles.checklist}>
+          <View style={styles.checkItem}>
+            <CheckCircle2 size={12} color={iconFgColor} />
+            <Text style={[styles.checkText, { color: colors.textPrimary }]} numberOfLines={1}>
+              {income > 0 ? `Save ${Money.format(outcome.monthlySavings, { zeroDecimals: true })}/month` : `Save ${preset.s}%`}
             </Text>
           </View>
-          <View style={styles.statBlock}>
-            <Text variant="caption" style={[styles.statLabel, { color: colors.textSecondary }]}>
-              E-Fund
+          <View style={styles.checkItem}>
+            <CheckCircle2 size={12} color={iconFgColor} />
+            <Text style={[styles.checkText, { color: colors.textPrimary }]} numberOfLines={1}>
+              {income > 0 ? `Safe Spend ${Money.format(outcome.safeToSpendToday, { zeroDecimals: true })}/day` : `Safe Spend limit`}
             </Text>
-            <Text style={[styles.statValue, { color: colors.textPrimary }]}>
-              {efMonths ? `${efMonths} mo` : '—'}
+          </View>
+          <View style={styles.checkItem}>
+            <CheckCircle2 size={12} color={iconFgColor} />
+            <Text style={[styles.checkText, { color: colors.textPrimary }]} numberOfLines={1}>
+              {efMonths ? `Emergency Fund in ${efMonths} months` : 'No E-Fund progress'}
+            </Text>
+          </View>
+          <View style={styles.checkItem}>
+            <CheckCircle2 size={12} color={iconFgColor} />
+            <Text style={[styles.checkText, { color: colors.textPrimary }]} numberOfLines={1}>
+              Budget Health {outcome.grade}
+            </Text>
+          </View>
+          <View style={styles.checkItem}>
+            <CheckCircle2 size={12} color={iconFgColor} />
+            <Text style={[styles.checkText, { color: colors.textPrimary }]} numberOfLines={1}>
+              Cash Flow Stable
+            </Text>
+          </View>
+          <View style={styles.checkItem}>
+            <CheckCircle2 size={12} color={iconFgColor} />
+            <Text style={[styles.checkText, { color: colors.textPrimary }]} numberOfLines={1}>
+              Bills Covered
+            </Text>
+          </View>
+          <View style={styles.checkItem}>
+            <CheckCircle2 size={12} color={iconFgColor} />
+            <Text style={[styles.checkText, { color: colors.textPrimary }]} numberOfLines={1}>
+              Financial Stress Low
             </Text>
           </View>
         </View>
@@ -209,8 +214,8 @@ export const LifestyleProfileCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   card: {
-    width: 164,
-    padding: 18,
+    width: 200,
+    padding: 16,
     position: 'relative',
   },
   badge: {
@@ -243,35 +248,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 4,
   },
-  savingsHeadline: {
-    fontFamily: 'Satoshi-Black',
-    fontSize: 17,
-    marginBottom: 4,
+  checklist: {
+    gap: 6,
+    marginTop: 12,
   },
-  story: {
-    lineHeight: 16,
-    marginBottom: 14,
-    fontSize: 11,
-  },
-  divider: {
-    height: 1,
-    marginBottom: 12,
-  },
-  statsRow: {
+  checkItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 6,
   },
-  statBlock: {
-    gap: 2,
-  },
-  statLabel: {
-    fontSize: 10,
+  checkText: {
     fontFamily: 'Satoshi-Medium',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  statValue: {
-    fontFamily: 'Satoshi-Bold',
-    fontSize: 12,
+    fontSize: 11,
+    flex: 1,
   },
 });

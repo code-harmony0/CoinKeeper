@@ -42,7 +42,7 @@ export const AddBillSheet: React.FC<Props> = ({
   onSubmit,
 }) => {
   const insets = useSafeAreaInsets();
-  const { colors } = useSpecTheme();
+  const { colors, iconContainerRadius } = useSpecTheme();
 
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
@@ -219,17 +219,17 @@ export const AddBillSheet: React.FC<Props> = ({
               </TouchableOpacity>
 
               {showAdvanced && (
-                <View style={[styles.advancedContainer, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+                <View style={[styles.advancedContainer, { backgroundColor: colors.surfaceSunken }]}>
                   {/* Recurring Toggle */}
-                  <View style={styles.settingRow}>
+                  <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
                     <View style={styles.settingLeft}>
-                      <View style={[styles.settingIconBox, { backgroundColor: 'rgba(0, 122, 255, 0.1)' }]}>
+                      <View style={[styles.settingIconBox, { backgroundColor: `${colors.primaryAccent}1A`, borderRadius: iconContainerRadius }]}>
                         <Repeat size={16} color={colors.primaryAccent} />
                       </View>
                       <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Recurring Bill</Text>
                     </View>
-                    <Switch 
-                      value={isRecurring} 
+                    <Switch
+                      value={isRecurring}
                       onValueChange={setIsRecurring}
                       trackColor={{ false: colors.border, true: colors.primaryAccent }}
                       style={{ transform: [{ scale: 0.8 }] }}
@@ -237,15 +237,15 @@ export const AddBillSheet: React.FC<Props> = ({
                   </View>
 
                   {/* Auto Pay Toggle */}
-                  <View style={styles.settingRow}>
+                  <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
                     <View style={styles.settingLeft}>
-                      <View style={[styles.settingIconBox, { backgroundColor: 'rgba(255, 204, 0, 0.1)' }]}>
+                      <View style={[styles.settingIconBox, { backgroundColor: 'rgba(255, 204, 0, 0.1)', borderRadius: iconContainerRadius }]}>
                         <Zap size={16} color="#FFCC00" />
                       </View>
                       <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Auto-Pay</Text>
                     </View>
-                    <Switch 
-                      value={autoPayEnabled} 
+                    <Switch
+                      value={autoPayEnabled}
                       onValueChange={setAutoPayEnabled}
                       trackColor={{ false: colors.border, true: colors.primaryAccent }}
                       style={{ transform: [{ scale: 0.8 }] }}
@@ -255,7 +255,7 @@ export const AddBillSheet: React.FC<Props> = ({
                   {/* Notes */}
                   <View style={[styles.settingRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
                     <View style={styles.settingLeft}>
-                      <View style={[styles.settingIconBox, { backgroundColor: colors.chipBg }]}>
+                      <View style={[styles.settingIconBox, { backgroundColor: colors.card, borderRadius: iconContainerRadius }]}>
                         <FileText size={16} color={colors.textSecondary} />
                       </View>
                       <TextInput
@@ -374,7 +374,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(150, 150, 150, 0.2)',
   },
   settingLeft: {
     flexDirection: 'row',

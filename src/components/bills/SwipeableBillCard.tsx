@@ -22,6 +22,8 @@ interface Props {
   isOverdue: boolean;
   colors: any;
   cardRadius: number;
+  cardShadow: any;
+  iconContainerRadius: number;
   onMarkPaid: () => void;
   onMenu: () => void;
 }
@@ -41,15 +43,16 @@ export const SwipeableBillCard: React.FC<Props> = ({
   isOverdue,
   colors,
   cardRadius,
+  cardShadow,
+  iconContainerRadius,
   onMarkPaid,
   onMenu,
 }) => {
   const translateX = useSharedValue(0);
   const scale = useSharedValue(1);
 
-  const cardBg = isPaid ? 'transparent' : isOverdue ? 'rgba(255, 59, 48, 0.05)' : colors.card;
-  const borderColor = isPaid ? colors.border : isOverdue ? 'rgba(255, 59, 48, 0.2)' : colors.border;
-  const iconBg = isOverdue ? 'rgba(255, 59, 48, 0.1)' : colors.chipBg;
+  const cardBg = isPaid ? 'transparent' : isOverdue ? `${colors.danger}0D` : colors.card;
+  const iconBg = isOverdue ? `${colors.danger}1A` : colors.chipBg;
   const iconColor = isOverdue ? colors.danger : colors.textPrimary;
 
   const handleComplete = () => {
@@ -90,8 +93,11 @@ export const SwipeableBillCard: React.FC<Props> = ({
   });
 
   return (
-    <View style={styles.container}>
-      <Animated.View style={[styles.backgroundAction, { backgroundColor: colors.success }, rBackgroundStyle]}>
+    // cardShadow lives on this static wrapper, not on the Animated.View below — Android's
+    // elevation shadow ghosts into a detached gray halo when applied to a view that Reanimated
+    // is also transforming (translateX/scale from the swipe gesture).
+    <View style={[styles.container, !isPaid && cardShadow, { borderRadius: cardRadius, backgroundColor: cardBg }]}>
+      <Animated.View style={[styles.backgroundAction, { backgroundColor: colors.success, borderRadius: cardRadius }, rBackgroundStyle]}>
         <CheckCircle2 color="#FFF" size={28} />
         <Text style={[styles.actionText, { color: '#FFF' }]}>Paid</Text>
       </Animated.View>
@@ -100,19 +106,19 @@ export const SwipeableBillCard: React.FC<Props> = ({
         <Animated.View
           style={[
             styles.card,
-            { backgroundColor: cardBg, borderRadius: cardRadius, borderWidth: 1, borderColor },
+            { borderRadius: cardRadius },
             isPaid && { opacity: 0.6 },
             rStyle,
           ]}
         >
-          <View style={[styles.iconBox, { backgroundColor: iconBg }]}>
+          <View style={[styles.iconBox, { backgroundColor: iconBg, borderRadius: iconContainerRadius }]}>
             {getBillIcon(bill.name, iconColor)}
           </View>
           
           <View style={styles.billInfo}>
             <Text variant="h3" style={[styles.billName, isPaid ? { textDecorationLine: 'line-through', color: colors.textSecondary } : { color: colors.textPrimary }]}>{bill.name}</Text>
             <View style={styles.chipsRow}>
-              <View style={[styles.statusChip, { backgroundColor: isPaid ? 'rgba(150, 150, 150, 0.1)' : isOverdue ? 'rgba(255, 59, 48, 0.1)' : 'rgba(0, 122, 255, 0.1)' }]}>
+              <View style={[styles.statusChip, { backgroundColor: isPaid ? `${colors.textSecondary}1A` : isOverdue ? `${colors.danger}1A` : `${colors.primaryAccent}1A` }]}>
                 <Text style={{ fontSize: 10, fontFamily: 'Satoshi-Bold', color: isPaid ? colors.textSecondary : isOverdue ? colors.danger : colors.primaryAccent, letterSpacing: 0.5 }}>
                   {isPaid ? 'PAID' : isOverdue ? 'OVERDUE' : 'UPCOMING'}
                 </Text>
@@ -160,7 +166,6 @@ const styles = StyleSheet.create({
   },
   backgroundAction: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -174,7 +179,6 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 48,
     height: 48,
-    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,

@@ -1,18 +1,16 @@
 import { create } from 'zustand';
 import { getDb } from './database';
+import { FinancialLedgerService } from '../services/FinancialLedgerService';
+import { financialEventBus } from '../services/EventBus';
 
 export interface Goal {
   id: string;
   name: string;
-  /** Note: Goals store amounts in whole INR (Rupees), NOT paise! (Legacy table schema) */
+  /** Stored in paise */
   targetAmount: number;
-  /** Note: Goals store amounts in whole INR (Rupees), NOT paise! (Legacy table schema) */
+  /** Stored in paise */
   currentAmount: number;
   deadline?: string;
-  /**
-   * Optional on input to addGoal — omitted, it's derived case-insensitively
-   * from `name`. Always a real boolean on goals loaded from the DB.
-   */
   isEmergencyFund?: boolean;
 }
 
@@ -96,20 +94,10 @@ export const useGoalStore = create<GoalStoreState>((set, get) => ({
     }
   },
 
-  updateGoalProgress: async (id, amount) => {
+  updateGoalProgress: async (id, amountPaise) => {
     set({ isLoading: true, error: null });
     try {
-      const db = getDb();
-      const targetGoal = get().goals.find(g => g.id === id);
-      if (!targetGoal) throw new Error('Goal not found');
-      
-      const newAmount = targetGoal.currentAmount + amount;
-      
-      await db.execute('UPDATE goals SET currentAmount = ? WHERE id = ?;', [newAmount, id]);
-      
-      set((state) => ({
-        goals: state.goals.map(g => g.id === id ? { ...g, currentAmount: newAmount } : g),
-      }));
+      await FinancialLedgerService.fundGoal(id, amountPaise);
     } catch (e: any) {
       console.error('[goalStore] Failed to update goal', e);
       set({ error: e.message || 'Failed to update goal' });
@@ -180,3 +168,8 @@ export const useGoalStore = create<GoalStoreState>((set, get) => ({
     }
   }
 }));
+
+// Subscribe to global invalidation events
+financialEventBus.subscribe(() => {
+  useGoalStore.getState().loadGoals();
+});

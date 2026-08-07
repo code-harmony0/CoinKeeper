@@ -1,4 +1,5 @@
 import { getDb } from '../store/database';
+import { FinancialIntelligenceEngine } from './FinancialIntelligenceEngine';
 
 export interface FinancialContext {
   totalBalancePaise: number;
@@ -45,17 +46,18 @@ export const FinancialContextService = {
       if (t.type === 'income') income += t.amount;
     });
 
-    // Mock calculations for safe to spend
+    // Mock calculations for upcoming bills
     const upcomingBills = 4500; // Mock derived from `bills` table
     const totalBalance = 24000;
-    const safeToSpend = totalBalance - upcomingBills;
+    
+    const snapshot = await FinancialIntelligenceEngine.getCurrentSnapshot();
 
     return {
       totalBalancePaise: totalBalance * 100,
       monthlyIncomePaise: income * 100,
       monthlyExpensesPaise: expenses * 100,
       upcomingBillsPaise: upcomingBills * 100,
-      safeToSpendPaise: safeToSpend * 100,
+      safeToSpendPaise: snapshot.safeToSpend,
       recentTransactions: recentTx.map(t => ({
         amount: t.amount,
         merchant: t.merchant,
