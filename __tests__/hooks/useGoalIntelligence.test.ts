@@ -5,7 +5,10 @@ jest.mock('../../src/services/FinancialLedgerService', () => ({
 }));
 jest.mock('../../src/services/FinancialIntelligenceEngine', () => ({
   FinancialIntelligenceEngine: {
-    getCurrentSnapshot: jest.fn().mockResolvedValue({ savingsBudget: 500000 }),
+    getCurrentSnapshot: jest.fn().mockResolvedValue({
+      savingsBudget: 500000,
+      buckets: { savings: { currentSpend: 5000 } },
+    }),
   },
 }));
 jest.mock('../../src/store/goalStore', () => ({

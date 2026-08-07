@@ -27,19 +27,13 @@ export const useGoalIntelligence = (): GoalIntelligence => {
       Promise.all(goals.map(goal => FinancialLedgerService.getGoalContributions(goal.id))),
     ]);
 
-    const monthStart = new Date(new Date(now).getFullYear(), new Date(now).getMonth(), 1).getTime();
-    const contributedThisMonthPaise = contributionsByGoal
-      .flat()
-      .filter(c => c.occurredAtMs >= monthStart)
-      .reduce((sum, c) => sum + c.amountPaise, 0);
-
     const entries = goals.map((goal, index) => ({
       goal,
       health: computeGoalHealth(goal, contributionsByGoal[index], now),
     }));
 
     setRankedGoals(rankGoalPriority(entries));
-    setSavingsBudgetRemainingPaise(Math.max(0, snapshot.savingsBudget - contributedThisMonthPaise));
+    setSavingsBudgetRemainingPaise(Math.max(0, snapshot.savingsBudget - snapshot.buckets.savings.currentSpend));
     setLoading(false);
   }, [goals]);
 
