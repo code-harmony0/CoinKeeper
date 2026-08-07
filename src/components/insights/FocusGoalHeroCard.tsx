@@ -9,6 +9,7 @@ import { Target, Plus } from 'lucide-react-native';
 import { Text } from '../ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim/PressableScale';
+import { Money } from '../../utils/money';
 
 interface Props {
   name: string;
@@ -81,13 +82,13 @@ export const FocusGoalHeroCard: React.FC<Props> = ({
             <View>
               <Text variant="label" style={{ color: colors.textSecondary }}>Saved</Text>
               <Text style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Black', fontSize: 28, marginTop: 4 }}>
-                ₹{currentAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                {Money.format(currentAmount, { zeroDecimals: true })}
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end' }}>
               <Text variant="label" style={{ color: colors.textSecondary }}>Target</Text>
               <Text style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium', fontSize: 16, marginTop: 4 }}>
-                ₹{targetAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                {Money.format(targetAmount, { zeroDecimals: true })}
               </Text>
             </View>
           </View>
