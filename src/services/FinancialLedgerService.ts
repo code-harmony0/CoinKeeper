@@ -113,9 +113,9 @@ export const FinancialLedgerService = {
       const categoryId = await resolveCategoryId(sqlTx, 'Savings Transfer', 'bank-transfer');
       await sqlTx.execute(
         `INSERT INTO transactions
-           (id, amount_paise, type, category_id, account_id, description, occurred_at, payment_method, upi_ref, sms_hash)
-         VALUES (?, ?, 'transfer_to_goal', ?, NULL, ?, ?, 'Transfer', NULL, NULL)`,
-        [newTxId, amountPaise, categoryId, `Transfer to ${goal.name}`, Date.now()],
+           (id, amount_paise, type, category_id, account_id, description, occurred_at, payment_method, upi_ref, sms_hash, goal_id)
+         VALUES (?, ?, 'transfer_to_goal', ?, NULL, ?, ?, 'Transfer', NULL, NULL, ?)`,
+        [newTxId, amountPaise, categoryId, `Transfer to ${goal.name}`, Date.now(), goalId],
       );
     });
 
