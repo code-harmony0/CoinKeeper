@@ -142,4 +142,15 @@ describe('rankGoalPriority', () => {
     expect(typeof ranked[0].priorityReason).toBe('string');
     expect(ranked[0].priorityReason.length).toBeGreaterThan(0);
   });
+
+  it('reports "Already complete" for a completed emergency fund that is outranked by an overdue goal', () => {
+    const entries = [
+      { goal: { id: 'ef', name: 'Emergency Fund', targetAmount: 100000, currentAmount: 100000, isEmergencyFund: true }, health: health({ state: 'completed', score: 100, progressPercent: 100 }) },
+      { goal: { id: 'overdue', name: 'Car', targetAmount: 100000, currentAmount: 0 }, health: health({ state: 'overdue', score: 10, progressPercent: 0 }) },
+    ];
+    const ranked = rankGoalPriority(entries);
+    const ef = ranked.find(r => r.goal.id === 'ef')!;
+    expect(ranked[0].goal.id).toBe('overdue');
+    expect(ef.priorityReason).toBe('Already complete');
+  });
 });

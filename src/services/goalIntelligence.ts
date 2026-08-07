@@ -122,11 +122,16 @@ export interface RankedGoal {
 }
 
 const priorityReasonFor = (goal: Goal, health: GoalHealth): string => {
+  if (health.state === 'completed') return 'Already complete';
   if (goal.isEmergencyFund) return 'Emergency fund always comes first';
   if (health.state === 'overdue') return 'Past its deadline';
   if (health.state === 'at_risk') return 'Behind pace for its deadline';
-  if (health.state === 'stalled') return `No contribution in ${health.daysSinceLastContribution} days`;
-  if (health.state === 'completed') return 'Already complete';
+  if (health.state === 'stalled') {
+    const daysLabel = Number.isFinite(health.daysSinceLastContribution)
+      ? `${health.daysSinceLastContribution} days`
+      : 'a while';
+    return `No contribution in ${daysLabel}`;
+  }
   return health.progressPercent >= 50 ? 'Closest to completion' : 'On track';
 };
 
