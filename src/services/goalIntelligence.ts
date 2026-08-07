@@ -113,3 +113,51 @@ export const computeGoalHealth = (
     isPaceBehindDeadline,
   };
 };
+
+export interface RankedGoal {
+  goal: Goal;
+  health: GoalHealth;
+  priorityRank: number; // 1-based
+  priorityReason: string;
+}
+
+const priorityReasonFor = (goal: Goal, health: GoalHealth): string => {
+  if (goal.isEmergencyFund) return 'Emergency fund always comes first';
+  if (health.state === 'overdue') return 'Past its deadline';
+  if (health.state === 'at_risk') return 'Behind pace for its deadline';
+  if (health.state === 'stalled') return `No contribution in ${health.daysSinceLastContribution} days`;
+  if (health.state === 'completed') return 'Already complete';
+  return health.progressPercent >= 50 ? 'Closest to completion' : 'On track';
+};
+
+const URGENCY_WEIGHT: Record<GoalState, number> = {
+  overdue: 300,
+  at_risk: 200,
+  stalled: 100,
+  healthy: 0,
+  completed: -1000, // sinks below every active goal
+};
+
+export const rankGoalPriority = (
+  entries: { goal: Goal; health: GoalHealth }[],
+): RankedGoal[] => {
+  const scored = entries.map(entry => {
+    const emergencyBonus = entry.goal.isEmergencyFund ? 1000 : 0;
+    const urgencyScore = URGENCY_WEIGHT[entry.health.state];
+    // Small tiebreak toward closer-to-completion within the same urgency tier.
+    const priorityScore = emergencyBonus + urgencyScore + entry.health.progressPercent;
+    return { ...entry, priorityScore };
+  });
+
+  scored.sort((a, b) => {
+    if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
+    return a.goal.id.localeCompare(b.goal.id); // deterministic tiebreak
+  });
+
+  return scored.map((entry, index) => ({
+    goal: entry.goal,
+    health: entry.health,
+    priorityRank: index + 1,
+    priorityReason: priorityReasonFor(entry.goal, entry.health),
+  }));
+};

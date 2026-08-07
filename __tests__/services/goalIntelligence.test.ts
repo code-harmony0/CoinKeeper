@@ -90,3 +90,56 @@ describe('computeGoalHealth', () => {
     expect(health.state).toBe('stalled');
   });
 });
+
+import { rankGoalPriority } from '../../src/services/goalIntelligence';
+
+describe('rankGoalPriority', () => {
+  const health = (overrides: Partial<import('../../src/services/goalIntelligence').GoalHealth> = {}) => ({
+    state: 'healthy' as const,
+    score: 50,
+    progressPercent: 50,
+    monthlyVelocityPaise: 1000,
+    etaLabel: null,
+    daysSinceLastContribution: 1,
+    isPaceBehindDeadline: false,
+    ...overrides,
+  });
+
+  it('always ranks the emergency fund first regardless of other goals\' urgency', () => {
+    const entries = [
+      { goal: { id: 'a', name: 'Car', targetAmount: 100000, currentAmount: 0 }, health: health({ state: 'overdue', score: 10 }) },
+      { goal: { id: 'ef', name: 'Emergency Fund', targetAmount: 100000, currentAmount: 10000, isEmergencyFund: true }, health: health({ score: 30 }) },
+    ];
+    const ranked = rankGoalPriority(entries);
+    expect(ranked[0].goal.id).toBe('ef');
+  });
+
+  it('ranks overdue and at_risk goals above merely stalled or healthy ones', () => {
+    const entries = [
+      { goal: { id: 'healthy', name: 'A', targetAmount: 100000, currentAmount: 0 }, health: health({ state: 'healthy' }) },
+      { goal: { id: 'atrisk', name: 'B', targetAmount: 100000, currentAmount: 0 }, health: health({ state: 'at_risk' }) },
+      { goal: { id: 'stalled', name: 'C', targetAmount: 100000, currentAmount: 0 }, health: health({ state: 'stalled' }) },
+    ];
+    const ranked = rankGoalPriority(entries);
+    expect(ranked.map(r => r.goal.id)).toEqual(['atrisk', 'stalled', 'healthy']);
+  });
+
+  it('sinks completed goals to the bottom', () => {
+    const entries = [
+      { goal: { id: 'done', name: 'Done', targetAmount: 100000, currentAmount: 100000 }, health: health({ state: 'completed', score: 100 }) },
+      { goal: { id: 'active', name: 'Active', targetAmount: 100000, currentAmount: 0 }, health: health({ state: 'stalled' }) },
+    ];
+    const ranked = rankGoalPriority(entries);
+    expect(ranked[ranked.length - 1].goal.id).toBe('done');
+  });
+
+  it('assigns 1-based priorityRank and a human-readable priorityReason', () => {
+    const entries = [
+      { goal: { id: 'ef', name: 'Emergency Fund', targetAmount: 100000, currentAmount: 0, isEmergencyFund: true }, health: health() },
+    ];
+    const ranked = rankGoalPriority(entries);
+    expect(ranked[0].priorityRank).toBe(1);
+    expect(typeof ranked[0].priorityReason).toBe('string');
+    expect(ranked[0].priorityReason.length).toBeGreaterThan(0);
+  });
+});
