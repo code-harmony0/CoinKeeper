@@ -166,3 +166,94 @@ export const rankGoalPriority = (
     priorityReason: priorityReasonFor(entry.goal, entry.health),
   }));
 };
+
+export interface AffordabilityCheck {
+  affordable: boolean;
+  remainingPaise: number;
+  message: string;
+}
+
+export const checkAffordability = (
+  amountPaise: number,
+  monthlyContributedSoFarPaise: number,
+  savingsBudgetPaise: number,
+): AffordabilityCheck => {
+  if (savingsBudgetPaise <= 0) {
+    return {
+      affordable: true,
+      remainingPaise: 0,
+      message: 'Set your income in Money Plan to see how this fits your monthly budget.',
+    };
+  }
+
+  const remainingPaise = Math.max(0, savingsBudgetPaise - monthlyContributedSoFarPaise);
+  const affordable = amountPaise <= remainingPaise;
+
+  return {
+    affordable,
+    remainingPaise,
+    message: affordable
+      ? `Within your ${Money.format(remainingPaise, { zeroDecimals: true })} remaining savings budget this month.`
+      : `This is ${Money.format(amountPaise - remainingPaise, { zeroDecimals: true })} more than your remaining savings budget this month.`,
+  };
+};
+
+export const simulateWhatIf = (
+  goal: Goal,
+  health: GoalHealth,
+  extraMonthlyPaise: number,
+): { etaLabel: string | null } => {
+  const hypotheticalVelocity = health.monthlyVelocityPaise + extraMonthlyPaise;
+  const remainingPaise = goal.targetAmount - goal.currentAmount;
+
+  if (hypotheticalVelocity <= 0 || remainingPaise <= 0) {
+    return { etaLabel: null };
+  }
+
+  const monthsToGo = Math.ceil(remainingPaise / hypotheticalVelocity);
+  return { etaLabel: `~${monthsToGo} month${monthsToGo === 1 ? '' : 's'} at current pace` };
+};
+
+/**
+ * Deadline-driven amount when a deadline exists (what closes the pace gap),
+ * otherwise 10% of the remaining gap as a reasonable default nudge — either
+ * way capped by what's actually affordable this month, never a number the
+ * user can't act on.
+ */
+export const recommendContribution = (
+  goal: Goal,
+  health: GoalHealth,
+  remainingAffordablePaise: number,
+): number => {
+  const remainingGapPaise = Math.max(0, goal.targetAmount - goal.currentAmount);
+  if (remainingGapPaise === 0) return 0;
+
+  let idealPaise: number;
+  if (goal.deadline) {
+    const monthsUntilDeadline = monthsBetween(Date.now(), new Date(goal.deadline).getTime());
+    idealPaise = monthsUntilDeadline > 0 ? Math.ceil(remainingGapPaise / monthsUntilDeadline) : remainingGapPaise;
+  } else {
+    idealPaise = Math.ceil(remainingGapPaise * 0.1);
+  }
+
+  return Math.max(0, Math.min(idealPaise, remainingAffordablePaise, remainingGapPaise));
+};
+
+export const generateRecommendationCopy = (
+  goal: Goal,
+  health: GoalHealth,
+  priorityReason: string,
+): string => {
+  if (health.state === 'completed') return `${goal.name} is fully funded — nice work.`;
+  if (health.state === 'overdue') return `${goal.name} passed its deadline. Update the date or add funds to get back on track.`;
+  if (health.state === 'at_risk') return `${goal.name} is behind pace — ${priorityReason.toLowerCase()}.`;
+  if (health.state === 'stalled') {
+    const daysLabel = Number.isFinite(health.daysSinceLastContribution)
+      ? `${health.daysSinceLastContribution} days`
+      : 'a while';
+    return `${goal.name} hasn't moved in ${daysLabel}.`;
+  }
+  return health.etaLabel
+    ? `${goal.name} is on track — ${health.etaLabel}.`
+    : `${goal.name} is on track.`;
+};

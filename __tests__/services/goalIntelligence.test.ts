@@ -154,3 +154,68 @@ describe('rankGoalPriority', () => {
     expect(ef.priorityReason).toBe('Already complete');
   });
 });
+
+import { checkAffordability, simulateWhatIf, recommendContribution, generateRecommendationCopy } from '../../src/services/goalIntelligence';
+
+describe('checkAffordability', () => {
+  it('is affordable when the amount fits within remaining savings budget this month', () => {
+    const result = checkAffordability(20000, 30000, 100000); // want ₹200, already put in ₹300 of a ₹1000 budget
+    expect(result.affordable).toBe(true);
+    expect(result.remainingPaise).toBe(70000);
+  });
+
+  it('warns (not blocks) when the amount exceeds remaining budget', () => {
+    const result = checkAffordability(90000, 30000, 100000); // want ₹900, only ₹700 left
+    expect(result.affordable).toBe(false);
+    expect(result.remainingPaise).toBe(70000);
+    expect(result.message).toMatch(/more than/i);
+  });
+
+  it('treats a zero or unknown savings budget as "can\'t evaluate" rather than always-unaffordable', () => {
+    const result = checkAffordability(10000, 0, 0);
+    expect(result.affordable).toBe(true);
+    expect(result.message).toMatch(/set your income/i);
+  });
+});
+
+describe('simulateWhatIf', () => {
+  it('recomputes ETA with extra monthly velocity added', () => {
+    const goal: Goal = { id: 'g1', name: 'Laptop', targetAmount: 120000, currentAmount: 0 };
+    const health = computeGoalHealth(goal, [], NOW); // 0 velocity, no ETA
+    const result = simulateWhatIf(goal, health, 20000); // +₹200/month
+    expect(result.etaLabel).toBe('~6 months at current pace');
+  });
+
+  it('returns null ETA when even the hypothetical velocity is zero', () => {
+    const goal: Goal = { id: 'g1', name: 'Laptop', targetAmount: 120000, currentAmount: 0 };
+    const health = computeGoalHealth(goal, [], NOW);
+    const result = simulateWhatIf(goal, health, 0);
+    expect(result.etaLabel).toBeNull();
+  });
+});
+
+describe('recommendContribution', () => {
+  it('suggests the amount needed to hit a set deadline, capped by what is affordable', () => {
+    const goal: Goal = { id: 'g1', name: 'Laptop', targetAmount: 120000, currentAmount: 0, deadline: new Date(NOW + 60 * DAY_MS).toISOString() };
+    const health = computeGoalHealth(goal, [], NOW);
+    const suggestion = recommendContribution(goal, health, 30000); // only ₹300 affordable this month
+    expect(suggestion).toBe(30000); // capped, even though ₹60,000 would be needed for the deadline
+  });
+
+  it('suggests a fraction of the remaining gap when there is no deadline', () => {
+    const goal: Goal = { id: 'g1', name: 'Laptop', targetAmount: 100000, currentAmount: 0 };
+    const health = computeGoalHealth(goal, [], NOW);
+    const suggestion = recommendContribution(goal, health, 1000000); // affordability isn't the constraint here
+    expect(suggestion).toBe(10000); // 10% of the ₹1,00,000 gap
+  });
+});
+
+describe('generateRecommendationCopy', () => {
+  it('produces a sentence that mentions the priority reason for the top-ranked goal', () => {
+    const goal: Goal = { id: 'g1', name: 'Laptop', targetAmount: 100000, currentAmount: 50000 };
+    const health = computeGoalHealth(goal, [{ amountPaise: 5000, occurredAtMs: NOW - 40 * DAY_MS }], NOW);
+    const copy = generateRecommendationCopy(goal, health, 'No contribution in 40 days');
+    expect(copy).toContain('Laptop');
+    expect(copy.length).toBeGreaterThan(0);
+  });
+});
