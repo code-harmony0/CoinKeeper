@@ -2,28 +2,31 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '../ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
-import { Goal } from '../../store/goalStore';
+import { RankedGoal, generateRecommendationCopy } from '../../services/goalIntelligence';
 import { Money } from '../../utils/money';
 
 interface Props {
-  goals: Goal[];
+  rankedGoals: RankedGoal[];
+  contributedThisMonthPaise: number;
+  contributedLastMonthPaise: number;
 }
 
-export const GoalsHeroDashboard: React.FC<Props> = ({ goals }) => {
+export const GoalsHeroDashboard: React.FC<Props> = ({ rankedGoals, contributedThisMonthPaise, contributedLastMonthPaise }) => {
   const { colors } = useSpecTheme();
 
-  const totalSaved = goals.reduce((acc, g) => acc + g.currentAmount, 0);
-  const totalTarget = goals.reduce((acc, g) => acc + g.targetAmount, 0);
-  const activeGoals = goals.filter(g => g.currentAmount < g.targetAmount).length;
+  const totalSaved = rankedGoals.reduce((acc, r) => acc + r.goal.currentAmount, 0);
 
-  const getInsight = () => {
-    if (goals.length === 0) return "Let's build your financial engine today.";
-    if (activeGoals === 0 && goals.length > 0) return "Incredible! You've completed all your active goals.";
-    const percentage = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
-    if (percentage > 75) return "You are on the final stretch! Keep the momentum going.";
-    if (percentage > 25) return "Solid progress. You are building real wealth.";
-    return "Every great journey starts with a single rupee.";
-  };
+  const trendDeltaPaise = contributedThisMonthPaise - contributedLastMonthPaise;
+  const trendLabel = contributedLastMonthPaise === 0 && contributedThisMonthPaise === 0
+    ? null
+    : trendDeltaPaise >= 0
+      ? `${Money.format(trendDeltaPaise, { zeroDecimals: true })} more than last month`
+      : `${Money.format(Math.abs(trendDeltaPaise), { zeroDecimals: true })} less than last month`;
+
+  const topGoal = rankedGoals[0];
+  const coachCopy = topGoal
+    ? generateRecommendationCopy(topGoal.goal, topGoal.health, topGoal.priorityReason)
+    : "Let's build your financial engine today.";
 
   return (
     <View style={styles.container}>
@@ -33,12 +36,17 @@ export const GoalsHeroDashboard: React.FC<Props> = ({ goals }) => {
           <Text style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Black', fontSize: 40, letterSpacing: -0.5, marginTop: 4 }}>
             {Money.format(totalSaved, { zeroDecimals: true })}
           </Text>
+          {trendLabel && (
+            <Text variant="caption" style={{ color: trendDeltaPaise >= 0 ? colors.success : colors.textSecondary, marginTop: 4 }}>
+              {trendLabel} this month
+            </Text>
+          )}
         </View>
       </View>
 
       <View style={[styles.coachBanner, { backgroundColor: `${colors.primaryAccent}10` }]}>
         <Text variant="caption" style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Medium', lineHeight: 18 }}>
-          <Text style={{ fontFamily: 'Satoshi-Bold', color: colors.primaryAccent }}>Coach: </Text>{getInsight()}
+          <Text style={{ fontFamily: 'Satoshi-Bold', color: colors.primaryAccent }}>Coach: </Text>{coachCopy}
         </Text>
       </View>
     </View>
