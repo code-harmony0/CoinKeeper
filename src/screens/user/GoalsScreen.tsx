@@ -4,9 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
-import { TextInput } from '../../components/ui/TextInput';
 import { useSpecTheme } from '../../theme/specTheme';
 import { useGoalStore } from '../../store/goalStore';
+import { useTransactionStore } from '../../store/transactionStore';
 import { ChevronLeft, Plus, Target } from 'lucide-react-native';
 import { PressableScale } from '../../components/anim/PressableScale';
 import { AddGoalSheet } from '../../components/modals/AddGoalSheet';
@@ -14,14 +14,16 @@ import { AddFundsSheet } from '../../components/modals/AddFundsSheet';
 import { FocusGoalHeroCard } from '../../components/insights/FocusGoalHeroCard';
 import { SecondaryGoalCard } from '../../components/insights/SecondaryGoalCard';
 import { GoalsHeroDashboard } from '../../components/insights/GoalsHeroDashboard';
+import { Money } from '../../utils/money';
 
 export const GoalsScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { colors, cardRadius, cardShadow, isDark } = useSpecTheme();
-  const styles = React.useMemo(() => makeStyles(colors, cardRadius, cardShadow), [colors, cardRadius, cardShadow]);
+  const { colors, cardRadius, cardShadow } = useSpecTheme();
+  const styles = React.useMemo(() => makeStyles(colors), [colors]);
   
   const { goals, loadGoals, addGoal, getEmergencyFundTarget, updateGoalProgress, deleteGoal } = useGoalStore();
+  const { transactions } = useTransactionStore();
   
   const [showAdd, setShowAdd] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<{ id: string, name: string } | null>(null);
@@ -33,14 +35,14 @@ export const GoalsScreen = () => {
   }, []);
 
   const handleAddGoal = async (goalName: string, targetStr: string) => {
-    const targetAmount = parseFloat(targetStr);
-    if (isNaN(targetAmount) || targetAmount <= 0) {
+    const targetAmountPaise = Money.toPaise(targetStr);
+    if (targetAmountPaise <= 0) {
       throw new Error('Invalid amount');
     }
 
     await addGoal({
       name: goalName,
-      targetAmount,
+      targetAmount: targetAmountPaise,
       currentAmount: 0,
     });
 
@@ -50,12 +52,12 @@ export const GoalsScreen = () => {
   const handleAddProgress = async (amountStr: string) => {
     if (!selectedGoal) return;
     
-    const amt = parseFloat(amountStr);
-    if (isNaN(amt) || amt <= 0) {
+    const amtPaise = Money.toPaise(amountStr);
+    if (amtPaise <= 0) {
       throw new Error('Invalid amount');
     }
 
-    await updateGoalProgress(selectedGoal.id, amt);
+    await updateGoalProgress(selectedGoal.id, amtPaise);
     setSelectedGoal(null);
   };
 
@@ -79,13 +81,11 @@ export const GoalsScreen = () => {
     return 0;
   });
 
-  const goalColors = [
-    colors.lavenderDeep,
-    colors.mintDeep,
-    colors.peachDeep,
-    colors.pinkDeep,
-    colors.skyDeep,
-  ];
+  const goalTransfers = transactions.filter(t => t.type === 'transfer_to_goal').slice(0, 5);
+
+  // Fixed accent rotation order (lavender → pink → mint → peach → sky) — see DESIGN.md §2.
+  const goalTints = [colors.lavender, colors.pink, colors.mint, colors.peach, colors.sky];
+  const goalDeeps = [colors.lavenderDeep, colors.pinkDeep, colors.mintDeep, colors.peachDeep, colors.skyDeep];
 
   return (
     <KeyboardAvoidingView 
@@ -129,8 +129,8 @@ export const GoalsScreen = () => {
                     name={sortedGoals[0].name}
                     currentAmount={sortedGoals[0].currentAmount}
                     targetAmount={sortedGoals[0].targetAmount}
-                    tint={goalColors[0]}
-                    deep={goalColors[0]}
+                    tint={goalTints[0]}
+                    deep={goalDeeps[0]}
                     onPress={() => setSelectedGoal({ id: sortedGoals[0].id, name: sortedGoals[0].name })}
                     onAddFunds={() => setSelectedGoal({ id: sortedGoals[0].id, name: sortedGoals[0].name })}
                   />
@@ -139,19 +139,51 @@ export const GoalsScreen = () => {
 
               {sortedGoals.length > 1 && (
                 <>
-                  <Text variant="caption" style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Bold', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>Other Active Goals</Text>
+                  <Text variant="caption" style={[styles.eyebrow, { marginBottom: 16 }]}>Other Active Goals</Text>
                   {sortedGoals.slice(1).map((goal, index) => (
                     <SecondaryGoalCard
                       key={goal.id}
                       name={goal.name}
                       currentAmount={goal.currentAmount}
                       targetAmount={goal.targetAmount}
-                      themeColor={goalColors[(index + 1) % goalColors.length]}
+                      themeColor={goalDeeps[(index + 1) % goalDeeps.length]}
                       onPress={() => setSelectedGoal({ id: goal.id, name: goal.name })}
                       onLongPress={() => handleDelete(goal.id)}
                     />
                   ))}
                 </>
+              )}
+
+              {goalTransfers.length > 0 && (
+                <View style={{ marginTop: 32 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <Text variant="caption" style={styles.eyebrow}>Recent Activity</Text>
+                    <PressableScale onPress={() => (navigation as any).navigate('Transactions')} style={{ paddingVertical: 8, paddingHorizontal: 4 }}>
+                      <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.skyDeep }}>View All</Text>
+                    </PressableScale>
+                  </View>
+                  <View style={[styles.activityCard, cardShadow, { backgroundColor: colors.card, borderRadius: cardRadius }]}>
+                    {goalTransfers.map((tx, index) => (
+                      <View
+                        key={tx.id}
+                        style={[
+                          styles.activityRow,
+                          index < goalTransfers.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+                        ]}
+                      >
+                        <View>
+                          <Text style={{ fontSize: 15, fontFamily: 'Satoshi-Bold', color: colors.textPrimary }}>{tx.description || tx.category}</Text>
+                          <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Medium', color: colors.textSecondary, marginTop: 4 }}>
+                            {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 15, fontFamily: 'Satoshi-Black', color: colors.skyDeep }}>
+                          +{Money.format(tx.amountPaise, { zeroDecimals: true })}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
               )}
             </View>
           </>
@@ -174,7 +206,7 @@ export const GoalsScreen = () => {
   );
 };
 
-const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
+const makeStyles = (colors: any) =>
   StyleSheet.create({
     root: { flex: 1 },
     header: {
@@ -185,10 +217,11 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
       paddingBottom: 16,
     },
     backBtn: {
-      width: 40,
-      height: 40,
+      width: 48,
+      height: 48,
       alignItems: 'center',
       justifyContent: 'center',
+      marginHorizontal: -4,
     },
     scrollContent: {
       paddingBottom: 40,
@@ -204,5 +237,22 @@ const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 16,
-    }
+    },
+    eyebrow: {
+      color: colors.textSecondary,
+      fontFamily: 'Satoshi-Bold',
+      fontSize: 11,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+    },
+    activityCard: {
+      overflow: 'hidden',
+    },
+    activityRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+    },
   });
