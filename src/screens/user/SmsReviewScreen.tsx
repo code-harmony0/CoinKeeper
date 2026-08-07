@@ -44,7 +44,7 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
   const handleApprove = async (item: TransactionDraft, index: number) => {
     try {
       await addTransaction({
-        amount: (item.amount_paise || 0) / 100, // App expects rupees currently
+        amountPaise: item.amount_paise || 0,
         type: 'expense', // Needs better mapping for credit if we extract it, but assuming expense for now
         category: item.category_id || 'unknown',
         categoryIcon: 'other',

@@ -27,20 +27,23 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
+
 import { useSpecTheme } from '../../theme/specTheme';
 import { useBudgetStore } from '../../store/budgetStore';
 import { PressableScale } from '../../components/anim';
 import { ChartIllustration } from '../../components/illustrations';
 import { StatRing } from '../../components/premium';
+import { FinancialIntelligenceEngine, ReportSnapshot } from '../../services/FinancialIntelligenceEngine';
+import { Money } from '../../utils/money';
 
 type Props = NativeStackScreenProps<any, 'Reports'>;
 
-type FilterTab = 'expense' | 'income' | 'budget';
-const TABS: FilterTab[] = ['expense', 'income', 'budget'];
+type FilterTab = 'expense' | 'income' | 'budget' | 'savings';
+const TABS: FilterTab[] = ['expense', 'income', 'savings', 'budget'];
 const TAB_LABELS: Record<FilterTab, string> = {
   expense: 'Spending',
   income: 'Income',
+  savings: 'Savings',
   budget: 'Budget',
 };
 
@@ -61,48 +64,34 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
 export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { colors, cardRadius, cardShadow, spring } = useSpecTheme();
-  const { transactions } = useTransactions();
   const { settings } = useBudgetStore();
   const [activeTab, setActiveTab] = useState<FilterTab>('expense');
   const [segmentWidth, setSegmentWidth] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date());
-
+  
+  const [report, setReport] = useState<ReportSnapshot | null>(null);
   const indicatorX = useSharedValue(0);
 
-  // Filter transactions by selected month
-  const monthlyTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      const d = new Date(t.date);
-      return d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentDate.getFullYear();
-    });
-  }, [transactions, currentDate]);
+  React.useEffect(() => {
+    FinancialIntelligenceEngine.getReportForMonth(currentDate).then(setReport);
+  }, [currentDate]);
 
-  // Calculate category totals for the active tab
-  const sortedCategories = useMemo(() => {
-    const categoryTotals = monthlyTransactions
-      .filter((t) => t.type === activeTab)
-      .reduce((acc, t) => {
-        acc[t.category] = (acc[t.category] || 0) + t.amount;
-        return acc;
-      }, {} as Record<string, number>);
+  const activeCategories = useMemo(() => {
+    if (!report) return [];
+    if (activeTab === 'expense') return report.categoryBreakdown.expense;
+    if (activeTab === 'income') return report.categoryBreakdown.income;
+    if (activeTab === 'savings') return report.categoryBreakdown.transfers;
+    return [];
+  }, [report, activeTab]);
 
-    return Object.entries(categoryTotals).sort(([, a], [, b]) => b - a);
-  }, [monthlyTransactions, activeTab]);
-
-  const total = useMemo(
-    () => sortedCategories.reduce((sum, [, amount]) => sum + amount, 0),
-    [sortedCategories],
+  const totalForTab = useMemo(
+    () => activeCategories.reduce((sum, c) => sum + c.amountPaise, 0),
+    [activeCategories],
   );
 
-  // Calculate totals for summary
-  const totalExpense = useMemo(
-    () => monthlyTransactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
-    [monthlyTransactions],
-  );
-  const totalIncome = useMemo(
-    () => monthlyTransactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
-    [monthlyTransactions],
-  );
+  const totalExpense = report?.totalExpense || 0;
+  const totalIncome = report?.totalIncome || 0;
+  const budgetStats = report?.budgetStats;
 
   const handleTabPress = (tab: FilterTab, index: number) => {
     ReactNativeHapticFeedback.trigger('impactLight');
@@ -122,38 +111,6 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
   const prevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
-
-  // Budget calculations
-  const budgetStats = useMemo(() => {
-    let needsSpent = 0;
-    let wantsSpent = 0;
-
-    monthlyTransactions.forEach(t => {
-      if (t.type === 'expense') {
-        const cat = t.category.toLowerCase();
-        if (['food', 'transport', 'bills', 'health', 'education'].includes(cat)) {
-          needsSpent += t.amount;
-        } else if (['shopping', 'entertainment', 'other', 'others', 'investment', 'savings'].includes(cat)) {
-          wantsSpent += t.amount;
-        } else {
-          wantsSpent += t.amount; // default to wants
-        }
-      }
-    });
-
-    const needsTarget = totalIncome * (settings.needsPercent / 100);
-    const wantsTarget = totalIncome * (settings.wantsPercent / 100);
-    const savingsTarget = totalIncome * (settings.savingsPercent / 100);
-    
-    // Savings is simply whatever money was not spent.
-    const actualSavings = Math.max(0, totalIncome - needsSpent - wantsSpent);
-
-    return {
-      needs: { spent: needsSpent, target: needsTarget, percent: settings.needsPercent },
-      wants: { spent: wantsSpent, target: wantsTarget, percent: settings.wantsPercent },
-      savings: { spent: actualSavings, target: savingsTarget, percent: settings.savingsPercent }
-    };
-  }, [monthlyTransactions, totalIncome, settings]);
 
   const onSegmentLayout = (e: LayoutChangeEvent) => {
     const width = (e.nativeEvent.layout.width - 8) / TABS.length;
@@ -214,7 +171,7 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
               label="spent this month"
               centerValue={
                 <Text style={[styles.heroValue, { color: colors.textPrimary }]}>
-                  ₹{totalExpense.toLocaleString('en-IN')}
+                  {Money.format(totalExpense, { zeroDecimals: true })}
                 </Text>
               }
             />
@@ -227,14 +184,14 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
               <View style={[styles.inlineDot, { backgroundColor: colors.mint }]} />
               <Text style={[styles.inlineStatLabel, { color: colors.textSecondary }]}>Income</Text>
               <Text style={[styles.inlineStatValue, { color: colors.mintDeep }]}>
-                ₹{totalIncome.toLocaleString('en-IN')}
+                {Money.format(totalIncome, { zeroDecimals: true })}
               </Text>
             </View>
             <View style={styles.inlineStat}>
               <View style={[styles.inlineDot, { backgroundColor: colors.peach }]} />
               <Text style={[styles.inlineStatLabel, { color: colors.textSecondary }]}>Expense</Text>
               <Text style={[styles.inlineStatValue, { color: colors.peachDeep }]}>
-                ₹{totalExpense.toLocaleString('en-IN')}
+                {Money.format(totalExpense, { zeroDecimals: true })}
               </Text>
             </View>
           </View>
@@ -243,7 +200,7 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
           {activeTab === 'budget' && totalIncome > 0 && (
             <View style={[styles.projectionWrap, { backgroundColor: colors.chipBg }]}>
               <Text style={[styles.projectionText, { color: colors.textSecondary }]}>
-                At this rate, you'll save <Text style={{ color: colors.mintDeep, fontFamily: 'Satoshi-Bold' }}>₹{Math.max(0, totalIncome - totalExpense * 1.2).toLocaleString('en-IN')}</Text> by month end
+                At this rate, you'll save <Text style={{ color: colors.mintDeep, fontFamily: 'Satoshi-Bold' }}>{Money.format(Math.max(0, totalIncome - totalExpense * 1.2), { zeroDecimals: true })}</Text> by month end
               </Text>
             </View>
           )}
@@ -300,7 +257,7 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
                 Add your income to see how your spending matches your {settings.needsPercent}/{settings.wantsPercent}/{settings.savingsPercent} budget rule.
               </Text>
             </Animated.View>
-          ) : (
+          ) : budgetStats ? (
             <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.budgetContainer}>
               {/* Needs */}
               <View style={[styles.categoryCard, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}>
@@ -318,10 +275,10 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
                   </View>
                   <View style={styles.categoryAmountContainer}>
                     <Text style={[styles.categoryAmount, { color: colors.textPrimary }]}>
-                      ₹{budgetStats.needs.spent.toLocaleString('en-IN')}
+                      {Money.format(budgetStats.needs.spent, { zeroDecimals: true })}
                     </Text>
                     <Text style={[styles.categoryPercentage, { color: colors.textSecondary }]}>
-                      of ₹{budgetStats.needs.target.toLocaleString('en-IN')}
+                      of {Money.format(budgetStats.needs.target, { zeroDecimals: true })}
                     </Text>
                   </View>
                 </View>
@@ -343,10 +300,10 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
                   </View>
                   <View style={styles.categoryAmountContainer}>
                     <Text style={[styles.categoryAmount, { color: colors.textPrimary }]}>
-                      ₹{budgetStats.wants.spent.toLocaleString('en-IN')}
+                      {Money.format(budgetStats.wants.spent, { zeroDecimals: true })}
                     </Text>
                     <Text style={[styles.categoryPercentage, { color: colors.textSecondary }]}>
-                      of ₹{budgetStats.wants.target.toLocaleString('en-IN')}
+                      of {Money.format(budgetStats.wants.target, { zeroDecimals: true })}
                     </Text>
                   </View>
                 </View>
@@ -368,25 +325,129 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
                   </View>
                   <View style={styles.categoryAmountContainer}>
                     <Text style={[styles.categoryAmount, { color: colors.textPrimary }]}>
-                      ₹{budgetStats.savings.spent.toLocaleString('en-IN')}
+                      {Money.format(budgetStats.savings.spent, { zeroDecimals: true })}
                     </Text>
                     <Text style={[styles.categoryPercentage, { color: colors.textSecondary }]}>
-                      of ₹{budgetStats.savings.target.toLocaleString('en-IN')}
+                      of {Money.format(budgetStats.savings.target, { zeroDecimals: true })}
                     </Text>
                   </View>
                 </View>
               </View>
             </Animated.View>
+          ) : null
+        ) : activeTab === 'savings' ? (
+          report?.transferDetails && report.transferDetails.length > 0 ? (
+            report.transferDetails.map((transfer, index) => {
+              const progressPercentage = transfer.goalTarget > 0 ? Math.min(100, (transfer.goalCurrent / transfer.goalTarget) * 100) : 0;
+              const formattedDate = new Date(transfer.occurredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              
+              const remainingAmount = Math.max(0, transfer.goalTarget - transfer.goalCurrent);
+              const monthsToComplete = transfer.amountPaise > 0 ? Math.ceil(remainingAmount / transfer.amountPaise) : 0;
+              
+              let etaText = 'No estimate';
+              if (remainingAmount === 0) {
+                etaText = 'Completed';
+              } else if (monthsToComplete > 0) {
+                const etaDate = new Date();
+                etaDate.setMonth(etaDate.getMonth() + monthsToComplete);
+                etaText = `ETA: ${etaDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
+              }
+
+              let trendText = 'On Track';
+              let trendColor = colors.mintDeep;
+              if (transfer.goalDeadline) {
+                const now = new Date();
+                const deadline = new Date(transfer.goalDeadline);
+                const monthsLeft = (deadline.getFullYear() - now.getFullYear()) * 12 + (deadline.getMonth() - now.getMonth());
+                if (monthsLeft > 0) {
+                  const requiredPerMonth = remainingAmount / monthsLeft;
+                  if (transfer.amountPaise < requiredPerMonth) {
+                    trendText = 'Behind';
+                    trendColor = colors.peachDeep;
+                  } else if (transfer.amountPaise > requiredPerMonth * 1.1) {
+                    trendText = 'Ahead';
+                    trendColor = colors.skyDeep;
+                  }
+                } else if (remainingAmount > 0) {
+                  trendText = 'Behind (Past Due)';
+                  trendColor = colors.danger;
+                }
+              }
+
+              return (
+                <Animated.View
+                  key={transfer.id}
+                  entering={FadeInDown.delay(180 + index * 20).springify()}
+                  style={[styles.categoryCard, { backgroundColor: colors.card, borderRadius: cardRadius, paddingBottom: 20 }, cardShadow]}
+                >
+                  <View style={styles.categoryRow}>
+                    <View style={[styles.categoryIcon, { backgroundColor: colors.chipBg }]}>
+                      <TrendingUp size={20} color={colors.textPrimary} strokeWidth={2} />
+                    </View>
+                    <View style={styles.categoryInfo}>
+                      <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
+                        {transfer.goalName}
+                      </Text>
+                      <Text style={[styles.categoryPercentage, { color: colors.textSecondary, marginBottom: 8 }]}>
+                        Transferred {formattedDate}
+                      </Text>
+                      
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 12, color: colors.textPrimary }}>
+                          {progressPercentage.toFixed(0)}% Complete
+                        </Text>
+                        <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 12, color: colors.textSecondary }}>
+                          {Money.format(remainingAmount, { zeroDecimals: true })} left
+                        </Text>
+                      </View>
+
+                      <View style={[styles.progressBar, { backgroundColor: colors.chipBg, marginBottom: 12 }]}>
+                        <View
+                          style={[
+                            styles.progressFill,
+                            { width: `${progressPercentage}%`, backgroundColor: colors.textPrimary },
+                          ]}
+                        />
+                      </View>
+                      
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 12, color: colors.textSecondary }}>
+                          {etaText}
+                        </Text>
+                        <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 12, color: trendColor }}>
+                          {trendText}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={[styles.categoryAmountContainer, { alignSelf: 'flex-start' }]}>
+                      <Text style={[styles.categoryAmount, { color: colors.textPrimary }]}>
+                        +{Money.format(transfer.amountPaise, { zeroDecimals: true })}
+                      </Text>
+                    </View>
+                  </View>
+                </Animated.View>
+              );
+            })
+          ) : (
+            <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.emptyState}>
+              <ChartIllustration size={120} />
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                No savings activity yet
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                Fund a goal to see your savings activity here
+              </Text>
+            </Animated.View>
           )
-        ) : sortedCategories.length > 0 ? (
-          sortedCategories.map(([category, amount], index) => {
-            const percentage = total > 0 ? (amount / total) * 100 : 0;
-            const Icon = CATEGORY_ICONS[category.toLowerCase()] || MoreHorizontal;
+        ) : activeCategories.length > 0 ? (
+          activeCategories.map((cat, index) => {
+            const percentage = totalForTab > 0 ? (cat.amountPaise / totalForTab) * 100 : 0;
+            const Icon = CATEGORY_ICONS[cat.categoryName.toLowerCase()] || MoreHorizontal;
             const accentColor = activeTab === 'income' ? colors.success : colors.danger;
 
             return (
               <Animated.View
-                key={category}
+                key={cat.categoryName}
                 entering={FadeInDown.delay(180 + index * 20).springify()}
                 style={[styles.categoryCard, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}
               >
@@ -396,7 +457,7 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
                   </View>
                   <View style={styles.categoryInfo}>
                     <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
-                      {category}
+                      {cat.categoryName}
                     </Text>
                     <View style={[styles.progressBar, { backgroundColor: colors.chipBg }]}>
                       <View
@@ -409,7 +470,7 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
                   </View>
                   <View style={styles.categoryAmountContainer}>
                     <Text style={[styles.categoryAmount, { color: colors.textPrimary }]}>
-                      ₹{amount.toLocaleString('en-IN')}
+                      {Money.format(cat.amountPaise, { zeroDecimals: true })}
                     </Text>
                     <Text style={[styles.categoryPercentage, { color: colors.textSecondary }]}>
                       {percentage.toFixed(0)}%

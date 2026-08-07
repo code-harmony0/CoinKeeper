@@ -7,6 +7,7 @@ import {
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
+import { Money } from '../../utils/money';
 
 export interface CountUpProps {
   value: number;
@@ -14,6 +15,7 @@ export interface CountUpProps {
   prefix?: string;
   style?: StyleProp<TextStyle>;
   formatter?: (value: number) => string;
+  isPaise?: boolean;
 }
 
 const FRAME_INTERVAL_MS = 1000 / 30;
@@ -25,8 +27,13 @@ export const CountUp: React.FC<CountUpProps> = ({
   duration = 800,
   prefix = '',
   style,
-  formatter = defaultFormatter,
+  isPaise = false,
+  formatter,
 }) => {
+  const defaultFormatter = (v: number) => 
+    isPaise ? Money.format(Math.round(v), { hideSymbol: true, zeroDecimals: true }) : Math.round(v).toLocaleString('en-IN');
+    
+  const activeFormatter = formatter || defaultFormatter;
   const animatedValue = useSharedValue(value);
   const [displayValue, setDisplayValue] = useState(value);
   const lastUpdateRef = useRef(0);
@@ -62,7 +69,7 @@ export const CountUp: React.FC<CountUpProps> = ({
   return (
     <Text style={style}>
       {prefix}
-      {formatter(displayValue)}
+      {activeFormatter(displayValue)}
     </Text>
   );
 };

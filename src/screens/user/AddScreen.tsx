@@ -42,7 +42,7 @@ export const AddScreen: React.FC = () => {
         onSubmit={async (draft, type) => {
           try {
             await addTransaction({
-              amount: (draft.amount_paise || 0) / 100, // App stores rupees externally in Context still
+              amountPaise: draft.amount_paise || 0,
               type: type || 'expense',
               category: draft.category_id || 'unknown',
               categoryIcon: 'other',

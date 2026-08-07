@@ -43,6 +43,7 @@ import {
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
+import { Money } from '../../utils/money';
 import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useSpecTheme } from '../../theme/specTheme';
 import { Transaction } from '../../types/transaction';
@@ -53,8 +54,8 @@ import { groupTransactionsByDate, GroupedRow } from '../../utils/groupTransactio
 
 type Props = NativeStackScreenProps<any, 'Transactions'>;
 
-type FilterTab = 'all' | 'income' | 'expense';
-const TABS: FilterTab[] = ['all', 'income', 'expense'];
+type FilterTab = 'all' | 'income' | 'expense' | 'transfer_to_goal';
+const TABS: FilterTab[] = ['all', 'income', 'expense', 'transfer_to_goal'];
 const TAB_LABELS = {
   all: 'All',
   income: 'Income',
@@ -127,7 +128,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   }, [deleteTransaction]);
 
   const filteredTx = useMemo(
-    () => (activeTab === 'all' ? transactions : transactions.filter(t => t.type === activeTab)),
+    () => (activeTab === 'all' ? transactions.filter(t => t.type !== 'transfer_to_goal') : transactions.filter(t => t.type === activeTab)),
     [transactions, activeTab],
   );
 
@@ -145,22 +146,24 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   const totalIncome = useMemo(
-    () => transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
+    () => transactions.filter(t => t.type === 'income').reduce((s, t) => s + (t.amountPaise || 0), 0),
     [transactions],
   );
   const totalExpense = useMemo(
-    () => transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
+    () => transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amountPaise || 0), 0),
     [transactions],
   );
   
   const incomeCount = transactions.filter(t => t.type === 'income').length;
   const expenseCount = transactions.filter(t => t.type === 'expense').length;
-  const allCount = transactions.length;
+  const transferCount = transactions.filter(t => t.type === 'transfer_to_goal').length;
+  const allCount = transactions.filter(t => t.type !== 'transfer_to_goal').length;
 
   const tabCounts = {
     all: allCount,
     income: incomeCount,
     expense: expenseCount,
+    transfer_to_goal: transferCount,
   };
 
   // Material Snackbar pattern: commit the previous pending delete immediately
@@ -248,7 +251,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     width: segmentWidth,
   }));
 
-  const formatAmount = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
+  const formatAmount = (amount: number) => Money.format(amount, { zeroDecimals: true });
 
   const renderRow = (item: Transaction, index: number) => {
     const Icon = CATEGORY_ICONS[item.categoryIcon] || MoreHorizontal;
@@ -281,14 +284,14 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.rowTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                 {item.description || item.category}
               </Text>
-              <Text style={[styles.rowMeta, { color: colors.textSecondary }]} numberOfLines={1}>
+              <Text style={[styles.rowMeta, { color: colors.textSecondary }]}>
                 {item.category}
+                {item.paymentMethod && ` • ${item.paymentMethod}`}
               </Text>
             </View>
             <View style={styles.rowRight}>
-              <Text style={[styles.rowAmount, { color: isIncome ? colors.success : colors.danger }]}>
-                {isIncome ? '+' : '-'}
-                {formatAmount(item.amount)}
+              <Text style={[styles.rowAmount, { color: isIncome ? colors.success : item.type === 'transfer_to_goal' ? colors.skyDeep : colors.danger }]}>
+                {isIncome ? '+' : ''}{formatAmount(item.amountPaise)}
               </Text>
             </View>
           </Pressable>
@@ -357,14 +360,14 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
               <ArrowUpRight size={18} color={colors.success} strokeWidth={2.2} />
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Income</Text>
             </View>
-            <CountUp value={totalIncome} prefix="₹" style={[styles.summaryValue, { color: colors.textPrimary }]} />
+            <CountUp value={totalIncome} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
           </View>
           <View style={[styles.summaryCard, { backgroundColor: colors.expenseTint, borderRadius: cardRadius }]}>
             <View style={styles.summaryIconRow}>
               <ArrowDownRight size={18} color={colors.danger} strokeWidth={2.2} />
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Expenses</Text>
             </View>
-            <CountUp value={totalExpense} prefix="₹" style={[styles.summaryValue, { color: colors.textPrimary }]} />
+            <CountUp value={totalExpense} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
           </View>
         </Animated.View>
 
@@ -382,22 +385,25 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
                 ]}
               />
             )}
-            {TABS.map((tab, index) => (
-              <Pressable
-                key={tab}
-                style={styles.segmentItem}
-                onPress={() => handleTabPress(tab, index)}
-              >
-                <Text
-                  style={[
-                    styles.segmentText,
-                    { color: activeTab === tab ? colors.segmentActiveText : colors.segmentInactiveText },
-                  ]}
+            {TABS.map((tab, index) => {
+              const isActive = activeTab === tab;
+              return (
+                <Pressable
+                  key={tab}
+                  style={styles.segmentItem}
+                  onPress={() => handleTabPress(tab, index)}
                 >
-                  {TAB_LABELS[tab]} ({tabCounts[tab]})
-                </Text>
-              </Pressable>
-            ))}
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      { color: isActive ? colors.segmentActiveText : colors.segmentInactiveText },
+                    ]}
+                  >
+                    {tab === 'transfer_to_goal' ? 'Transfers' : tab.charAt(0).toUpperCase() + tab.slice(1)} ({tabCounts[tab]})
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </Animated.View>
 

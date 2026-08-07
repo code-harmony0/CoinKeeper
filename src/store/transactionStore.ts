@@ -3,6 +3,7 @@ import { Transaction } from '../types/transaction';
 import { getDb } from './database';
 import { toPaise, fromPaise } from '../utils/money';
 import { classifyBudgetBucket } from '../utils/budgetBucket';
+import { financialEventBus } from '../services/EventBus';
 
 interface MonthlyStats {
   income: number;
@@ -82,11 +83,12 @@ const ROW_QUERY = `
          t.description, t.occurred_at, t.payment_method AS paymentMethod
   FROM transactions t
   LEFT JOIN categories c ON c.id = t.category_id
+  WHERE t.type IN ('income', 'expense', 'transfer_to_goal')
 `;
 
 const rowToTransaction = (row: any): Transaction => ({
   id: row.id,
-  amount: fromPaise(row.amount_paise),
+  amountPaise: row.amount_paise,
   type: row.type,
   category: row.category ?? 'Other',
   categoryIcon: row.categoryIcon ?? 'other',
@@ -117,7 +119,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       const id = generateId();
       const date = transaction.date || new Date().toISOString();
       const newTx: Transaction = { ...transaction, id, date };
-      const amountPaise = toPaise(String(newTx.amount));
+      const amountPaise = newTx.amountPaise;
 
       const db = getDb();
       const categoryId = await resolveCategoryId(db, newTx.category, newTx.categoryIcon);
@@ -140,6 +142,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       set(state => ({
         transactions: [newTx, ...state.transactions],
       }));
+      financialEventBus.emit();
     } catch (error) {
       console.error('[transactionStore] addTransaction error:', error);
       throw error;
@@ -154,6 +157,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       set(state => ({
         transactions: state.transactions.filter(tx => tx.id !== id),
       }));
+      financialEventBus.emit();
     } catch (error) {
       console.error('[transactionStore] deleteTransaction error:', error);
       throw error;
@@ -175,7 +179,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
           description = ?, occurred_at = ?, payment_method = ?
          WHERE id = ?;`,
         [
-          toPaise(String(merged.amount)),
+          merged.amountPaise,
           merged.type,
           categoryId,
           merged.description ?? null,
@@ -190,6 +194,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
           tx.id === id ? merged : tx,
         ),
       }));
+      financialEventBus.emit();
     } catch (error) {
       console.error('[transactionStore] updateTransaction error:', error);
       throw error;
@@ -207,9 +212,9 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
         }
 
         if (tx.type === 'income') {
-          acc.income += tx.amount;
+          acc.income += tx.amountPaise;
         } else if (tx.type === 'expense') {
-          acc.expenses += tx.amount;
+          acc.expenses += tx.amountPaise;
         }
         acc.net = acc.income - acc.expenses;
         return acc;
@@ -229,3 +234,8 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
     );
   },
 }));
+
+// Subscribe to global invalidation events so the store updates when Bills or Goals mutate the ledger
+financialEventBus.subscribe(() => {
+  useTransactionStore.getState().loadTransactions();
+});

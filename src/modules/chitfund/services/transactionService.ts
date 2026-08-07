@@ -106,7 +106,7 @@ export const transactionService = {
             const data = docSnap.data();
             return {
               id: docSnap.id,
-              amount: data.amount,
+              amountPaise: data.amountPaise,
               type: data.type,
               category: data.category,
               categoryIcon: data.categoryIcon || 'other',

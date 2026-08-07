@@ -2,7 +2,7 @@ import { groupTransactionsByDate } from '../../src/utils/groupTransactionsByDate
 import { Transaction } from '../../src/types/transaction';
 
 const tx = (id: string, date: string): Transaction => ({
-  id, amount: 100, type: 'expense', category: 'Food', categoryIcon: 'food', date,
+  id, amountPaise: 100, type: 'expense', category: 'Food', categoryIcon: 'food', date,
 });
 
 describe('groupTransactionsByDate', () => {

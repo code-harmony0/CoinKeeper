@@ -35,6 +35,7 @@ import { getDb } from '../../store/database';
 import { TransactionDraft } from '../../types/transactionDraft';
 import { IncomeDistribution } from '../../services/income/IncomeRoutingEngine';
 import { IncomeEngine } from '../../services/income/IncomeEngine';
+import { financialEventBus } from '../../services/EventBus';
 
 const SCREEN_W = Dimensions.get('window').width;
 
@@ -58,7 +59,7 @@ const buildWeeklyExpenses = (txs: Transaction[]) => {
     const d = new Date(t.date);
     if (d.getMonth() !== m || d.getFullYear() !== y) return;
     const weekIdx = Math.min(Math.floor((d.getDate() - 1) / 7), 4);
-    weeks[weekIdx] += t.amount;
+    weeks[weekIdx] += t.amountPaise;
     hasData = true;
   });
 
@@ -123,6 +124,10 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   React.useEffect(() => {
     loadInsights();
+    const unsubscribe = financialEventBus.subscribe(() => {
+      loadInsights();
+    });
+    return unsubscribe;
   }, [loadInsights]);
 
   const weekly = useMemo(() => buildWeeklyExpenses(transactions), [transactions]);
@@ -200,7 +205,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
               </View>
               <View style={st.heroBlock}>
                 <Text style={st.heroLabel}>Spent this month</Text>
-                <CountUp value={weekly.monthTotal} prefix="₹" style={st.heroValue} />
+                <CountUp value={weekly.monthTotal} prefix="₹" isPaise style={st.heroValue} />
               </View>
               <SkiaSpendingChart
                 data={weekly.values}

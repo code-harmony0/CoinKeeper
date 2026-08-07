@@ -2,8 +2,8 @@ import { IncomeType } from './income';
 
 export interface Transaction {
   id: string;
-  amount: number;
-  type: 'income' | 'expense';
+  amountPaise: number;
+  type: 'income' | 'expense' | 'transfer_to_goal';
   category: string;
   categoryIcon: string;
   description?: string;
