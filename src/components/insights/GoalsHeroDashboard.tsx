@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '../ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
 import { Goal } from '../../store/goalStore';
+import { Money } from '../../utils/money';
 
 interface Props {
   goals: Goal[];
@@ -28,14 +29,14 @@ export const GoalsHeroDashboard: React.FC<Props> = ({ goals }) => {
     <View style={styles.container}>
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
-          <Text variant="caption" style={{ color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, fontSize: 10 }}>Total Wealth Built</Text>
-          <Text style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Black', fontSize: 36, letterSpacing: -1, marginTop: 4 }}>
-            ₹{totalSaved.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+          <Text variant="caption" style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Bold', textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 11 }}>Total Wealth Built</Text>
+          <Text style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Black', fontSize: 40, letterSpacing: -0.5, marginTop: 4 }}>
+            {Money.format(totalSaved, { zeroDecimals: true })}
           </Text>
         </View>
       </View>
 
-      <View style={[styles.coachBanner, { backgroundColor: `${colors.primaryAccent}10`, borderLeftColor: colors.primaryAccent, borderLeftWidth: 3 }]}>
+      <View style={[styles.coachBanner, { backgroundColor: `${colors.primaryAccent}10` }]}>
         <Text variant="caption" style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Medium', lineHeight: 18 }}>
           <Text style={{ fontFamily: 'Satoshi-Bold', color: colors.primaryAccent }}>Coach: </Text>{getInsight()}
         </Text>
