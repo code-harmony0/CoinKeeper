@@ -3,6 +3,7 @@ import { fromPaise } from '../utils/money';
 import { detectSubscriptions } from './subscriptionDetector';
 import { computeGoalHealth, rankGoalPriority } from './goalIntelligence';
 import { FinancialLedgerService } from './FinancialLedgerService';
+import type { Goal } from '../store/goalStore';
 
 export interface Insight {
   id: string;
@@ -13,14 +14,13 @@ export interface Insight {
   actionable?: boolean;
 }
 
-export interface Goal {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline?: string;
-  isEmergencyFund?: boolean;
-}
+// Re-exported (not redeclared) so existing external imports of `Goal` from
+// this module keep working — goalStore.ts is the single source of truth for
+// this shape now that computeGoalHealth/rankGoalPriority (below) consume it
+// directly; a second, structurally-identical local definition was exactly
+// the "two definitions of a goal" problem getPrimaryGoal's refactor was
+// meant to eliminate, just moved from logic into the type declaration.
+export type { Goal };
 
 const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
 
