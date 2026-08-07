@@ -9,6 +9,7 @@ import { Crosshair } from 'lucide-react-native';
 import { Text } from '../ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim/PressableScale';
+import { Money } from '../../utils/money';
 
 interface Props {
   name: string;
@@ -27,7 +28,7 @@ export const SecondaryGoalCard: React.FC<Props> = ({
   onPress,
   onLongPress
 }) => {
-  const { colors, cardRadius } = useSpecTheme();
+  const { colors, cardRadius, cardShadow, iconShadow, iconContainerRadius } = useSpecTheme();
   
   const percentage = Math.min(100, Math.round((currentAmount / targetAmount) * 100)) || 0;
   const isComplete = currentAmount >= targetAmount;
@@ -47,23 +48,23 @@ export const SecondaryGoalCard: React.FC<Props> = ({
   return (
     <PressableScale onPress={onPress} onLongPress={onLongPress}>
       <View style={[
-        styles.card, 
-        { 
+        styles.card,
+        cardShadow,
+        {
           backgroundColor: colors.card,
-          borderColor: isComplete ? `${colors.success}50` : colors.border,
           borderRadius: cardRadius,
         }
       ]}>
-        
+
         <View style={styles.contentRow}>
-          <View style={[styles.iconWrap, { backgroundColor: `${accentColor}15` }]}>
+          <View style={[styles.iconWrap, iconShadow, { backgroundColor: `${accentColor}15`, borderRadius: iconContainerRadius }]}>
             <Crosshair color={accentColor} size={20} />
           </View>
           
           <View style={styles.infoCol}>
             <Text variant="h3" style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Bold', marginBottom: 2 }} numberOfLines={1}>{name}</Text>
             <Text variant="caption" style={{ color: colors.textSecondary }}>
-              ₹{currentAmount.toLocaleString('en-IN')} / ₹{targetAmount.toLocaleString('en-IN')}
+              {Money.format(currentAmount, { zeroDecimals: true })} / {Money.format(targetAmount, { zeroDecimals: true })}
             </Text>
           </View>
 
@@ -88,7 +89,6 @@ export const SecondaryGoalCard: React.FC<Props> = ({
 const styles = StyleSheet.create({
   card: {
     padding: 16,
-    borderWidth: 1,
     marginBottom: 12,
   },
   contentRow: {
@@ -99,7 +99,6 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
