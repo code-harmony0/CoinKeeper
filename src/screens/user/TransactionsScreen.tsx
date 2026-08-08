@@ -450,7 +450,6 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             alignSelf: 'center',
             width: '100%',
           }}
-          estimatedItemSize={76}
           onScroll={handleScroll}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}

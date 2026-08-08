@@ -23,6 +23,7 @@ module.exports = {
       '|@shopify/flash-list' +
       '|@shopify/react-native-skia' +
       '|react-native-image-picker' +
+      '|react-native-fs' +
       '|uuid' +
       ')/)',
   ],

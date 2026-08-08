@@ -26,6 +26,7 @@ export interface PressableScaleProps {
   hitSlop?: number | Insets;
   children?: React.ReactNode;
   testID?: string;
+  accessible?: boolean;
   accessibilityRole?: AccessibilityRole;
   accessibilityLabel?: string;
   accessibilityState?: AccessibilityState;
@@ -49,6 +50,7 @@ export const PressableScale: React.FC<PressableScaleProps> = ({
   hitSlop,
   children,
   testID,
+  accessible,
   accessibilityRole,
   accessibilityLabel,
   accessibilityState,
@@ -88,6 +90,7 @@ export const PressableScale: React.FC<PressableScaleProps> = ({
   return (
     <AnimatedPressable
       testID={testID}
+      accessible={accessible}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
       accessibilityState={accessibilityState}

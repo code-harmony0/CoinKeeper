@@ -12,6 +12,30 @@ jest.mock('@op-engineering/op-sqlite', () => ({
   })),
 }));
 
+// react-native-fs is a native module whose FS.common.js constructs a
+// NativeEventEmitter at import time, which throws in Jest's null native
+// module environment. Reachable from App.tsx via ProfileScreen.
+jest.mock('react-native-fs', () => ({
+  DocumentDirectoryPath: '/tmp',
+  CachesDirectoryPath: '/tmp',
+  exists: jest.fn(async () => false),
+  mkdir: jest.fn(async () => {}),
+  writeFile: jest.fn(async () => {}),
+  readFile: jest.fn(async () => ''),
+  unlink: jest.fn(async () => {}),
+  copyFile: jest.fn(async () => {}),
+}));
+
+// @react-native-ml-kit/text-recognition is a native module (no JS fallback).
+// Used by MLKitProvider.ts for real on-device receipt OCR, reachable from
+// App.tsx via AddTransactionSheet -> ReceiptScanService -> MLKitProvider.
+jest.mock('@react-native-ml-kit/text-recognition', () => ({
+  __esModule: true,
+  default: {
+    recognize: jest.fn(async () => ({ text: '', blocks: [] })),
+  },
+}));
+
 // react-native-argon2 is a native module (no JS fallback). Used by
 // pinService.ts — now reachable from App.tsx via the auth screen imports.
 jest.mock('react-native-argon2', () =>
