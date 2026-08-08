@@ -114,7 +114,20 @@ jest.mock('@shopify/react-native-skia', () => {
     RoundedRect: stub('RoundedRect'),
     Group: ({ children }) => children ?? null,
     LinearGradient: stub('LinearGradient'),
-    Skia: { Path: { Make: () => ({ addArc: jest.fn() }) } },
+    SweepGradient: stub('SweepGradient'),
+    BlurMask: stub('BlurMask'),
+    Paint: ({ children }) => children ?? null,
+    Skia: {
+      Path: {
+        Make: () => ({
+          addArc: jest.fn(),
+          addCircle: jest.fn(),
+          moveTo: jest.fn(),
+          lineTo: jest.fn(),
+          close: jest.fn(),
+        }),
+      },
+    },
     rect: (x, y, width, height) => ({ x, y, width, height }),
     rrect: (r, rx, ry) => ({ rect: r, rx, ry }),
     vec: (x, y) => ({ x, y }),
