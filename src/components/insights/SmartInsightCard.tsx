@@ -12,7 +12,7 @@ interface SmartInsightCardProps {
 }
 
 export const SmartInsightCard: React.FC<SmartInsightCardProps> = ({ insight, delay = 0 }) => {
-  const { colors, cardRadius, cardShadow, space } = useSpecTheme();
+  const { colors, cardRadius, cardShadow, iconShadow, space } = useSpecTheme();
 
   let icon;
   let bgTint;
@@ -43,17 +43,21 @@ export const SmartInsightCard: React.FC<SmartInsightCardProps> = ({ insight, del
   }
 
   return (
-    <Animated.View entering={FadeInDown.delay(delay).springify()} style={[styles.container, { backgroundColor: colors.card, borderRadius: cardRadius, padding: space.sm, marginBottom: space.sm }, cardShadow]}>
+    <Animated.View entering={FadeInDown.delay(delay).springify()} style={[styles.container, { backgroundColor: colors.card, borderRadius: cardRadius, padding: space.sm }, cardShadow]}>
       <View style={[styles.header, { marginBottom: space.xs }]}>
         <View style={[styles.titleRow, { gap: space.xs }]}>
-          <View style={[styles.iconBox, { backgroundColor: bgTint }]}>{icon}</View>
-          <Text variant="h2" style={styles.title}>{insight.title}</Text>
+          <View style={[styles.iconBox, { backgroundColor: bgTint }, iconShadow]}>{icon}</View>
+          <Text variant="h3" style={[styles.title, { color: colors.textPrimary }]}>
+            {insight.title}
+          </Text>
         </View>
         {insight.value && (
-          <Text variant="h2" style={{ color: fgTint }}>{insight.value}</Text>
+          <Text variant="h3" style={{ color: fgTint }}>{insight.value}</Text>
         )}
       </View>
-      <Text variant="caption" color="secondary" style={styles.message}>
+      {/* Explicit specTheme color: ui/Text's `color="secondary"` resolves to
+          useTheme()'s indigo #5856D6, not the gray body tone this needs. */}
+      <Text variant="caption" style={[styles.message, { color: colors.textSecondary }]}>
         {insight.message}
       </Text>
     </Animated.View>
@@ -72,9 +76,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },

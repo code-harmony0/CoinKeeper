@@ -1,81 +1,76 @@
 /**
- * UserDashboardScreen — Spending Home
- * SpecTheme-driven rewrite: header + spending chart card + chits section
- * Floating capsule tab bar — extra bottom padding
+ * UserDashboardScreen — Home
+ *
+ * Structure: a persistent pulse header (the one number that answers "can I
+ * spend today?") over three swipeable rooms — Spending, Goals, Income. The
+ * rooms exist so each surface gets a full viewport instead of five cards
+ * competing for attention in one undifferentiated scroll.
  */
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Text,
-  Dimensions,
-  Alert,
-} from 'react-native';
-import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
+import { View, StyleSheet, Text, Alert } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  runOnJS,
+  useAnimatedScrollHandler,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Sparkles, Plus, Target, Wallet } from 'lucide-react-native';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
-import { SkiaSpendingChart } from '../../components/insights/SkiaSpendingChart';
-import { ChevronRight } from 'lucide-react-native';
+import { MoneyMap } from '../../components/insights/MoneyMap';
+import { PulseHeader } from '../../components/insights/PulseHeader';
+import { RoomSwitcher } from '../../components/insights/RoomSwitcher';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
 import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useSpecTheme } from '../../theme/specTheme';
-import type { Transaction } from '../../types/transaction';
-import { PressableScale, CountUp, BlueRefreshControl } from '../../components/anim';
-import { ChartIllustration } from '../../components/illustrations';
-import { PastelCard } from '../../components/premium';
-import { generateInsights, getBudgetStreak, type Insight } from '../../services/insightsEngine';
+import { PressableScale, BlueRefreshControl } from '../../components/anim';
+import {
+  generateInsights,
+  getBudgetStreak,
+  type Insight,
+} from '../../services/insightsEngine';
+import { FinancialIntelligenceEngine } from '../../services/FinancialIntelligenceEngine';
 import { useGoalIntelligence } from '../../hooks/useGoalIntelligence';
 import { SmartInsightCard } from '../../components/insights/SmartInsightCard';
-import { StreakBanner } from '../../components/insights/StreakBanner';
 import { GoalTrackerCard } from '../../components/insights/GoalTrackerCard';
 import { NextSalaryWidget } from '../../components/income/NextSalaryWidget';
 import { IncomeHealthWidget } from '../../components/income/IncomeHealthWidget';
 import { IncomeInsightsWidget } from '../../components/income/IncomeInsightsWidget';
 import { IncomeTransactionFlow } from '../../components/modals/IncomeTransactionFlow';
-import { getDb } from '../../store/database';
 import { TransactionDraft } from '../../types/transactionDraft';
 import { IncomeDistribution } from '../../services/income/IncomeRoutingEngine';
 import { IncomeEngine } from '../../services/income/IncomeEngine';
 import { financialEventBus } from '../../services/EventBus';
 
-const SCREEN_W = Dimensions.get('window').width;
-
 // Guarded require, not a static import: CHITFUND_ENABLED is inlined as a
 // literal at build time, so Metro drops this branch — and the whole
 // src/modules/chitfund tree — from the lite bundle.
-const DashboardChitsSection = process.env.CK_CHITFUND === '1'
-  ? require('../../modules/chitfund/components/DashboardChitsSection').default
-  : null;
+const DashboardChitsSection =
+  process.env.CK_CHITFUND === '1'
+    ? require('../../modules/chitfund/components/DashboardChitsSection').default
+    : null;
 
-/** Build weekly expense totals for the current month */
-const buildWeeklyExpenses = (txs: Transaction[]) => {
-  const now = new Date();
-  const m = now.getMonth();
-  const y = now.getFullYear();
-  const weeks = [0, 0, 0, 0, 0];
-  let hasData = false;
+const ROOMS = ['Spending', 'Goals', 'Income'];
 
-  txs.forEach((t) => {
-    if (t.type !== 'expense') return;
-    const d = new Date(t.date);
-    if (d.getMonth() !== m || d.getFullYear() !== y) return;
-    const weekIdx = Math.min(Math.floor((d.getDate() - 1) / 7), 4);
-    weeks[weekIdx] += t.amountPaise;
-    hasData = true;
-  });
+const greeting = (): string => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+};
 
-  return {
-    hasData,
-    labels: weeks.map((_, i) => `W${i + 1}`),
-    values: weeks,
-    monthTotal: weeks.reduce((sum, v) => sum + v, 0),
-  };
+type MonthSnapshot = {
+  safeToSpend: number;
+  safeToSpendToday: number;
+  monthlyRemaining: number;
+  income: number;
 };
 
 export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   useSecureScreen();
   const insets = useSafeAreaInsets();
-  const { colors, cardRadius, cardShadow } = useSpecTheme();
+  const { colors, cardRadius, cardShadow, chipRadius } = useSpecTheme();
   const { transactions, refreshTransactions } = useTransactions();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -83,16 +78,20 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [streakDays, setStreakDays] = useState(0);
   const [isIncomeFlowVisible, setIncomeFlowVisible] = useState(false);
+  const [room, setRoom] = useState(0);
+  const [snapshot, setSnapshot] = useState<MonthSnapshot | null>(null);
 
   // Same ranking (rankGoalPriority) and the same goalStore-backed goal list
   // that GoalsScreen's Focus card uses — one source of truth for "which goal
   // is #1", so Dashboard and Goals can never disagree about it.
   const { rankedGoals } = useGoalIntelligence();
-  const goal = rankedGoals[0]?.goal ?? null;
 
-  const handleIncomeSubmit = async (draft: TransactionDraft, distribution: IncomeDistribution[]) => {
+  const handleIncomeSubmit = async (
+    draft: TransactionDraft,
+    distribution: IncomeDistribution[],
+  ) => {
     try {
-      await IncomeEngine.processConfirmedIncome(draft);
+      await IncomeEngine.processConfirmedIncome(draft, undefined, distribution);
       setIncomeFlowVisible(false);
       onRefresh();
     } catch (e) {
@@ -108,12 +107,24 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const loadInsights = useCallback(async () => {
-    const [insightData, streak] = await Promise.all([
+    const [insightData, streak, snap] = await Promise.all([
       generateInsights(),
       getBudgetStreak(),
+      FinancialIntelligenceEngine.getCurrentSnapshot(),
     ]);
-    setInsights(insightData);
+    // The pulse header already states safe-to-spend-today, budget left, and
+    // the no-income case. Rendering the engine's versions too put the exact
+    // same ₹ figures on screen twice and undercut the header's authority.
+    setInsights(
+      insightData.filter(i => i.id !== 'safe-spending' && i.id !== 'no-income'),
+    );
     setStreakDays(streak);
+    setSnapshot({
+      safeToSpend: snap.safeToSpend,
+      safeToSpendToday: snap.safeToSpendToday,
+      monthlyRemaining: snap.monthlyRemaining,
+      income: snap.income,
+    });
   }, []);
 
   const onRefresh = useCallback(async () => {
@@ -134,19 +145,14 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
     return unsubscribe;
   }, [loadInsights]);
 
-  const weekly = useMemo(() => buildWeeklyExpenses(transactions), [transactions]);
-
-  // chartConfig no longer needed with Skia
-
-  const navigateToAdd = useCallback(() => {
-    navigation.navigate('Add');
-  }, [navigation]);
-
   const navigateToReports = useCallback(() => {
     navigation.navigate('Reports');
   }, [navigation]);
 
-  const st = useMemo(() => makeStyles(colors, cardRadius, cardShadow), [colors, cardRadius, cardShadow]);
+  const st = useMemo(
+    () => makeStyles(colors, cardRadius, cardShadow, chipRadius),
+    [colors, cardRadius, cardShadow, chipRadius],
+  );
 
   // Feeds the shared scroll offset the tab bar reads to auto-hide.
   const { scrollY } = useTabBarScroll();
@@ -156,94 +162,167 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
     },
   });
 
+  const goToRoom = useCallback((next: number) => {
+    setRoom(Math.min(ROOMS.length - 1, Math.max(0, next)));
+  }, []);
+
+  // Horizontal-only pan so the vertical ScrollView keeps its gesture.
+  const swipe = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX([-24, 24])
+        .failOffsetY([-12, 12])
+        .onEnd(e => {
+          if (e.translationX < -48) runOnJS(goToRoom)(room + 1);
+          else if (e.translationX > 48) runOnJS(goToRoom)(room - 1);
+        }),
+    [room, goToRoom],
+  );
+
+  const monthPlan = snapshot
+    ? {
+        safeToSpend: snapshot.safeToSpend,
+        monthlyRemaining: snapshot.monthlyRemaining,
+        safeToSpendToday: snapshot.safeToSpendToday,
+      }
+    : null;
+
+  const hasIncome = (snapshot?.income ?? 0) > 0;
+  const hasGoalsRoomContent = rankedGoals.length > 0 || insights.length > 0;
+
+  const renderRoom = () => {
+    switch (room) {
+      case 0:
+        return (
+          <Animated.View key="spending" entering={FadeIn.duration(180)} style={st.room}>
+            <MoneyMap
+              transactions={transactions}
+              monthPlan={monthPlan}
+              onOpenReports={navigateToReports}
+            />
+            {DashboardChitsSection ? (
+              <DashboardChitsSection
+                navigation={navigation}
+                refreshToken={refreshToken}
+              />
+            ) : null}
+          </Animated.View>
+        );
+
+      case 1:
+        return (
+          <Animated.View key="goals" entering={FadeIn.duration(180)} style={st.room}>
+            {hasGoalsRoomContent ? (
+              <>
+                {/* All ranked goals, not just #1 — showing one and leaving the
+                    rest of the room empty hid work the user had already done. */}
+                {rankedGoals.map(({ goal: g }) => (
+                  <GoalTrackerCard
+                    key={g.id}
+                    name={g.name}
+                    targetAmount={g.targetAmount}
+                    currentAmount={g.currentAmount}
+                  />
+                ))}
+                {insights.map((insight, index) => (
+                  <SmartInsightCard
+                    key={insight.id}
+                    insight={insight}
+                    delay={index * 20}
+                  />
+                ))}
+              </>
+            ) : (
+              <EmptyRoom
+                st={st}
+                icon={<Target size={22} color={colors.textSecondary} strokeWidth={2} />}
+                title="No goals yet"
+                body="Set a savings goal and CoinKeeper will track your progress and flag what's drifting."
+                ctaLabel="Set a goal"
+                onPress={() => navigation.navigate('Goals')}
+              />
+            )}
+          </Animated.View>
+        );
+
+      default:
+        return (
+          <Animated.View key="income" entering={FadeIn.duration(180)} style={st.room}>
+            {hasIncome ? (
+              <>
+                <NextSalaryWidget />
+                <IncomeHealthWidget />
+                <IncomeInsightsWidget />
+              </>
+            ) : (
+              <EmptyRoom
+                st={st}
+                icon={<Wallet size={22} color={colors.textSecondary} strokeWidth={2} />}
+                title="No income recorded"
+                body="Add your income and CoinKeeper works out your monthly plan, predicts your next payday, and scores how steady your earnings are."
+                ctaLabel="Add income"
+                onPress={() => setIncomeFlowVisible(true)}
+              />
+            )}
+          </Animated.View>
+        );
+    }
+  };
+
   return (
     <View style={st.root}>
       <Animated.ScrollView
         style={st.scroll}
-        contentContainerStyle={[st.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 144 }]}
-        refreshControl={<BlueRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={[
+          st.content,
+          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 144 },
+        ]}
+        refreshControl={
+          <BlueRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         showsVerticalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
       >
-        {/* ═══════════════════ HEADER ═══════════════════ */}
-        <Animated.View entering={FadeInDown.delay(0).springify()} style={[st.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <Text style={st.title}>Overview</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <PressableScale onPress={() => setIncomeFlowVisible(true)} style={{ backgroundColor: colors.success + '20', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.success }}>+ Income</Text>
+        {/* Greeting + quick actions */}
+        <Animated.View entering={FadeInDown.springify()} style={st.topRow}>
+          <Text style={st.greeting}>{greeting()}</Text>
+          <View style={st.actions}>
+            <PressableScale
+              onPress={() => setIncomeFlowVisible(true)}
+              style={st.actionPill}
+              accessibilityRole="button"
+              accessibilityLabel="Add income"
+            >
+              <Plus size={14} color={colors.textPrimary} strokeWidth={2.5} />
+              <Text style={st.actionText}>Income</Text>
             </PressableScale>
-            <PressableScale onPress={() => navigation.navigate('AskAi')} style={{ backgroundColor: colors.chipBg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.textPrimary }}>Ask AI</Text>
+            <PressableScale
+              onPress={() => navigation.navigate('AskAi')}
+              style={st.actionPill}
+              accessibilityRole="button"
+              accessibilityLabel="Ask AI about your money"
+            >
+              <Sparkles size={14} color={colors.textPrimary} strokeWidth={2.5} />
+              <Text style={st.actionText}>Ask AI</Text>
             </PressableScale>
           </View>
         </Animated.View>
 
-        {/* ═══════════════════ GAMIFICATION & INSIGHTS ═══════════════════ */}
-        {streakDays > 0 && (
-          <View style={{ marginBottom: 16 }}>
-            <StreakBanner days={streakDays} message="Stayed under budget." />
-          </View>
-        )}
+        <PulseHeader
+          safeToSpendToday={snapshot?.safeToSpendToday ?? 0}
+          monthlyRemaining={snapshot?.monthlyRemaining ?? 0}
+          safeToSpend={snapshot?.safeToSpend ?? 0}
+          streakDays={streakDays}
+        />
 
-        {insights.map((insight, index) => (
-          <SmartInsightCard key={insight.id} insight={insight} delay={20 + index * 20} />
-        ))}
+        <View style={st.switcher}>
+          <RoomSwitcher rooms={ROOMS} activeIndex={room} onChange={goToRoom} />
+        </View>
 
-        {/* ═══════════════════ INCOME INTELLIGENCE ═══════════════════ */}
-        <Animated.View entering={FadeInDown.delay(50).springify()}>
-          <NextSalaryWidget />
-          <View style={{ flexDirection: 'row', gap: 16 }}>
-            <View style={{ flex: 1 }}><IncomeHealthWidget /></View>
-            <View style={{ flex: 1 }}><IncomeInsightsWidget /></View>
-          </View>
-        </Animated.View>
-        
-        {/* ═══════════════════ SPENDING CHART CARD ═══════════════════ */}
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={st.chartCard}>
-          {weekly.hasData ? (
-            <PressableScale onPress={navigateToReports} style={st.chartCardTouchable}>
-              <View style={st.chartCardTopRow}>
-                <Text style={st.viewReportLink}>View report</Text>
-                <ChevronRight size={14} color={colors.lavenderDeep} strokeWidth={2.4} />
-              </View>
-              <View style={st.heroBlock}>
-                <Text style={st.heroLabel}>Spent this month</Text>
-                <CountUp value={weekly.monthTotal} prefix="₹" isPaise style={st.heroValue} />
-              </View>
-              <SkiaSpendingChart
-                data={weekly.values}
-                labels={weekly.labels}
-                width={Math.max(SCREEN_W - 112, 260)}
-                height={180}
-                color={colors.lavenderDeep}
-                textColor={colors.textSecondary}
-                gridColor={colors.chipBg}
-              />
-            </PressableScale>
-          ) : (
-            <View style={st.emptyState}>
-              <ChartIllustration size={120} />
-              <Text style={st.emptyTitle}>No spending data</Text>
-              <Text style={st.emptySubtitle}>Add your first expense to get started</Text>
-              <PressableScale onPress={navigateToAdd} style={st.emptyCta}>
-                <Text style={st.emptyCtaText}>Add Expense</Text>
-              </PressableScale>
-            </View>
-          )}
-        </Animated.View>
-
-        {/* ═══════════════════ GOALS ═══════════════════ */}
-        {goal && (
-          <View style={{ marginBottom: 32 }}>
-            <GoalTrackerCard name={goal.name} targetAmount={goal.targetAmount} currentAmount={goal.currentAmount} />
-          </View>
-        )}
-
-        {/* ═══════════════════ CHITS (pro flavor only) ═══════════════════ */}
-        {DashboardChitsSection ? (
-          <DashboardChitsSection navigation={navigation} refreshToken={refreshToken} />
-        ) : null}
+        <GestureDetector gesture={swipe}>
+          <View>{renderRoom()}</View>
+        </GestureDetector>
       </Animated.ScrollView>
 
       <IncomeTransactionFlow
@@ -255,56 +334,110 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   );
 };
 
+const EmptyRoom: React.FC<{
+  st: any;
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+  ctaLabel: string;
+  onPress: () => void;
+}> = ({ st, icon, title, body, ctaLabel, onPress }) => (
+  <View style={st.empty}>
+    <View style={st.emptyIcon}>{icon}</View>
+    <Text style={st.emptyTitle}>{title}</Text>
+    <Text style={st.emptyBody}>{body}</Text>
+    <PressableScale
+      onPress={onPress}
+      style={st.emptyCta}
+      accessibilityRole="button"
+      accessibilityLabel={ctaLabel}
+    >
+      <Text style={st.emptyCtaText}>{ctaLabel}</Text>
+    </PressableScale>
+  </View>
+);
 
-const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
+const makeStyles = (
+  colors: any,
+  cardRadius: number,
+  cardShadow: any,
+  chipRadius: number,
+) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.background },
     scroll: { flex: 1 },
     content: { paddingHorizontal: 24 },
-    header: { marginBottom: 16 },
-    title: { fontSize: 28, fontFamily: 'Satoshi-Black', color: colors.textPrimary },
-    chartCard: {
-      backgroundColor: colors.card,
-      borderRadius: cardRadius,
-      padding: 20,
-      marginBottom: 32,
-      ...cardShadow,
-    },
-    chart: { borderRadius: cardRadius, marginLeft: -12 },
-    chartCardTouchable: { width: '100%' },
-    chartCardTopRow: {
+    topRow: {
       flexDirection: 'row',
-      justifyContent: 'flex-end',
       alignItems: 'center',
-      gap: 2,
-      marginBottom: 4,
-    },
-    viewReportLink: { fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.lavenderDeep },
-    heroBlock: { marginBottom: 8 },
-    heroLabel: { fontSize: 13, fontFamily: 'Satoshi-Medium', color: colors.textSecondary },
-    heroValue: { fontSize: 32, fontFamily: 'Satoshi-Black', color: colors.textPrimary, marginTop: 2 },
-    emptyState: { alignItems: 'center', paddingVertical: 32 },
-    emptyTitle: { fontSize: 15, fontFamily: 'Satoshi-Bold', color: colors.textPrimary, marginTop: 12 },
-    emptySubtitle: { fontSize: 13, fontFamily: 'Satoshi-Regular', color: colors.textSecondary, marginTop: 4 },
-    emptyCta: {
-      marginTop: 16,
-      paddingHorizontal: 24,
-      paddingVertical: 12,
-      borderRadius: 999,
-      backgroundColor: colors.primaryAccent,
-    },
-    emptyCtaText: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: colors.background },
-    section: { marginBottom: 32 },
-    sectionRow: {
-      flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
       marginBottom: 16,
     },
-    sectionTitle: { fontSize: 17, fontFamily: 'Satoshi-Bold', color: colors.textPrimary },
-    linkText: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: colors.lavenderDeep },
-    moreLink: { alignItems: 'center', paddingVertical: 12 },
-    moreLinkText: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: colors.lavenderDeep },
+    greeting: {
+      fontSize: 15,
+      fontFamily: 'Satoshi-Bold',
+      color: colors.textPrimary,
+    },
+    actions: { flexDirection: 'row', gap: 8 },
+    actionPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: colors.chipBg,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      borderRadius: chipRadius,
+    },
+    actionText: {
+      fontSize: 13,
+      fontFamily: 'Satoshi-Bold',
+      color: colors.textPrimary,
+    },
+    switcher: { marginBottom: 24 },
+    room: { gap: 16 },
+
+    empty: {
+      backgroundColor: colors.card,
+      borderRadius: cardRadius,
+      padding: 24,
+      alignItems: 'center',
+      ...cardShadow,
+    },
+    emptyIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.chipBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      fontSize: 20,
+      fontFamily: 'Satoshi-Bold',
+      color: colors.textPrimary,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    emptyBody: {
+      fontSize: 14,
+      fontFamily: 'Satoshi-Regular',
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+      marginBottom: 24,
+    },
+    emptyCta: {
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: chipRadius,
+      backgroundColor: colors.primaryAccent,
+    },
+    emptyCtaText: {
+      fontSize: 14,
+      fontFamily: 'Satoshi-Bold',
+      color: '#FFFFFF',
+    },
   });
 
 export default UserDashboardScreen;

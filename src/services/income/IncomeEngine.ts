@@ -1,7 +1,7 @@
 import { TransactionDraft } from '../../types/transactionDraft';
 import { AccountRoutingService } from './AccountRoutingService';
 import { IncomeRuleEngine } from './IncomeRuleEngine';
-import { IncomeRoutingEngine } from './IncomeRoutingEngine';
+import { IncomeRoutingEngine, IncomeDistribution } from './IncomeRoutingEngine';
 import { IncomePredictionService } from './IncomePredictionService';
 import { IncomeHealthService } from './IncomeHealthService';
 import { IncomeForecastService } from './IncomeForecastService';
@@ -23,6 +23,7 @@ export const IncomeEngine = {
   async processConfirmedIncome(
     draft: TransactionDraft,
     options?: { id?: string },
+    customDistribution?: IncomeDistribution[],
   ): Promise<void> {
     const db = getDb();
 
@@ -74,11 +75,17 @@ export const IncomeEngine = {
         await AccountRoutingService.depositToAccount(tx, draft.account_id, amountPaise);
       }
 
-      // 3. Evaluate Routing Rules
-      const rules = await IncomeRuleEngine.getRulesForSource(tx, draft.income_source_id || null);
-      
-      // 4. Execute Cascading Distribution
-      const distribution = await IncomeRoutingEngine.executeRules(tx, rules, amountPaise, transactionId);
+      // 3. Evaluate Routing Rules & 4. Execute Cascading Distribution
+      let distribution: IncomeDistribution[] = [];
+      if (customDistribution && customDistribution.length > 0) {
+        // Use manual distribution from UI
+        await IncomeRoutingEngine.executeCustomDistribution(tx, customDistribution, transactionId);
+        distribution = customDistribution;
+      } else {
+        // Fallback to auto rule engine
+        const rules = await IncomeRuleEngine.getRulesForSource(tx, draft.income_source_id || null);
+        distribution = await IncomeRoutingEngine.executeRules(tx, rules, amountPaise, transactionId);
+      }
 
       // 5. Update Forecasts & Predictions
       if (draft.income_source_id) {

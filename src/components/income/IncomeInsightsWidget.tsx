@@ -7,7 +7,7 @@ import { IncomeInsight } from '../../types/income';
 import * as Icons from 'lucide-react-native';
 
 export const IncomeInsightsWidget = () => {
-  const { colors, cardRadius } = useSpecTheme();
+  const { colors, cardRadius, cardShadow, iconShadow } = useSpecTheme();
   const typography = THEME_TYPOGRAPHY;
   const spacing = THEME_SPACING;
   const [insights, setInsights] = useState<IncomeInsight[]>([]);
@@ -28,20 +28,22 @@ export const IncomeInsightsWidget = () => {
   if (insights.length === 0) return null;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.card, borderRadius: cardRadius, padding: spacing.lg }]}>
+    <View style={[styles.container, { backgroundColor: colors.card, borderRadius: cardRadius, padding: spacing.lg }, cardShadow]}>
       <View style={styles.header}>
-        <Icons.Sparkles color={colors.primaryAccent} size={20} />
+        <View style={[styles.iconBox, { backgroundColor: colors.chipBg }, iconShadow]}>
+          <Icons.Sparkles color={colors.textSecondary} size={20} />
+        </View>
         <Text style={[typography.h3, { color: colors.textPrimary, marginLeft: spacing.sm }]}>Income AI Insights</Text>
       </View>
-      
+
       <View style={styles.list}>
         {insights.map((insight) => {
-          const iconColor = insight.severity === 'success' ? colors.success : 
-                            insight.severity === 'warning' ? colors.danger : 
+          const iconColor = insight.severity === 'success' ? colors.success :
+                            insight.severity === 'warning' ? colors.peachDeep :
                             insight.severity === 'danger' ? colors.danger : colors.primaryAccent;
           return (
             <View key={insight.id} style={styles.insightRow}>
-              <View style={[styles.iconContainer, { backgroundColor: iconColor + '20' }]}>
+              <View style={[styles.iconContainer, { backgroundColor: colors.chipBg }, iconShadow]}>
                 <Icons.TrendingUp color={iconColor} size={16} />
               </View>
               <View style={styles.textContainer}>
@@ -58,12 +60,19 @@ export const IncomeInsightsWidget = () => {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    // marginBottom removed for bento box gap layout
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     gap: 12,
@@ -73,9 +82,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,

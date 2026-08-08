@@ -64,6 +64,30 @@ export const IncomeRoutingEngine = {
   },
 
   /**
+   * Executes a custom user-defined distribution and applies the virtual balances.
+   * Logs the allocations to the ledger.
+   */
+  async executeCustomDistribution(
+    tx: SQLiteTransaction,
+    distribution: IncomeDistribution[],
+    transactionId: string
+  ): Promise<void> {
+    for (const alloc of distribution) {
+      if (alloc.amount_paise > 0) {
+        // Log allocation
+        await tx.execute(
+          `INSERT INTO income_allocations (id, transaction_id, rule_id, destination_type, destination_id, allocated_amount_paise, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [uuidv4(), transactionId, 'manual', alloc.destination_type, alloc.destination_id, alloc.amount_paise, Date.now()]
+        );
+
+        // Execute virtual allocation
+        await this.routeVirtualBalance(tx, alloc.destination_type, alloc.destination_id, alloc.amount_paise);
+      }
+    }
+  },
+
+  /**
    * Handles the actual update to the destination's balance.
    * Architecture Decision: Virtual allocation by default (no ledger entries for goals/bills yet).
    */

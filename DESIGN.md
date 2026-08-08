@@ -213,6 +213,37 @@ Behavior:
 
 Any new tab consumer (admin or user) configures this component with its own `tabs: TabConfig[]` (name/label/icon) — it does not fork the component or restyle it per side.
 
+### Money Map — home-screen hero (`src/components/insights/MoneyMap.tsx`)
+
+The home screen's month-at-a-glance panel — the **one sanctioned exception** to the white-card rule: a **midnight enamel panel** (`specDark` tokens) sitting on the light-blue canvas. Rationale: the home needs a single dark hero surface the whole screen reads against; the light canvas + white cards stack elsewhere already resolves to "white on light blue", so the hero inverts to dark to win the screen (see §1's "establish which one wins"). Only the home hero uses this — a second dark surface elsewhere is a bug.
+
+Behavior:
+
+- **Transit metaphor** — income is the central hub (filled `specDark.textPrimary`, INCOME label + compact value), the top-5 expense categories are stations on **45°/90° spokes only**, spent-vs-plan is a **fare strip** at the panel foot (fill `success`, flips to `danger` when over).
+- **The boundary ring is the game** — the dashed ring is a track, and spend fills it clockwise from 12 o'clock (`strokeDasharray` over `RING_C`, rotated -90°). A **pace marker** tick sits where an even draw-down of the month's plan would put you today. Racing that marker — not the raw total — is the loop: the ring reads `success` when under pace, `danger` when spending faster than plan, and the verdict is stated in words under the panel title. Budget pacing (actual ÷ expected cumulative spend) is a real, named finance metric; the ring must never imply a target the plan doesn't set.
+- **Station labels sit on the far side of the station from the hub** (`labelDy` per station) — labels placed hub-side get a 6.5px route stroke drawn straight through the text.
+- **Below three categories the map degrades to a ranked bar list** — one or two spokes read as a lollipop under a screen of dead panel, so the same data pays its way as rows with proportional bars.
+- **Line inks are the accent rotation** — `specLight.lavender/pink/mint/peach/sky` in that fixed order (§2), glowing on the dark ground. Rotation order is load-bearing here too.
+- **One line burns** — tapping a station makes its route the burning line (opacity animates 0.28 → 1 via `AnimatedPath`) and shows that category's last 3 transactions below the map.
+- **Geometry** — viewBox 340×306, hub at center (170,150, r=32), ring r=100, `mapW = min(screenW−80, 340)`. E-station labels shift left 36px to clear the viewBox edge.
+- **Empty state** — dashed ring + solid hub only, "Your money map fills in as you add expenses".
+- **Fare strip** — hidden when `safeToSpend` is 0, replaced by "Add income to set this month's spending plan".
+
+Money Map reads `safeToSpend`/`monthlyRemaining` from `FinancialIntelligenceEngine.getCurrentSnapshot()`. It lives inside the home's **Spending** room (see below), not as a free-standing hero.
+
+### Home structure — pulse header + rooms (`src/screens/user/UserDashboardScreen.tsx`)
+
+The home refuses the stacked-card scroll. It is one persistent header over three switchable rooms:
+
+- **Pulse header** (`src/components/insights/PulseHeader.tsx`) — on-canvas, never in a card. Display-40 `safeToSpendToday` in `textPrimary`, labelled "Safe to spend today", with a supporting line (`monthlyRemaining` of `safeToSpend`) and the budget streak as a `peach`/`peachDeep` chip. This is the screen's hierarchy winner; the Money Map panel is second. With no income recorded it degrades to "Add income to see what's safe to spend" rather than showing ₹0.
+- **Streak framing is capped, not escalating.** Past 30 days the chip switches from days to months. Loss-aversion research on long streaks (Silverman & Barasch, JCR 2023; Octalysis streak-design analysis) finds that beyond ~30–60 days an escalating daily counter stops reading as an achievement and becomes something fragile the user fears destroying, and that broken streaks durably suppress re-engagement. Never ship an uncapped day counter here, and never dramatize breaking one.
+- **Numbers appear once.** The pulse header owns safe-to-spend-today and budget-left, so the dashboard filters the engine's `safe-spending` and `no-income` insights out of the insight list. Any new surface that restates a pulse figure is a bug.
+- **Room switcher** (`src/components/insights/RoomSwitcher.tsx`) — the same segmented control idiom as Transactions/Reports (`segmentActiveBg` pill on a `segmentInactiveBg` track, spring-driven indicator, `impactLight` haptic). Never a second switching idiom on this screen.
+- **Three rooms** — **Spending** (Money Map + chits on pro), **Goals** (goal tracker + smart insights), **Income** (next salary, health, insights). Switched by tap or horizontal swipe (`Gesture.Pan`, `activeOffsetX ±24` / `failOffsetY ±12` so the vertical scroll keeps its gesture). Each room fades in at 180ms; only the active room renders.
+- **Every room owns a real empty state** — icon in a `chipBg` circle, title, one explanatory line, and a `primaryAccent` CTA. A room never renders as blank space because its widgets each self-nulled.
+
+Quick actions (`+ Income`, `Ask AI`) are `chipBg` pills in a top row beside a time-of-day greeting. There is no "Overview" screen title — the pulse number is the screen's identity.
+
 ### Other components
 
 - **StatRing** — thick circular progress (SVG), track in `chipBg`, fill in the active accent's `*Deep` or `primaryAccent`. Center text is Display/H1 weight. One per screen maximum.
@@ -259,6 +290,8 @@ Before any component ships, confirm:
 - ✅ Tab bar swapped to the shared `ExpandingTabBar` (`src/components/shared/ExpandingTabBar.tsx`) for both admin and user navigators.
 - ✅ `UserCapsuleTabBar` and `userFintechTheme` retired — no longer the source of truth for the user side's tab bar or theme.
 - ✅ This document (DESIGN.md) rewritten as v4 to describe the admin-mirrored system as canonical.
+- ✅ `ExpandingTabBar` fixed — icon clipping (label now absolutely positioned so it takes zero layout space; only `width`/`opacity`/`translateX`/`scale` animate) and FAB centering (FAB pinned to screen-center, invisible ghost slots balance tab sides so the FAB is always centered regardless of tab count).
+- ✅ **Money Map** home hero shipped (`src/components/insights/MoneyMap.tsx`, documented in §7) — transit diagram of the month's money, wired as the `UserDashboardScreen` hero with `FinancialIntelligenceEngine` month-plan data; dead chart-card styles removed from the dashboard.
 
 **Still needed — verification pass:**
 

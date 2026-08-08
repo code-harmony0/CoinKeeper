@@ -34,10 +34,17 @@ const BAR_HEIGHT = 56; // Reduced height
 const CORNER_RADIUS = BAR_HEIGHT / 2;
 
 const ICON_SIZE = 22; // Compact icon size
-const EXPANDED_WIDTH = 68; // Tight expanded width
 const TAB_HEIGHT = 40; // Compact height
 const FAB_SIZE = fabSize; // Larger FAB that grows out
 const FAB_SPACER_WIDTH = 74; // Extra space around FAB for better separation
+const PILL_PADDING = 6; // padding inside each tab pill
+const ICON_LABEL_GAP = 6; // gap between icon and revealed label
+// Collapsed pill = icon + PILL_PADDING each side so the icon is never clipped.
+const COLLAPSED_PILL = ICON_SIZE + PILL_PADDING * 2;
+// Expanded pill fits icon + gap + widest label ("Activity" ≈52px at 12px Bold).
+const EXPANDED_PILL = COLLAPSED_PILL + ICON_LABEL_GAP + 52;
+// Label sits absolutely to the right of the icon: padding + icon + gap.
+const LABEL_LEFT = PILL_PADDING + ICON_SIZE + ICON_LABEL_GAP;
 
 // Theme-driven palette — mirrors useTheme()'s light/darkColors (specLight/
 // specDark). Light values stay pixel-identical to the original frosted glass;
@@ -164,25 +171,13 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
     barVisible.value = withSpring(1, { damping: 20, stiffness: 200 });
   }, [activeIndex, isDetailScreen, barVisible]);
 
-  const renderTab = (
-    tab: TabConfig,
-    index: number,
-    isFabPosition: boolean = false,
-  ) => {
-    // Render invisible spacer for FAB position
-    if (isFabPosition && hasFab) {
-      return <View key="fab-spacer" style={styles.fabSlot} />;
-    }
-
+  const renderTab = (tab: TabConfig, index: number) => {
     const isActive = activeIndex === index;
     const vibrantFill =
       barColors.vibrantFills[index % barColors.vibrantFills.length];
 
-    const flexItemsCount = Math.max(1, tabs.length - 1);
-    const flexItemWidth = (BAR_WIDTH - FAB_SPACER_WIDTH) / flexItemsCount;
-
     return (
-      <View key={tab.name} style={[styles.tabSlot, { width: flexItemWidth }]}>
+      <View key={tab.name} style={styles.tabSlot}>
         <ExpandingTab
           icon={tab.icon}
           label={tab.label}
@@ -225,19 +220,47 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
           reducedTransparencyFallbackColor={barColors.blurFallback}
         />
         <View style={[styles.bar, { backgroundColor: barColors.barBg }]}>
-          {tabs.map((tab, index) =>
-            renderTab(tab, index, hasFab && index === fabIndex),
+          {!hasFab ? (
+            tabs.map((tab, index) => renderTab(tab, index))
+          ) : (
+            <>
+              {/* Ghost slots balance the bar so the FAB sits dead-center
+                  regardless of tab count (e.g. 4 lite tabs → [2][FAB][2]). */}
+              {Array.from(
+                { length: Math.max(0, tabs.length - fabIndex - 1 - fabIndex) },
+                (_, i) => (
+                  <View key={`ghost-l-${i}`} style={styles.tabSlot} />
+                ),
+              )}
+              {tabs.slice(0, fabIndex).map((tab, i) => renderTab(tab, i))}
+              <View key="fab-slot" style={styles.fabSlot} />
+              {tabs
+                .slice(fabIndex + 1)
+                .map((tab, i) => renderTab(tab, i + fabIndex + 1))}
+              {Array.from(
+                {
+                  length: Math.max(0, fabIndex - (tabs.length - fabIndex - 1)),
+                },
+                (_, i) => (
+                  <View key={`ghost-r-${i}`} style={styles.tabSlot} />
+                ),
+              )}
+            </>
           )}
         </View>
       </View>
 
       {/* Absolutely positioned FAB - sibling to barContainer for overflow */}
       {hasFab && (
-        <Animated.View 
+        <Animated.View
           style={[
-            styles.fabContainer, 
-            { left: (SCREEN_WIDTH - BAR_WIDTH) / 2 + (fabIndex * ((BAR_WIDTH - FAB_SPACER_WIDTH) / Math.max(1, tabs.length - 1))) + (FAB_SPACER_WIDTH / 2) },
-            animatedFabStyle
+            styles.fabContainer,
+            {
+              // fabContainer centers itself on `left` via marginLeft: -FAB_SIZE/2,
+              // and the bar is centered on screen — so screen center = bar center.
+              left: SCREEN_WIDTH / 2,
+            },
+            animatedFabStyle,
           ]}
         >
           <FabButton
@@ -297,7 +320,7 @@ const ExpandingTab = memo(
       const width = interpolate(
         progress.value,
         [0, 1],
-        [ICON_SIZE, EXPANDED_WIDTH],
+        [COLLAPSED_PILL, EXPANDED_PILL],
         Extrapolation.CLAMP,
       );
       return {
@@ -361,15 +384,18 @@ const ExpandingTab = memo(
                 isActive={isActive}
               />
             </Animated.View>
-            <Animated.View style={labelStyle}>
-              <Text
-                style={[styles.label, { color: labelColor }]}
-                numberOfLines={1}
-              >
-                {label}
-              </Text>
-            </Animated.View>
           </View>
+          {/* Label is absolutely positioned beside the icon and clipped by the
+              pill (overflow hidden) — it never takes layout space, so the icon
+              stays perfectly centered and can't be pushed out / cut off. */}
+          <Animated.View style={[styles.labelPositioner, labelStyle]}>
+            <Text
+              style={[styles.label, { color: labelColor }]}
+              numberOfLines={1}
+            >
+              {label}
+            </Text>
+          </Animated.View>
         </Animated.View>
       </Pressable>
     );
@@ -696,6 +722,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   tabSlot: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -713,15 +740,22 @@ const styles = StyleSheet.create({
   tab: {
     height: TAB_HEIGHT,
     borderRadius: TAB_HEIGHT / 2,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingHorizontal: 2,
+    paddingHorizontal: 6,
     overflow: 'hidden',
   },
   tabContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+  },
+  labelPositioner: {
+    position: 'absolute',
+    left: LABEL_LEFT,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
   },
   iconWrapper: {
     width: ICON_SIZE,

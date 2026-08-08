@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '../ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
+import { Money } from '../../utils/money';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 interface GoalTrackerCardProps {
@@ -12,7 +13,7 @@ interface GoalTrackerCardProps {
 
 export const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ name, targetAmount, currentAmount }) => {
   const { colors, cardRadius, cardShadow } = useSpecTheme();
-  
+
   const progress = Math.min(Math.max(currentAmount / targetAmount, 0), 1);
   const percentage = Math.round(progress * 100);
 
@@ -22,17 +23,17 @@ export const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ name, targetAm
         <Text variant="h3" style={{ color: colors.textPrimary }}>{name}</Text>
         <Text variant="h3" style={{ color: colors.primaryAccent }}>{percentage}%</Text>
       </View>
-      
+
       <View style={[styles.progressBarBg, { backgroundColor: colors.surfaceSunken }]}>
         <View style={[styles.progressBarFill, { width: `${percentage}%`, backgroundColor: colors.primaryAccent }]} />
       </View>
-      
+
       <View style={styles.footer}>
         <Text variant="caption" style={{ color: colors.textSecondary }}>
-          ₹{currentAmount.toLocaleString()} saved
+          {Money.format(currentAmount, { zeroDecimals: true })} saved
         </Text>
         <Text variant="caption" style={{ color: colors.textSecondary }}>
-          Target: ₹{targetAmount.toLocaleString()}
+          Target: {Money.format(targetAmount, { zeroDecimals: true })}
         </Text>
       </View>
     </Animated.View>
@@ -41,9 +42,8 @@ export const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ name, targetAm
 
 const styles = StyleSheet.create({
   card: {
-    padding: 20,
+    padding: 16,
     width: '100%',
-    marginBottom: 16,
   },
   header: {
     flexDirection: 'row',
@@ -52,15 +52,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   progressBarBg: {
-    height: 8,
-    borderRadius: 4,
+    height: 10,
+    borderRadius: 5,
     width: '100%',
     overflow: 'hidden',
     marginBottom: 12,
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 5,
   },
   footer: {
     flexDirection: 'row',
