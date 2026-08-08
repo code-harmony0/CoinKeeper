@@ -15,10 +15,11 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { colors, cardRadius } = useSpecTheme();
   const { addTransaction } = useTransactionsContext();
-  
+
   const [loading, setLoading] = useState(true);
   const [drafts, setDrafts] = useState<TransactionDraft[]>([]);
-  
+  const [bulkSummary, setBulkSummary] = useState<string | null>(null);
+
   useEffect(() => {
     loadSms();
   }, []);
@@ -41,53 +42,70 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
     }
   };
 
-  const handleApprove = async (item: TransactionDraft, index: number) => {
+  const approveOne = async (item: TransactionDraft): Promise<boolean> => {
     try {
       await addTransaction({
         amountPaise: item.amount_paise || 0,
-        type: 'expense', // Needs better mapping for credit if we extract it, but assuming expense for now
+        type: 'expense',
         category: item.category_id || 'unknown',
         categoryIcon: 'other',
         description: item.merchant_name || 'Unknown',
         date: item.date || new Date().toISOString(),
-        paymentMethod: item.payment_method || 'UPI'
+        paymentMethod: item.payment_method || 'UPI',
       });
-      
+
       if (item.merchant_name && item.category_id) {
         await MerchantLearningService.learnCorrection(item.merchant_name, item.category_id);
         await MerchantLearningService.updateFrequency(item.merchant_name, item.category_id);
       }
-      
-      await EcosystemIntegrationService.notifyDraftSaved(item);
 
-      setDrafts(prev => prev.filter((_, i) => i !== index));
+      await EcosystemIntegrationService.notifyDraftSaved(item);
+      return true;
     } catch (e) {
+      return false;
+    }
+  };
+
+  const handleApprove = async (item: TransactionDraft) => {
+    const ok = await approveOne(item);
+    if (ok) {
+      setDrafts(prev => prev.filter(d => d.id !== item.id));
+    } else {
       Alert.alert('Save Failed', 'Could not save transaction.');
     }
   };
 
-  const handleReject = (index: number) => {
-    setDrafts(prev => prev.filter((_, i) => i !== index));
+  const handleReject = (id: string) => {
+    setDrafts(prev => prev.filter(d => d.id !== id));
   };
 
-  // Group by confidence
   const { highConf, lowConf } = useMemo(() => {
-    const high: Array<{item: TransactionDraft, idx: number}> = [];
-    const low: Array<{item: TransactionDraft, idx: number}> = [];
-    
-    drafts.forEach((item, idx) => {
-      const conf = item.confidence || 0;
-      if (conf >= 90) high.push({ item, idx });
-      else low.push({ item, idx });
-    });
-    
+    const high: TransactionDraft[] = [];
+    const low: TransactionDraft[] = [];
+    drafts.forEach(item => ((item.confidence || 0) >= 90 ? high : low).push(item));
     return { highConf: high, lowConf: low };
   }, [drafts]);
 
   const handleBulkApproveHigh = async () => {
-    for (const { item, idx } of highConf) {
-      await handleApprove(item, idx);
+    const batch = highConf;
+    const failedIds = new Set<string>();
+    let succeeded = 0;
+
+    for (const item of batch) {
+      const ok = await approveOne(item);
+      if (ok) succeeded++;
+      else failedIds.add(item.id);
     }
+
+    setDrafts(prev => prev.filter(d => !batch.some(b => b.id === d.id) || failedIds.has(d.id)));
+
+    const failed = failedIds.size;
+    setBulkSummary(
+      failed === 0
+        ? `${succeeded} transaction${succeeded === 1 ? '' : 's'} added`
+        : `${succeeded} added, ${failed} failed — still in your inbox`,
+    );
+    setTimeout(() => setBulkSummary(null), 4000);
   };
 
   return (
@@ -101,6 +119,13 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
         </View>
       </View>
 
+      {bulkSummary && (
+        <View style={[styles.summaryBanner, { backgroundColor: colors.success + '20' }]}>
+          <CheckCircle2 size={16} color={colors.success} />
+          <Text style={[styles.summaryBannerText, { color: colors.success }]}>{bulkSummary}</Text>
+        </View>
+      )}
+
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
         {loading ? (
           <Text style={[styles.empty, { color: colors.textSecondary }]}>Scanning SMS inbox...</Text>
@@ -112,7 +137,6 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
           </View>
         ) : (
           <View>
-            {/* High Confidence Section */}
             {highConf.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
@@ -122,12 +146,12 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
                     <Text style={[styles.bulkText, { color: colors.success }]}>Approve All ({highConf.length})</Text>
                   </PressableScale>
                 </View>
-                {highConf.map(({ item, idx }) => (
-                  <SmsInboxRow 
-                    key={idx} 
-                    item={item} 
-                    onApprove={() => handleApprove(item, idx)} 
-                    onReject={() => handleReject(idx)}
+                {highConf.map(item => (
+                  <SmsInboxRow
+                    key={item.id}
+                    item={item}
+                    onApprove={() => handleApprove(item)}
+                    onReject={() => handleReject(item.id)}
                     onChangeCategory={() => {
                       Alert.alert('Change Category', 'Category picker would open here.');
                     }}
@@ -136,16 +160,15 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
               </View>
             )}
 
-            {/* Low Confidence Section */}
             {lowConf.length > 0 && (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 12 }]}>Needs Review</Text>
-                {lowConf.map(({ item, idx }) => (
-                  <SmsInboxRow 
-                    key={idx} 
-                    item={item} 
-                    onApprove={() => handleApprove(item, idx)} 
-                    onReject={() => handleReject(idx)}
+                {lowConf.map(item => (
+                  <SmsInboxRow
+                    key={item.id}
+                    item={item}
+                    onApprove={() => handleApprove(item)}
+                    onReject={() => handleReject(item.id)}
                     onChangeCategory={() => {
                       Alert.alert('Change Category', 'Category picker would open here.');
                     }}
@@ -176,4 +199,6 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontFamily: 'Satoshi-Bold' },
   bulkBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
   bulkText: { fontSize: 13, fontFamily: 'Satoshi-Bold' },
+  summaryBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 20, marginBottom: 12, padding: 12, borderRadius: 12 },
+  summaryBannerText: { fontFamily: 'Satoshi-Bold', fontSize: 13 },
 });
