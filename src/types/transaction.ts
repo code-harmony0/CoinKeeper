@@ -6,6 +6,7 @@ export interface Transaction {
   type: 'income' | 'expense' | 'transfer_to_goal';
   category: string;
   categoryIcon: string;
+  categoryColor?: string;
   description?: string;
   date: string;
   paymentMethod?: string;

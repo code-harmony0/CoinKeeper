@@ -28,13 +28,6 @@ import {
   ArrowLeft,
   ArrowUpRight,
   ArrowDownRight,
-  Utensils,
-  Car,
-  ShoppingBag,
-  Receipt,
-  Film,
-  HeartPulse,
-  Wallet,
   MoreHorizontal,
   Search,
   Trash2,
@@ -51,6 +44,7 @@ import { CountUp, PressableScale } from '../../components/anim';
 import { PiggyBankIllustration } from '../../components/illustrations';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { groupTransactionsByDate, GroupedRow } from '../../utils/groupTransactionsByDate';
+import { resolveCategoryIcon } from '../../utils/categoryIcon';
 
 type Props = NativeStackScreenProps<any, 'Transactions'>;
 
@@ -60,17 +54,6 @@ const TAB_LABELS = {
   all: 'All',
   income: 'Income',
   expense: 'Expense',
-};
-
-const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
-  food: Utensils,
-  transport: Car,
-  shopping: ShoppingBag,
-  bills: Receipt,
-  entertainment: Film,
-  health: HeartPulse,
-  salary: Wallet,
-  other: MoreHorizontal,
 };
 
 export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
@@ -254,7 +237,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   const formatAmount = (amount: number) => Money.format(amount, { zeroDecimals: true });
 
   const renderRow = (item: Transaction, index: number) => {
-    const Icon = CATEGORY_ICONS[item.categoryIcon] || MoreHorizontal;
+    const Icon = resolveCategoryIcon(item.category, item.categoryIcon);
     const isIncome = item.type === 'income';
     const isSelected = selectedIds.has(item.id);
 
@@ -277,7 +260,10 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => (selectedIds.size > 0 ? toggleSelected(item.id) : undefined)}
             style={[styles.row, isSelected && { backgroundColor: colors.chipBg }]}
           >
-            <View style={[styles.rowIcon, { backgroundColor: colors.chipBg }, iconShadow]}>
+            <View
+              testID={`row-icon-${item.id}`}
+              style={[styles.rowIcon, { backgroundColor: item.categoryColor || colors.chipBg }, iconShadow]}
+            >
               <Icon size={20} color={colors.textPrimary} strokeWidth={2} />
             </View>
             <View style={styles.rowInfo}>

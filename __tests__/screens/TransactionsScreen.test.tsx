@@ -23,6 +23,7 @@ jest.mock('../../src/context/TransactionsContext', () => ({
     transactions: [
       { id: '1', amount: 100, type: 'expense', category: 'Food', categoryIcon: 'food', description: 'Lunch', date: '2026-07-31T09:00:00.000Z' },
       { id: '2', amount: 5000, type: 'income', category: 'Salary', categoryIcon: 'salary', description: 'Paycheck', date: '2026-07-30T09:00:00.000Z' },
+      { id: '3', amountPaise: 20000, type: 'expense', category: 'Streaming', categoryIcon: 'Tv', categoryColor: '#7C6CF6', description: 'Netflix', date: '2026-07-29T09:00:00.000Z' },
     ],
     deleteTransaction: mockDelete,
   }),
@@ -117,5 +118,15 @@ describe('TransactionsScreen', () => {
     expect(mockDelete).toHaveBeenCalledTimes(2);
 
     jest.useRealTimers();
+  });
+
+  it('renders a custom category (not one of the 8 defaults) with its own icon and color, not a generic fallback', () => {
+    const { getByTestId } = render(
+      <TransactionsScreen navigation={navigation} route={{} as any} />,
+    );
+    const iconWrap = getByTestId('row-icon-3');
+    expect(iconWrap.props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ backgroundColor: '#7C6CF6' })]),
+    );
   });
 });

@@ -69,6 +69,33 @@ describe('transactionStore', () => {
     await expect(useTransactionStore.getState().deleteTransaction('tx1')).rejects.toThrow('locked');
   });
 
+  it('loadTransactions maps the category color through to the Transaction shape', async () => {
+    mockExecute.mockImplementation((sql: string) => {
+      if (sql.includes('FROM transactions t')) {
+        return Promise.resolve({
+          rows: [
+            {
+              id: 'tx1',
+              amount_paise: 45000,
+              type: 'expense',
+              category: 'Groceries',
+              categoryIcon: 'ShoppingCart',
+              categoryColor: '#FFB86B',
+              description: null,
+              occurred_at: Date.now(),
+              paymentMethod: null,
+            },
+          ],
+        });
+      }
+      return Promise.resolve({ rows: [] });
+    });
+
+    await useTransactionStore.getState().loadTransactions();
+
+    expect(useTransactionStore.getState().transactions[0].categoryColor).toBe('#FFB86B');
+  });
+
   it('searchTransactions filters by description and category, case-insensitively', () => {
     useTransactionStore.setState({
       transactions: [

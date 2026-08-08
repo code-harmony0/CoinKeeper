@@ -80,6 +80,7 @@ export const resolveCategoryId = async (
 const ROW_QUERY = `
   SELECT t.id, t.amount_paise, t.type, c.name AS category,
          COALESCE(c.icon, 'other') AS categoryIcon,
+         c.color AS categoryColor,
          t.description, t.occurred_at, t.payment_method AS paymentMethod
   FROM transactions t
   LEFT JOIN categories c ON c.id = t.category_id
@@ -92,6 +93,7 @@ const rowToTransaction = (row: any): Transaction => ({
   type: row.type,
   category: row.category ?? 'Other',
   categoryIcon: row.categoryIcon ?? 'other',
+  categoryColor: row.categoryColor ?? undefined,
   description: row.description ?? undefined,
   date: new Date(row.occurred_at).toISOString(),
   paymentMethod: row.paymentMethod ?? undefined,
@@ -115,6 +117,9 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
   },
 
   addTransaction: async transaction => {
+    if (!(transaction.amountPaise > 0)) {
+      throw new Error('Invalid amount');
+    }
     try {
       const id = generateId();
       const date = transaction.date || new Date().toISOString();
