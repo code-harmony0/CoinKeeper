@@ -16,6 +16,7 @@ export interface CountUpProps {
   style?: StyleProp<TextStyle>;
   formatter?: (value: number) => string;
   isPaise?: boolean;
+  testID?: string;
 }
 
 const FRAME_INTERVAL_MS = 1000 / 30;
@@ -29,6 +30,7 @@ export const CountUp: React.FC<CountUpProps> = ({
   style,
   isPaise = false,
   formatter,
+  testID,
 }) => {
   const defaultFormatter = (v: number) => 
     isPaise ? Money.format(Math.round(v), { hideSymbol: true, zeroDecimals: true }) : Math.round(v).toLocaleString('en-IN');
@@ -67,7 +69,7 @@ export const CountUp: React.FC<CountUpProps> = ({
   );
 
   return (
-    <Text style={style}>
+    <Text style={style} testID={testID}>
       {prefix}
       {activeFormatter(displayValue)}
     </Text>

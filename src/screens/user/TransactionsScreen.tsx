@@ -44,6 +44,7 @@ import { PiggyBankIllustration } from '../../components/illustrations';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { groupTransactionsByDate, GroupedRow } from '../../utils/groupTransactionsByDate';
 import { resolveCategoryIcon } from '../../utils/categoryIcon';
+import { isWithinPeriod, PeriodFilter } from '../../utils/transactionPeriod';
 
 type Props = NativeStackScreenProps<any, 'Transactions'>;
 
@@ -72,6 +73,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   );
   const { transactions, deleteTransaction } = useTransactions();
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [period, setPeriod] = useState<PeriodFilter>('month');
   const [segmentWidth, setSegmentWidth] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
@@ -114,13 +116,18 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     [transactions, activeTab],
   );
 
+  const inPeriod = useMemo(
+    () => filteredTx.filter(t => isWithinPeriod(t.date, period)),
+    [filteredTx, period],
+  );
+
   const searched = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return filteredTx;
-    return filteredTx.filter(
+    if (!q) return inPeriod;
+    return inPeriod.filter(
       t => (t.description ?? '').toLowerCase().includes(q) || t.category.toLowerCase().includes(q),
     );
-  }, [filteredTx, searchQuery]);
+  }, [inPeriod, searchQuery]);
 
   const grouped = useMemo(
     () => groupTransactionsByDate(searched.filter(t => !hiddenIds.has(t.id))),
@@ -128,12 +135,12 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   const totalIncome = useMemo(
-    () => transactions.filter(t => t.type === 'income').reduce((s, t) => s + (t.amountPaise || 0), 0),
-    [transactions],
+    () => inPeriod.filter(t => t.type === 'income').reduce((s, t) => s + (t.amountPaise || 0), 0),
+    [inPeriod],
   );
   const totalExpense = useMemo(
-    () => transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amountPaise || 0), 0),
-    [transactions],
+    () => inPeriod.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amountPaise || 0), 0),
+    [inPeriod],
   );
   
   const incomeCount = transactions.filter(t => t.type === 'income').length;
@@ -345,15 +352,30 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
               <ArrowUpRight size={18} color={colors.success} strokeWidth={2.2} />
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Income</Text>
             </View>
-            <CountUp value={totalIncome} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
+            <CountUp testID="summary-income" value={totalIncome} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
           </View>
           <View style={[styles.summaryCard, { backgroundColor: colors.expenseTint, borderRadius: cardRadius }]}>
             <View style={styles.summaryIconRow}>
               <ArrowDownRight size={18} color={colors.danger} strokeWidth={2.2} />
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Expenses</Text>
             </View>
-            <CountUp value={totalExpense} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
+            <CountUp testID="summary-expense" value={totalExpense} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
           </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.periodRow}>
+          {(['week', 'month', 'all'] as PeriodFilter[]).map(p => (
+            <Pressable
+              key={p}
+              testID={`period-${p}`}
+              onPress={() => setPeriod(p)}
+              style={[styles.periodPill, period === p && { backgroundColor: colors.chipBg }]}
+            >
+              <Text style={[styles.periodText, { color: period === p ? colors.textPrimary : colors.textSecondary }]}>
+                {p === 'week' ? 'This Week' : p === 'month' ? 'This Month' : 'All Time'}
+              </Text>
+            </Pressable>
+          ))}
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.segmentWrapper}>
@@ -507,6 +529,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Satoshi-Black',
   },
+
+  periodRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  periodPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
+  periodText: { fontSize: 12, fontFamily: 'Satoshi-Bold' },
 
   segmentWrapper: {
     marginBottom: 16,
