@@ -5,6 +5,7 @@ export interface Transaction {
   amountPaise: number;
   type: 'income' | 'expense' | 'transfer_to_goal';
   category: string;
+  categoryId: string;
   categoryIcon: string;
   categoryColor?: string;
   description?: string;

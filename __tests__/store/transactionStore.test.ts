@@ -99,8 +99,8 @@ describe('transactionStore', () => {
   it('searchTransactions filters by description and category, case-insensitively', () => {
     useTransactionStore.setState({
       transactions: [
-        { id: '1', amountPaise: 5000, type: 'expense', category: 'Food', categoryIcon: 'food', description: 'Swiggy order', date: '2026-01-01T00:00:00.000Z' },
-        { id: '2', amountPaise: 2000, type: 'expense', category: 'Transport', categoryIcon: 'car', description: 'Uber ride', date: '2026-01-02T00:00:00.000Z' },
+        { id: '1', amountPaise: 5000, type: 'expense', category: 'Food', categoryId: 'food', categoryIcon: 'food', description: 'Swiggy order', date: '2026-01-01T00:00:00.000Z' },
+        { id: '2', amountPaise: 2000, type: 'expense', category: 'Transport', categoryId: 'transport', categoryIcon: 'car', description: 'Uber ride', date: '2026-01-02T00:00:00.000Z' },
       ],
       loading: false,
     });

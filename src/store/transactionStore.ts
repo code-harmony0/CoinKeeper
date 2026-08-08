@@ -16,7 +16,7 @@ interface TransactionStore {
   loading: boolean;
   loadTransactions: () => Promise<void>;
   addTransaction: (
-    transaction: Omit<Transaction, 'id' | 'date'> & { date?: string },
+    transaction: Omit<Transaction, 'id' | 'date' | 'categoryId'> & { date?: string },
   ) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   updateTransaction: (
@@ -79,6 +79,7 @@ export const resolveCategoryId = async (
 
 const ROW_QUERY = `
   SELECT t.id, t.amount_paise, t.type, c.name AS category,
+         c.id AS categoryId,
          COALESCE(c.icon, 'other') AS categoryIcon,
          c.color AS categoryColor,
          t.description, t.occurred_at, t.payment_method AS paymentMethod
@@ -92,6 +93,7 @@ const rowToTransaction = (row: any): Transaction => ({
   amountPaise: row.amount_paise,
   type: row.type,
   category: row.category ?? 'Other',
+  categoryId: row.categoryId ?? row.category ?? 'other',
   categoryIcon: row.categoryIcon ?? 'other',
   categoryColor: row.categoryColor ?? undefined,
   description: row.description ?? undefined,
@@ -123,11 +125,12 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
     try {
       const id = generateId();
       const date = transaction.date || new Date().toISOString();
-      const newTx: Transaction = { ...transaction, id, date };
-      const amountPaise = newTx.amountPaise;
 
       const db = getDb();
-      const categoryId = await resolveCategoryId(db, newTx.category, newTx.categoryIcon);
+      const categoryId = await resolveCategoryId(db, transaction.category, transaction.categoryIcon);
+
+      const newTx: Transaction = { ...transaction, id, date, categoryId };
+      const amountPaise = newTx.amountPaise;
 
       await db.execute(
         `INSERT INTO transactions

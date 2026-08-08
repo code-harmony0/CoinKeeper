@@ -7,7 +7,7 @@ import { RecurringIncomeService } from '../services/income/RecurringIncomeServic
 
 interface TransactionsContextType {
   transactions: Transaction[];
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'date'> & { date?: string }) => Promise<void>;
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'date' | 'categoryId'> & { date?: string }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
   refreshTransactions: () => Promise<void>;

@@ -28,7 +28,6 @@ import {
   ArrowLeft,
   ArrowUpRight,
   ArrowDownRight,
-  MoreHorizontal,
   Search,
   Trash2,
   Tag,
@@ -237,7 +236,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   const formatAmount = (amount: number) => Money.format(amount, { zeroDecimals: true });
 
   const renderRow = (item: Transaction, index: number) => {
-    const Icon = resolveCategoryIcon(item.category, item.categoryIcon);
+    const Icon = resolveCategoryIcon(item.categoryId, item.categoryIcon);
     const isIncome = item.type === 'income';
     const isSelected = selectedIds.has(item.id);
 

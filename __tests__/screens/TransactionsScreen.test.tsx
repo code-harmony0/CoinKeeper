@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, fireEvent, act } from '@testing-library/react-native';
+import { render, fireEvent, act, within } from '@testing-library/react-native';
+import { Utensils } from 'lucide-react-native';
 import { TransactionsScreen } from '../../src/screens/user/TransactionsScreen';
 
 // useSecureScreen calls useFocusEffect(useNavigation()) internally, which
@@ -21,9 +22,12 @@ const mockDelete = jest.fn(async () => {});
 jest.mock('../../src/context/TransactionsContext', () => ({
   useTransactionsContext: () => ({
     transactions: [
-      { id: '1', amount: 100, type: 'expense', category: 'Food', categoryIcon: 'food', description: 'Lunch', date: '2026-07-31T09:00:00.000Z' },
-      { id: '2', amount: 5000, type: 'income', category: 'Salary', categoryIcon: 'salary', description: 'Paycheck', date: '2026-07-30T09:00:00.000Z' },
-      { id: '3', amountPaise: 20000, type: 'expense', category: 'Streaming', categoryIcon: 'Tv', categoryColor: '#7C6CF6', description: 'Netflix', date: '2026-07-29T09:00:00.000Z' },
+      { id: '1', amount: 100, type: 'expense', category: 'Food', categoryId: 'food', categoryIcon: 'food', description: 'Lunch', date: '2026-07-31T09:00:00.000Z' },
+      { id: '2', amount: 5000, type: 'income', category: 'Salary', categoryId: 'salary', categoryIcon: 'salary', description: 'Paycheck', date: '2026-07-30T09:00:00.000Z' },
+      { id: '3', amountPaise: 20000, type: 'expense', category: 'Streaming', categoryId: 'streaming', categoryIcon: 'Tv', categoryColor: '#7C6CF6', description: 'Netflix', date: '2026-07-29T09:00:00.000Z' },
+      // Real seeded default category: id 'food', name 'Food', icon 'food' (MaterialCommunityIcons-style,
+      // not a valid Lucide export) — exercises the DEFAULT_ID_TO_ICON fallback branch in resolveCategoryIcon.
+      { id: '4', amountPaise: 15000, type: 'expense', category: 'Food', categoryId: 'food', categoryIcon: 'food', description: 'Groceries', date: '2026-07-28T09:00:00.000Z' },
     ],
     deleteTransaction: mockDelete,
   }),
@@ -128,5 +132,13 @@ describe('TransactionsScreen', () => {
     expect(iconWrap.props.style).toEqual(
       expect.arrayContaining([expect.objectContaining({ backgroundColor: '#7C6CF6' })]),
     );
+  });
+
+  it('renders a seeded default category (id "food", icon "food") with the Utensils icon via the id-keyed fallback, not the generic MoreHorizontal', () => {
+    const { getByTestId } = render(
+      <TransactionsScreen navigation={navigation} route={{} as any} />,
+    );
+    const iconWrap = getByTestId('row-icon-4');
+    expect(within(iconWrap).UNSAFE_getAllByType(Utensils).length).toBeGreaterThan(0);
   });
 });
