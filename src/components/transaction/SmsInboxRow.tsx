@@ -49,7 +49,11 @@ export const SmsInboxRow: React.FC<Props> = ({ item, onApprove, onReject, onChan
           </View>
 
           <View style={styles.footer}>
-            <PressableScale onPress={onChangeCategory} style={[styles.categoryBtn, { backgroundColor: colors.chipBg }]}>
+            <PressableScale
+              onPress={onChangeCategory}
+              testID={`category-btn-${item.id}`}
+              style={[styles.categoryBtn, { backgroundColor: colors.chipBg }]}
+            >
               <Tag size={14} color={colors.textSecondary} />
               <Text style={[styles.categoryText, { color: colors.textSecondary }]}>{item.category_id || 'Uncategorized'}</Text>
             </PressableScale>

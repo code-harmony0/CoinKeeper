@@ -10,6 +10,7 @@ import { SmsInboxRow } from '../../components/transaction/SmsInboxRow';
 import { MerchantLearningService } from '../../services/MerchantLearningService';
 import { EcosystemIntegrationService } from '../../services/EcosystemIntegrationService';
 import { TransactionDraft } from '../../types/transactionDraft';
+import { CategoryPickerSheet, PickableCategory } from '../../components/transaction/CategoryPickerSheet';
 
 export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -19,6 +20,7 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [drafts, setDrafts] = useState<TransactionDraft[]>([]);
   const [bulkSummary, setBulkSummary] = useState<string | null>(null);
+  const [pickingCategoryForId, setPickingCategoryForId] = useState<string | null>(null);
 
   useEffect(() => {
     loadSms();
@@ -77,6 +79,16 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
 
   const handleReject = (id: string) => {
     setDrafts(prev => prev.filter(d => d.id !== id));
+  };
+
+  const openCategoryPicker = (id: string) => setPickingCategoryForId(id);
+
+  const applyCategory = (category: PickableCategory) => {
+    if (!pickingCategoryForId) return;
+    setDrafts(prev =>
+      prev.map(d => (d.id === pickingCategoryForId ? { ...d, category_id: category.id } : d)),
+    );
+    setPickingCategoryForId(null);
   };
 
   const { highConf, lowConf } = useMemo(() => {
@@ -152,9 +164,7 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
                     item={item}
                     onApprove={() => handleApprove(item)}
                     onReject={() => handleReject(item.id)}
-                    onChangeCategory={() => {
-                      Alert.alert('Change Category', 'Category picker would open here.');
-                    }}
+                    onChangeCategory={() => openCategoryPicker(item.id)}
                   />
                 ))}
               </View>
@@ -169,9 +179,7 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
                     item={item}
                     onApprove={() => handleApprove(item)}
                     onReject={() => handleReject(item.id)}
-                    onChangeCategory={() => {
-                      Alert.alert('Change Category', 'Category picker would open here.');
-                    }}
+                    onChangeCategory={() => openCategoryPicker(item.id)}
                   />
                 ))}
               </View>
@@ -179,6 +187,13 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
           </View>
         )}
       </ScrollView>
+
+      <CategoryPickerSheet
+        visible={!!pickingCategoryForId}
+        selectedCategoryId={drafts.find(d => d.id === pickingCategoryForId)?.category_id}
+        onSelect={applyCategory}
+        onClose={() => setPickingCategoryForId(null)}
+      />
     </View>
   );
 };
