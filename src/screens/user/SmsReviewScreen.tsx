@@ -11,6 +11,7 @@ import { MerchantLearningService } from '../../services/MerchantLearningService'
 import { EcosystemIntegrationService } from '../../services/EcosystemIntegrationService';
 import { TransactionDraft } from '../../types/transactionDraft';
 import { CategoryPickerSheet, PickableCategory } from '../../components/transaction/CategoryPickerSheet';
+import { getDb } from '../../store/database';
 
 export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -21,10 +22,32 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
   const [drafts, setDrafts] = useState<TransactionDraft[]>([]);
   const [bulkSummary, setBulkSummary] = useState<string | null>(null);
   const [pickingCategoryForId, setPickingCategoryForId] = useState<string | null>(null);
+  // category_id on a draft is always a real DB categories.id (from ML prediction lookup
+  // or from CategoryPickerSheet) — never a display name. This map resolves those ids to
+  // human-readable names for the inbox row badge, without changing what's stored on the draft.
+  const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadSms();
   }, []);
+
+  const loadCategoryNames = async (ids: string[]) => {
+    const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+    if (uniqueIds.length === 0) return;
+    try {
+      const db = getDb();
+      const placeholders = uniqueIds.map(() => '?').join(', ');
+      const res = await db.execute(`SELECT id, name FROM categories WHERE id IN (${placeholders});`, uniqueIds);
+      const rows = (res?.rows ?? []) as { id: string; name: string }[];
+      setCategoryNames(prev => {
+        const next = { ...prev };
+        rows.forEach(r => (next[r.id] = r.name));
+        return next;
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+  };
 
   const loadSms = async () => {
     setLoading(true);
@@ -36,6 +59,7 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
         if (result) parsed.push(result);
       }
       setDrafts(parsed);
+      loadCategoryNames(parsed.map(d => d.category_id).filter((id): id is string => !!id));
     } catch (e) {
       console.warn(e);
       Alert.alert('Error', 'Failed to read SMS');
@@ -46,11 +70,27 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
 
   const approveOne = async (item: TransactionDraft): Promise<boolean> => {
     try {
+      // Resolve the draft's category_id (a real DB categories.id) to its actual name/icon
+      // right before saving — addTransaction/resolveCategoryId look up categories by name,
+      // so passing the id straight through would fail the lookup and spawn a duplicate
+      // category literally named after the opaque id string.
+      let categoryName = 'Other';
+      let categoryIcon = 'other';
+      if (item.category_id) {
+        const db = getDb();
+        const res = await db.execute('SELECT name, icon FROM categories WHERE id = ? LIMIT 1;', [item.category_id]);
+        const row = (res?.rows?.[0] ?? undefined) as { name?: string; icon?: string } | undefined;
+        if (row?.name) {
+          categoryName = row.name;
+          categoryIcon = row.icon || 'other';
+        }
+      }
+
       await addTransaction({
         amountPaise: item.amount_paise || 0,
         type: 'expense',
-        category: item.category_id || 'unknown',
-        categoryIcon: 'other',
+        category: categoryName,
+        categoryIcon,
         description: item.merchant_name || 'Unknown',
         date: item.date || new Date().toISOString(),
         paymentMethod: item.payment_method || 'UPI',
@@ -88,6 +128,7 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
     setDrafts(prev =>
       prev.map(d => (d.id === pickingCategoryForId ? { ...d, category_id: category.id } : d)),
     );
+    setCategoryNames(prev => ({ ...prev, [category.id]: category.name }));
     setPickingCategoryForId(null);
   };
 
@@ -162,6 +203,7 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
                   <SmsInboxRow
                     key={item.id}
                     item={item}
+                    categoryName={item.category_id ? categoryNames[item.category_id] : undefined}
                     onApprove={() => handleApprove(item)}
                     onReject={() => handleReject(item.id)}
                     onChangeCategory={() => openCategoryPicker(item.id)}
@@ -177,6 +219,7 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
                   <SmsInboxRow
                     key={item.id}
                     item={item}
+                    categoryName={item.category_id ? categoryNames[item.category_id] : undefined}
                     onApprove={() => handleApprove(item)}
                     onReject={() => handleReject(item.id)}
                     onChangeCategory={() => openCategoryPicker(item.id)}
