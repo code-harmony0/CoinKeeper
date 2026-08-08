@@ -229,20 +229,34 @@ Behavior:
 - **Empty state** — dashed ring + solid hub only, "Your money map fills in as you add expenses".
 - **Fare strip** — hidden when `safeToSpend` is 0, replaced by "Add income to set this month's spending plan".
 
-Money Map reads `safeToSpend`/`monthlyRemaining` from `FinancialIntelligenceEngine.getCurrentSnapshot()`. It lives inside the home's **Spending** room (see below), not as a free-standing hero.
+Money Map reads its month plan from `FinancialIntelligenceEngine.getCurrentSnapshot()` and carries the `PaceRing` as the home's hero.
 
-### Home structure — pulse header + rooms (`src/screens/user/UserDashboardScreen.tsx`)
+### PaceRing — the home hero (`src/components/insights/PaceRing.tsx`)
 
-The home refuses the stacked-card scroll. It is one persistent header over three switchable rooms:
+One object answering three questions, sitting at the top of the Money Map panel:
 
-- **Pulse header** (`src/components/insights/PulseHeader.tsx`) — on-canvas, never in a card. Display-40 `safeToSpendToday` in `textPrimary`, labelled "Safe to spend today", with a supporting line (`monthlyRemaining` of `safeToSpend`) and the budget streak as a `peach`/`peachDeep` chip. This is the screen's hierarchy winner; the Money Map panel is second. With no income recorded it degrades to "Add income to see what's safe to spend" rather than showing ₹0.
+| Zone | Question | Content |
+| --- | --- | --- |
+| Centre | "Can I spend right now?" | `safeToSpendToday` at Display-40 `Satoshi-Black`, labelled "Safe to spend today" |
+| Ring | "Am I on track?" | Spend fills clockwise from 12 o'clock; a marker tick sits at the even-draw-down position for today |
+| Verdict | — | The pace status in words, under the ring |
+
+- **Skia draws geometry only; every string is a React Native `<Text>` layered over the `Canvas`.** This is deliberate and load-bearing: it avoids loading Satoshi into Skia via `useFont`, keeps type crisp at any density, and leaves the numbers reachable by TalkBack. Never render hero text inside the Skia canvas.
+- **Pacing is `src/services/budgetPacing.ts`** (`computePace`), a pure unit-tested module — never re-derive pace inline in a component. `ratio > 1.05` is `fast` (`danger`), `< 0.85` is `ahead` (`success`), between is `on` (`sky`). Budget pacing (actual ÷ expected cumulative spend) is a real named finance metric; the ring must never imply a target the plan doesn't set.
+- **Motion is one authored moment**: the arc springs `0 → current` after a 200ms delay, and the marker fades in at 900ms so the eye lands on the verdict last. Both carry `ReduceMotion.System`.
+- **With no plan** (`planPaise === 0`) the centre reads "Add income to set a plan" — never a ₹0 hero.
+
+### Home structure — one scroll (`src/screens/user/UserDashboardScreen.tsx`)
+
+A single vertical scroll: greeting + streak + quick actions, then Money Map (hero), goals strip, insights, income row, chits (pro only).
+
+- **No room switcher.** A Spending/Goals/Income segmented control shipped here once and was removed: it forced a choice before the user saw anything, and two of three rooms rendered a single card above a screen of void. Evidence runs the other way — Google Pay's 2022 home cut visible options 40% and lifted transaction initiation 22%; Empower's single-primary-number dashboard with detail one level deeper held 70% six-month retention against a 35–40% industry average. Do not reintroduce sibling rooms on this screen.
+- **Numbers appear once.** The ring owns safe-to-spend-today and budget-left, so the dashboard filters the engine's `safe-spending` and `no-income` insights out of the list. Any new surface that restates a hero figure is a bug.
 - **Streak framing is capped, not escalating.** Past 30 days the chip switches from days to months. Loss-aversion research on long streaks (Silverman & Barasch, JCR 2023; Octalysis streak-design analysis) finds that beyond ~30–60 days an escalating daily counter stops reading as an achievement and becomes something fragile the user fears destroying, and that broken streaks durably suppress re-engagement. Never ship an uncapped day counter here, and never dramatize breaking one.
-- **Numbers appear once.** The pulse header owns safe-to-spend-today and budget-left, so the dashboard filters the engine's `safe-spending` and `no-income` insights out of the insight list. Any new surface that restates a pulse figure is a bug.
-- **Room switcher** (`src/components/insights/RoomSwitcher.tsx`) — the same segmented control idiom as Transactions/Reports (`segmentActiveBg` pill on a `segmentInactiveBg` track, spring-driven indicator, `impactLight` haptic). Never a second switching idiom on this screen.
-- **Three rooms** — **Spending** (Money Map + chits on pro), **Goals** (goal tracker + smart insights), **Income** (next salary, health, insights). Switched by tap or horizontal swipe (`Gesture.Pan`, `activeOffsetX ±24` / `failOffsetY ±12` so the vertical scroll keeps its gesture). Each room fades in at 180ms; only the active room renders.
-- **Every room owns a real empty state** — icon in a `chipBg` circle, title, one explanatory line, and a `primaryAccent` CTA. A room never renders as blank space because its widgets each self-nulled.
+- **Summary first, detail on demand.** `GoalsStrip` shows every goal compactly and opens Goals; `IncomeSummaryRow` replaces three self-nulling widgets with one row opening `IncomeDetail`. A component that returns `null` without data must never be the only thing in a region.
+- **Empty states are real** — icon in a `chipBg` circle, title, one explanatory line, `primaryAccent` CTA.
 
-Quick actions (`+ Income`, `Ask AI`) are `chipBg` pills in a top row beside a time-of-day greeting. There is no "Overview" screen title — the pulse number is the screen's identity.
+Quick actions (`+ Income`, `Ask AI`) are `chipBg` pills in the top row beside a time-of-day greeting. There is no "Overview" screen title — the hero number is the screen's identity.
 
 ### Other components
 
