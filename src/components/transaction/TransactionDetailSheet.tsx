@@ -47,6 +47,7 @@ export const TransactionDetailSheet: React.FC<Props> = ({ visible, transaction, 
       amountPaise: Money.toPaise(amountInput),
       description: description.trim() || undefined,
       category: categoryName,
+      categoryId,
       categoryIcon,
       categoryColor,
     });
