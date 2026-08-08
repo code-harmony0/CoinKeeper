@@ -128,6 +128,14 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     [filteredTx, period],
   );
 
+  // Summary cards and tab badge counts answer "what happened this period" and should
+  // stay stable across the type tabs — only `inPeriod` (used for the visible list) is
+  // scoped to `activeTab`.
+  const inPeriodAllTabs = useMemo(
+    () => transactions.filter(t => isWithinPeriod(t.date, period)),
+    [transactions, period],
+  );
+
   const searched = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return inPeriod;
@@ -147,18 +155,18 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   const totalIncome = useMemo(
-    () => inPeriod.filter(t => t.type === 'income').reduce((s, t) => s + (t.amountPaise || 0), 0),
-    [inPeriod],
+    () => inPeriodAllTabs.filter(t => t.type === 'income').reduce((s, t) => s + (t.amountPaise || 0), 0),
+    [inPeriodAllTabs],
   );
   const totalExpense = useMemo(
-    () => inPeriod.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amountPaise || 0), 0),
-    [inPeriod],
+    () => inPeriodAllTabs.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amountPaise || 0), 0),
+    [inPeriodAllTabs],
   );
-  
-  const incomeCount = transactions.filter(t => t.type === 'income').length;
-  const expenseCount = transactions.filter(t => t.type === 'expense').length;
-  const transferCount = transactions.filter(t => t.type === 'transfer_to_goal').length;
-  const allCount = transactions.filter(t => t.type !== 'transfer_to_goal').length;
+
+  const incomeCount = inPeriodAllTabs.filter(t => t.type === 'income').length;
+  const expenseCount = inPeriodAllTabs.filter(t => t.type === 'expense').length;
+  const transferCount = inPeriodAllTabs.filter(t => t.type === 'transfer_to_goal').length;
+  const allCount = inPeriodAllTabs.filter(t => t.type !== 'transfer_to_goal').length;
 
   const tabCounts = {
     all: allCount,
