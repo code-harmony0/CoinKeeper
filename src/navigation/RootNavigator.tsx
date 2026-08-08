@@ -10,6 +10,7 @@ import { SplashScreen, OnboardingScreen, PrivacyFirstScreen } from '../screens/o
 import { AskAiScreen } from '../screens/user';
 import { UserTabNavigator } from './UserTabNavigator';
 import { ReportsScreen } from '../screens/user/ReportsScreen';
+import { IncomeDetailScreen } from '../screens/user/IncomeDetailScreen';
 import { CategoriesScreen } from '../screens/user/CategoriesScreen';
 import { BudgetScreen } from '../screens/user/BudgetScreen';
 import { BillsScreen } from '../screens/user/BillsScreen';
@@ -190,6 +191,7 @@ export const RootNavigator = () => {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="SmsReview" component={SmsReviewScreen} />
         <Stack.Screen name="AskAi" component={AskAiScreen} />
+        <Stack.Screen name="IncomeDetail" component={IncomeDetailScreen} />
         {/* Login, admin console, and Notifications are all chit-fund routes —
             the lite build has no accounts and no server to log into. */}
         {chitFundRoutes.map((route: { name: string; component: React.ComponentType<any> }) => (

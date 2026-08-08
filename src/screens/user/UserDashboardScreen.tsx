@@ -1,26 +1,26 @@
 /**
  * UserDashboardScreen — Home
  *
- * Structure: a persistent pulse header (the one number that answers "can I
- * spend today?") over three swipeable rooms — Spending, Goals, Income. The
- * rooms exist so each surface gets a full viewport instead of five cards
- * competing for attention in one undifferentiated scroll.
+ * One vertical scroll, one hero. The Money Map panel carries the PaceRing,
+ * which owns the screen's single primary number (safe to spend today) and the
+ * pacing verdict. Everything below it is a summary that opens one level
+ * deeper on tap.
+ *
+ * Deliberately NOT a room switcher: forcing a Spending/Goals/Income choice
+ * before the user sees anything adds a decision where the evidence says
+ * removing decisions drives action.
  */
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, StyleSheet, Text, Alert } from 'react-native';
 import Animated, {
-  FadeIn,
   FadeInDown,
-  runOnJS,
   useAnimatedScrollHandler,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Sparkles, Plus, Target, Wallet } from 'lucide-react-native';
+import { Sparkles, Plus, Target, Flame } from 'lucide-react-native';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { MoneyMap } from '../../components/insights/MoneyMap';
-import { PulseHeader } from '../../components/insights/PulseHeader';
-import { RoomSwitcher } from '../../components/insights/RoomSwitcher';
+import { GoalsStrip } from '../../components/insights/GoalsStrip';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
 import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useSpecTheme } from '../../theme/specTheme';
@@ -33,10 +33,7 @@ import {
 import { FinancialIntelligenceEngine } from '../../services/FinancialIntelligenceEngine';
 import { useGoalIntelligence } from '../../hooks/useGoalIntelligence';
 import { SmartInsightCard } from '../../components/insights/SmartInsightCard';
-import { GoalTrackerCard } from '../../components/insights/GoalTrackerCard';
-import { NextSalaryWidget } from '../../components/income/NextSalaryWidget';
-import { IncomeHealthWidget } from '../../components/income/IncomeHealthWidget';
-import { IncomeInsightsWidget } from '../../components/income/IncomeInsightsWidget';
+import { IncomeSummaryRow } from '../../components/income/IncomeSummaryRow';
 import { IncomeTransactionFlow } from '../../components/modals/IncomeTransactionFlow';
 import { TransactionDraft } from '../../types/transactionDraft';
 import { IncomeDistribution } from '../../services/income/IncomeRoutingEngine';
@@ -51,14 +48,22 @@ const DashboardChitsSection =
     ? require('../../modules/chitfund/components/DashboardChitsSection').default
     : null;
 
-const ROOMS = ['Spending', 'Goals', 'Income'];
-
 const greeting = (): string => {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
   return 'Good evening';
 };
+
+/**
+ * Past a month, an escalating daily counter stops reading as an achievement
+ * and starts reading as something fragile the user can destroy. Switching to
+ * months slows the tick and reframes it as a durable record.
+ */
+const streakLabel = (days: number): string =>
+  days >= 30
+    ? `${Math.floor(days / 30)} month${days >= 60 ? 's' : ''} under budget`
+    : `${days}d under budget`;
 
 type MonthSnapshot = {
   safeToSpend: number;
@@ -78,7 +83,6 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [streakDays, setStreakDays] = useState(0);
   const [isIncomeFlowVisible, setIncomeFlowVisible] = useState(false);
-  const [room, setRoom] = useState(0);
   const [snapshot, setSnapshot] = useState<MonthSnapshot | null>(null);
 
   // Same ranking (rankGoalPriority) and the same goalStore-backed goal list
@@ -112,9 +116,9 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
       getBudgetStreak(),
       FinancialIntelligenceEngine.getCurrentSnapshot(),
     ]);
-    // The pulse header already states safe-to-spend-today, budget left, and
-    // the no-income case. Rendering the engine's versions too put the exact
-    // same ₹ figures on screen twice and undercut the header's authority.
+    // The hero ring already states safe-to-spend-today, budget left, and the
+    // no-income case. Rendering the engine's versions too put the exact same ₹
+    // figures on screen twice and undercut the hero's authority.
     setInsights(
       insightData.filter(i => i.id !== 'safe-spending' && i.id !== 'no-income'),
     );
@@ -162,23 +166,6 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
     },
   });
 
-  const goToRoom = useCallback((next: number) => {
-    setRoom(Math.min(ROOMS.length - 1, Math.max(0, next)));
-  }, []);
-
-  // Horizontal-only pan so the vertical ScrollView keeps its gesture.
-  const swipe = useMemo(
-    () =>
-      Gesture.Pan()
-        .activeOffsetX([-24, 24])
-        .failOffsetY([-12, 12])
-        .onEnd(e => {
-          if (e.translationX < -48) runOnJS(goToRoom)(room + 1);
-          else if (e.translationX > 48) runOnJS(goToRoom)(room - 1);
-        }),
-    [room, goToRoom],
-  );
-
   const monthPlan = snapshot
     ? {
         safeToSpend: snapshot.safeToSpend,
@@ -188,86 +175,12 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
     : null;
 
   const hasIncome = (snapshot?.income ?? 0) > 0;
-  const hasGoalsRoomContent = rankedGoals.length > 0 || insights.length > 0;
-
-  const renderRoom = () => {
-    switch (room) {
-      case 0:
-        return (
-          <Animated.View key="spending" entering={FadeIn.duration(180)} style={st.room}>
-            <MoneyMap
-              transactions={transactions}
-              monthPlan={monthPlan}
-              onOpenReports={navigateToReports}
-            />
-            {DashboardChitsSection ? (
-              <DashboardChitsSection
-                navigation={navigation}
-                refreshToken={refreshToken}
-              />
-            ) : null}
-          </Animated.View>
-        );
-
-      case 1:
-        return (
-          <Animated.View key="goals" entering={FadeIn.duration(180)} style={st.room}>
-            {hasGoalsRoomContent ? (
-              <>
-                {/* All ranked goals, not just #1 — showing one and leaving the
-                    rest of the room empty hid work the user had already done. */}
-                {rankedGoals.map(({ goal: g }) => (
-                  <GoalTrackerCard
-                    key={g.id}
-                    name={g.name}
-                    targetAmount={g.targetAmount}
-                    currentAmount={g.currentAmount}
-                  />
-                ))}
-                {insights.map((insight, index) => (
-                  <SmartInsightCard
-                    key={insight.id}
-                    insight={insight}
-                    delay={index * 20}
-                  />
-                ))}
-              </>
-            ) : (
-              <EmptyRoom
-                st={st}
-                icon={<Target size={22} color={colors.textSecondary} strokeWidth={2} />}
-                title="No goals yet"
-                body="Set a savings goal and CoinKeeper will track your progress and flag what's drifting."
-                ctaLabel="Set a goal"
-                onPress={() => navigation.navigate('Goals')}
-              />
-            )}
-          </Animated.View>
-        );
-
-      default:
-        return (
-          <Animated.View key="income" entering={FadeIn.duration(180)} style={st.room}>
-            {hasIncome ? (
-              <>
-                <NextSalaryWidget />
-                <IncomeHealthWidget />
-                <IncomeInsightsWidget />
-              </>
-            ) : (
-              <EmptyRoom
-                st={st}
-                icon={<Wallet size={22} color={colors.textSecondary} strokeWidth={2} />}
-                title="No income recorded"
-                body="Add your income and CoinKeeper works out your monthly plan, predicts your next payday, and scores how steady your earnings are."
-                ctaLabel="Add income"
-                onPress={() => setIncomeFlowVisible(true)}
-              />
-            )}
-          </Animated.View>
-        );
-    }
-  };
+  const goals = rankedGoals.map(({ goal }) => ({
+    id: goal.id,
+    name: goal.name,
+    targetAmount: goal.targetAmount,
+    currentAmount: goal.currentAmount,
+  }));
 
   return (
     <View style={st.root}>
@@ -284,9 +197,17 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
       >
-        {/* Greeting + quick actions */}
+        {/* Greeting + streak + quick actions */}
         <Animated.View entering={FadeInDown.springify()} style={st.topRow}>
-          <Text style={st.greeting}>{greeting()}</Text>
+          <View style={st.greetCol}>
+            <Text style={st.greeting}>{greeting()}</Text>
+            {streakDays > 0 && (
+              <View style={st.streak}>
+                <Flame size={13} color={colors.peachDeep} strokeWidth={2.5} />
+                <Text style={st.streakText}>{streakLabel(streakDays)}</Text>
+              </View>
+            )}
+          </View>
           <View style={st.actions}>
             <PressableScale
               onPress={() => setIncomeFlowVisible(true)}
@@ -309,20 +230,65 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
           </View>
         </Animated.View>
 
-        <PulseHeader
-          safeToSpendToday={snapshot?.safeToSpendToday ?? 0}
-          monthlyRemaining={snapshot?.monthlyRemaining ?? 0}
-          safeToSpend={snapshot?.safeToSpend ?? 0}
-          streakDays={streakDays}
-        />
+        <View style={st.stack}>
+          {/* Hero — carries the PaceRing and the month's spending story */}
+          <MoneyMap
+            transactions={transactions}
+            monthPlan={monthPlan}
+            onOpenReports={navigateToReports}
+          />
 
-        <View style={st.switcher}>
-          <RoomSwitcher rooms={ROOMS} activeIndex={room} onChange={goToRoom} />
+          {goals.length > 0 ? (
+            <GoalsStrip
+              goals={goals}
+              onPress={() => navigation.navigate('Goals')}
+            />
+          ) : (
+            <View style={st.empty}>
+              <View style={st.emptyIcon}>
+                <Target
+                  size={22}
+                  color={colors.textSecondary}
+                  strokeWidth={2}
+                />
+              </View>
+              <Text style={st.emptyTitle}>No goals yet</Text>
+              <Text style={st.emptyBody}>
+                Set a savings goal and CoinKeeper will track your progress and
+                flag what's drifting.
+              </Text>
+              <PressableScale
+                onPress={() => navigation.navigate('Goals')}
+                style={st.emptyCta}
+                accessibilityRole="button"
+                accessibilityLabel="Set a goal"
+              >
+                <Text style={st.emptyCtaText}>Set a goal</Text>
+              </PressableScale>
+            </View>
+          )}
+
+          {insights.map((insight, index) => (
+            <SmartInsightCard
+              key={insight.id}
+              insight={insight}
+              delay={index * 20}
+            />
+          ))}
+
+          <IncomeSummaryRow
+            hasIncome={hasIncome}
+            onOpenDetail={() => navigation.navigate('IncomeDetail')}
+            onAddIncome={() => setIncomeFlowVisible(true)}
+          />
+
+          {DashboardChitsSection ? (
+            <DashboardChitsSection
+              navigation={navigation}
+              refreshToken={refreshToken}
+            />
+          ) : null}
         </View>
-
-        <GestureDetector gesture={swipe}>
-          <View>{renderRoom()}</View>
-        </GestureDetector>
       </Animated.ScrollView>
 
       <IncomeTransactionFlow
@@ -333,29 +299,6 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
     </View>
   );
 };
-
-const EmptyRoom: React.FC<{
-  st: any;
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-  ctaLabel: string;
-  onPress: () => void;
-}> = ({ st, icon, title, body, ctaLabel, onPress }) => (
-  <View style={st.empty}>
-    <View style={st.emptyIcon}>{icon}</View>
-    <Text style={st.emptyTitle}>{title}</Text>
-    <Text style={st.emptyBody}>{body}</Text>
-    <PressableScale
-      onPress={onPress}
-      style={st.emptyCta}
-      accessibilityRole="button"
-      accessibilityLabel={ctaLabel}
-    >
-      <Text style={st.emptyCtaText}>{ctaLabel}</Text>
-    </PressableScale>
-  </View>
-);
 
 const makeStyles = (
   colors: any,
@@ -369,14 +312,30 @@ const makeStyles = (
     content: { paddingHorizontal: 24 },
     topRow: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       justifyContent: 'space-between',
-      marginBottom: 16,
+      marginBottom: 24,
     },
+    greetCol: { flex: 1, gap: 6 },
     greeting: {
       fontSize: 15,
       fontFamily: 'Satoshi-Bold',
       color: colors.textPrimary,
+    },
+    streak: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      alignSelf: 'flex-start',
+      backgroundColor: colors.peach,
+      borderRadius: chipRadius,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    streakText: {
+      fontSize: 12,
+      fontFamily: 'Satoshi-Bold',
+      color: colors.peachDeep,
     },
     actions: { flexDirection: 'row', gap: 8 },
     actionPill: {
@@ -393,8 +352,7 @@ const makeStyles = (
       fontFamily: 'Satoshi-Bold',
       color: colors.textPrimary,
     },
-    switcher: { marginBottom: 24 },
-    room: { gap: 16 },
+    stack: { gap: 16, paddingBottom: 24 },
 
     empty: {
       backgroundColor: colors.card,
