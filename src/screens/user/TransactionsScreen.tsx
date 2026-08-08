@@ -28,19 +28,12 @@ import {
   ArrowLeft,
   ArrowUpRight,
   ArrowDownRight,
-  Utensils,
-  Car,
-  ShoppingBag,
-  Receipt,
-  Film,
-  HeartPulse,
-  Wallet,
-  MoreHorizontal,
   Search,
   Trash2,
   Tag,
   MessageSquare,
   X,
+  SlidersHorizontal,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
@@ -52,6 +45,11 @@ import { CountUp, PressableScale } from '../../components/anim';
 import { PiggyBankIllustration } from '../../components/illustrations';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { groupTransactionsByDate, GroupedRow } from '../../utils/groupTransactionsByDate';
+import { resolveCategoryIcon } from '../../utils/categoryIcon';
+import { isWithinPeriod, PeriodFilter } from '../../utils/transactionPeriod';
+import { TransactionFiltersSheet } from '../../components/transaction/TransactionFiltersSheet';
+import { TransactionDetailSheet } from '../../components/transaction/TransactionDetailSheet';
+import { AmountDateFilter, matchesAmountDateFilter, isFilterActive } from '../../utils/transactionFilters';
 
 type Props = NativeStackScreenProps<any, 'Transactions'>;
 
@@ -61,17 +59,6 @@ const TAB_LABELS = {
   all: 'All',
   income: 'Income',
   expense: 'Expense',
-};
-
-const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
-  food: Utensils,
-  transport: Car,
-  shopping: ShoppingBag,
-  bills: Receipt,
-  entertainment: Film,
-  health: HeartPulse,
-  salary: Wallet,
-  other: MoreHorizontal,
 };
 
 export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
@@ -89,10 +76,14 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     },
     [scrollY],
   );
-  const { transactions, deleteTransaction } = useTransactions();
+  const { transactions, deleteTransaction, updateTransaction } = useTransactions();
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [period, setPeriod] = useState<PeriodFilter>('month');
   const [segmentWidth, setSegmentWidth] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [amountDateFilter, setAmountDateFilter] = useState<AmountDateFilter>({});
+  const [showFilters, setShowFilters] = useState(false);
+  const [detailTx, setDetailTx] = useState<Transaction | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
   // Rows removed from view optimistically — via swipe (pendingDelete tracks
   // which one for the undo banner) or multi-select (no undo, committed
@@ -133,32 +124,50 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     [transactions, activeTab],
   );
 
+  const inPeriod = useMemo(
+    () => filteredTx.filter(t => isWithinPeriod(t.date, period)),
+    [filteredTx, period],
+  );
+
+  // Summary cards and tab badge counts answer "what happened this period" and should
+  // stay stable across the type tabs — only `inPeriod` (used for the visible list) is
+  // scoped to `activeTab`.
+  const inPeriodAllTabs = useMemo(
+    () => transactions.filter(t => isWithinPeriod(t.date, period)),
+    [transactions, period],
+  );
+
   const searched = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return filteredTx;
-    return filteredTx.filter(
+    if (!q) return inPeriod;
+    return inPeriod.filter(
       t => (t.description ?? '').toLowerCase().includes(q) || t.category.toLowerCase().includes(q),
     );
-  }, [filteredTx, searchQuery]);
+  }, [inPeriod, searchQuery]);
+
+  const filtered = useMemo(
+    () => searched.filter(t => matchesAmountDateFilter(t, amountDateFilter)),
+    [searched, amountDateFilter],
+  );
 
   const grouped = useMemo(
-    () => groupTransactionsByDate(searched.filter(t => !hiddenIds.has(t.id))),
-    [searched, hiddenIds],
+    () => groupTransactionsByDate(filtered.filter(t => !hiddenIds.has(t.id))),
+    [filtered, hiddenIds],
   );
 
   const totalIncome = useMemo(
-    () => transactions.filter(t => t.type === 'income').reduce((s, t) => s + (t.amountPaise || 0), 0),
-    [transactions],
+    () => inPeriodAllTabs.filter(t => t.type === 'income').reduce((s, t) => s + (t.amountPaise || 0), 0),
+    [inPeriodAllTabs],
   );
   const totalExpense = useMemo(
-    () => transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amountPaise || 0), 0),
-    [transactions],
+    () => inPeriodAllTabs.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amountPaise || 0), 0),
+    [inPeriodAllTabs],
   );
-  
-  const incomeCount = transactions.filter(t => t.type === 'income').length;
-  const expenseCount = transactions.filter(t => t.type === 'expense').length;
-  const transferCount = transactions.filter(t => t.type === 'transfer_to_goal').length;
-  const allCount = transactions.filter(t => t.type !== 'transfer_to_goal').length;
+
+  const incomeCount = inPeriodAllTabs.filter(t => t.type === 'income').length;
+  const expenseCount = inPeriodAllTabs.filter(t => t.type === 'expense').length;
+  const transferCount = inPeriodAllTabs.filter(t => t.type === 'transfer_to_goal').length;
+  const allCount = inPeriodAllTabs.filter(t => t.type !== 'transfer_to_goal').length;
 
   const tabCounts = {
     all: allCount,
@@ -235,6 +244,16 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     await Promise.all(ids.map(id => deleteTransaction(id)));
   };
 
+  const handleSaveDetail = async (id: string, updates: Partial<Transaction>) => {
+    await updateTransaction(id, updates);
+    setDetailTx(null);
+  };
+
+  const handleDeleteDetail = async (id: string) => {
+    await deleteTransaction(id);
+    setDetailTx(null);
+  };
+
   const handleTabPress = (tab: FilterTab, index: number) => {
     ReactNativeHapticFeedback.trigger('impactLight');
     setActiveTab(tab);
@@ -255,7 +274,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   const formatAmount = (amount: number) => Money.format(amount, { zeroDecimals: true });
 
   const renderRow = (item: Transaction, index: number) => {
-    const Icon = CATEGORY_ICONS[item.categoryIcon] || MoreHorizontal;
+    const Icon = resolveCategoryIcon(item.categoryId, item.categoryIcon);
     const isIncome = item.type === 'income';
     const isSelected = selectedIds.has(item.id);
 
@@ -275,13 +294,16 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
           <PressableScale
             testID={`row-${item.id}`}
             onLongPress={() => enterSelection(item.id)}
-            onPress={() => (selectedIds.size > 0 ? toggleSelected(item.id) : undefined)}
+            onPress={() => (selectedIds.size > 0 ? toggleSelected(item.id) : setDetailTx(item))}
             style={[styles.row, isSelected && { backgroundColor: colors.chipBg }]}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel={`${item.description || item.category}. ${item.category}. ${isIncome ? 'Income' : 'Expense'} of ${formatAmount(item.amountPaise)} rupees`}
           >
-            <View style={[styles.rowIcon, { backgroundColor: colors.chipBg }, iconShadow]}>
+            <View
+              testID={`row-icon-${item.id}`}
+              style={[styles.rowIcon, { backgroundColor: item.categoryColor || colors.chipBg }, iconShadow]}
+            >
               <Icon size={20} color={colors.textPrimary} strokeWidth={2} />
             </View>
             <View style={styles.rowInfo}>
@@ -369,15 +391,30 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
               <ArrowUpRight size={18} color={colors.success} strokeWidth={2.2} />
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Income</Text>
             </View>
-            <CountUp value={totalIncome} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
+            <CountUp testID="summary-income" value={totalIncome} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
           </View>
           <View style={[styles.summaryCard, { backgroundColor: colors.expenseTint, borderRadius: cardRadius }]}>
             <View style={styles.summaryIconRow}>
               <ArrowDownRight size={18} color={colors.danger} strokeWidth={2.2} />
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Expenses</Text>
             </View>
-            <CountUp value={totalExpense} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
+            <CountUp testID="summary-expense" value={totalExpense} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
           </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.periodRow}>
+          {(['week', 'month', 'all'] as PeriodFilter[]).map(p => (
+            <Pressable
+              key={p}
+              testID={`period-${p}`}
+              onPress={() => setPeriod(p)}
+              style={[styles.periodPill, period === p && { backgroundColor: colors.chipBg }]}
+            >
+              <Text style={[styles.periodText, { color: period === p ? colors.textPrimary : colors.textSecondary }]}>
+                {p === 'week' ? 'This Week' : p === 'month' ? 'This Month' : 'All Time'}
+              </Text>
+            </Pressable>
+          ))}
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.segmentWrapper}>
@@ -433,6 +470,13 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
               <X size={16} color={colors.textSecondary} />
             </Pressable>
           )}
+          <Pressable testID="open-filters" onPress={() => setShowFilters(true)} style={styles.filterIconBtn}>
+            <SlidersHorizontal
+              size={18}
+              color={isFilterActive(amountDateFilter) ? colors.primaryAccent : colors.textSecondary}
+              strokeWidth={2}
+            />
+          </Pressable>
         </Animated.View>
       </View>
 
@@ -469,6 +513,21 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
           }
         />
       </View>
+
+      <TransactionFiltersSheet
+        visible={showFilters}
+        initialFilter={amountDateFilter}
+        onApply={setAmountDateFilter}
+        onClose={() => setShowFilters(false)}
+      />
+
+      <TransactionDetailSheet
+        visible={!!detailTx}
+        transaction={detailTx}
+        onClose={() => setDetailTx(null)}
+        onSave={handleSaveDetail}
+        onDelete={handleDeleteDetail}
+      />
 
       {pendingDelete && (
         <Animated.View
@@ -546,6 +605,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Black',
   },
 
+  periodRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  periodPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
+  periodText: { fontSize: 12, fontFamily: 'Satoshi-Bold' },
+
   segmentWrapper: {
     marginBottom: 16,
   },
@@ -587,6 +650,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Medium',
     padding: 0,
   },
+  filterIconBtn: { paddingLeft: 8 },
 
   selectionDeleteButton: {
     marginLeft: 'auto',

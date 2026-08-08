@@ -9,12 +9,13 @@ import { PressableScale } from '../anim';
 
 interface Props {
   item: TransactionDraft;
+  categoryName?: string;
   onApprove: () => void;
   onReject: () => void;
   onChangeCategory: () => void;
 }
 
-export const SmsInboxRow: React.FC<Props> = ({ item, onApprove, onReject, onChangeCategory }) => {
+export const SmsInboxRow: React.FC<Props> = ({ item, categoryName, onApprove, onReject, onChangeCategory }) => {
   const { colors, cardRadius } = useSpecTheme();
 
   const renderRightActions = () => {
@@ -49,9 +50,13 @@ export const SmsInboxRow: React.FC<Props> = ({ item, onApprove, onReject, onChan
           </View>
 
           <View style={styles.footer}>
-            <PressableScale onPress={onChangeCategory} style={[styles.categoryBtn, { backgroundColor: colors.chipBg }]}>
+            <PressableScale
+              onPress={onChangeCategory}
+              testID={`category-btn-${item.id}`}
+              style={[styles.categoryBtn, { backgroundColor: colors.chipBg }]}
+            >
               <Tag size={14} color={colors.textSecondary} />
-              <Text style={[styles.categoryText, { color: colors.textSecondary }]}>{item.category_id || 'Uncategorized'}</Text>
+              <Text style={[styles.categoryText, { color: colors.textSecondary }]}>{categoryName || item.category_id || 'Uncategorized'}</Text>
             </PressableScale>
             
             {confidenceLevel === 'high' && (
