@@ -1,5 +1,11 @@
-import notifee, { AlarmType, AndroidImportance, TriggerType, TimestampTrigger } from '@notifee/react-native';
-import { Bill } from '../store/billStore';
+import notifee, {
+  AlarmType,
+  AndroidImportance,
+  TriggerType,
+  TimestampTrigger,
+} from '@notifee/react-native';
+import { Bill, useBillStore } from '../store/billStore';
+import { getPreference } from '../store/database';
 
 export const CHANNELS = {
   BILLS: 'bills_reminders',
@@ -29,6 +35,13 @@ export const initializeNotifications = async () => {
   });
 };
 
+// Master notifications gate — the Settings screen toggle is the only writer
+// of the 'notifications' preference; everything that schedules reads it here.
+export const areNotificationsEnabled = async (): Promise<boolean> => {
+  const value = await getPreference('notifications');
+  return value !== 'off';
+};
+
 export const cancelBillReminder = async (notificationId: string) => {
   const ids = notificationId.split(',');
   for (const id of ids) {
@@ -36,8 +49,13 @@ export const cancelBillReminder = async (notificationId: string) => {
   }
 };
 
-export const scheduleBillReminder = async (bill: Bill): Promise<string | null> => {
+export const scheduleBillReminder = async (
+  bill: Bill,
+): Promise<string | null> => {
   try {
+    if (!(await areNotificationsEnabled())) {
+      return null;
+    }
     const now = new Date();
     // Schedule for 3 days before the due day at 10 AM.
     // If due day is e.g. 15th, alarm is on 12th.
@@ -45,14 +63,18 @@ export const scheduleBillReminder = async (bill: Bill): Promise<string | null> =
     let targetMonth = now.getMonth();
     let targetYear = now.getFullYear();
     let targetDay = bill.dueDay - 3;
-    
+
     if (targetDay <= 0) {
       targetMonth -= 1;
       if (targetMonth < 0) {
         targetMonth = 11;
         targetYear -= 1;
       }
-      const daysInPrevMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+      const daysInPrevMonth = new Date(
+        targetYear,
+        targetMonth + 1,
+        0,
+      ).getDate();
       targetDay = daysInPrevMonth + targetDay;
     }
 
@@ -72,7 +94,11 @@ export const scheduleBillReminder = async (bill: Bill): Promise<string | null> =
           targetMonth = 11;
           targetYear -= 1;
         }
-        const daysInPrevMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+        const daysInPrevMonth = new Date(
+          targetYear,
+          targetMonth + 1,
+          0,
+        ).getDate();
         targetDay = daysInPrevMonth + targetDay;
       }
       triggerDate.setFullYear(targetYear);
@@ -97,7 +123,7 @@ export const scheduleBillReminder = async (bill: Bill): Promise<string | null> =
           channelId: CHANNELS.BILLS,
         },
       },
-      trigger
+      trigger,
     );
 
     // Schedule day-of reminder
@@ -105,15 +131,15 @@ export const scheduleBillReminder = async (bill: Bill): Promise<string | null> =
     let dayOfMonth = now.getMonth();
     let yearOf = now.getFullYear();
     let dayOfDate = bill.dueDay;
-    
+
     // Check if the due day exists in the current month (e.g. Feb 30 -> Feb 28)
     let daysInMonth = new Date(yearOf, dayOfMonth + 1, 0).getDate();
     if (dayOfDate > daysInMonth) {
       dayOfDate = daysInMonth;
     }
-    
+
     let dayOfTriggerDate = new Date(yearOf, dayOfMonth, dayOfDate, 9, 0, 0); // 9 AM
-    
+
     // If the due day this month has already passed, schedule for next month
     if (dayOfTriggerDate.getTime() < now.getTime()) {
       dayOfMonth += 1;
@@ -128,7 +154,7 @@ export const scheduleBillReminder = async (bill: Bill): Promise<string | null> =
       }
       dayOfTriggerDate = new Date(yearOf, dayOfMonth, dayOfDate, 9, 0, 0);
     }
-    
+
     // Only schedule if it's in the future
     let dayOfNotificationId = '';
     if (dayOfTriggerDate.getTime() > now.getTime()) {
@@ -149,13 +175,59 @@ export const scheduleBillReminder = async (bill: Bill): Promise<string | null> =
             channelId: CHANNELS.BILLS,
           },
         },
-        dayOfTrigger
+        dayOfTrigger,
       );
     }
 
-    return dayOfNotificationId ? `${notificationId},${dayOfNotificationId}` : notificationId;
+    return dayOfNotificationId
+      ? `${notificationId},${dayOfNotificationId}`
+      : notificationId;
   } catch (error) {
-    console.error('[notificationService] Failed to schedule bill reminder', error);
+    console.error(
+      '[notificationService] Failed to schedule bill reminder',
+      error,
+    );
     return null;
+  }
+};
+
+// Turning the master toggle off cancels everything scheduled.
+export const cancelAllReminders = async (): Promise<void> => {
+  try {
+    await notifee.cancelAllNotifications();
+  } catch (error) {
+    console.error(
+      '[notificationService] Failed to cancel all reminders',
+      error,
+    );
+  }
+};
+
+// Turning the master toggle on re-schedules reminders for active bills
+// (skipping ones already paid this month).
+export const rescheduleBillReminders = async (): Promise<void> => {
+  try {
+    const { bills } = useBillStore.getState();
+    const now = new Date();
+    for (const bill of bills) {
+      if (bill.lastPaidAt) {
+        const paid = new Date(bill.lastPaidAt);
+        if (
+          paid.getMonth() === now.getMonth() &&
+          paid.getFullYear() === now.getFullYear()
+        ) {
+          continue;
+        }
+      }
+      const id = await scheduleBillReminder(bill);
+      if (id) {
+        await useBillStore.getState().updateNotificationId(bill.id, id);
+      }
+    }
+  } catch (error) {
+    console.error(
+      '[notificationService] Failed to reschedule bill reminders',
+      error,
+    );
   }
 };

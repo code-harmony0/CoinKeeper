@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring, FadeIn } from 'react-native-reanimated';
-import { CheckCircle2 } from 'lucide-react-native';
+import { CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { Text } from '../ui/Text';
 import { PressableScale } from '../anim/PressableScale';
-import { computePresetOutcome } from '../../services/moneyPlanIntelligence';
+import { computePresetOutcome, NEEDS_RANGE } from '../../services/moneyPlanIntelligence';
 import { useSpecTheme } from '../../theme/specTheme';
 import { Money } from '../../utils/money';
 
@@ -99,6 +99,10 @@ export const LifestyleProfileCard: React.FC<Props> = ({
     <Animated.View style={animStyle}>
       <PressableScale
         onPress={() => onSelect(preset.n, preset.w, preset.s)}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel={`${preset.name} plan. ${badge ? badge.label : ''}. ${preset.outcomeStory}.`}
+        accessibilityState={{ selected: isSelected }}
         style={[
           styles.card,
           {
@@ -189,21 +193,33 @@ export const LifestyleProfileCard: React.FC<Props> = ({
             </Text>
           </View>
           <View style={styles.checkItem}>
-            <CheckCircle2 size={12} color={iconFgColor} />
-            <Text style={[styles.checkText, { color: colors.textPrimary }]} numberOfLines={1}>
-              Cash Flow Stable
+            {outcome.cashFlowStable ? (
+              <CheckCircle2 size={12} color={iconFgColor} />
+            ) : (
+              <AlertCircle size={12} color={colors.textSecondary} />
+            )}
+            <Text style={[styles.checkText, { color: outcome.cashFlowStable ? colors.textPrimary : colors.textSecondary }]} numberOfLines={1}>
+              {outcome.cashFlowStable ? 'Cash Flow Stable' : 'Allocation Unbalanced'}
             </Text>
           </View>
           <View style={styles.checkItem}>
-            <CheckCircle2 size={12} color={iconFgColor} />
-            <Text style={[styles.checkText, { color: colors.textPrimary }]} numberOfLines={1}>
-              Bills Covered
+            {outcome.billsCovered ? (
+              <CheckCircle2 size={12} color={iconFgColor} />
+            ) : (
+              <AlertCircle size={12} color={colors.textSecondary} />
+            )}
+            <Text style={[styles.checkText, { color: outcome.billsCovered ? colors.textPrimary : colors.textSecondary }]} numberOfLines={1}>
+              {outcome.billsCovered ? 'Bills Covered' : `Needs Over ${NEEDS_RANGE[1]}%`}
             </Text>
           </View>
           <View style={styles.checkItem}>
-            <CheckCircle2 size={12} color={iconFgColor} />
-            <Text style={[styles.checkText, { color: colors.textPrimary }]} numberOfLines={1}>
-              Financial Stress Low
+            {outcome.financialStressLow ? (
+              <CheckCircle2 size={12} color={iconFgColor} />
+            ) : (
+              <AlertCircle size={12} color={colors.textSecondary} />
+            )}
+            <Text style={[styles.checkText, { color: outcome.financialStressLow ? colors.textPrimary : colors.textSecondary }]} numberOfLines={1}>
+              {outcome.financialStressLow ? 'Financial Stress Low' : 'Financial Stress Elevated'}
             </Text>
           </View>
         </View>

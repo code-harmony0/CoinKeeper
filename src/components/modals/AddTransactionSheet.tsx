@@ -244,9 +244,19 @@ export const AddTransactionSheet: React.FC<Props> = ({
             setDraft({ ...scannedDraft, source: 'scan' });
             if (scannedDraft.amount_paise) setAmountInput((scannedDraft.amount_paise / 100).toString());
             if (scannedDraft.merchant_name) setMerchantInput(scannedDraft.merchant_name);
+
+            const pred = await TransactionPredictionService.predict(scannedDraft);
+            setPrediction(pred);
+
+            if (!scannedDraft.merchant_name || !scannedDraft.amount_paise) {
+              Alert.alert(
+                'Partial Scan',
+                "Couldn't read every field on this receipt — check the amount and merchant before saving."
+              );
+            }
           } catch (e) {
             console.error(e);
-            Alert.alert('Scan Failed', 'Could not process the receipt.');
+            Alert.alert('Scan Failed', "Couldn't read this receipt. Try a clearer, well-lit photo, or enter it manually.");
             setActiveMode('manual');
           } finally {
             setIsScanningReceipt(false);
@@ -503,10 +513,10 @@ export const AddTransactionSheet: React.FC<Props> = ({
                 <TransactionPreviewCard draft={draft} mode="scan" />
                 <PredictionBanner
                   variant="inbox"
-                  category={draft.category_id}
-                  confidence={draft.confidence}
-                  isDuplicate={draft.is_duplicate}
-                  isRecurring={draft.is_recurring_candidate}
+                  category={prediction?.categoryId || draft.category_id}
+                  confidence={prediction?.confidence}
+                  isDuplicate={prediction?.isDuplicate}
+                  isRecurring={prediction?.isRecurring}
                 />
               </>
             )}

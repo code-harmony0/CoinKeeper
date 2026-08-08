@@ -23,7 +23,8 @@ import type { Transaction } from '../../types/transaction';
 import { PressableScale, CountUp, BlueRefreshControl } from '../../components/anim';
 import { ChartIllustration } from '../../components/illustrations';
 import { PastelCard } from '../../components/premium';
-import { generateInsights, getBudgetStreak, getPrimaryGoal, type Insight, type Goal } from '../../services/insightsEngine';
+import { generateInsights, getBudgetStreak, type Insight } from '../../services/insightsEngine';
+import { useGoalIntelligence } from '../../hooks/useGoalIntelligence';
 import { SmartInsightCard } from '../../components/insights/SmartInsightCard';
 import { StreakBanner } from '../../components/insights/StreakBanner';
 import { GoalTrackerCard } from '../../components/insights/GoalTrackerCard';
@@ -81,8 +82,13 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [refreshToken, setRefreshToken] = useState(0);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [streakDays, setStreakDays] = useState(0);
-  const [goal, setGoal] = useState<Goal | null>(null);
   const [isIncomeFlowVisible, setIncomeFlowVisible] = useState(false);
+
+  // Same ranking (rankGoalPriority) and the same goalStore-backed goal list
+  // that GoalsScreen's Focus card uses — one source of truth for "which goal
+  // is #1", so Dashboard and Goals can never disagree about it.
+  const { rankedGoals } = useGoalIntelligence();
+  const goal = rankedGoals[0]?.goal ?? null;
 
   const handleIncomeSubmit = async (draft: TransactionDraft, distribution: IncomeDistribution[]) => {
     try {
@@ -102,14 +108,12 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const loadInsights = useCallback(async () => {
-    const [insightData, streak, primaryGoal] = await Promise.all([
+    const [insightData, streak] = await Promise.all([
       generateInsights(),
       getBudgetStreak(),
-      getPrimaryGoal(),
     ]);
     setInsights(insightData);
     setStreakDays(streak);
-    setGoal(primaryGoal);
   }, []);
 
   const onRefresh = useCallback(async () => {

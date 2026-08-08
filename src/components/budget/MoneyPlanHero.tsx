@@ -72,7 +72,7 @@ export const MoneyPlanHero: React.FC<Props> = ({
   );
 
   // ── Card width measure for arc centering ─────────────────────────────────
-  const [cardWidth, setCardWidth] = React.useState(0);
+  // Removed unneeded onLayout to prevent initial mount jank
 
   return (
     <Animated.View
@@ -82,12 +82,16 @@ export const MoneyPlanHero: React.FC<Props> = ({
         { backgroundColor: colors.card, borderRadius: cardRadius },
         cardShadow,
       ]}
-      onLayout={(e) => setCardWidth(e.nativeEvent.layout.width)}
     >
       {hasIncome ? (
         <View style={styles.contentRow}>
           {/* ── Left: number block ── */}
-          <View style={styles.leftBlock}>
+          <View
+            style={styles.leftBlock}
+            accessible={true}
+            accessibilityRole="text"
+            accessibilityLabel={`Today's plan limit is ${previewOutcome.safeToSpendToday} rupees`}
+          >
             <Text
               variant="caption"
               style={[styles.overline, { color: colors.textSecondary }]}
@@ -96,7 +100,7 @@ export const MoneyPlanHero: React.FC<Props> = ({
             </Text>
             <CountUp value={previewOutcome.safeToSpendToday} prefix="₹" isPaise style={[styles.bigNumber, { color: colors.textPrimary }]} />
             
-            <View style={styles.metricsGrid}>
+            <View style={styles.metricsGrid} accessible={true}>
               <View style={styles.metricItem}>
                 <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Monthly Remaining</Text>
                 <CountUp value={previewOutcome.monthlyRemaining} prefix="₹" isPaise style={[styles.metricValue, { color: colors.skyDeep }]} />

@@ -1,21 +1,29 @@
+import TextRecognition from '@react-native-ml-kit/text-recognition';
 import { IReceiptExtractionProvider, ReceiptExtractionResult } from '../IReceiptExtractionProvider';
+import { parseReceiptText } from '../receiptTextParser';
 
+// Real on-device OCR via Google ML Kit's Text Recognition — no network call,
+// no API key, works offline. Structured fields (merchant/amount/date) are then
+// heuristically extracted from the recognized text in receiptTextParser.ts.
 export class MLKitProvider implements IReceiptExtractionProvider {
   readonly name = 'MLKit';
 
   async processImage(imageUri: string): Promise<ReceiptExtractionResult> {
-    // In a real environment, this invokes the on-device ML Kit OCR module.
-    // It is fast and offline but less structured than Vision AI, often requiring 
-    // regex processing after text extraction to find Amount and Merchant.
-    
-    await new Promise(resolve => setTimeout(resolve, 800)); // Simulate offline processing
+    const result = await TextRecognition.recognize(imageUri);
+
+    if (!result.text || result.text.trim().length === 0) {
+      throw new Error('No text detected on the receipt.');
+    }
+
+    const parsed = parseReceiptText(result.text);
 
     return {
-      merchant_name: 'D-Mart Store',
-      amount_paise: 125000, // 1250
-      confidence: 70, // Lower confidence due to lack of AI semantic understanding
-      date: new Date().toISOString()
-      // Notice subtotal, tax, line items might be missing in basic OCR
+      merchant_name: parsed.merchant_name,
+      amount_paise: parsed.amount_paise,
+      currency: 'INR',
+      date: parsed.date,
+      confidence: parsed.confidence,
+      raw_text: result.text,
     };
   }
 }

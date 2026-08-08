@@ -4,7 +4,7 @@ import { detectSubscriptions } from './subscriptionDetector';
 import { FinancialIntelligenceEngine } from './FinancialIntelligenceEngine';
 import { computeGoalHealth, rankGoalPriority } from './goalIntelligence';
 import { FinancialLedgerService } from './FinancialLedgerService';
-import type { Goal } from '../store/goalStore';
+import { useGoalStore, type Goal } from '../store/goalStore';
 
 export interface Insight {
   id: string;
@@ -77,25 +77,23 @@ export const getBudgetStreak = async (): Promise<number> => {
   }
 };
 
-/** Fetch the user's primary savings goal, if one has been created */
+/**
+ * Fetch the user's primary savings goal, if one has been created.
+ *
+ * Reads from useGoalStore (the same store useGoalIntelligence/GoalsScreen
+ * read) rather than re-querying the goals table directly — two independent
+ * reads of "the goals" used to be able to disagree on which one ranks #1
+ * whenever the store's cache and a fresh DB read fell out of sync. One
+ * source of list, one ranking function (rankGoalPriority) — no drift.
+ */
 export const getPrimaryGoal = async (): Promise<Goal | null> => {
-  const db = getDb();
-
   try {
-    const result = await db.execute(
-      'SELECT id, name, targetAmount, currentAmount, deadline, is_emergency_fund FROM goals;',
-    );
-    const rows = (result.rows || []) as any[];
-    if (rows.length === 0) return null;
-
-    const goals: Goal[] = rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      targetAmount: row.targetAmount,
-      currentAmount: row.currentAmount,
-      deadline: row.deadline || undefined,
-      isEmergencyFund: row.is_emergency_fund === 1,
-    }));
+    let goals = useGoalStore.getState().goals;
+    if (goals.length === 0) {
+      await useGoalStore.getState().loadGoals();
+      goals = useGoalStore.getState().goals;
+    }
+    if (goals.length === 0) return null;
 
     const now = Date.now();
     const entries = await Promise.all(

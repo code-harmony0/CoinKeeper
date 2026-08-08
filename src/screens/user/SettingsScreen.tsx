@@ -2,17 +2,19 @@
  * SettingsScreen - Spec Theme
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Text, Switch, Alert } from 'react-native';
-import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
+import { View, StyleSheet, Text, Switch, Alert, Image } from 'react-native';
+import Animated, {
+  FadeInDown,
+  ReduceMotion,
+  useAnimatedScrollHandler,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   User,
   Bell,
-  Shield,
-  CreditCard,
-  HelpCircle,
   ChevronRight,
   Moon,
   PieChart,
@@ -23,6 +25,10 @@ import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSpecTheme } from '../../theme/specTheme';
 import { useOptionalAuth } from '../../hooks/useOptionalAuth';
 import { getPreference, setPreference } from '../../store/database';
+import {
+  cancelAllReminders,
+  rescheduleBillReminders,
+} from '../../services/notificationService';
 import { PressableScale } from '../../components/anim';
 import {
   SettingsCard,
@@ -31,7 +37,11 @@ import {
   SettingsRow,
   LogoutButton,
 } from '../../components/shared/SettingsRow';
-import { SETTINGS_TINTS, ICON_CONTAINER_SIZE, ICON_CONTAINER_RADIUS } from '../../theme/settingsIcons';
+import {
+  SETTINGS_TINTS,
+  ICON_CONTAINER_SIZE,
+  ICON_CONTAINER_RADIUS,
+} from '../../theme/settingsIcons';
 
 type Props = NativeStackScreenProps<any, 'Settings'>;
 
@@ -44,10 +54,12 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       scrollY.value = event.contentOffset.y;
     },
   });
-  const { colors, cardRadius, cardShadow, isDark, toggleTheme } = useSpecTheme();
-  const { userProfile, signOut } = useOptionalAuth();
+  const { colors, cardRadius, cardShadow, isDark, toggleTheme } =
+    useSpecTheme();
+  const { userProfile, signOut, isAvailable } = useOptionalAuth();
   const [notifications, setNotifications] = useState(true);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
   // Hydrate notifications preference from local SQLite
   useEffect(() => {
@@ -60,68 +72,83 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
     loadPref();
   }, []);
 
-  // Hydrate profile name preference from local SQLite
-  useEffect(() => {
-    const loadProfileName = async () => {
-      const value = await getPreference('profile_name');
-      if (value !== null) {
-        setProfileName(value);
-      }
-    };
-    loadProfileName();
-  }, []);
+  // Hydrate profile name + avatar from local SQLite on mount and again every
+  // time the screen regains focus (the user may edit them on the Profile screen).
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        const [savedName, savedAvatar] = await Promise.all([
+          getPreference('profile_name'),
+          getPreference('profile_avatar'),
+        ]);
+        if (!active) return;
+        if (savedName !== null) setProfileName(savedName);
+        if (savedAvatar) setAvatarUri(savedAvatar);
+      })();
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   const handleToggleNotifications = useCallback(async (val: boolean) => {
     ReactNativeHapticFeedback.trigger('impactLight');
     setNotifications(val);
     try {
       await setPreference('notifications', val ? 'on' : 'off');
+      if (val) {
+        await rescheduleBillReminders();
+      } else {
+        await cancelAllReminders();
+      }
     } catch (error) {
-      console.error('[SettingsScreen] Error saving notifications preference:', error);
+      console.error(
+        '[SettingsScreen] Error saving notifications preference:',
+        error,
+      );
     }
   }, []);
 
   const handleLogout = useCallback(() => {
     ReactNativeHapticFeedback.trigger('impactMedium');
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+            // 'Login' is a chit-fund (pro) route only; skip the reset in
+            // builds where it doesn't exist so the action can't dead-end.
+            if (isAvailable) {
               navigation.reset({
                 index: 0,
                 routes: [{ name: 'Login' }],
               });
-            } catch (error) {
-              Alert.alert('Error', 'Failed to logout. Please try again.');
             }
-          },
+          } catch (error) {
+            Alert.alert('Error', 'Failed to logout. Please try again.');
+          }
         },
-      ]
-    );
-  }, [signOut, navigation]);
+      },
+    ]);
+  }, [signOut, navigation, isAvailable]);
 
   const handleDarkModeToggle = useCallback(() => {
     ReactNativeHapticFeedback.trigger('impactLight');
     toggleTheme();
   }, [toggleTheme]);
 
-  const handleInertPress = useCallback(() => {
-    // No-op placeholder for unimplemented rows; SettingsRow provides the tap feedback.
-  }, []);
-
   const profileIconPair = SETTINGS_TINTS.blue[isDark ? 'dark' : 'light'];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+          Settings
+        </Text>
       </View>
 
       <Animated.ScrollView
@@ -134,46 +161,69 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         scrollEventThrottle={16}
       >
         {/* Profile Card */}
-        <Animated.View entering={FadeInDown.springify().delay(50)}>
+        <Animated.View
+          entering={FadeInDown.springify()
+            .delay(50)
+            .reduceMotion(ReduceMotion.System)}
+        >
           <View>
             <PressableScale
               onPress={() => navigation.navigate('Profile')}
+              accessibilityRole="button"
+              accessibilityLabel="Profile"
               style={[
                 styles.profileCard,
                 { backgroundColor: colors.card, borderRadius: cardRadius },
                 cardShadow,
               ]}
             >
-              <View style={[styles.avatarBox, { backgroundColor: profileIconPair.bg }]}>
-                <User size={26} color={profileIconPair.icon} strokeWidth={2.5} />
+              <View
+                style={[
+                  styles.avatarBox,
+                  { backgroundColor: profileIconPair.bg },
+                ]}
+              >
+                {avatarUri ? (
+                  <Image
+                    source={{ uri: avatarUri }}
+                    style={styles.avatarImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <User
+                    size={26}
+                    color={profileIconPair.icon}
+                    strokeWidth={2.5}
+                  />
+                )}
               </View>
               <View style={styles.profileInfo}>
-                <Text style={[styles.profileName, { color: colors.textPrimary }]}>
+                <Text
+                  style={[styles.profileName, { color: colors.textPrimary }]}
+                >
                   {userProfile?.name || profileName || 'User'}
                 </Text>
-                <Text style={[styles.profilePhone, { color: colors.textSecondary }]}>
+                <Text
+                  style={[styles.profilePhone, { color: colors.textSecondary }]}
+                >
                   {userProfile?.phoneNumber || ''}
                 </Text>
               </View>
-              <ChevronRight size={20} color={colors.textSecondary} strokeWidth={2} />
+              <ChevronRight
+                size={20}
+                color={colors.textSecondary}
+                strokeWidth={2}
+              />
             </PressableScale>
           </View>
         </Animated.View>
 
-        {/* ACCOUNT */}
-        <Animated.View entering={FadeInDown.springify().delay(100)}>
-          <SettingsSectionTitle>ACCOUNT</SettingsSectionTitle>
-          <SettingsCard style={styles.groupCard}>
-            <SettingsRow icon={User} tint="blue" label="Profile" onPress={() => navigation.navigate('Profile')} />
-            <SettingsDivider />
-            <SettingsRow icon={CreditCard} tint="green" label="Payment Methods" onPress={handleInertPress} />
-            <SettingsDivider />
-            <SettingsRow icon={Shield} tint="teal" label="Security" onPress={handleInertPress} />
-          </SettingsCard>
-        </Animated.View>
-
         {/* PREFERENCES */}
-        <Animated.View entering={FadeInDown.springify().delay(160)}>
+        <Animated.View
+          entering={FadeInDown.springify()
+            .delay(100)
+            .reduceMotion(ReduceMotion.System)}
+        >
           <SettingsSectionTitle>PREFERENCES</SettingsSectionTitle>
           <SettingsCard style={styles.groupCard}>
             <SettingsRow
@@ -184,6 +234,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
                 <Switch
                   value={isDark}
                   onValueChange={handleDarkModeToggle}
+                  accessibilityLabel="Dark Mode"
                   trackColor={{ false: colors.inputBg, true: colors.success }}
                   thumbColor="#FFFFFF"
                 />
@@ -198,45 +249,42 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
                 <Switch
                   value={notifications}
                   onValueChange={handleToggleNotifications}
+                  accessibilityLabel="Notifications"
                   trackColor={{ false: colors.inputBg, true: colors.success }}
                   thumbColor="#FFFFFF"
                 />
               }
             />
             <SettingsDivider />
-            <SettingsRow 
-              icon={PieChart} 
-              tint="green" 
-              label="Budget Rule" 
-              onPress={() => navigation.navigate('Budget')} 
+            <SettingsRow
+              icon={PieChart}
+              tint="green"
+              label="Budget Rule"
+              onPress={() => navigation.navigate('Budget')}
             />
             <SettingsDivider />
-            <SettingsRow 
-              icon={Receipt} 
-              tint="orange" 
-              label="Upcoming Bills" 
-              onPress={() => navigation.navigate('Bills')} 
+            <SettingsRow
+              icon={Receipt}
+              tint="orange"
+              label="Upcoming Bills"
+              onPress={() => navigation.navigate('Bills')}
             />
             <SettingsDivider />
-            <SettingsRow 
-              icon={Target} 
-              tint="purple" 
-              label="Savings Goals" 
-              onPress={() => navigation.navigate('Goals')} 
+            <SettingsRow
+              icon={Target}
+              tint="purple"
+              label="Savings Goals"
+              onPress={() => navigation.navigate('Goals')}
             />
-          </SettingsCard>
-        </Animated.View>
-
-        {/* SUPPORT */}
-        <Animated.View entering={FadeInDown.springify().delay(220)}>
-          <SettingsSectionTitle>SUPPORT</SettingsSectionTitle>
-          <SettingsCard style={styles.groupCard}>
-            <SettingsRow icon={HelpCircle} tint="purple" label="Help Center" onPress={handleInertPress} />
           </SettingsCard>
         </Animated.View>
 
         {/* Logout */}
-        <Animated.View entering={FadeInDown.springify().delay(280)}>
+        <Animated.View
+          entering={FadeInDown.springify()
+            .delay(280)
+            .reduceMotion(ReduceMotion.System)}
+        >
           <LogoutButton onPress={handleLogout} />
         </Animated.View>
       </Animated.ScrollView>
@@ -274,6 +322,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   profileInfo: {
     flex: 1,

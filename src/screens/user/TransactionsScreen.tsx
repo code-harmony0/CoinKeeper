@@ -40,6 +40,7 @@ import {
   Trash2,
   Tag,
   MessageSquare,
+  X,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
@@ -271,11 +272,14 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             </Pressable>
           )}
         >
-          <Pressable
+          <PressableScale
             testID={`row-${item.id}`}
             onLongPress={() => enterSelection(item.id)}
             onPress={() => (selectedIds.size > 0 ? toggleSelected(item.id) : undefined)}
             style={[styles.row, isSelected && { backgroundColor: colors.chipBg }]}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.description || item.category}. ${item.category}. ${isIncome ? 'Income' : 'Expense'} of ${formatAmount(item.amountPaise)} rupees`}
           >
             <View style={[styles.rowIcon, { backgroundColor: colors.chipBg }, iconShadow]}>
               <Icon size={20} color={colors.textPrimary} strokeWidth={2} />
@@ -294,7 +298,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
                 {isIncome ? '+' : ''}{formatAmount(item.amountPaise)}
               </Text>
             </View>
-          </Pressable>
+          </PressableScale>
         </Swipeable>
       </Animated.View>
     );
@@ -303,7 +307,12 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   const renderItem = ({ item, index }: ListRenderItemInfo<GroupedRow>) => {
     if (item.type === 'header') {
       return (
-        <Text style={[styles.dateHeader, { color: colors.textSecondary }]}>{item.label}</Text>
+        <View style={styles.dateHeaderContainer}>
+          <Text style={[styles.dateHeader, { color: colors.textSecondary, backgroundColor: colors.background }]}>
+            {item.label}
+          </Text>
+          <View style={[styles.dateHeaderLine, { backgroundColor: colors.border || colors.chipBg }]} />
+        </View>
       );
     }
     return renderRow(item.tx, index);
@@ -312,25 +321,25 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.headerSection, { paddingTop: insets.top + 16 }]}>
-        <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.headerRow}>
-          {selectedIds.size > 0 ? (
-            <>
-              <PressableScale
-                onPress={() => setSelectedIds(new Set())}
-                style={[styles.backButton, { backgroundColor: colors.chipBg }]}
-              >
-                <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
-              </PressableScale>
-              <Text style={[styles.title, { color: colors.textPrimary }]}>
-                {selectedIds.size} selected
+        {selectedIds.size > 0 ? (
+          <Animated.View entering={FadeInDown.springify()} style={styles.headerRow}>
+            <PressableScale
+              onPress={() => setSelectedIds(new Set())}
+              style={[styles.backButton, { backgroundColor: colors.chipBg }]}
+            >
+              <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+            </PressableScale>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>
+              {selectedIds.size} selected
+            </Text>
+            <Pressable onPress={deleteSelected} style={styles.selectionDeleteButton}>
+              <Text style={{ color: colors.danger, fontFamily: 'Satoshi-Bold', fontSize: 15 }}>
+                Delete
               </Text>
-              <Pressable onPress={deleteSelected} style={styles.selectionDeleteButton}>
-                <Text style={{ color: colors.danger, fontFamily: 'Satoshi-Bold', fontSize: 15 }}>
-                  Delete
-                </Text>
-              </Pressable>
-            </>
-          ) : (
+            </Pressable>
+          </Animated.View>
+        ) : (
+          <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.headerRow}>
             <AppHeader
               title="Transactions"
               onBack={() => navigation.goBack()}
@@ -351,8 +360,8 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
                 </>
               }
             />
-          )}
-        </Animated.View>
+          </Animated.View>
+        )}
 
         <Animated.View entering={FadeInDown.delay(50).springify()} style={styles.summaryRow}>
           <View style={[styles.summaryCard, { backgroundColor: colors.incomeTint, borderRadius: cardRadius }]}>
@@ -392,6 +401,9 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
                   key={tab}
                   style={styles.segmentItem}
                   onPress={() => handleTabPress(tab, index)}
+                  accessible={true}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isActive }}
                 >
                   <Text
                     style={[
@@ -416,6 +428,11 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={12}>
+              <X size={16} color={colors.textSecondary} />
+            </Pressable>
+          )}
         </Animated.View>
       </View>
 
@@ -429,7 +446,11 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             paddingHorizontal: 24,
             paddingTop: 4,
             paddingBottom: insets.bottom + 144,
+            maxWidth: 600,
+            alignSelf: 'center',
+            width: '100%',
           }}
+          estimatedItemSize={76}
           onScroll={handleScroll}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
@@ -471,6 +492,9 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   headerSection: {
     paddingHorizontal: 24,
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
   },
   headerRow: {
     flexDirection: 'row',
@@ -506,7 +530,7 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   summaryIconRow: {
     flexDirection: 'row',
@@ -575,11 +599,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  dateHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 12,
+  },
   dateHeader: {
     fontSize: 13,
     fontFamily: 'Satoshi-Bold',
-    marginTop: 12,
-    marginBottom: 8,
+    paddingRight: 12,
+    zIndex: 1,
+  },
+  dateHeaderLine: {
+    flex: 1,
+    height: 1,
+    opacity: 0.5,
   },
 
   swipeDelete: {
@@ -606,17 +641,19 @@ const styles = StyleSheet.create({
   rowInfo: { flex: 1, marginRight: 8 },
   rowTitle: {
     fontSize: 15,
-    fontFamily: 'Satoshi-Bold',
+    fontFamily: 'Satoshi-Black',
+    letterSpacing: 0.2,
   },
   rowMeta: {
     fontSize: 12,
-    fontFamily: 'Satoshi-Regular',
+    fontFamily: 'Satoshi-Medium',
     marginTop: 3,
   },
   rowRight: { alignItems: 'flex-end' },
   rowAmount: {
     fontSize: 15,
-    fontFamily: 'Satoshi-Bold',
+    fontFamily: 'Satoshi-Black',
+    fontVariant: ['tabular-nums'],
   },
   rowDate: {
     fontSize: 11,
@@ -662,6 +699,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 18,
     paddingVertical: 14,
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
   },
   undoText: {
     flex: 1,

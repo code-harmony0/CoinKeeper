@@ -15,6 +15,7 @@ Existing codebase: React Native 0.80.2, TypeScript. Android-only build (build-fl
 Primary audience for ongoing design work: the **lite consumer** — an individual tracking their own everyday income, expenses, budgets, and goals. No chit-fund membership, no admin role. Their situation is day-to-day personal money management: logging transactions (manually or via SMS auto-extraction), watching a budget, working toward savings goals.
 
 Two other audiences exist in the same codebase behind a separate build flavor (`CK_CHITFUND`) but are not the primary design focus going forward:
+
 - **Pro chit-fund member** — tracks contributions, draws, and dues for chit-fund groups they belong to, alongside personal expenses.
 - **Chit-fund admin/organizer** — runs groups, approves members, confirms payments, conducts draws.
 
@@ -33,6 +34,8 @@ CoinKeeper is a personal expense tracker (lite) with an optional chit-fund manag
 - SMS auto-extraction of bank messages is a real, working workflow on the lite side (Android SMS read permission), not just manual entry.
 - Chit-fund workflows (draws, member approval, contribution confirmation) are ritual, recurring group processes distinct from personal budgeting.
 - Firebase project `coinkeeper-c53e7` backs auth and Firestore.
+- All money is Indian Rupee (₹) denominated, formatted via `src/utils/money.ts` (INR, `en-IN` locale) — every amount in the app renders as ₹.
+- The Kaza (missed-prayer) tracker ships in both build flavors but is experimental (see Capabilities).
 
 ## Capabilities and Constraints
 
@@ -40,6 +43,7 @@ CoinKeeper is a personal expense tracker (lite) with an optional chit-fund manag
 - Android-only at present; no iOS build is maintained (bundled fonts are Android-asset-only).
 - Lite and pro are compiled as genuinely separate bundles — a lite-focused feature must not assume chit-fund code/data is present.
 - SMS parsing accuracy and permission handling are a known constraint area for the lite onboarding/trust experience.
+- **Experimental — not a confirmed product commitment:** a Kaza (missed-prayer) tracker exists behind `ISLAMIC_ENABLED` (`src/config/buildFlags.ts`, currently `true`, flavor-independent — ships in both builds). It has its own SQLite tables (`kaza_prayers`, `kaza_log`), store (`src/store/kazaStore.ts`), reminder prefs, and an optional pinned tab. Treat it as a live experiment until the user confirms it as a product commitment; do not design other surfaces around it.
 
 ## Brand Commitments
 

@@ -27,6 +27,7 @@ interface Props {
   onApply: () => void;
   colors: any;
   paddingBottom: number;
+  onHeightChange?: (height: number) => void;
 }
 
 const fmt = (v: number) =>
@@ -50,6 +51,7 @@ export const MoneyPlanSaveBar: React.FC<Props> = ({
   onApply,
   colors,
   paddingBottom,
+  onHeightChange,
 }) => {
   const { cardShadow } = useSpecTheme();
   const savingsDelta = monthlySavings - previousMonthlySavings;
@@ -85,6 +87,7 @@ export const MoneyPlanSaveBar: React.FC<Props> = ({
             { paddingBottom, backgroundColor: colors.card },
             cardShadow,
           ]}
+          onLayout={(e) => onHeightChange?.(e.nativeEvent.layout.height)}
         >
 
           {/* Hairline border top */}

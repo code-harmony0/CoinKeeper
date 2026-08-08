@@ -1,17 +1,29 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '../ui/Text';
+import { PressableScale } from '../anim/PressableScale';
 import { useSpecTheme } from '../../theme/specTheme';
 import { RankedGoal, generateRecommendationCopy } from '../../services/goalIntelligence';
 import { Money } from '../../utils/money';
+import { ArrowRight } from 'lucide-react-native';
 
 interface Props {
   rankedGoals: RankedGoal[];
   contributedThisMonthPaise: number;
   contributedLastMonthPaise: number;
+  /** This month's unspent Money Plan savings allocation, in paise. */
+  savingsBudgetRemainingPaise?: number;
+  /** Called when the user routes the surplus into the top-ranked goal. */
+  onRouteSurplus?: () => void;
 }
 
-export const GoalsHeroDashboard: React.FC<Props> = ({ rankedGoals, contributedThisMonthPaise, contributedLastMonthPaise }) => {
+export const GoalsHeroDashboard: React.FC<Props> = ({
+  rankedGoals,
+  contributedThisMonthPaise,
+  contributedLastMonthPaise,
+  savingsBudgetRemainingPaise = 0,
+  onRouteSurplus,
+}) => {
   const { colors } = useSpecTheme();
 
   const totalSaved = rankedGoals.reduce((acc, r) => acc + r.goal.currentAmount, 0);
@@ -27,6 +39,9 @@ export const GoalsHeroDashboard: React.FC<Props> = ({ rankedGoals, contributedTh
   const coachCopy = topGoal
     ? generateRecommendationCopy(topGoal.goal, topGoal.health, topGoal.priorityReason)
     : "Let's build your financial engine today.";
+
+  const canRouteSurplus =
+    !!topGoal && topGoal.health.state !== 'completed' && savingsBudgetRemainingPaise > 0 && !!onRouteSurplus;
 
   return (
     <View style={styles.container}>
@@ -48,6 +63,15 @@ export const GoalsHeroDashboard: React.FC<Props> = ({ rankedGoals, contributedTh
         <Text variant="caption" style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Medium', lineHeight: 18 }}>
           <Text style={{ fontFamily: 'Satoshi-Bold', color: colors.primaryAccent }}>Coach: </Text>{coachCopy}
         </Text>
+
+        {canRouteSurplus && (
+          <PressableScale onPress={onRouteSurplus} style={[styles.surplusRow, { borderTopColor: `${colors.primaryAccent}20` }]}>
+            <Text variant="caption" style={{ color: colors.primaryAccent, fontFamily: 'Satoshi-Bold', flex: 1 }}>
+              Route this month's unused {Money.format(savingsBudgetRemainingPaise, { zeroDecimals: true })} savings into {topGoal!.goal.name}
+            </Text>
+            <ArrowRight size={16} color={colors.primaryAccent} />
+          </PressableScale>
+        )}
       </View>
     </View>
   );
@@ -70,5 +94,13 @@ const styles = StyleSheet.create({
   coachBanner: {
     padding: 16,
     borderRadius: 12,
-  }
+  },
+  surplusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
 });

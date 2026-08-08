@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+  AccessibilityRole,
+  AccessibilityState,
   Insets,
   Pressable,
   StyleProp,
@@ -24,6 +26,9 @@ export interface PressableScaleProps {
   hitSlop?: number | Insets;
   children?: React.ReactNode;
   testID?: string;
+  accessibilityRole?: AccessibilityRole;
+  accessibilityLabel?: string;
+  accessibilityState?: AccessibilityState;
 }
 
 const SCALE_SPRING = { damping: 15, stiffness: 300 };
@@ -44,6 +49,9 @@ export const PressableScale: React.FC<PressableScaleProps> = ({
   hitSlop,
   children,
   testID,
+  accessibilityRole,
+  accessibilityLabel,
+  accessibilityState,
 }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -80,6 +88,9 @@ export const PressableScale: React.FC<PressableScaleProps> = ({
   return (
     <AnimatedPressable
       testID={testID}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={accessibilityState}
       onPress={handlePress}
       onLongPress={handleLongPress}
       onPressIn={handlePressIn}

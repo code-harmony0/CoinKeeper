@@ -14,6 +14,7 @@ import { AddFundsSheet } from '../../components/modals/AddFundsSheet';
 import { FocusGoalHeroCard } from '../../components/insights/FocusGoalHeroCard';
 import { SecondaryGoalCard } from '../../components/insights/SecondaryGoalCard';
 import { GoalsHeroDashboard } from '../../components/insights/GoalsHeroDashboard';
+import { GoalCelebrationModal } from '../../components/insights/GoalCelebrationModal';
 import { Money } from '../../utils/money';
 import { useGoalIntelligence } from '../../hooks/useGoalIntelligence';
 
@@ -36,6 +37,7 @@ export const GoalsScreen = () => {
 
   const [showAdd, setShowAdd] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<{ id: string, name: string } | null>(null);
+  const [celebratingGoal, setCelebratingGoal] = useState<{ name: string; targetAmount: number } | null>(null);
 
   useEffect(() => {
     useGoalStore.getState().loadGoals().then(() => {
@@ -61,14 +63,51 @@ export const GoalsScreen = () => {
 
   const handleAddProgress = async (amountStr: string) => {
     if (!selectedGoal) return;
-    
+
     const amtPaise = Money.toPaise(amountStr);
     if (amtPaise <= 0) {
       throw new Error('Invalid amount');
     }
 
+    const target = rankedGoals.find(r => r.goal.id === selectedGoal.id)?.goal;
+    const wasIncomplete = !!target && target.currentAmount < target.targetAmount;
+
     await updateGoalProgress(selectedGoal.id, amtPaise);
     setSelectedGoal(null);
+
+    if (target && wasIncomplete && target.currentAmount + amtPaise >= target.targetAmount) {
+      setCelebratingGoal({ name: target.name, targetAmount: target.targetAmount });
+    }
+  };
+
+  const handleRouteSurplus = () => {
+    const topGoal = rankedGoals[0];
+    if (!topGoal || savingsBudgetRemainingPaise <= 0) return;
+
+    const remainingGapPaise = Math.max(0, topGoal.goal.targetAmount - topGoal.goal.currentAmount);
+    const amountPaise = Math.min(savingsBudgetRemainingPaise, remainingGapPaise);
+    if (amountPaise <= 0) return;
+
+    Alert.alert(
+      'Route Surplus to Goal',
+      `Move ${Money.format(amountPaise, { zeroDecimals: true })} of this month's unused savings into "${topGoal.goal.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Route Funds',
+          onPress: async () => {
+            try {
+              await updateGoalProgress(topGoal.goal.id, amountPaise);
+              if (topGoal.goal.currentAmount + amountPaise >= topGoal.goal.targetAmount) {
+                setCelebratingGoal({ name: topGoal.goal.name, targetAmount: topGoal.goal.targetAmount });
+              }
+            } catch (e) {
+              Alert.alert('Could not move funds', e instanceof Error ? e.message : 'Please try again.');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleDelete = (id: string) => {
@@ -131,6 +170,8 @@ export const GoalsScreen = () => {
               rankedGoals={rankedGoals}
               contributedThisMonthPaise={contributedThisMonthPaise}
               contributedLastMonthPaise={contributedLastMonthPaise}
+              savingsBudgetRemainingPaise={savingsBudgetRemainingPaise}
+              onRouteSurplus={handleRouteSurplus}
             />
 
             <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
@@ -218,6 +259,13 @@ export const GoalsScreen = () => {
         savingsBudgetRemainingPaise={savingsBudgetRemainingPaise}
         onClose={() => setSelectedGoal(null)}
         onSubmit={handleAddProgress}
+      />
+
+      <GoalCelebrationModal
+        visible={!!celebratingGoal}
+        goalName={celebratingGoal?.name ?? ''}
+        targetAmountPaise={celebratingGoal?.targetAmount ?? 0}
+        onDismiss={() => setCelebratingGoal(null)}
       />
     </KeyboardAvoidingView>
   );

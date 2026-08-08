@@ -61,9 +61,25 @@ export const TransactionPredictionService = {
       }
     }
 
-    // 3. Predict Recurring Risk (Placeholder for subscriptionDetector logic)
-    // In a real flow, this would check if this merchant + amount occurs monthly.
-    
+    // 3. Predict Recurring Risk — match against the subscriptions table, which
+    // subscriptionDetector.detectSubscriptions() keeps populated from real
+    // transaction history (same merchant + amount recurring on a weekly/
+    // biweekly/monthly/yearly cadence). A live full re-scan here would be too
+    // expensive to run on every keystroke, so this reads the cached result.
+    if (draft.merchant_name && draft.amount_paise) {
+      const db = getDb();
+      const subMatch = await db.execute(
+        `SELECT id FROM subscriptions WHERE LOWER(name) = ? AND amount_paise = ? AND isActive = 1 LIMIT 1`,
+        [draft.merchant_name.trim().toLowerCase(), draft.amount_paise]
+      );
+      if (subMatch?.rows && subMatch.rows.length > 0) {
+        result.isRecurring = true;
+        result.predictionReason = result.predictionReason
+          ? result.predictionReason + '. Matches a recurring subscription.'
+          : 'This looks like a recurring subscription.';
+      }
+    }
+
     return result;
   },
 

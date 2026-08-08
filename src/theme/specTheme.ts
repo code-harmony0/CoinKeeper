@@ -24,6 +24,9 @@ export const specLight = {
   danger: '#FF3B30',
   textPrimary: '#1A1A1A',
   textSecondary: '#6B7280',
+  // Section eyebrows/labels on the light-blue canvas — textSecondary fails
+  // 4.5:1 there (≈4.0:1), this clears it (≈6.6:1). See DESIGN.md §2.
+  sectionLabel: '#4B5563',
   segmentActiveBg: '#121723',
   segmentActiveText: '#FFFFFF',
   segmentInactiveBg: '#F4F6F8',
@@ -59,6 +62,7 @@ export const specDark = {
   danger: '#FF6B6B',
   textPrimary: '#F5F7FA',
   textSecondary: '#A0AEC0',
+  sectionLabel: '#A0AEC0',
   segmentActiveBg: '#F5F7FA',
   segmentActiveText: '#0F1419',
   segmentInactiveBg: '#252D38',

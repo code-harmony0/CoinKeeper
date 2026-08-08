@@ -206,7 +206,14 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
       ]}
     >
       {/* ── Header row ── */}
-      <PressableScale onPress={handleToggle} style={styles.headerRow}>
+      <PressableScale 
+        onPress={handleToggle} 
+        style={styles.headerRow}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel={`${name} category. ${percentage} percent allocated. ${Money.format(amountPaise, { zeroDecimals: true })} per month. Double tap to ${expanded ? 'collapse' : 'expand'}.`}
+        accessibilityState={{ expanded }}
+      >
         <View style={[styles.iconBox, { backgroundColor: tint ?? `${color}15` }, iconShadow]}>
           {icon}
         </View>
@@ -245,13 +252,20 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
           <PressableScale
             onPress={handleMinus}
             style={[styles.stepBtn, { backgroundColor: colors.chipBg }]}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={`Decrease ${name} allocation`}
           >
             <Minus color={colors.textPrimary} size={16} />
           </PressableScale>
 
           <GestureDetector gesture={panGesture}>
-            <View
-              style={styles.sliderTrackContainer}
+            <View 
+              style={[styles.sliderTrackContainer, { width: trackWidth }]}
+              accessible={true}
+              accessibilityRole="adjustable"
+              accessibilityLabel={`${name} allocation slider`}
+              accessibilityValue={{ text: `${percentage} percent` }}
               onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
             >
               <Canvas style={{ width: trackWidth, height: CANVAS_H }}>
@@ -303,6 +317,9 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
           <PressableScale
             onPress={handlePlus}
             style={[styles.stepBtn, { backgroundColor: colors.chipBg }]}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={`Increase ${name} allocation`}
           >
             <Plus color={colors.textPrimary} size={16} />
           </PressableScale>

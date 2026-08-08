@@ -11,11 +11,13 @@ export interface ReceiptExtractionResult {
   invoice_number?: string;
   line_items?: LineItem[];
   confidence: number;
+  /** Full recognized text, kept for the receipt history log and manual review. */
+  raw_text?: string;
 }
 
 export interface IReceiptExtractionProvider {
   /**
-   * The name of the provider (e.g., 'GeminiVision', 'MLKit', 'OCRSpace')
+   * The name of the provider (e.g., 'MLKit')
    */
   readonly name: string;
 

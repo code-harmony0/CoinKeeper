@@ -1,24 +1,20 @@
 import { TransactionDraftService } from './TransactionDraftService';
 import { TransactionDraft } from '../types/transactionDraft';
 import { IReceiptExtractionProvider, ReceiptExtractionResult } from './receipt/IReceiptExtractionProvider';
-import { GeminiVisionProvider } from './receipt/providers/GeminiVisionProvider';
 import { MLKitProvider } from './receipt/providers/MLKitProvider';
-import { OCRSpaceProvider } from './receipt/providers/OCRSpaceProvider';
 import { getDb } from '../store/database';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * ReceiptScanService orchestrates the AI pipeline for receipt ingestion.
- * It tries providers in a fallback sequence (e.g. Gemini Vision -> ML Kit)
- * and hydrates a rich TransactionDraft.
+ * ReceiptScanService runs receipt images through on-device OCR (ML Kit) and
+ * hydrates a TransactionDraft from the extracted text. Single real provider —
+ * no cloud fallback chain, since that would need external API credentials
+ * this app doesn't hold.
  */
 export const ReceiptScanService = {
-  // Ordered array of providers. Primary first, offline fallbacks last.
   providers: [
-    new GeminiVisionProvider(),
     new MLKitProvider(),
-    new OCRSpaceProvider()
   ] as IReceiptExtractionProvider[],
 
   /**
@@ -58,7 +54,7 @@ export const ReceiptScanService = {
       [
         receiptId,
         imageUri,
-        `Extracted by ${successfulProviderName}`, // Normally raw text, but simplified for the mock
+        result.raw_text || `Extracted by ${successfulProviderName}`,
         result.merchant_name || null,
         result.amount_paise || null,
         result.date || null,

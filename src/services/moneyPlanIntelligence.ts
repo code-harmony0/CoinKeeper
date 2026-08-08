@@ -13,7 +13,7 @@ export interface MoneyPlanScoreResult {
   recommendations: string[];
 }
 
-const NEEDS_RANGE: [number, number] = [50, 60];
+export const NEEDS_RANGE: [number, number] = [50, 60];
 const WANTS_RANGE: [number, number] = [20, 30];
 const MIN_SAVINGS_PERCENT = 20;
 
@@ -83,13 +83,19 @@ export interface PresetOutcome {
   grade: string;
   safeToSpendToday: number;
   monthlyRemaining: number;
+  /** Allocation sums to 100% with a real savings buffer (>= 10%) — not a vibe, just arithmetic. */
+  cashFlowStable: boolean;
+  /** Needs bucket (rent/utilities/EMIs) stays within the recommended range instead of crowding out savings. */
+  billsCovered: boolean;
+  /** Budget health grade of B or better. */
+  financialStressLow: boolean;
 }
 
 const EMERGENCY_FUND_TARGET = 100000;
 
 export const computePresetOutcome = (input: PresetOutcomeInput): PresetOutcome => {
   const monthlySavings = Math.round(input.income * (input.savingsPercent / 100));
-  
+
   let budgetHealthScore = 100;
   if (input.savingsPercent < 20) budgetHealthScore -= 10;
   if (input.needsPercent > 60) budgetHealthScore -= 20;
@@ -103,7 +109,9 @@ export const computePresetOutcome = (input: PresetOutcomeInput): PresetOutcome =
   const today = new Date();
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   const daysLeft = Math.max(1, daysInMonth - today.getDate());
-  
+
+  const allocationBalanced = input.needsPercent + input.wantsPercent + input.savingsPercent === 100;
+
   return {
     safeToSpend,
     monthlySavings,
@@ -112,6 +120,9 @@ export const computePresetOutcome = (input: PresetOutcomeInput): PresetOutcome =
     grade,
     monthlyRemaining: safeToSpend,
     safeToSpendToday: Math.floor(safeToSpend / daysInMonth), // Provide full month daily average for preview
+    cashFlowStable: allocationBalanced && input.savingsPercent >= 10,
+    billsCovered: input.needsPercent <= NEEDS_RANGE[1],
+    financialStressLow: Math.max(0, budgetHealthScore) >= 70,
   };
 };
 

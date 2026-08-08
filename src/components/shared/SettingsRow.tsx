@@ -9,7 +9,13 @@
  * by both AdminSettingsScreen and (user) SettingsScreen lives here.
  */
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ViewStyle,
+  ActivityIndicator,
+} from 'react-native';
 import { LucideIcon, ChevronRight, LogOut } from 'lucide-react-native';
 import { PressableScale } from '../anim';
 import { useSpecTheme } from '../../theme/specTheme';
@@ -24,13 +30,20 @@ import {
 
 // ---- Card wrapper ---------------------------------------------------
 
-export const SettingsCard: React.FC<{ children: React.ReactNode; style?: ViewStyle }> = ({
-  children,
-  style,
-}) => {
+export const SettingsCard: React.FC<{
+  children: React.ReactNode;
+  style?: ViewStyle;
+}> = ({ children, style }) => {
   const { colors } = useSpecTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.card }, SETTINGS_CARD_SHADOW, style]}>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.card },
+        SETTINGS_CARD_SHADOW,
+        style,
+      ]}
+    >
       {children}
     </View>
   );
@@ -38,21 +51,29 @@ export const SettingsCard: React.FC<{ children: React.ReactNode; style?: ViewSty
 
 export const SettingsDivider: React.FC = () => {
   const { colors } = useSpecTheme();
-  return <View style={[styles.divider, { backgroundColor: colors.surfaceSunken }]} />;
+  return (
+    <View style={[styles.divider, { backgroundColor: colors.surfaceSunken }]} />
+  );
 };
 
-export const SettingsSectionTitle: React.FC<{ children: string }> = ({ children }) => {
+export const SettingsSectionTitle: React.FC<{ children: string }> = ({
+  children,
+}) => {
   const { colors } = useSpecTheme();
-  return <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{children}</Text>;
+  return (
+    <Text style={[styles.sectionTitle, { color: colors.sectionLabel }]}>
+      {children}
+    </Text>
+  );
 };
 
 // ---- Icon box (standalone — for rows AND custom layouts like a profile avatar) ----
 
-export const SettingsIconBox: React.FC<{ icon: LucideIcon; tint: SettingsTintName; size?: number }> = ({
-  icon: Icon,
-  tint,
-  size = ICON_CONTAINER_SIZE,
-}) => {
+export const SettingsIconBox: React.FC<{
+  icon: LucideIcon;
+  tint: SettingsTintName;
+  size?: number;
+}> = ({ icon: Icon, tint, size = ICON_CONTAINER_SIZE }) => {
   const { isDark } = useSpecTheme();
   const pair = SETTINGS_TINTS[tint][isDark ? 'dark' : 'light'];
   const iconSize = Math.round(size * 0.5);
@@ -60,7 +81,12 @@ export const SettingsIconBox: React.FC<{ icon: LucideIcon; tint: SettingsTintNam
     <View
       style={[
         styles.iconBox,
-        { width: size, height: size, borderRadius: (size / ICON_CONTAINER_SIZE) * ICON_CONTAINER_RADIUS, backgroundColor: pair.bg },
+        {
+          width: size,
+          height: size,
+          borderRadius: (size / ICON_CONTAINER_SIZE) * ICON_CONTAINER_RADIUS,
+          backgroundColor: pair.bg,
+        },
       ]}
     >
       <Icon size={iconSize} color={pair.icon} strokeWidth={2.5} />
@@ -97,15 +123,20 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
     <View style={styles.row}>
       <SettingsIconBox icon={Icon} tint={tint} />
       <View style={styles.rowContent}>
-        <Text style={[styles.label, { color: colors.textPrimary }]}>{label}</Text>
+        <Text style={[styles.label, { color: colors.textPrimary }]}>
+          {label}
+        </Text>
         {description ? (
-          <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>
+            {description}
+          </Text>
         ) : null}
         {children}
       </View>
-      {rightElement ?? (showChevron && onPress ? (
-        <ChevronRight size={20} color={colors.textSecondary} />
-      ) : null)}
+      {rightElement ??
+        (showChevron && onPress ? (
+          <ChevronRight size={20} color={colors.textSecondary} />
+        ) : null)}
     </View>
   );
 
@@ -113,7 +144,12 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
     return content;
   }
   return (
-    <PressableScale onPress={onPress} haptic="impactLight">
+    <PressableScale
+      onPress={onPress}
+      haptic="impactLight"
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
       {content}
     </PressableScale>
   );
@@ -121,12 +157,20 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
 
 // ---- Logout button ------------------------------------------------------
 
-export const LogoutButton: React.FC<{ onPress: () => void }> = ({ onPress }) => {
+export const LogoutButton: React.FC<{ onPress: () => void }> = ({
+  onPress,
+}) => {
   const { isDark } = useSpecTheme();
   const c = isDark ? LOGOUT_COLORS.dark : LOGOUT_COLORS.light;
 
   return (
-    <PressableScale onPress={onPress} haptic="impactLight" style={[styles.logoutButton, { backgroundColor: c.bg }]}>
+    <PressableScale
+      onPress={onPress}
+      haptic="impactLight"
+      accessibilityRole="button"
+      accessibilityLabel="Log Out"
+      style={[styles.logoutButton, { backgroundColor: c.bg }]}
+    >
       <LogOut size={20} color={c.text} strokeWidth={2.5} />
       <Text style={[styles.logoutText, { color: c.text }]}>Log Out</Text>
     </PressableScale>
@@ -156,6 +200,8 @@ export const SettingsPrimaryButton: React.FC<SettingsPrimaryButtonProps> = ({
       onPress={onPress}
       haptic="impactLight"
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityLabel={label}
       style={[
         styles.primaryButton,
         { backgroundColor: colors.primaryAccent, opacity: disabled ? 0.5 : 1 },
@@ -165,8 +211,14 @@ export const SettingsPrimaryButton: React.FC<SettingsPrimaryButtonProps> = ({
         <ActivityIndicator size="small" color={colors.background} />
       ) : (
         <>
-          {Icon ? <Icon size={20} color={colors.background} strokeWidth={2.5} /> : null}
-          <Text style={[styles.primaryButtonText, { color: colors.background }]}>{label}</Text>
+          {Icon ? (
+            <Icon size={20} color={colors.background} strokeWidth={2.5} />
+          ) : null}
+          <Text
+            style={[styles.primaryButtonText, { color: colors.background }]}
+          >
+            {label}
+          </Text>
         </>
       )}
     </PressableScale>

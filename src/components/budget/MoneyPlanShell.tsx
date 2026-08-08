@@ -71,6 +71,7 @@ export const MoneyPlanShell = ({ navigation }: any) => {
   const [savings, setSavings] = useState(settings.savingsPercent);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [saveBarHeight, setSaveBarHeight] = useState(260);
 
   useEffect(() => {
     loadBudget();
@@ -227,7 +228,7 @@ export const MoneyPlanShell = ({ navigation }: any) => {
           contentContainerStyle={[
             styles.scrollContent,
             // Extra bottom padding to clear the SaveBar when it's visible
-            { paddingBottom: showSuccess ? 40 : 260 + insets.bottom },
+            { paddingBottom: showSuccess ? 40 : saveBarHeight + insets.bottom + 20 },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -389,6 +390,9 @@ export const MoneyPlanShell = ({ navigation }: any) => {
                   savingsPercent: settings.savingsPercent
                 })}
                 newOutcome={previewOutcome}
+                income={income}
+                currentSavingsPercent={settings.savingsPercent}
+                newSavingsPercent={savings}
                 emergencyFundTarget={emergencyFundGoal?.targetAmount ?? 100000}
                 emergencyFundCurrent={emergencyFundGoal?.currentAmount ?? 0}
                 colors={colors}
@@ -415,7 +419,8 @@ export const MoneyPlanShell = ({ navigation }: any) => {
         previousMonthlySavings={computePresetOutcome({ income, needsPercent: settings.needsPercent, wantsPercent: settings.wantsPercent, savingsPercent: settings.savingsPercent }).monthlySavings}
         onApply={handleSave}
         colors={colors}
-        paddingBottom={insets.bottom + 16}
+        paddingBottom={insets.bottom > 0 ? insets.bottom : 20}
+        onHeightChange={setSaveBarHeight}
       />
 
       {/* SUCCESS BLUR MODAL */}
@@ -499,7 +504,10 @@ const makeStyles = (colors: any) =>
       paddingBottom: 16,
     },
     scrollContent: {
-      // dynamic paddingBottom set inline based on SaveBar visibility
+      paddingTop: 16,
+      width: '100%',
+      maxWidth: 600,
+      alignSelf: 'center',
     },
     advancedHeader: {
       flexDirection: 'row',

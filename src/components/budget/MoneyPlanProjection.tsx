@@ -4,36 +4,51 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { TrendingUp, ShieldCheck, Clock } from 'lucide-react-native';
 import { Money } from '../../utils/money';
 import { Text } from '../ui/Text';
-import { PresetOutcome } from '../../services/moneyPlanIntelligence';
+import { PresetOutcome, computeProjection } from '../../services/moneyPlanIntelligence';
 import { useSpecTheme } from '../../theme/specTheme';
 
 interface Props {
   currentOutcome: PresetOutcome;
   newOutcome: PresetOutcome;
+  /** Monthly income (paise), needed to project savings forward in time. */
+  income: number;
+  currentSavingsPercent: number;
+  newSavingsPercent: number;
   emergencyFundTarget: number;
   emergencyFundCurrent: number;
   colors: any;
   cardRadius: number;
 }
 
+const PROJECTION_HORIZON_MONTHS = [6, 12, 24];
+
 export const MoneyPlanProjection: React.FC<Props> = ({
   currentOutcome,
   newOutcome,
+  income,
+  currentSavingsPercent,
+  newSavingsPercent,
   emergencyFundTarget,
   emergencyFundCurrent,
   colors,
   cardRadius,
 }) => {
   const { cardShadow } = useSpecTheme();
-  
+
   const hasChanged = currentOutcome.monthlySavings !== newOutcome.monthlySavings || currentOutcome.safeToSpend !== newOutcome.safeToSpend;
-  
+
   const savingsDelta = newOutcome.monthlySavings - currentOutcome.monthlySavings;
   const spendDelta = newOutcome.safeToSpendToday - currentOutcome.safeToSpendToday;
 
   const efCurrentMo = currentOutcome.emergencyFundMonths;
   const efNewMo = newOutcome.emergencyFundMonths;
   const efDelta = (efCurrentMo && efNewMo) ? (efNewMo - efCurrentMo) : null;
+
+  // Pure arithmetic (monthlySavings × months, no compounding/interest assumed)
+  // projected out to 6/12/24 months — this is what actually answers "where
+  // does this plan lead," not just this month's delta.
+  const currentTrajectory = computeProjection({ income, savingsPercent: currentSavingsPercent, months: PROJECTION_HORIZON_MONTHS });
+  const newTrajectory = computeProjection({ income, savingsPercent: newSavingsPercent, months: PROJECTION_HORIZON_MONTHS });
 
   return (
     <Animated.View entering={FadeInDown.duration(400).delay(200)}>
@@ -99,6 +114,32 @@ export const MoneyPlanProjection: React.FC<Props> = ({
           </>
         )}
 
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <Text variant="caption" style={[styles.sectionTitle, { color: colors.textPrimary }]}>WHERE THIS PLAN LEADS</Text>
+        <View style={styles.trajectoryRow}>
+          {newTrajectory.map((point, i) => {
+            const currentPoint = currentTrajectory[i];
+            const delta = hasChanged ? point.cumulativeSavings - currentPoint.cumulativeSavings : 0;
+            const label = point.months >= 12 ? `${point.months / 12}${point.months === 12 ? ' yr' : ' yrs'}` : `${point.months} mo`;
+            return (
+              <View key={point.months} style={styles.trajectoryCol}>
+                <Text variant="caption" style={{ color: colors.textSecondary, fontSize: 10, letterSpacing: 0.5 }}>{label.toUpperCase()}</Text>
+                <Text style={[styles.trajectoryValue, { color: colors.textPrimary }]}>
+                  {Money.format(point.cumulativeSavings, { zeroDecimals: true })}
+                </Text>
+                {delta !== 0 && (
+                  <Text style={{ color: delta > 0 ? colors.mintDeep : colors.peachDeep, fontFamily: 'Satoshi-Bold', fontSize: 11, marginTop: 2 }}>
+                    {delta > 0 ? '+' : ''}{Money.format(delta, { zeroDecimals: true })}
+                  </Text>
+                )}
+              </View>
+            );
+          })}
+        </View>
+        <Text variant="caption" style={{ color: colors.textSecondary, fontSize: 11, marginTop: 8, textAlign: 'center' }}>
+          Cumulative savings at this rate — plain arithmetic, no interest or investment growth assumed.
+        </Text>
+
       </View>
     </Animated.View>
   );
@@ -153,5 +194,19 @@ const styles = StyleSheet.create({
   impactText: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 14,
+  },
+  trajectoryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  trajectoryCol: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  trajectoryValue: {
+    fontFamily: 'Satoshi-Black',
+    fontSize: 16,
+    marginTop: 4,
   },
 });
