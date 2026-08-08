@@ -32,6 +32,7 @@ import {
   Trash2,
   Tag,
   MessageSquare,
+  SlidersHorizontal,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
@@ -45,6 +46,8 @@ import { AppHeader } from '../../components/ui/AppHeader';
 import { groupTransactionsByDate, GroupedRow } from '../../utils/groupTransactionsByDate';
 import { resolveCategoryIcon } from '../../utils/categoryIcon';
 import { isWithinPeriod, PeriodFilter } from '../../utils/transactionPeriod';
+import { TransactionFiltersSheet } from '../../components/transaction/TransactionFiltersSheet';
+import { AmountDateFilter, matchesAmountDateFilter, isFilterActive } from '../../utils/transactionFilters';
 
 type Props = NativeStackScreenProps<any, 'Transactions'>;
 
@@ -76,6 +79,8 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   const [period, setPeriod] = useState<PeriodFilter>('month');
   const [segmentWidth, setSegmentWidth] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [amountDateFilter, setAmountDateFilter] = useState<AmountDateFilter>({});
+  const [showFilters, setShowFilters] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
   // Rows removed from view optimistically — via swipe (pendingDelete tracks
   // which one for the undo banner) or multi-select (no undo, committed
@@ -129,9 +134,14 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     );
   }, [inPeriod, searchQuery]);
 
+  const filtered = useMemo(
+    () => searched.filter(t => matchesAmountDateFilter(t, amountDateFilter)),
+    [searched, amountDateFilter],
+  );
+
   const grouped = useMemo(
-    () => groupTransactionsByDate(searched.filter(t => !hiddenIds.has(t.id))),
-    [searched, hiddenIds],
+    () => groupTransactionsByDate(filtered.filter(t => !hiddenIds.has(t.id))),
+    [filtered, hiddenIds],
   );
 
   const totalIncome = useMemo(
@@ -423,6 +433,13 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          <Pressable testID="open-filters" onPress={() => setShowFilters(true)} style={styles.filterIconBtn}>
+            <SlidersHorizontal
+              size={18}
+              color={isFilterActive(amountDateFilter) ? colors.primaryAccent : colors.textSecondary}
+              strokeWidth={2}
+            />
+          </Pressable>
         </Animated.View>
       </View>
 
@@ -456,6 +473,13 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
           }
         />
       </View>
+
+      <TransactionFiltersSheet
+        visible={showFilters}
+        initialFilter={amountDateFilter}
+        onApply={setAmountDateFilter}
+        onClose={() => setShowFilters(false)}
+      />
 
       {pendingDelete && (
         <Animated.View
@@ -575,6 +599,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Medium',
     padding: 0,
   },
+  filterIconBtn: { paddingLeft: 8 },
 
   selectionDeleteButton: {
     marginLeft: 'auto',
