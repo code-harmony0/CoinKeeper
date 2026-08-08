@@ -47,6 +47,7 @@ import { groupTransactionsByDate, GroupedRow } from '../../utils/groupTransactio
 import { resolveCategoryIcon } from '../../utils/categoryIcon';
 import { isWithinPeriod, PeriodFilter } from '../../utils/transactionPeriod';
 import { TransactionFiltersSheet } from '../../components/transaction/TransactionFiltersSheet';
+import { TransactionDetailSheet } from '../../components/transaction/TransactionDetailSheet';
 import { AmountDateFilter, matchesAmountDateFilter, isFilterActive } from '../../utils/transactionFilters';
 
 type Props = NativeStackScreenProps<any, 'Transactions'>;
@@ -74,13 +75,14 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     },
     [scrollY],
   );
-  const { transactions, deleteTransaction } = useTransactions();
+  const { transactions, deleteTransaction, updateTransaction } = useTransactions();
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [period, setPeriod] = useState<PeriodFilter>('month');
   const [segmentWidth, setSegmentWidth] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [amountDateFilter, setAmountDateFilter] = useState<AmountDateFilter>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [detailTx, setDetailTx] = useState<Transaction | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
   // Rows removed from view optimistically — via swipe (pendingDelete tracks
   // which one for the undo banner) or multi-select (no undo, committed
@@ -233,6 +235,16 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     await Promise.all(ids.map(id => deleteTransaction(id)));
   };
 
+  const handleSaveDetail = async (id: string, updates: Partial<Transaction>) => {
+    await updateTransaction(id, updates);
+    setDetailTx(null);
+  };
+
+  const handleDeleteDetail = async (id: string) => {
+    await deleteTransaction(id);
+    setDetailTx(null);
+  };
+
   const handleTabPress = (tab: FilterTab, index: number) => {
     ReactNativeHapticFeedback.trigger('impactLight');
     setActiveTab(tab);
@@ -273,7 +285,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
           <Pressable
             testID={`row-${item.id}`}
             onLongPress={() => enterSelection(item.id)}
-            onPress={() => (selectedIds.size > 0 ? toggleSelected(item.id) : undefined)}
+            onPress={() => (selectedIds.size > 0 ? toggleSelected(item.id) : setDetailTx(item))}
             style={[styles.row, isSelected && { backgroundColor: colors.chipBg }]}
           >
             <View
@@ -479,6 +491,14 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
         initialFilter={amountDateFilter}
         onApply={setAmountDateFilter}
         onClose={() => setShowFilters(false)}
+      />
+
+      <TransactionDetailSheet
+        visible={!!detailTx}
+        transaction={detailTx}
+        onClose={() => setDetailTx(null)}
+        onSave={handleSaveDetail}
+        onDelete={handleDeleteDetail}
       />
 
       {pendingDelete && (
