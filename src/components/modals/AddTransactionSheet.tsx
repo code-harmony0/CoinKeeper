@@ -107,11 +107,13 @@ export const AddTransactionSheet: React.FC<Props> = ({
       setRecents(recs);
 
       const db = getDb();
+      // amount_paise/occurred_at are the post-002 column names; `amount`/`date`
+      // threw "no such column" and left the quick-amount chips permanently empty.
       const res = await db.execute(
-        `SELECT DISTINCT amount FROM transactions ORDER BY date DESC LIMIT 4`
+        `SELECT DISTINCT amount_paise FROM transactions ORDER BY occurred_at DESC LIMIT 4`
       );
       if (res?.rows) {
-        setQuickAmounts((res.rows as any[]).map(r => Math.round(r.amount * 100)));
+        setQuickAmounts((res.rows as any[]).map(r => Number(r.amount_paise)));
       }
     };
     if (visible) loadSuggestions();

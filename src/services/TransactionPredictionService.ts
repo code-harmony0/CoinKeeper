@@ -1,6 +1,8 @@
 import { MerchantLearningService } from './MerchantLearningService';
 import { TransactionDraft } from '../types/transactionDraft';
 import { getDb } from '../store/database';
+import { BudgetBucket } from '../utils/budgetBucket';
+import { FinancialIntelligenceEngine } from './FinancialIntelligenceEngine';
 
 export interface PredictionResult {
   categoryId: string | null;
@@ -43,14 +45,16 @@ export const TransactionPredictionService = {
     // If the amount and merchant match a transaction from the last 48 hours
     if (draft.amount_paise && draft.merchant_name) {
       const db = getDb();
+      // occurred_at is INTEGER epoch-ms and amount_paise is paise — the
+      // pre-002 column names (amount/date) threw "no such column" here, which
+      // killed the whole prediction and sent every expense to 'unknown'.
       const fortyEightHoursAgo = Date.now() - (48 * 60 * 60 * 1000);
-      const iso48 = new Date(fortyEightHoursAgo).toISOString();
-      
+
       const dupCheck = await db.execute(
-        `SELECT id FROM transactions 
-         WHERE amount = ? AND LOWER(description) LIKE ? AND date >= ?
+        `SELECT id FROM transactions
+         WHERE amount_paise = ? AND LOWER(description) LIKE ? AND occurred_at >= ?
          LIMIT 1`,
-        [draft.amount_paise / 100, `%${draft.merchant_name.toLowerCase()}%`, iso48]
+        [draft.amount_paise, `%${draft.merchant_name.toLowerCase()}%`, fortyEightHoursAgo]
       );
       
       if (dupCheck?.rows && dupCheck.rows.length > 0) {
@@ -84,7 +88,14 @@ export const TransactionPredictionService = {
   },
 
   /**
-   * Evaluates the budget impact of a proposed draft.
+   * Evaluates the budget impact of a proposed draft against the bucket its
+   * category belongs to.
+   *
+   * This previously queried a `budgets` table with a `monthly_limit` column.
+   * No migration has ever created that table, and this app has no per-category
+   * budgets at all — the real model is `budget_settings` (one row of
+   * needs/wants/savings percentages) applied to each category's
+   * `budget_bucket`. The old query could only ever throw.
    */
   async evaluateBudgetImpact(draft: TransactionDraft): Promise<{
     exceedsBudget: boolean;
@@ -94,32 +105,27 @@ export const TransactionPredictionService = {
     if (!draft.amount_paise || !draft.category_id) return null;
 
     const db = getDb();
-    
-    // Check budget for this category
-    const budgetRes = await db.execute(
-      'SELECT monthly_limit FROM budgets WHERE category_id = ?',
-      [draft.category_id]
+
+    const bucketRes = await db.execute(
+      'SELECT budget_bucket FROM categories WHERE id = ? LIMIT 1',
+      [draft.category_id],
     );
+    const bucket = (bucketRes?.rows?.[0] as any)?.budget_bucket as
+      | BudgetBucket
+      | undefined;
+    if (!bucket) return null;
 
-    if (!budgetRes?.rows || budgetRes.rows.length === 0) return null;
-    const monthlyLimit = (budgetRes.rows[0] as any).monthly_limit * 100; // convert to paise
+    const snapshot = await FinancialIntelligenceEngine.getCurrentSnapshot();
+    const stats = snapshot.buckets?.[bucket];
+    if (!stats || stats.budgetLimit <= 0) return null;
 
-    // Get current spent this month for this category
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    
-    const spentRes = await db.execute(
-      "SELECT SUM(amount) as total FROM transactions WHERE category = (SELECT name FROM categories WHERE id = ?) AND date >= ? AND type = 'expense'",
-      [draft.category_id, startOfMonth]
-    );
+    const remainingAfter =
+      stats.budgetLimit - (stats.currentSpend + draft.amount_paise);
 
-    const spentPaise = ((spentRes?.rows?.[0] as any)?.total || 0) * 100;
-    const remainingAfter = monthlyLimit - (spentPaise + draft.amount_paise);
-    
     return {
       exceedsBudget: remainingAfter < 0,
       remainingAfter,
-      budgetTotal: monthlyLimit
+      budgetTotal: stats.budgetLimit,
     };
   }
 };
