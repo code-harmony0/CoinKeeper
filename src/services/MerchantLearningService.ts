@@ -1,6 +1,7 @@
 import { getDb } from '../store/database';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { UNKNOWN, resolveCategory } from './categoryResolver';
 
 export interface MerchantLearningEntry {
   id: string;
@@ -69,12 +70,15 @@ export const MerchantLearningService = {
       return { categoryId: row.category_id, confidence: row.confidence };
     }
 
-    // 3. Fallback heuristics
-    if (normalized.includes('uber') || normalized.includes('ola')) {
-      return { categoryId: 'transport', confidence: 80 };
-    }
-    if (normalized.includes('zomato') || normalized.includes('swiggy')) {
-      return { categoryId: 'food', confidence: 80 };
+    // 3. Resolve from the text itself. Both callers of this method
+    // (TransactionPredictionService.predict and smsParserService) route
+    // through here, so first-run categorization lands in one place rather
+    // than being patched into each. Replaces four hardcoded merchant
+    // heuristics that only covered uber/ola/zomato/swiggy.
+    const catRes = await db.execute('SELECT id, name FROM categories');
+    const match = resolveCategory(normalized, (catRes?.rows ?? []) as any);
+    if (match) {
+      return { categoryId: match.categoryId, confidence: match.reason === 'name' ? 90 : 80 };
     }
 
     return { categoryId: null, confidence: 0 };
@@ -87,6 +91,16 @@ export const MerchantLearningService = {
     const db = getDb();
     const normalized = await this.normalizeMerchant(rawName);
     if (!normalized || !categoryId) return;
+
+    // The unknown bucket is never a lesson. Learning it is what turned a single
+    // mislabelled expense into a model that confidently predicted "unknown"
+    // for every subsequent one — the corruption trained itself.
+    const nameRes = await db.execute(
+      'SELECT name FROM categories WHERE id = ? LIMIT 1',
+      [categoryId],
+    );
+    const categoryName = (nameRes?.rows?.[0] as any)?.name as string | undefined;
+    if (categoryName && categoryName.trim().toLowerCase() === UNKNOWN) return;
 
     await db.transaction(async tx => {
       // Upsert into map for future exact matches

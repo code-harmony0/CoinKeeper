@@ -64,15 +64,32 @@ describe('MerchantLearningService', () => {
       expect(result.confidence).toBe(90);
     });
 
-    it('falls back to heuristics', async () => {
-      // normalize
+    it('resolves from the merchant text when nothing has been learned', async () => {
+      // normalize / map check / learning table — all empty
       mockExecute.mockResolvedValueOnce({ rows: [] });
       mockExecute.mockResolvedValueOnce({ rows: [] });
       mockExecute.mockResolvedValueOnce({ rows: [] });
-      
+      // the resolver reads the user's real categories
+      mockExecute.mockResolvedValueOnce({
+        rows: [
+          { id: 'food', name: 'Food' },
+          { id: 'transport', name: 'Transport' },
+        ],
+      });
+
       const result = await MerchantLearningService.predictCategory('Zomato Limited');
       expect(result.categoryId).toBe('food');
       expect(result.confidence).toBe(80);
+    });
+
+    it('returns nothing when the text matches no category the user has', async () => {
+      mockExecute.mockResolvedValueOnce({ rows: [] });
+      mockExecute.mockResolvedValueOnce({ rows: [] });
+      mockExecute.mockResolvedValueOnce({ rows: [] });
+      mockExecute.mockResolvedValueOnce({ rows: [{ id: 'food', name: 'Food' }] });
+
+      const result = await MerchantLearningService.predictCategory('qwertyuiop');
+      expect(result.categoryId).toBeNull();
     });
   });
 });

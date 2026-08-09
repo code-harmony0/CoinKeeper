@@ -154,7 +154,7 @@ export const IncomeTransactionFlow: React.FC<Props> = ({ visible, onClose, onSub
                   { borderRadius: cardRadius }
                 ]}
               >
-                <Text style={{ color: selectedType === t ? '#FFF' : colors.textSecondary }}>{t.toUpperCase()}</Text>
+                <Text style={{ color: selectedType === t ? '#FFF' : colors.textSecondary }}>{t.charAt(0).toUpperCase() + t.slice(1)}</Text>
               </TouchableOpacity>
             ))}
           </View>

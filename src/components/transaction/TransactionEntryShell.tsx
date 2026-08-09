@@ -119,7 +119,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Bold',
     fontSize: 14,
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
   content: {
     flex: 1,

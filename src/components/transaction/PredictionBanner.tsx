@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   container: { padding: 16, marginVertical: 8 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  title: { fontFamily: 'Satoshi-Bold', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 },
+  title: { fontFamily: 'Satoshi-Bold', fontSize: 13, letterSpacing: 0.5 },
   confidence: { fontFamily: 'Satoshi-Bold', fontSize: 13 },
   body: { gap: 8 },
   predictionText: { fontFamily: 'Satoshi-Black', fontSize: 18 },

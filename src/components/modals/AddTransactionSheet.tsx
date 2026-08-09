@@ -319,7 +319,10 @@ export const AddTransactionSheet: React.FC<Props> = ({
     setIsSaving(true);
     Keyboard.dismiss();
 
-    const finalCategory = prediction?.categoryId || draft.category_id || 'unknown';
+    // 'others' is a real seeded category. The old 'unknown' fallback was a bare
+    // string that resolveCategoryId turned into a brand-new junk category row,
+    // which then polluted the Categories screen, Money Map, and Reports.
+    const finalCategory = prediction?.categoryId || draft.category_id || 'others';
     const finalDraft: TransactionDraft = {
       ...draft,
       amount_paise: (parseFloat(amountInput) || 0) * 100,
