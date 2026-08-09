@@ -141,10 +141,22 @@ export const AddTransactionSheet: React.FC<Props> = ({
       setDraft(updatedDraft);
 
       if (numAmount > 0 || updatedDraft.merchant_name) {
-        const pred = await TransactionPredictionService.predict(updatedDraft);
-        setPrediction(pred);
-        const budget = await TransactionPredictionService.evaluateBudgetImpact(updatedDraft);
-        setBudgetImpact(budget);
+        try {
+          const pred = await TransactionPredictionService.predict(updatedDraft);
+          setPrediction(pred);
+          const budget = await TransactionPredictionService.evaluateBudgetImpact(updatedDraft);
+          setBudgetImpact(budget);
+        } catch (e) {
+          // A failed prediction must never become a category. This effect had
+          // no catch, so when predict() threw on a stale column name the
+          // rejection was swallowed, setPrediction never ran, and the save path
+          // fell through to || 'unknown' — which is how every expense in the
+          // app ended up mislabelled. Showing no suggestion is the honest
+          // degradation.
+          console.error('[runPredictions]', e);
+          setPrediction(null);
+          setBudgetImpact(null);
+        }
       } else {
         setPrediction(null);
         setBudgetImpact(null);
