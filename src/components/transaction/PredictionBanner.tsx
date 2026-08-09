@@ -49,9 +49,13 @@ export const PredictionBanner: React.FC<Props> = ({
       </View>
 
       <View style={styles.body}>
-        {category && (
+        {category ? (
           <Text style={[styles.predictionText, { color: colors.textPrimary }]}>
             Looks like <Text style={{ color: colors.primaryAccent }}>{category}</Text>
+          </Text>
+        ) : (
+          <Text style={[styles.predictionText, { color: colors.textSecondary }]}>
+            Choose a category
           </Text>
         )}
 

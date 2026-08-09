@@ -14,7 +14,13 @@ import { AddTransactionSheet } from '../../src/components/modals/AddTransactionS
 
 jest.mock('../../src/store/database', () => ({
   getDb: () => ({
-    execute: jest.fn(async () => ({ rows: [] })),
+    // The sheet resolves a predicted category id to its display name, so the
+    // categories query has to answer with something.
+    execute: jest.fn(async (sql: string) =>
+      /FROM categories/i.test(sql)
+        ? { rows: [{ id: 'transport', name: 'Transport', icon: 'car' }] }
+        : { rows: [] },
+    ),
     transaction: jest.fn(async (fn: any) => fn({ execute: jest.fn(async () => ({ rows: [] })) })),
   }),
 }));
@@ -129,8 +135,9 @@ describe('AddTransactionSheet validation', () => {
       ),
     );
 
-    // Appears twice by design: the PredictionBanner ("Looks like transport")
-    // and the StickySaveBar's sub-label ("as transport").
+    // The display NAME, never the raw category id. Appears twice by design:
+    // the PredictionBanner ("Looks like Transport") and the StickySaveBar's
+    // sub-label ("as Transport").
     expect(await findAllByText(/transport/i)).toHaveLength(2);
   });
 });

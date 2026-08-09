@@ -28,6 +28,7 @@ import Animated, { FadeInUp, FadeOutUp, Layout } from 'react-native-reanimated';
 import { TransactionEntryShell } from '../transaction/TransactionEntryShell';
 import { TransactionEntryModeTabs } from '../transaction/TransactionEntryModeTabs';
 import { PredictionBanner } from '../transaction/PredictionBanner';
+import { CategoryPickerSheet, PickableCategory } from '../transaction/CategoryPickerSheet';
 import { SmartSuggestionsSection } from '../transaction/SmartSuggestionsSection';
 import { TransactionPreviewCard } from '../transaction/TransactionPreviewCard';
 import { ReceiptPreviewCard } from '../transaction/ReceiptPreviewCard';
@@ -76,6 +77,11 @@ export const AddTransactionSheet: React.FC<Props> = ({
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [budgetImpact, setBudgetImpact] = useState<{ exceedsBudget: boolean; remainingAfter: number, budgetTotal: number } | null>(null);
 
+  // A guess the user can override. Their pick always beats the prediction.
+  const [pickedCategoryId, setPickedCategoryId] = useState<string | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [categories, setCategories] = useState<PickableCategory[]>([]);
+
   // Manual mode: SmartSuggestionsSection data
   const [favorites, setFavorites] = useState<MerchantItem[]>([]);
   const [recents, setRecents] = useState<MerchantItem[]>([]);
@@ -115,6 +121,9 @@ export const AddTransactionSheet: React.FC<Props> = ({
       if (res?.rows) {
         setQuickAmounts((res.rows as any[]).map(r => Number(r.amount_paise)));
       }
+
+      const cats = await db.execute('SELECT id, name, icon, color FROM categories ORDER BY name ASC;');
+      setCategories((cats?.rows ?? []) as unknown as PickableCategory[]);
     };
     if (visible) loadSuggestions();
   }, [visible]);
@@ -322,7 +331,7 @@ export const AddTransactionSheet: React.FC<Props> = ({
     // 'others' is a real seeded category. The old 'unknown' fallback was a bare
     // string that resolveCategoryId turned into a brand-new junk category row,
     // which then polluted the Categories screen, Money Map, and Reports.
-    const finalCategory = prediction?.categoryId || draft.category_id || 'others';
+    const finalCategory = effectiveCategoryId || 'others';
     const finalDraft: TransactionDraft = {
       ...draft,
       amount_paise: (parseFloat(amountInput) || 0) * 100,
@@ -366,6 +375,11 @@ export const AddTransactionSheet: React.FC<Props> = ({
   const merchantIsEmpty = merchantInput.trim().length === 0;
   const isValid = !amountIsEmpty && !merchantIsEmpty;
 
+  // The user's pick wins over the guess, always.
+  const effectiveCategoryId = pickedCategoryId || prediction?.categoryId || draft.category_id || null;
+  const effectiveCategoryName =
+    categories.find(c => c.id === effectiveCategoryId)?.name ?? undefined;
+
   const headerContext = `Add Expense • ${new Date().toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })}`;
 
   const footer = (
@@ -376,7 +390,7 @@ export const AddTransactionSheet: React.FC<Props> = ({
       isSuccess={isSuccess}
       budgetImpact={budgetImpact}
       isRecurring={prediction?.isRecurring}
-      category={prediction?.categoryId || draft.category_id}
+      category={effectiveCategoryName}
       amount={parseFloat(amountInput) || 0}
     />
   );
@@ -462,17 +476,29 @@ export const AddTransactionSheet: React.FC<Props> = ({
               </Animated.View>
             )}
 
-            {!merchantIsEmpty && prediction?.categoryId && (
-              <View style={styles.dynamicContent}>
+            {/* Always tappable once there's a merchant: a guess the user can
+                correct, or an explicit prompt when nothing resolved. Without
+                this there was no way to set a category at entry time at all. */}
+            {!merchantIsEmpty && (
+              <TouchableOpacity
+                style={styles.dynamicContent}
+                onPress={() => setPickerVisible(true)}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  effectiveCategoryName
+                    ? `Category ${effectiveCategoryName}. Tap to change.`
+                    : 'Choose a category'
+                }
+              >
                 <PredictionBanner
                   variant="manual"
-                  category={prediction.categoryId}
+                  category={effectiveCategoryName}
                   exceedsBudget={budgetImpact?.exceedsBudget}
                   budgetUsagePercent={budgetImpact ? ((budgetImpact.budgetTotal - budgetImpact.remainingAfter) / budgetImpact.budgetTotal) * 100 : undefined}
-                  isDuplicate={prediction.isDuplicate}
-                  isRecurring={prediction.isRecurring}
+                  isDuplicate={prediction?.isDuplicate}
+                  isRecurring={prediction?.isRecurring}
                 />
-              </View>
+              </TouchableOpacity>
             )}
           </>
         )}
@@ -541,6 +567,21 @@ export const AddTransactionSheet: React.FC<Props> = ({
         )}
 
       </ScrollView>
+
+      <CategoryPickerSheet
+        visible={pickerVisible}
+        selectedCategoryId={effectiveCategoryId ?? undefined}
+        onClose={() => setPickerVisible(false)}
+        onSelect={(cat) => {
+          setPickedCategoryId(cat.id);
+          setPickerVisible(false);
+          // Teach the model from the correction — learnCorrection already
+          // refuses the unknown bucket, so this can only improve predictions.
+          if (merchantInput.trim()) {
+            MerchantLearningService.learnCorrection(merchantInput.trim(), cat.id);
+          }
+        }}
+      />
     </TransactionEntryShell>
   );
 };
