@@ -1,6 +1,7 @@
 import { TransactionPredictionService } from '../services/TransactionPredictionService';
 import { MerchantLearningService } from '../services/MerchantLearningService';
 import { getDb } from '../store/database';
+import { FinancialIntelligenceEngine } from '../services/FinancialIntelligenceEngine';
 import { TransactionDraft } from '../types/transactionDraft';
 
 jest.mock('../store/database', () => ({
@@ -11,6 +12,12 @@ jest.mock('../services/MerchantLearningService', () => ({
   MerchantLearningService: {
     predictCategory: jest.fn()
   }
+}));
+
+jest.mock('../services/FinancialIntelligenceEngine', () => ({
+  FinancialIntelligenceEngine: {
+    getCurrentSnapshot: jest.fn(),
+  },
 }));
 
 describe('TransactionPredictionService', () => {
@@ -71,27 +78,54 @@ describe('TransactionPredictionService', () => {
     });
   });
 
+  /**
+   * These previously mocked a `budgets` table with a `monthly_limit` column.
+   * No migration has ever created that table and this app has no per-category
+   * budgets — the mock was validating behaviour that could not exist against a
+   * real database. Budget impact is measured against the category's bucket
+   * (needs/wants/savings) from budget_settings, via the intelligence snapshot.
+   */
   describe('evaluateBudgetImpact', () => {
-    it('returns exceedsBudget true if draft pushes category over limit', async () => {
-      // mock budget lookup
-      mockExecute.mockResolvedValueOnce({ rows: [{ monthly_limit: 1000 }] }); // 1000 INR
-      // mock current spent
-      mockExecute.mockResolvedValueOnce({ rows: [{ total: 950 }] }); // 950 INR spent
+    const draftInFood: TransactionDraft = {
+      id: '3',
+      source: 'manual',
+      amount_paise: 6000, // ₹60
+      category_id: 'food',
+      draft_status: 'editing',
+    };
 
-      const draft: TransactionDraft = {
-        id: '3',
-        source: 'manual',
-        amount_paise: 6000, // 60 INR -> Total 1010, exceeds 1000
-        category_id: 'food',
-        draft_status: 'editing'
-      };
+    it('flags a draft that pushes its bucket over the limit', async () => {
+      mockExecute.mockResolvedValueOnce({ rows: [{ budget_bucket: 'needs' }] });
+      (FinancialIntelligenceEngine.getCurrentSnapshot as jest.Mock).mockResolvedValue({
+        buckets: { needs: { budgetLimit: 100000, currentSpend: 95000 } },
+      });
 
-      const result = await TransactionPredictionService.evaluateBudgetImpact(draft);
-      
+      const result = await TransactionPredictionService.evaluateBudgetImpact(draftInFood);
+
       expect(result).not.toBeNull();
       expect(result?.exceedsBudget).toBe(true);
-      expect(result?.budgetTotal).toBe(100000); // 100000 paise
-      expect(result?.remainingAfter).toBe(-1000); // -10 INR in paise
+      expect(result?.budgetTotal).toBe(100000);
+      expect(result?.remainingAfter).toBe(-1000); // 100000 - (95000 + 6000)
+    });
+
+    it('does not flag a draft that stays within the bucket', async () => {
+      mockExecute.mockResolvedValueOnce({ rows: [{ budget_bucket: 'needs' }] });
+      (FinancialIntelligenceEngine.getCurrentSnapshot as jest.Mock).mockResolvedValue({
+        buckets: { needs: { budgetLimit: 100000, currentSpend: 10000 } },
+      });
+
+      const result = await TransactionPredictionService.evaluateBudgetImpact(draftInFood);
+
+      expect(result?.exceedsBudget).toBe(false);
+      expect(result?.remainingAfter).toBe(84000);
+    });
+
+    it('returns null when the category has no bucket to measure against', async () => {
+      mockExecute.mockResolvedValueOnce({ rows: [] });
+
+      const result = await TransactionPredictionService.evaluateBudgetImpact(draftInFood);
+
+      expect(result).toBeNull();
     });
   });
 });
