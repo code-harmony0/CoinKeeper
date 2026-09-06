@@ -146,3 +146,50 @@ jest.mock('@notifee/react-native', () => ({
   AndroidImportance: { HIGH: 4 },
   TriggerType: { TIMESTAMP: 0 },
 }));
+
+// Native bottom tabs render a real UIKit/Android tab bar, so there is nothing
+// for Jest to run — and the package ships ESM sources (plus a nested ESM
+// `color`) that the transform allow-list cannot reach without listing every
+// transitive dependency. A stub is both simpler and closer to the truth:
+// the navigator's job here is only to render its screens.
+jest.mock('@bottom-tabs/react-navigation', () => {
+  const React = require('react');
+  return {
+    createNativeBottomTabNavigator: () => ({
+      Navigator: ({ children }: { children?: React.ReactNode }) =>
+        React.createElement('BottomTabNavigator', null, children),
+      Screen: ({ children }: { children?: React.ReactNode }) =>
+        React.createElement('BottomTabScreen', null, children),
+    }),
+  };
+});
+
+jest.mock('@callstack/liquid-glass', () => {
+  const React = require('react');
+  const passthrough = (name: string) => ({ children }: { children?: React.ReactNode }) =>
+    React.createElement(name, null, children);
+  return {
+    LiquidGlassView: passthrough('LiquidGlassView'),
+    LiquidGlassContainerView: passthrough('LiquidGlassContainerView'),
+    isLiquidGlassSupported: false,
+  };
+});
+
+// The document picker is a native file-chooser dialog; there is nothing to
+// render or drive in Jest. Suites that exercise restore mock it per-file with
+// their own fixtures — this stub only keeps unrelated suites parseable.
+jest.mock('@react-native-documents/picker', () => ({
+  pick: jest.fn(async () => []),
+  keepLocalCopy: jest.fn(async () => []),
+  types: { allFiles: '*/*' },
+  errorCodes: { OPERATION_CANCELED: 'OPERATION_CANCELED' },
+  isErrorWithCode: () => false,
+}));
+
+// react-native-share resolves a TurboModule at import time, which throws
+// outside a native runtime. Suites that assert on sharing mock it themselves.
+jest.mock('react-native-share', () => ({
+  __esModule: true,
+  default: { open: jest.fn(async () => ({ success: true })) },
+  open: jest.fn(async () => ({ success: true })),
+}));
