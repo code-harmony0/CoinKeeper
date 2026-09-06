@@ -409,6 +409,80 @@ git commit -m "feat: write a backup as an optionally encrypted database"
 
 ---
 
+### Task 3b: Read the device schema version
+
+**Files:**
+- Create: `src/services/backup/schemaVersion.ts`
+- Test: `__tests__/services/backup/schemaVersion.test.ts`
+
+A hardcoded version constant rots the moment someone adds a migration, and the
+failure is silent: restore would start wrongly accepting or rejecting files. Read
+it from the database instead. Both the writer and the reader use this one helper.
+
+**Step 1: Write the failing test**
+
+```ts
+const mockExecute = jest.fn();
+jest.mock('../../../src/store/database', () => ({ getDb: () => ({ execute: mockExecute }) }));
+
+import { readSchemaVersion } from '../../../src/services/backup/schemaVersion';
+
+describe('readSchemaVersion', () => {
+  beforeEach(() => mockExecute.mockReset());
+
+  it('reads the version from the database rather than a constant', async () => {
+    mockExecute.mockResolvedValue({ rows: [{ user_version: 16 }] });
+    expect(await readSchemaVersion()).toBe(16);
+  });
+
+  it('survives the column coming back under a different key', async () => {
+    mockExecute.mockResolvedValue({ rows: [{ 'PRAGMA user_version': 9 }] });
+    expect(await readSchemaVersion()).toBe(9);
+  });
+
+  it('returns 0 when the pragma yields nothing', async () => {
+    mockExecute.mockResolvedValue({ rows: [] });
+    expect(await readSchemaVersion()).toBe(0);
+  });
+});
+```
+
+**Step 2: Run test to verify it fails**
+
+Run: `npx jest __tests__/services/backup/schemaVersion.test.ts`
+Expected: FAIL — module not found
+
+**Step 3: Write minimal implementation**
+
+```ts
+import { getDb } from '../../store/database';
+
+/**
+ * PRAGMA user_version, read live. Drivers disagree about what they name the
+ * returned column, so take the single value rather than a fixed key.
+ */
+export const readSchemaVersion = async (): Promise<number> => {
+  const result = await getDb().execute('PRAGMA user_version;');
+  const row = result?.rows?.[0] as Record<string, number> | undefined;
+  if (!row) return 0;
+  return Object.values(row)[0] ?? 0;
+};
+```
+
+**Step 4: Run test to verify it passes**
+
+Run: `npx jest __tests__/services/backup/schemaVersion.test.ts`
+Expected: PASS, 3 tests
+
+**Step 5: Commit**
+
+```bash
+git add src/services/backup/schemaVersion.ts __tests__/services/backup/schemaVersion.test.ts
+git commit -m "feat: read the database schema version at runtime"
+```
+
+---
+
 ### Task 4: Open a backup file and detect encryption
 
 **Files:**
@@ -420,6 +494,11 @@ git commit -m "feat: write a backup as an optionally encrypted database"
 ```ts
 const mockOpen = jest.fn();
 jest.mock('@op-engineering/op-sqlite', () => ({ open: mockOpen }));
+
+// The device's own schema version, read at runtime — never a hardcoded constant.
+jest.mock('../../../src/services/backup/schemaVersion', () => ({
+  readSchemaVersion: jest.fn(async () => 16),
+}));
 
 import {
   readBackup,
@@ -480,10 +559,9 @@ Expected: FAIL — module not found
 ```ts
 import { open } from '@op-engineering/op-sqlite';
 import { BACKUP_TABLES } from './backupTables';
+import { readSchemaVersion } from './schemaVersion';
 import type { CollectedRows } from './collectRows';
 
-/** The device schema version this build understands. Bump with migrations. */
-export const CURRENT_SCHEMA_VERSION = 16;
 
 export class BackupEncryptedError extends Error {
   constructor() {
@@ -527,7 +605,8 @@ export const readBackup = async (
     const meta = metaResult?.rows?.[0] as BackupMeta | undefined;
     if (!meta) throw new BackupEncryptedError();
 
-    if (meta.schema_user_version > CURRENT_SCHEMA_VERSION) {
+    const deviceVersion = await readSchemaVersion();
+    if (meta.schema_user_version > deviceVersion) {
       throw new BackupTooNewError(meta.schema_user_version);
     }
 
@@ -749,23 +828,19 @@ import Share from 'react-native-share';
 import { getDb } from '../../store/database';
 import { BACKUP_TABLES } from './backupTables';
 import { collectRows } from './collectRows';
+import { readSchemaVersion } from './schemaVersion';
 import { writeBackup } from './writeBackup';
 
 export * from './backupTables';
 export * from './collectRows';
 export * from './readBackup';
 export * from './restoreBackup';
+export * from './schemaVersion';
 export * from './writeBackup';
 
 const backupFileName = (): string => {
   const today = new Date().toISOString().slice(0, 10);
   return `coinkeeper-backup-${today}.ckbackup`;
-};
-
-const readSchemaVersion = async (): Promise<number> => {
-  const result = await getDb().execute('PRAGMA user_version;');
-  const row = result?.rows?.[0] as Record<string, number> | undefined;
-  return row ? Object.values(row)[0] ?? 0 : 0;
 };
 
 export const createAndShareBackup = async (passphrase?: string): Promise<void> => {
