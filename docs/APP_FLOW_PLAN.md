@@ -1,6 +1,6 @@
 # CoinKeeper — App Flow Plan (Source of Truth)
 
-**Last updated:** 2026-07-31
+**Last updated:** 2026-09-07
 **Purpose:** This is the canonical screen map for the lite (public) consumer app. Every future prompt/task should reference screen names from this file — no screen exists outside this list. Status is verified against the actual codebase, not assumed.
 
 > ✅ **Merged (2026-07-31):** `docs/GEMINI_FEATURE_PLAN.md`'s deep feature list (transfers, tags, split transactions, confidence-scored categorization, etc.) has been verified against the repo and folded in as section H below. Two of Gemini's status claims were corrected on verification — see H for detail and for a real bug that verification surfaced and fixed along the way.
@@ -12,6 +12,47 @@
 - ⚠️ **Partial** — component/service exists but isn't a full screen, or is a screen with dead rows/no-op buttons
 - 🔴 **Missing** — does not exist anywhere in the codebase
 - 🐛 **Built but broken** — exists and is wired, but has a real bug (crash, dead nav target, etc.)
+
+---
+
+## Status as of 2026-09-07
+
+Everything in the old Tier 1 and Tier 2 lists has shipped, and each item was
+verified on an Android device rather than assumed. What changed since the
+2026-07-31 revision:
+
+| Was | Now |
+|---|---|
+| SMS parsing orphaned, no permission screen | ✅ `SmsReviewScreen` wired; `READ_SMS` requested at runtime in `fetchRecentSms`. The manifest declared the permission but nothing ever asked for it, so the importer returned nothing on every fresh install |
+| Set Income / Create PIN / Biometric missing | ✅ `FirstRunSetupScreen`, `SetupPinScreen`, `UnlockScreen`, `biometricService` — all registered in `RootNavigator` |
+| 6 dead Settings rows | ✅ `handleInertPress` is gone; every row navigates or toggles |
+| Transaction Detail / Edit missing | ✅ `TransactionDetailSheet` with edit and delete |
+| Categories / Budgets / Goals / Bills partial | ✅ `CategoriesScreen`, `BudgetScreen`, `GoalsScreen`, `BillsScreen`, all reachable from Settings |
+| Backup & Restore 🔴 nothing | ✅ `src/services/backup/` + `BackupRestoreScreen`. Logical export, optionally SQLCipher-encrypted; replace and additive-merge restore. Both directions verified on device |
+| Category drill-down a dead tap | ✅ Tapping a Reports category opens Transactions filtered to it, with a clearable chip |
+| Budget overspend notification 🔴 | ✅ `budgetAlert.ts` — 80% and 100% warnings, once each per month |
+
+Also fixed along the way: `initializeNotifications()` was never called anywhere,
+so no notifee channels existed and Android silently dropped every notification —
+which meant the *existing* bill reminders were being dropped too, with no error.
+
+### Still open — genuinely new scope, not gaps
+
+- **Export (CSV/PDF)** for the lite app — backup covers disaster recovery, not "give me a spreadsheet"
+- **Statement import** (PDF/Excel)
+- **Merchant detail** view
+- **Net worth** module (income forecasting exists; net worth does not)
+- **Transfers, tags, split transactions** — schema decisions, deliberately unanswered
+- **Goal-reminder and SMS-parsed notifications** — the channels exist; only bill reminders and budget alerts use them
+
+### Housekeeping done
+
+- Deleted five services with no importer anywhere: `FavoriteMerchantService`,
+  `RecentMerchantService`, `QuickTemplateService`, `IncomeIntelligenceService`,
+  `EmployerLearningService`.
+- Test suite is green (410 tests). Two suites had been failing long enough to be
+  treated as background noise; both were harness problems, and a red suite is how
+  several of the bugs above stayed hidden behind "tests pass".
 
 ---
 
