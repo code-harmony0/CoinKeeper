@@ -1,11 +1,11 @@
 const mockBackupExecute = jest.fn();
 const mockClose = jest.fn();
-const mockOpen = jest.fn(() => ({ execute: mockBackupExecute, close: mockClose }));
+const mockOpen = jest.fn((_options: any) => ({ execute: mockBackupExecute, close: mockClose }));
 
 // The factory is hoisted above the consts above, so it must reach mockOpen
 // lazily at call time rather than capturing it at module-evaluation time.
 jest.mock('@op-engineering/op-sqlite', () => ({
-  open: (...args: unknown[]) => mockOpen(...(args as [])),
+  open: (options: any) => mockOpen(options),
 }));
 
 import { writeBackup, BACKUP_FORMAT_VERSION } from '../../../src/services/backup/writeBackup';

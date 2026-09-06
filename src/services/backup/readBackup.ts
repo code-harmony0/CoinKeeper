@@ -42,7 +42,7 @@ export const readBackup = async (
 
   try {
     const metaResult = await file.execute('SELECT * FROM backup_meta LIMIT 1;');
-    const meta = metaResult?.rows?.[0] as BackupMeta | undefined;
+    const meta = metaResult?.rows?.[0] as unknown as BackupMeta | undefined;
     if (!meta) throw new BackupEncryptedError();
 
     const deviceVersion = await readSchemaVersion();

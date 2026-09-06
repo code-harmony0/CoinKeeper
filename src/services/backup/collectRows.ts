@@ -1,7 +1,8 @@
+import type { Scalar } from '@op-engineering/op-sqlite';
 import { getDb } from '../../store/database';
 import { NULLED_COLUMNS } from './backupTables';
 
-export type BackupRow = Record<string, unknown>;
+export type BackupRow = Record<string, Scalar>;
 export type CollectedRows = Record<string, BackupRow[]>;
 
 /**
