@@ -38,6 +38,19 @@ describe('readBackup', () => {
     await expect(readBackup('/tmp/b.ckbackup', 'wrong')).rejects.toBeInstanceOf(BackupEncryptedError);
   });
 
+  it('asks for a passphrase when the file opens but will not read', async () => {
+    // SQLCipher does not validate the key at open() — it fails on the first
+    // query. On a real device an encrypted backup opens fine and then throws
+    // "file is not a database" here, so this path must also mean "encrypted".
+    mockOpen.mockReturnValue({
+      execute: jest.fn(async () => {
+        throw new Error('[op-sqlite] sqlite query error: file is not a database');
+      }),
+      close: jest.fn(),
+    });
+    await expect(readBackup('/tmp/b.ckbackup')).rejects.toBeInstanceOf(BackupEncryptedError);
+  });
+
   it('refuses a backup newer than this app understands', async () => {
     mockOpen.mockReturnValue(
       fileWith({ format_version: 1, schema_user_version: 999, created_at: 1 }),

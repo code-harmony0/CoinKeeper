@@ -45,8 +45,16 @@ export const readBackup = async (
   }
 
   try {
-    const metaResult = await file.execute('SELECT * FROM backup_meta LIMIT 1;');
-    const meta = metaResult?.rows?.[0] as unknown as BackupMeta | undefined;
+    // SQLCipher does not verify the key at open() — it decrypts lazily, so a
+    // wrong or missing key surfaces here as "file is not a database". This
+    // read, not the open above, is the real key check.
+    let meta: BackupMeta | undefined;
+    try {
+      const metaResult = await file.execute('SELECT * FROM backup_meta LIMIT 1;');
+      meta = metaResult?.rows?.[0] as unknown as BackupMeta | undefined;
+    } catch {
+      throw new BackupEncryptedError();
+    }
     if (!meta) throw new BackupEncryptedError();
 
     const deviceVersion = await readSchemaVersion();
