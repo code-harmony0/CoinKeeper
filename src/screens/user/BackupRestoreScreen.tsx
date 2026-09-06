@@ -17,7 +17,7 @@ import {
   Download,
   AlertTriangle,
 } from 'lucide-react-native';
-import { pick } from '@react-native-documents/picker';
+import { pick, keepLocalCopy } from '@react-native-documents/picker';
 import { Text } from '../../components/ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../../components/anim';
@@ -112,8 +112,22 @@ export const BackupRestoreScreen: React.FC<Props> = ({ navigation }) => {
     try {
       const [file] = await pick();
       if (!file?.uri) return;
-      setPendingPath(file.uri);
-      await loadBackup(file.uri);
+
+      // Android hands back a content:// URI, which SQLite cannot open. Copying
+      // the document into our own storage turns it into a real readable path.
+      const [copy] = await keepLocalCopy({
+        files: [{ uri: file.uri, fileName: file.name ?? 'backup.ckbackup' }],
+        destination: 'cachesDirectory',
+      });
+
+      if (copy.status !== 'success') {
+        setError('Could not open that file.');
+        return;
+      }
+
+      const localPath = copy.localUri.replace('file://', '');
+      setPendingPath(localPath);
+      await loadBackup(localPath);
     } catch (e) {
       // Cancelling the picker is not an error worth reporting.
       console.warn('[backup] file selection ended:', e);

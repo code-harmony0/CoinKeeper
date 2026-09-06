@@ -8,7 +8,12 @@ const mockReadBackup = jest.fn(async (_path: string, _passphrase?: string) => ({
   rows: { transactions: [{ id: 't1' }, { id: 't2' }], goals: [{ id: 'g1' }] },
 }));
 const mockRestoreBackup = jest.fn(async (_rows: unknown, _mode: string) => undefined);
-const mockPick = jest.fn(async () => [{ uri: '/tmp/b.ckbackup', name: 'b.ckbackup' }]);
+const mockPick = jest.fn(async () => [
+  { uri: 'content://com.android.providers.downloads/document/42', name: 'b.ckbackup' },
+]);
+const mockKeepLocalCopy = jest.fn(async (_options: unknown) => [
+  { status: 'success', localUri: 'file:///cache/b.ckbackup' },
+]);
 
 class mockEncryptedError extends Error {}
 class mockTooNewError extends Error {}
@@ -29,6 +34,7 @@ jest.mock('../../src/services/backup', () => ({
 
 jest.mock('@react-native-documents/picker', () => ({
   pick: () => mockPick(),
+  keepLocalCopy: (options: unknown) => mockKeepLocalCopy(options),
   types: { allFiles: '*/*' },
 }));
 
@@ -98,6 +104,19 @@ describe('BackupRestoreScreen', () => {
     await waitFor(() => expect(getByText(/3 rows|2 transactions/i)).toBeTruthy());
     expect(mockRestoreBackup).not.toHaveBeenCalled();
     expect(queryByText('Replace everything')).toBeTruthy();
+  });
+
+  it('converts the picker content URI into a real file before reading it', async () => {
+    const { getByText } = render(<BackupRestoreScreen navigation={navigation} />);
+
+    fireEvent.press(getByText('Restore from a file'));
+
+    // op-sqlite cannot open a content:// URI, so the picked document must be
+    // copied locally first and the real path handed to readBackup.
+    await waitFor(() => expect(mockKeepLocalCopy).toHaveBeenCalled());
+    const [path] = mockReadBackup.mock.calls[0];
+    expect(path).not.toMatch(/^content:\/\//);
+    expect(path).toBe('/cache/b.ckbackup');
   });
 
   it('asks for a passphrase when the chosen file is encrypted', async () => {
