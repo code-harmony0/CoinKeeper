@@ -6,7 +6,12 @@ import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Screens
-import { SplashScreen, OnboardingScreen, PrivacyFirstScreen } from '../screens/onboarding';
+import {
+  SplashScreen,
+  OnboardingScreen,
+  PrivacyFirstScreen,
+  FirstRunSetupScreen,
+} from '../screens/onboarding';
 import { AskAiScreen } from '../screens/user';
 import { UserTabNavigator } from './UserTabNavigator';
 import { ReportsScreen } from '../screens/user/ReportsScreen';
@@ -17,9 +22,11 @@ import { BillsScreen } from '../screens/user/BillsScreen';
 import { GoalsScreen } from '../screens/user/GoalsScreen';
 import { ProfileScreen } from '../screens/settings/ProfileScreen';
 import { SmsReviewScreen } from '../screens/user/SmsReviewScreen';
+import { BackupRestoreScreen } from '../screens/user/BackupRestoreScreen';
 import { UnlockScreen } from '../screens/auth/UnlockScreen';
 import { SetupPinScreen } from '../screens/auth/SetupPinScreen';
 import { useAppLock } from '../context/AppLockContext';
+import { APP_LOCK_ENABLED } from '../config/buildFlags';
 import { hasPinSet } from '../services/pinService';
 import { isBiometricAvailable, promptBiometric } from '../services/biometricService';
 import { setPreference } from '../store/database';
@@ -87,6 +94,7 @@ export const RootNavigator = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [showPrivacyScreen, setShowPrivacyScreen] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [showBiometricEnroll, setShowBiometricEnroll] = useState(false);
   const [pinIsSet, setPinIsSet] = useState(false);
@@ -119,20 +127,37 @@ export const RootNavigator = () => {
     setHasSeenOnboarding(true);
     setPinIsSet(true);
     setShowPrivacyScreen(false);
+    setShowSetup(false);
     setShowPinSetup(false);
     setShowBiometricEnroll(false);
   };
 
-  // Privacy acceptance no longer marks onboarding complete directly — it
-  // transitions into PIN setup first (Task 2.5).
+  // Privacy acceptance hands off to the setup flow, which is where the user
+  // declares their income and gets a first goal — the app's numbers are all
+  // empty states until then.
   const handlePrivacyAccept = () => {
     setShowPrivacyScreen(false);
-    setShowPinSetup(true);
+    setShowSetup(true);
+  };
+
+  const handleSetupComplete = () => {
+    setShowSetup(false);
+    // In development the PIN step is skipped outright rather than shown and
+    // dismissed — onboarding should reach the app, not a lock the developer
+    // then has to remember.
+    if (APP_LOCK_ENABLED) {
+      setShowPinSetup(true);
+    } else {
+      finishFirstRun();
+    }
   };
 
   const handlePinSetupComplete = async () => {
     setShowPinSetup(false);
-    if (await isBiometricAvailable()) {
+    // Same gate as the PIN. Enrolling biometrics is part of the lock feature,
+    // and a fingerprint prompt on every dev launch is the same friction the
+    // PIN screen was removed for.
+    if (APP_LOCK_ENABLED && (await isBiometricAvailable())) {
       setShowBiometricEnroll(true);
     } else {
       await finishFirstRun();
@@ -156,12 +181,15 @@ export const RootNavigator = () => {
   // App lock gate. A user who hasn't set a PIN yet (still mid-onboarding,
   // Task 2.5) is never blocked here — only someone who has already
   // completed PIN setup sees the unlock screen.
-  if (isLocked && pinIsSet) {
+  //
+  // APP_LOCK_ENABLED is false in development so a reload doesn't cost a PIN
+  // entry; it is hardcoded true in release by `__DEV__`. See buildFlags.ts.
+  if (APP_LOCK_ENABLED && isLocked && pinIsSet) {
     return <UnlockScreen onUnlock={unlock} />;
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer navigationInChildEnabled>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         {!hasSeenOnboarding && (
           showBiometricEnroll ? (
@@ -171,6 +199,10 @@ export const RootNavigator = () => {
           ) : showPinSetup ? (
             <Stack.Screen name="SetupPin">
               {() => <SetupPinScreen onComplete={handlePinSetupComplete} />}
+            </Stack.Screen>
+          ) : showSetup ? (
+            <Stack.Screen name="FirstRunSetup">
+              {() => <FirstRunSetupScreen onComplete={handleSetupComplete} />}
             </Stack.Screen>
           ) : showPrivacyScreen ? (
             <Stack.Screen name="PrivacyFirst">
@@ -189,6 +221,7 @@ export const RootNavigator = () => {
         <Stack.Screen name="Bills" component={BillsScreen} />
         <Stack.Screen name="Goals" component={GoalsScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="BackupRestore" component={BackupRestoreScreen} />
         <Stack.Screen name="SmsReview" component={SmsReviewScreen} />
         <Stack.Screen name="AskAi" component={AskAiScreen} />
         <Stack.Screen name="IncomeDetail" component={IncomeDetailScreen} />

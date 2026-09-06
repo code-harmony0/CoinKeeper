@@ -50,15 +50,26 @@ describe('computeGoalHealth', () => {
     expect(health.daysSinceLastContribution).toBe(5);
   });
 
-  it('projects a velocity-based ETA in months when there is no deadline', () => {
-    // ₹10,000/month average over the trailing 3 months, ₹60,000 remaining -> 6 months
+  it('projects a velocity-based arrival month when there is no deadline', () => {
+    // ₹10,000/month average over the trailing 3 months, ₹60,000 remaining -> 6
+    // months, which from August 2026 lands in February 2027.
     const contributions: GoalContribution[] = [
       { amountPaise: 10000, occurredAtMs: NOW - 10 * DAY_MS },
       { amountPaise: 10000, occurredAtMs: NOW - 40 * DAY_MS },
       { amountPaise: 10000, occurredAtMs: NOW - 70 * DAY_MS },
     ];
     const health = computeGoalHealth(baseGoal, contributions, NOW);
-    expect(health.etaLabel).toBe('~6 months at current pace');
+    expect(health.etaLabel).toBe('February 2027 at this pace');
+  });
+
+  it('keeps the pace qualifier, so a projection never reads as a promise', () => {
+    const contributions: GoalContribution[] = [
+      { amountPaise: 10000, occurredAtMs: NOW - 10 * DAY_MS },
+      { amountPaise: 10000, occurredAtMs: NOW - 40 * DAY_MS },
+      { amountPaise: 10000, occurredAtMs: NOW - 70 * DAY_MS },
+    ];
+    const health = computeGoalHealth(baseGoal, contributions, NOW);
+    expect(health.etaLabel).toMatch(/at this pace$/);
   });
 
   it('flags at_risk when pace is behind a set deadline', () => {
@@ -182,8 +193,21 @@ describe('simulateWhatIf', () => {
   it('recomputes ETA with extra monthly velocity added', () => {
     const goal: Goal = { id: 'g1', name: 'Laptop', targetAmount: 120000, currentAmount: 0 };
     const health = computeGoalHealth(goal, [], NOW); // 0 velocity, no ETA
-    const result = simulateWhatIf(goal, health, 20000); // +₹200/month
-    expect(result.etaLabel).toBe('~6 months at current pace');
+    const result = simulateWhatIf(goal, health, 20000, NOW); // +₹200/month
+    expect(result.etaLabel).toBe('February 2027 at this pace');
+  });
+
+  it('phrases its projection exactly like the goal card does', () => {
+    // These were two independent copies of the same sentence, free to drift.
+    const goal: Goal = { id: 'g1', name: 'Laptop', targetAmount: 120000, currentAmount: 0 };
+    const contributions: GoalContribution[] = [
+      { amountPaise: 20000, occurredAtMs: NOW - 10 * DAY_MS },
+      { amountPaise: 20000, occurredAtMs: NOW - 40 * DAY_MS },
+      { amountPaise: 20000, occurredAtMs: NOW - 70 * DAY_MS },
+    ];
+    const health = computeGoalHealth(goal, contributions, NOW);
+    const preview = simulateWhatIf(goal, health, 0, NOW);
+    expect(preview.etaLabel).toBe(health.etaLabel);
   });
 
   it('returns null ETA when even the hypothetical velocity is zero', () => {

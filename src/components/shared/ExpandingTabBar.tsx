@@ -1,6 +1,14 @@
 /**
- * ExpandingTabBar - Enhanced with better animations and micro-interactions
- * Premium expanding tab bar with smooth transitions
+ * ExpandingTabBar — iOS 26 Liquid Glass Edition
+ *
+ * A floating pill tab bar that morphs between two states:
+ *   EXPANDED  — full width, labels visible, sliding indicator pill
+ *   MINIMIZED — compact pill, icons only, slides down slightly
+ *
+ * The transition is driven by scroll position (scrollY from TabBarScrollContext)
+ * and animated with spring physics for that organic "liquid" feel.
+ *
+ * Surface: solid themed fill (liquid glass removed).
  */
 
 import React, { useEffect, memo } from 'react';
@@ -17,39 +25,58 @@ import Animated, {
   ReduceMotion,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from '@react-native-community/blur';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
+import { EXPRESSIVE, SPRING } from '../../theme/motion';
 import {
   useSpecTheme,
   specDark,
   specLight,
   fabSize,
 } from '../../theme/specTheme';
+import { PlatformGlassMaterial } from './PlatformGlassMaterial';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BAR_WIDTH = SCREEN_WIDTH * 0.94; // Wider bar, less side space
-const BAR_HEIGHT = 56; // Reduced height
+
+// ─── Expanded state dimensions ────────────────────────────────────────
+const BAR_WIDTH_EXPANDED = SCREEN_WIDTH * 0.94;
+const BAR_HEIGHT = 56;
 const CORNER_RADIUS = BAR_HEIGHT / 2;
 
-const ICON_SIZE = 22; // Compact icon size
-const TAB_HEIGHT = 40; // Compact height
-const FAB_SIZE = fabSize; // Larger FAB that grows out
-const FAB_SPACER_WIDTH = 74; // Extra space around FAB for better separation
-const PILL_PADDING = 6; // padding inside each tab pill
-const ICON_LABEL_GAP = 6; // gap between icon and revealed label
-// Collapsed pill = icon + PILL_PADDING each side so the icon is never clipped.
+// ─── Minimized state dimensions ───────────────────────────────────────
+// Compact pill: just icons + padding. Roughly 3-4 icons × 44px + margins.
+const ICON_SLOT_MINIMIZED = 44;
+const BAR_PADDING_MINIMIZED = 8;
+
+// ─── Shared constants ─────────────────────────────────────────────────
+const ICON_SIZE = 22;
+const TAB_HEIGHT = 40;
+const FAB_SIZE = fabSize;
+const FAB_SPACER_WIDTH = 74;
+const PILL_PADDING = 6;
+const ICON_LABEL_GAP = 6;
 const COLLAPSED_PILL = ICON_SIZE + PILL_PADDING * 2;
-// Expanded pill fits icon + gap + widest label ("Activity" ≈52px at 12px Bold).
 const EXPANDED_PILL = COLLAPSED_PILL + ICON_LABEL_GAP + 52;
-// Label sits absolutely to the right of the icon: padding + icon + gap.
 const LABEL_LEFT = PILL_PADDING + ICON_SIZE + ICON_LABEL_GAP;
 
-// Theme-driven palette — mirrors useTheme()'s light/darkColors (specLight/
-// specDark). Light values stay pixel-identical to the original frosted glass;
-// dark swaps in the dark palette so the bar doesn't remain a white pill on the
-// #0F1419 canvas. The rotation order (lavender→pink→mint→peach→sky) is load-bearing.
+// ─── Spring configs ───────────────────────────────────────────────────
+// Smooth, organic springs that feel "liquid" — slight overshoot, fast settle.
+const TAB_SWITCH_SPRING = {
+  damping: 16,
+  stiffness: 140,
+  mass: 0.9,
+  overshootClamping: false,
+};
+
+const MINIMIZE_SPRING = {
+  damping: 22,
+  stiffness: 300,
+  mass: 0.6,
+  overshootClamping: false,
+};
+
+// Theme-driven palette
 const getBarColors = (isDark: boolean) => {
   const palette = isDark ? specDark : specLight;
   return {
@@ -57,26 +84,25 @@ const getBarColors = (isDark: boolean) => {
       palette.lavender,
       palette.pink,
       palette.mint,
-      palette.peach,
-      palette.sky,
     ],
-    vibrantFills: [
-      palette.lavenderDeep,
-      palette.pinkDeep,
-      palette.mintDeep,
-      palette.peachDeep,
-      palette.skyDeep,
-    ],
-    activeIcon: palette.primaryAccent,
+    activeIcon: isDark ? '#FFFFFF' : '#000000',
     inactiveIcon: palette.textSecondary,
     labelColor: palette.textPrimary,
-    inactiveBg: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.2)',
-    barBg: isDark ? 'rgba(30,37,48,0.95)' : 'rgba(255,255,255,0.15)',
-    barBorder: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
+    // Active tab capsule is now a subtle glass highlight, not a solid color
+    activeBg: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+    inactiveBg: 'transparent',
+    // Fallback glass tint for non-LiquidGlass platforms
+    barBg: isDark ? 'rgba(20,25,35,0.45)' : 'rgba(255,255,255,0.25)',
+    // Tint retained for the active-capsule highlight
+    glassTint: isDark ? 'rgba(140,160,200,0.08)' : 'rgba(255,255,255,0.25)',
+    // Border for glass edge
+    barBorder: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.4)',
     blurType: (isDark ? 'dark' : 'light') as 'dark' | 'light',
     blurFallback: isDark ? '#1E2530' : '#FFFFFF',
-    fabBg: palette.primaryAccent,
-    fabIcon: isDark ? '#0F1419' : '#FFFFFF',
+    colorScheme: (isDark ? 'dark' : 'light') as 'dark' | 'light',
+    // FAB is now glass
+    fabBg: isDark ? 'rgba(20,25,35,0.45)' : 'rgba(255,255,255,0.25)',
+    fabIcon: isDark ? '#FFFFFF' : '#000000',
   };
 };
 
@@ -106,88 +132,148 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
   const { isDark } = useSpecTheme();
   const barColors = getBarColors(isDark);
 
-  // Check if we're on a detail screen (nested route)
   const currentRoute = state.routes[activeIndex];
   const isDetailScreen = currentRoute?.state?.index > 0;
 
-  // Every hook below must run on every render. The `isDetailScreen` early
-  // return lives after all of them (just above the JSX) — returning here
-  // would skip these hooks and crash React with "rendered fewer hooks than
-  // expected" the moment a nested stack pushes a detail screen.
-
-  // Scroll Hiding Logic
+  // ─── Scroll-driven minimize ───────────────────────────────────────
   const { scrollY } = useTabBarScroll();
-  const barVisible = useSharedValue(1);
+
+  // 0 = expanded, 1 = minimized
+  const minimizeProgress = useSharedValue(0);
+  const lastScrollY = useSharedValue(0);
+
+  // Calculate minimized width based on visible tab count
+  const visibleTabs = hasFab
+    ? tabs.filter((_, i) => i !== fabIndex)
+    : tabs;
+  const minimizedWidth =
+    visibleTabs.length * ICON_SLOT_MINIMIZED +
+    BAR_PADDING_MINIMIZED * 2 +
+    (hasFab ? FAB_SPACER_WIDTH * 0.6 : 0);
 
   useAnimatedReaction(
     () => scrollY.value,
     (current, previous) => {
       if (previous === null || previous === undefined) return;
       const diff = current - previous;
-      if (Math.abs(diff) > 10) {
-        if (diff > 0 && current > 50) {
-          // Scrolling down - hide
-          barVisible.value = withSpring(0, { damping: 20, stiffness: 200 });
+
+      if (Math.abs(diff) > 4) {
+        if (diff > 0 && current > 30) {
+          // Scrolling down → hide fast
+          minimizeProgress.value = withSpring(1, MINIMIZE_SPRING);
         } else if (diff < 0) {
-          // Scrolling up - show
-          barVisible.value = withSpring(1, { damping: 20, stiffness: 200 });
+          // Scrolling up → show
+          minimizeProgress.value = withSpring(0, MINIMIZE_SPRING);
         }
       }
     },
     [scrollY],
   );
 
-  const animatedWrapperStyle = useAnimatedStyle(() => {
-    'worklet';
-    const translateY = interpolate(barVisible.value, [0, 1], [150, 0]);
-    return {
-      transform: [{ translateY }],
-      opacity: barVisible.value,
-    };
-  });
+  // Restore bar when switching tabs or leaving detail
+  useEffect(() => {
+    minimizeProgress.value = withSpring(0, MINIMIZE_SPRING);
+  }, [activeIndex, isDetailScreen, minimizeProgress]);
 
-  // Calculate effective padding bottom for bar positioning
+  // ─── Animated bar container (the glass pill) ──────────────────────
   const effectivePaddingBottom = Math.max(insets.bottom, 18);
 
-  // Animated style for FAB
-  const animatedFabStyle = useAnimatedStyle(() => {
+  const animatedBarContainerStyle = useAnimatedStyle(() => {
     'worklet';
-    const translateY = interpolate(barVisible.value, [0, 1], [150, 0]);
-    const opacity = barVisible.value;
-    // FAB sits more on the bar (moved down 15px from previous position)
-    const bottomValue = effectivePaddingBottom + 10;
-
+    const width = interpolate(
+      minimizeProgress.value,
+      [0, 1],
+      [BAR_WIDTH_EXPANDED, minimizedWidth],
+      Extrapolation.CLAMP,
+    );
+    const translateY = interpolate(
+      minimizeProgress.value,
+      [0, 1],
+      [0, 12],
+      Extrapolation.CLAMP,
+    );
+    const scale = interpolate(
+      minimizeProgress.value,
+      [0, 1],
+      [1, 0.95],
+      Extrapolation.CLAMP,
+    );
     return {
-      bottom: bottomValue,
-      transform: [{ translateY }],
-      opacity: opacity,
+      width,
+      transform: [{ translateY }, { scale }],
     };
   });
 
-  // Coming back from a detail screen (or switching tabs) must always restore
-  // the bar. Without this it stays hidden at barVisible=0 if the user had
-  // scrolled down before drilling in, and only a scroll-up would reveal it.
-  useEffect(() => {
-    barVisible.value = withSpring(1, { damping: 20, stiffness: 200 });
-  }, [activeIndex, isDetailScreen, barVisible]);
+  // ─── Labels fade out during minimize ──────────────────────────────
+  const labelGlobalOpacity = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      opacity: interpolate(
+        minimizeProgress.value,
+        [0, 0.3],
+        [1, 0],
+        Extrapolation.CLAMP,
+      ),
+    };
+  });
 
+  // ─── Animated wrapper ──────────────────────────────────────────────
+  const animatedWrapperStyle = useAnimatedStyle(() => {
+    'worklet';
+    const opacity = interpolate(
+      minimizeProgress.value,
+      [0, 1],
+      [1, 0.92],
+      Extrapolation.CLAMP,
+    );
+    return { opacity };
+  });
+
+  // ─── FAB follows minimize ─────────────────────────────────────────
+  const animatedFabStyle = useAnimatedStyle(() => {
+    'worklet';
+    const translateY = interpolate(
+      minimizeProgress.value,
+      [0, 1],
+      [0, 14],
+      Extrapolation.CLAMP,
+    );
+    const scale = interpolate(
+      minimizeProgress.value,
+      [0, 1],
+      [1, 0.82],
+      Extrapolation.CLAMP,
+    );
+    const opacity = interpolate(
+      minimizeProgress.value,
+      [0, 0.7, 1],
+      [1, 0.7, 0.5],
+      Extrapolation.CLAMP,
+    );
+    const bottomValue = effectivePaddingBottom + 10;
+    return {
+      bottom: bottomValue,
+      transform: [{ translateY }, { scale }],
+      opacity,
+    };
+  });
+
+  // ─── Render tabs ──────────────────────────────────────────────────
   const renderTab = (tab: TabConfig, index: number) => {
     const isActive = activeIndex === index;
-    const vibrantFill =
-      barColors.vibrantFills[index % barColors.vibrantFills.length];
 
     return (
       <View key={tab.name} style={styles.tabSlot}>
-        <ExpandingTab
+        <LiquidGlassTab
           icon={tab.icon}
           label={tab.label}
           isActive={isActive}
-          accentColor={barColors.accents[index % barColors.accents.length]}
-          vibrantFill={vibrantFill}
           activeIcon={barColors.activeIcon}
           inactiveIcon={barColors.inactiveIcon}
           labelColor={barColors.labelColor}
           inactiveBg={barColors.inactiveBg}
+          activeBg={barColors.activeBg}
+          minimizeProgress={minimizeProgress}
           onPress={() => {
             ReactNativeHapticFeedback.trigger('impactLight', {
               enableVibrateFallback: true,
@@ -199,33 +285,27 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
     );
   };
 
-  // Safe to bail out now — every hook above has already run.
-  if (isDetailScreen) {
-    return null;
-  }
-
-  return (
-    <Animated.View
-      style={[
-        styles.wrapper,
-        { paddingBottom: effectivePaddingBottom },
-        animatedWrapperStyle,
-      ]}
-    >
-      <View style={[styles.barContainer, { borderColor: barColors.barBorder }]}>
-        <BlurView
-          blurType={barColors.blurType}
-          blurAmount={80}
-          style={styles.blur}
-          reducedTransparencyFallbackColor={barColors.blurFallback}
+  const renderContent = () => (
+    <>
+      <Animated.View
+        style={[
+          styles.barContainer,
+          { borderColor: barColors.barBorder },
+          animatedBarContainerStyle,
+        ]}
+      >
+        {/* Unified Glass material background */}
+        <PlatformGlassMaterial
+          style={styles.liquidGlass}
+          tintColor={barColors.glassTint}
+          colorScheme={barColors.colorScheme}
+          blurFallbackColor={barColors.blurFallback}
         />
-        <View style={[styles.bar, { backgroundColor: barColors.barBg }]}>
+        <View style={styles.bar}>
           {!hasFab ? (
             tabs.map((tab, index) => renderTab(tab, index))
           ) : (
             <>
-              {/* Ghost slots balance the bar so the FAB sits dead-center
-                  regardless of tab count (e.g. 4 lite tabs → [2][FAB][2]). */}
               {Array.from(
                 { length: Math.max(0, tabs.length - fabIndex - 1 - fabIndex) },
                 (_, i) => (
@@ -248,23 +328,19 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
             </>
           )}
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Absolutely positioned FAB - sibling to barContainer for overflow */}
+      {/* FAB — sibling to barContainer for overflow */}
       {hasFab && (
         <Animated.View
           style={[
             styles.fabContainer,
-            {
-              // fabContainer centers itself on `left` via marginLeft: -FAB_SIZE/2,
-              // and the bar is centered on screen — so screen center = bar center.
-              left: SCREEN_WIDTH / 2,
-            },
+            { left: SCREEN_WIDTH / 2 },
             animatedFabStyle,
           ]}
         >
           <FabButton
-            color={barColors.fabBg}
+            barColors={barColors}
             iconColor={barColors.fabIcon}
             accessibilityLabel={tabs[fabIndex]?.label ?? 'Add'}
             onPress={() => {
@@ -276,64 +352,98 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
           />
         </Animated.View>
       )}
+    </>
+  );
+
+  if (isDetailScreen) {
+    return null;
+  }
+
+  return (
+    <Animated.View
+      style={[
+        styles.wrapper,
+        { paddingBottom: effectivePaddingBottom },
+        animatedWrapperStyle,
+      ]}
+    >
+      <View style={styles.glassSystemContainer}>{renderContent()}</View>
     </Animated.View>
   );
 };
 
-// Enhanced Expanding Tab
-const ExpandingTab = memo(
+// ═══════════════════════════════════════════════════════════════════════
+// LiquidGlassTab — Individual tab with minimize-aware animations
+// ═══════════════════════════════════════════════════════════════════════
+
+interface LiquidGlassTabProps {
+  icon: string;
+  label: string;
+  isActive: boolean;
+  activeIcon: string;
+  inactiveIcon: string;
+  labelColor: string;
+  inactiveBg: string;
+  activeBg: string;
+  minimizeProgress: Animated.SharedValue<number>;
+  onPress: () => void;
+}
+
+const LiquidGlassTab = memo(
   ({
     icon,
     label,
     isActive,
-    accentColor,
-    vibrantFill,
     activeIcon,
     inactiveIcon,
     labelColor,
     inactiveBg,
+    activeBg,
+    minimizeProgress,
     onPress,
-  }: {
-    icon: string;
-    label: string;
-    isActive: boolean;
-    accentColor: string;
-    vibrantFill: string;
-    activeIcon: string;
-    inactiveIcon: string;
-    labelColor: string;
-    inactiveBg: string;
-    onPress: () => void;
-  }) => {
+  }: LiquidGlassTabProps) => {
+    // Tab active/inactive transition
     const progress = useSharedValue(isActive ? 1 : 0);
 
     useEffect(() => {
-      progress.value = withSpring(isActive ? 1 : 0, {
-        damping: 15,
-        stiffness: 120,
-        overshootClamping: false,
-      });
+      progress.value = withSpring(isActive ? 1 : 0, TAB_SWITCH_SPRING);
     }, [isActive, progress]);
 
+    // ─── Pill container: width morphs with both active state AND minimize ──
     const containerStyle = useAnimatedStyle(() => {
       'worklet';
-      const width = interpolate(
+      // When expanded: active tab is wider (shows label), inactive is compact
+      const expandedWidth = interpolate(
         progress.value,
         [0, 1],
         [COLLAPSED_PILL, EXPANDED_PILL],
         Extrapolation.CLAMP,
       );
-      return {
-        width,
-      };
+      // When minimized: all tabs are same compact size
+      const width = interpolate(
+        minimizeProgress.value,
+        [0, 1],
+        [expandedWidth, COLLAPSED_PILL],
+        Extrapolation.CLAMP,
+      );
+      return { width };
     });
 
+    // ─── Label: fades out on both deactivation AND minimize ─────────────
     const labelStyle = useAnimatedStyle(() => {
       'worklet';
-      const labelOpacity = interpolate(
+      // Active progress drives label visibility when expanded
+      const activeOpacity = interpolate(
         progress.value,
         [0.6, 1],
         [0, 1],
+        Extrapolation.CLAMP,
+      );
+      // Minimize progress hides label regardless
+      const minimizeOpacity = interpolate(
+        minimizeProgress.value,
+        [0, 0.3],
+        [1, 0],
         Extrapolation.CLAMP,
       );
       const translateX = interpolate(
@@ -343,26 +453,41 @@ const ExpandingTab = memo(
         Extrapolation.CLAMP,
       );
       return {
-        opacity: labelOpacity,
+        opacity: activeOpacity * minimizeOpacity,
         transform: [{ translateX }],
       };
     });
 
+    // ─── Icon: scale and subtle bounce ──────────────────────────────────
     const iconScale = useAnimatedStyle(() => {
       'worklet';
       const iconScaleValue = interpolate(
         progress.value,
         [0, 1],
-        [0.95, 1],
+        [0.95, 1.1],
+        Extrapolation.CLAMP,
+      );
+      // Slightly smaller in minimized state
+      const minimizeScale = interpolate(
+        minimizeProgress.value,
+        [0, 1],
+        [1, 0.92],
         Extrapolation.CLAMP,
       );
       return {
-        transform: [{ scale: iconScaleValue }],
+        transform: [{ scale: iconScaleValue * minimizeScale }],
       };
     });
 
     const iconColor = isActive ? activeIcon : inactiveIcon;
-    const bgColor = isActive ? accentColor : inactiveBg;
+    const bgColor = isActive ? activeBg : inactiveBg;
+    const activeBorderStyle = useAnimatedStyle(() => {
+      'worklet';
+      return {
+        borderWidth: interpolate(progress.value, [0, 1], [0, 0.5]),
+        borderColor: 'rgba(255,255,255,0.15)',
+      };
+    });
 
     return (
       <Pressable
@@ -373,21 +498,18 @@ const ExpandingTab = memo(
         hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
       >
         <Animated.View
-          style={[styles.tab, containerStyle, { backgroundColor: bgColor }]}
+          style={[styles.tab, containerStyle, { backgroundColor: bgColor }, activeBorderStyle]}
         >
           <View style={styles.tabContent}>
             <Animated.View style={[styles.iconWrapper, iconScale]}>
               <TabIcon
                 name={icon}
                 color={iconColor}
-                fill={vibrantFill}
+                fill="none" // Remove solid fill since capsule itself highlights
                 isActive={isActive}
               />
             </Animated.View>
           </View>
-          {/* Label is absolutely positioned beside the icon and clipped by the
-              pill (overflow hidden) — it never takes layout space, so the icon
-              stays perfectly centered and can't be pushed out / cut off. */}
           <Animated.View style={[styles.labelPositioner, labelStyle]}>
             <Text
               style={[styles.label, { color: labelColor }]}
@@ -402,66 +524,79 @@ const ExpandingTab = memo(
   },
 );
 
-// Enhanced FAB Button
+// ═══════════════════════════════════════════════════════════════════════
+// FabButton — same as before, with subtle minimize awareness
+// ═══════════════════════════════════════════════════════════════════════
+
 const FabButton = memo(
   ({
     onPress,
-    color,
+    barColors,
     iconColor,
     accessibilityLabel,
   }: {
     onPress: () => void;
-    color: string;
+    barColors: ReturnType<typeof getBarColors>;
     iconColor: string;
     accessibilityLabel: string;
   }) => {
-    const pulse = useSharedValue(1);
-
-    useEffect(() => {
-      pulse.value = withTiming(1.05, {
-        duration: 1000,
-        reduceMotion: ReduceMotion.System,
-      });
-      const interval = setInterval(() => {
-        pulse.value = withSequence(
-          withTiming(1.05, {
-            duration: 1000,
-            reduceMotion: ReduceMotion.System,
-          }),
-          withTiming(1, { duration: 1000, reduceMotion: ReduceMotion.System }),
-        );
-      }, 2000);
-      return () => clearInterval(interval);
-    }, [pulse]);
+    const press = useSharedValue(1);
 
     const pulseStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: pulse.value }],
+      transform: [
+        { scale: press.value },
+      ],
     }));
 
     return (
       <Pressable
         onPress={onPress}
+        onPressIn={() => {
+          press.value = withSpring(0.92, {
+            damping: 20,
+            stiffness: 400,
+            mass: 0.6,
+          });
+        }}
+        onPressOut={() => {
+          press.value = withSpring(1, {
+            damping: 20,
+            stiffness: 400,
+            mass: 0.6,
+          });
+        }}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
       >
-        <Animated.View
-          style={[styles.fab, { backgroundColor: color }, pulseStyle]}
-        >
-          <Svg width={26} height={26} viewBox="0 0 24 24">
-            <Path
-              d="M12 5V19M5 12H19"
-              stroke={iconColor}
-              strokeWidth={2.8}
-              strokeLinecap="round"
-            />
-          </Svg>
+        <Animated.View style={[styles.fab, { borderColor: barColors.barBorder }, pulseStyle]}>
+          <PlatformGlassMaterial
+            style={styles.liquidGlass}
+            tintColor={barColors.glassTint}
+            colorScheme={barColors.colorScheme}
+            blurFallbackColor={barColors.blurFallback}
+            isFab={true}
+          />
+
+          <View style={styles.fabIconContainer}>
+            <Svg width={26} height={26} viewBox="0 0 24 24">
+              <Path
+                d="M12 5V19M5 12H19"
+                stroke={iconColor}
+                strokeWidth={2.8}
+                strokeLinecap="round"
+              />
+            </Svg>
+          </View>
         </Animated.View>
       </Pressable>
     );
   },
 );
 
-// Pure Tab Icon - Dark Stroke + PROMINENT Vibrant Fill
+// ═══════════════════════════════════════════════════════════════════════
+// TabIcon — Pure SVG icons (unchanged)
+// ═══════════════════════════════════════════════════════════════════════
+
 const TabIcon = memo(
   ({
     name,
@@ -474,12 +609,9 @@ const TabIcon = memo(
     fill: string;
     isActive: boolean;
   }) => {
-    // Icon must render at exactly ICON_SIZE so it never overflows the 22px
-    // iconWrapper (the tab clips via overflow:hidden — 26px SVGs got cropped).
     const size = ICON_SIZE;
     const sw = 2.2;
     const vibrantFill = isActive ? fill : 'none';
-    // FULL OPACITY for prominent visibility
     const fillOpacity = isActive ? 1 : 0;
 
     switch (name) {
@@ -691,6 +823,10 @@ const TabIcon = memo(
   },
 );
 
+// ═══════════════════════════════════════════════════════════════════════
+// Styles
+// ═══════════════════════════════════════════════════════════════════════
+
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
@@ -699,20 +835,29 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
+  glassSystemContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
   barContainer: {
-    width: BAR_WIDTH,
     height: BAR_HEIGHT,
     borderRadius: CORNER_RADIUS,
     overflow: 'hidden',
-    borderWidth: 1.5,
+    // Liquid glass: thin luminous border
+    borderWidth: 0.5,
+    // Softer, more diffused shadow for floating glass effect
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 25,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 30,
     elevation: 10,
   },
   blur: {
     ...StyleSheet.absoluteFillObject,
+  },
+  liquidGlass: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: CORNER_RADIUS,
   },
   bar: {
     flex: 1,
@@ -774,11 +919,20 @@ const styles = StyleSheet.create({
     borderRadius: FAB_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    borderWidth: 0.5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 12,
+  },
+  fabIconContainer: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
   },
 });
 

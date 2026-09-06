@@ -6,11 +6,11 @@ import { AddScreen } from '../screens/user/AddScreen';
 import { KazaScreen } from '../screens/user/KazaScreen';
 import { CHITFUND_ENABLED, ISLAMIC_ENABLED } from '../config/buildFlags';
 import { getPreference } from '../store/database';
-import { getUserTabs } from './userTabs';
+import { getUserTabs, KAZA_PINNED_KEY } from './userTabs';
 
 const Tab = createBottomTabNavigator();
 
-export const KAZA_PINNED_KEY = 'kazaPinned';
+export { KAZA_PINNED_KEY };
 
 // Guarded require: CHITFUND_ENABLED is inlined at build time, so the lite
 // bundle never resolves the chit-fund screen.

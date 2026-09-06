@@ -14,6 +14,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import { EXPRESSIVE, SPRING } from '../../theme/motion';
 
 export type PressableScaleHaptic = 'impactLight' | 'none';
 
@@ -32,7 +33,12 @@ export interface PressableScaleProps {
   accessibilityState?: AccessibilityState;
 }
 
-const SCALE_SPRING = { damping: 15, stiffness: 300 };
+// Press and release are not the same curve. Going down is fast and critically
+// damped — the surface should be under the finger immediately. Coming back up
+// carries a little overshoot, which is what makes a slab of pixels read as a
+// physical thing rather than a value being reassigned.
+const PRESS_SPRING = { ...SPRING.press, reduceMotion: EXPRESSIVE };
+const RELEASE_SPRING = { ...SPRING.release, reduceMotion: EXPRESSIVE };
 
 // Single animated node: carries layout style (so it participates correctly
 // in a parent flex row/column, e.g. `flex: 1` segmented-control items) AND
@@ -64,13 +70,13 @@ export const PressableScale: React.FC<PressableScaleProps> = ({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.96, SCALE_SPRING);
-    opacity.value = withSpring(0.9, SCALE_SPRING);
+    scale.value = withSpring(0.97, PRESS_SPRING);
+    opacity.value = withSpring(0.95, PRESS_SPRING);
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, SCALE_SPRING);
-    opacity.value = withSpring(1, SCALE_SPRING);
+    scale.value = withSpring(1, RELEASE_SPRING);
+    opacity.value = withSpring(1, RELEASE_SPRING);
   };
 
   const handlePress = (event: GestureResponderEvent) => {

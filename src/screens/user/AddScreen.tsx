@@ -4,6 +4,8 @@ import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
 import { AddTransactionSheet } from '../../components/modals/AddTransactionSheet';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
 import { useSpecTheme } from '../../theme/specTheme';
+import { useGoalStore } from '../../store/goalStore';
+import { applyRoundUp } from '../../services/roundUp';
 
 export const AddScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -11,6 +13,7 @@ export const AddScreen: React.FC = () => {
   const isFocused = useIsFocused();
   const { colors } = useSpecTheme();
   const { addTransaction } = useTransactions();
+  const goals = useGoalStore(s => s.goals);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -41,8 +44,9 @@ export const AddScreen: React.FC = () => {
         onClose={closeSheet}
         onSubmit={async (draft, type) => {
           try {
+            const amountPaise = draft.amount_paise || 0;
             await addTransaction({
-              amountPaise: draft.amount_paise || 0,
+              amountPaise,
               type: type || 'expense',
               category: draft.category_id || 'unknown',
               categoryIcon: 'other',
@@ -50,6 +54,17 @@ export const AddScreen: React.FC = () => {
               paymentMethod: draft.payment_method ?? 'Manual',
               date: draft.date || new Date().toISOString(),
             });
+
+            // Deliberately after the await and outside the try that guards the
+            // expense: the transaction is what the user asked for, and it must
+            // be saved and kept even if earmarking the change fails.
+            // applyRoundUp swallows its own errors for the same reason, and
+            // only ever fires for spending — rounding up income would earmark
+            // money against money arriving, which is nonsense.
+            if ((type || 'expense') === 'expense') {
+              await applyRoundUp(amountPaise, draft.merchant_name, goals);
+            }
+
             closeSheet();
           } catch (error) {
             Alert.alert('Could not save transaction', error instanceof Error ? error.message : 'Please try again.');

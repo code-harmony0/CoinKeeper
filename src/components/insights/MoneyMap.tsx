@@ -5,9 +5,10 @@
  * central interchange, categories are stations, the top line burns brightest,
  * the budget is a fare boundary. It refuses the category default: a row of
  * stat cards above a bar chart.
- * OWN-WORLD: a midnight enamel panel (dark tokens) on the light canvas;
- * porcelain hub and station ticks; five pastel line inks (lavender, pink,
- * mint, peach, sky); routes bend only at 45/90; one line burns.
+ * OWN-WORLD: a neutral enamel panel (`enamel` tokens) on the light canvas;
+ * porcelain hub and station ticks; line inks drawn from the category palette
+ * so a route's colour belongs to its category; routes bend only at 45/90;
+ * one line burns.
  * STORY: the visitor traces "where did this month's money go" in one glance,
  * taps a station, sees that line's spend and its recent transactions.
  * FIRST VIEWPORT: header pills, then the map panel: hub (income) at center,
@@ -21,7 +22,7 @@
  */
 
 import React, { memo, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Path, Circle, G, Text as SvgText } from 'react-native-svg';
 import Animated, {
   useAnimatedProps,
@@ -29,25 +30,30 @@ import Animated, {
   withTiming,
   FadeInDown,
 } from 'react-native-reanimated';
-import { ChevronRight } from 'lucide-react-native';
-import { useSpecTheme, specDark, specLight } from '../../theme/specTheme';
+import { ChevronRight, Plus } from 'lucide-react-native';
+import { useSpecTheme, enamel } from '../../theme/specTheme';
+import { categoryInk } from '../../theme/categoryColors';
 import { Money } from '../../utils/money';
-import { PaceRing } from './PaceRing';
-import type { Transaction } from '../../types/transaction';
+import { categoryLabel } from '../../utils/categoryLabel';
+import { PaceRing, RingLegend } from './PaceRing';
+import { StoryRow, StatusLine, KpiPills, PlanBar } from './HeroStats';
+import { PressableScale } from '../anim';
+import type { Badge } from '../../services/badges';
+import type { AgeOfMoney } from '../../services/ageOfMoney';
+import type { HomeStatus } from '../../services/homeNarrative';
+import type { MonthLedger } from '../../hooks/useMonthLedger';
+import { EXPRESSIVE, HOME_SEQUENCE, STAGGER } from '../../theme/motion';
 
 const SCREEN_W = Dimensions.get('window').width;
 
-// Line inks are the light pastel accents (lavender → pink → mint → peach →
-// sky, rotation order is load-bearing) glowing on the dark enamel ground.
-const LINE_COLORS = [
-  specLight.lavender,
-  specLight.pink,
-  specLight.mint,
-  specLight.peach,
-  specLight.sky,
-];
+// Line inks come from the category palette, not the app's pastel accent
+// rotation. The rotation is right on the light canvas; inside the dark hero it
+// put a pink route beside a green ring and an amber warning, and a colour that
+// carries no meaning sitting between two that do reads as a bug. A route's
+// colour is now a property of its category, stable across renders and screens.
+const lineColor = (name: string) => categoryInk(name).fill;
 
-const EN = { ...specDark, background: '#121723' }; // midnight enamel panel tokens
+const EN = enamel;
 
 const VW = 340;
 const VH = 306;
@@ -67,11 +73,6 @@ const STATIONS = [
   { x: 170, y: 240, path: 'M170,150 L170,240', labelDy: 30, dx: 0 }, // S  (vertical, labels below)
 ];
 
-/** "unknown" / "food" arrive lowercase from the ledger; screens show them titled. */
-const titleCase = (s: string): string =>
-  s === 'unknown'
-    ? 'Uncategorized'
-    : s.charAt(0).toUpperCase() + s.slice(1);
 
 type MonthPlan = {
   safeToSpend: number; // paise
@@ -80,9 +81,32 @@ type MonthPlan = {
 };
 
 interface MoneyMapProps {
-  transactions: Transaction[];
+  /** The month's aggregates, derived once by useMonthLedger. */
+  ledger: MonthLedger;
+  /**
+   * This month's income, from FinancialIntelligenceEngine.
+   *
+   * NOT from the ledger. The engine is the single source for income — it is
+   * what derives the plan, the buckets and safe-to-spend — and taking income
+   * from a second computation put ₹1,00,000 on Home beside ₹85,000 on Money
+   * Plan for the same month. Worse, the outer ring divides the engine's plan
+   * by the ledger's income, mixing two sources inside one ratio.
+   */
+  incomePaise: number;
   monthPlan: MonthPlan | null;
   onOpenReports: () => void;
+  /** Opens category management — the map's growth prompt when data is thin. */
+  onAddCategory: () => void;
+  /** Consecutive days at or under the daily allowance. */
+  streakDays: number;
+  /** The one badge worth showing, or null. */
+  badge: Badge | null;
+  /** How long money sits before being spent, or null when unprovable. */
+  ageOfMoney: AgeOfMoney | null;
+  /** The contextual sentence under the ring. */
+  status: HomeStatus;
+  /** Bumped on pull-to-refresh to rewind and redraw the gauge. */
+  replayToken?: number;
 }
 
 const compactINR = (paise: number): string => {
@@ -125,47 +149,29 @@ const RouteLine = memo(
 );
 
 export const MoneyMap: React.FC<MoneyMapProps> = ({
-  transactions,
+  ledger,
+  incomePaise: income,
   monthPlan,
   onOpenReports,
+  onAddCategory,
+  streakDays,
+  badge,
+  ageOfMoney,
+  status,
+  replayToken = 0,
 }) => {
   const { cardRadius, cardShadow } = useSpecTheme();
   const [activeIndex, setActiveIndex] = useState(0);
   const active = useSharedValue(0);
 
-  const map = useMemo(() => {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const monthTxs = transactions.filter(
-      t => new Date(t.date).getTime() >= monthStart,
-    );
+  const {
+    spendPaise: spend,
+    todaySpendPaise: todaySpend,
+    byCategory: breakdown,
+    expenses,
+  } = ledger;
 
-    let income = 0;
-    let spend = 0;
-    const byCategory = new Map<string, number>();
-    const expenses: Transaction[] = [];
-
-    for (const t of monthTxs) {
-      if (t.type === 'income') income += t.amountPaise;
-      else if (t.type === 'expense') {
-        spend += t.amountPaise;
-        expenses.push(t);
-        byCategory.set(
-          t.category,
-          (byCategory.get(t.category) ?? 0) + t.amountPaise,
-        );
-      }
-    }
-
-    const stations = [...byCategory.entries()]
-      .map(([name, amountPaise]) => ({ name, amountPaise }))
-      .sort((a, b) => b.amountPaise - a.amountPaise)
-      .slice(0, 5);
-
-    return { income, spend, stations, expenses };
-  }, [transactions]);
-
-  const { income, spend, stations, expenses } = map;
+  const stations = useMemo(() => breakdown.slice(0, 5), [breakdown]);
 
   const selectStation = (i: number) => {
     setActiveIndex(i);
@@ -182,9 +188,6 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
   }, [activeStation, expenses]);
 
   const safeToSpend = monthPlan?.safeToSpend ?? 0;
-  const pct = safeToSpend > 0 ? Math.min(1, spend / safeToSpend) : 0;
-  const remaining = safeToSpend > 0 ? safeToSpend - spend : 0;
-  const over = remaining < 0;
   const mapW = Math.min(SCREEN_W - 80, 340);
   const mapH = mapW * (VH / VW);
   // The transit diagram needs at least three spokes to read as a map.
@@ -195,7 +198,7 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
     station: { name: string; amountPaise: number },
     i: number,
   ) => {
-    const color = LINE_COLORS[i % LINE_COLORS.length];
+    const color = lineColor(station.name);
     const isBurning = stations[activeIndex]?.name === station.name;
     const { labelDy, dx: labelDx } = STATIONS[i];
     return (
@@ -225,7 +228,7 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
           textAnchor="middle"
           opacity={isBurning ? 1 : 0.55}
         >
-          {titleCase(station.name)}
+          {categoryLabel(station.name)}
         </SvgText>
         <SvgText
           x={STATIONS[i].x + labelDx}
@@ -247,7 +250,7 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
       {/* Panel header */}
       <View style={styles.panelHeader}>
         <Text style={styles.panelTitle}>This month</Text>
-        <Pressable
+        <PressableScale
           onPress={onOpenReports}
           accessibilityRole="button"
           accessibilityLabel="View report"
@@ -255,18 +258,46 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
           style={styles.reportLink}
         >
           <Text style={styles.reportLinkText}>View report</Text>
-          <ChevronRight size={14} color={EN.textSecondary} strokeWidth={2.4} />
-        </Pressable>
+          <ChevronRight size={13} color={EN.textPrimary} strokeWidth={2.6} />
+        </PressableScale>
       </View>
 
-      {/* Hero: the one number, the pacing ring, the verdict. */}
+      {/* Hero: the three rings, then the story, the status, and the frame. */}
       <View style={styles.heroRing}>
         <PaceRing
           safeTodayPaise={monthPlan?.safeToSpendToday ?? 0}
+          todaySpendPaise={todaySpend}
           spendPaise={spend}
           planPaise={safeToSpend}
+          incomePaise={income}
+          replayToken={replayToken}
+        />
+        {/* The key to the three rings. Without it the gauge is decoration:
+            three arcs the reader has to guess the meaning of. */}
+        <RingLegend
+          safeTodayPaise={monthPlan?.safeToSpendToday ?? 0}
+          todaySpendPaise={todaySpend}
+          spendPaise={spend}
+          planPaise={safeToSpend}
+          incomePaise={income}
         />
       </View>
+
+      <StoryRow streakDays={streakDays} badge={badge} ageOfMoney={ageOfMoney} />
+      <StatusLine status={status} />
+      <KpiPills incomePaise={income} planPaise={safeToSpend} />
+      {safeToSpend > 0 && (
+        <PlanBar
+          spendPaise={spend}
+          planPaise={safeToSpend}
+          categories={breakdown}
+        />
+      )}
+
+      {/* The map is the second act: the hero says how the month is going, the
+          map says where the money went. A rule keeps them from reading as one
+          undifferentiated column of panel. */}
+      <View style={styles.actBreak} />
 
       {stations.length === 0 ? (
         <View style={styles.emptyState}>
@@ -286,13 +317,13 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
               {Money.format(income, { zeroDecimals: true })}
             </Text>
           </View>
-          {stations.map((s, i) => {
-            const color = LINE_COLORS[i % LINE_COLORS.length];
+          {stations.map(s => {
+            const color = lineColor(s.name);
             const share = spend > 0 ? s.amountPaise / spend : 0;
             return (
               <View key={s.name} style={styles.sparseRow}>
                 <View style={styles.sparseRowHead}>
-                  <Text style={styles.sparseName}>{titleCase(s.name)}</Text>
+                  <Text style={styles.sparseName}>{categoryLabel(s.name)}</Text>
                   <Text style={[styles.sparseAmount, { color }]}>
                     {Money.format(s.amountPaise, { zeroDecimals: true })}
                   </Text>
@@ -311,9 +342,29 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
               </View>
             );
           })}
-          <Text style={styles.sparseHint}>
-            Track a third category and this becomes your money map
-          </Text>
+          {/* This is a growth prompt, and it spent its life as dead grey text
+              at the foot of the panel where nobody would ever action it. A
+              prompt worth making is worth making tappable — and it arrives
+              after the rows it follows, so it reads as the conclusion of the
+              list rather than as another row of it. */}
+          <Animated.View
+            entering={FadeInDown.springify()
+              .damping(16)
+              .delay(HOME_SEQUENCE.breakdown + stations.length * STAGGER.normal)
+              .reduceMotion(EXPRESSIVE)}
+          >
+            <PressableScale
+              onPress={onAddCategory}
+              style={styles.sparseCta}
+              accessibilityRole="button"
+              accessibilityLabel="Add a category to build your money map"
+            >
+              <Plus size={16} color={EN.success} strokeWidth={2.8} />
+              <Text style={styles.sparseCtaText}>
+                Add a category to build your map
+              </Text>
+            </PressableScale>
+          </Animated.View>
         </View>
       ) : (
         <>
@@ -336,7 +387,7 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
                 index={i}
                 active={active}
                 path={STATIONS[i].path}
-                color={LINE_COLORS[i % LINE_COLORS.length]}
+                color={lineColor(s.name)}
               />
             ))}
             {/* stations */}
@@ -379,18 +430,18 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
                     styles.detailDot,
                     {
                       backgroundColor:
-                        LINE_COLORS[activeIndex % LINE_COLORS.length],
+                        lineColor(activeStation.name),
                     },
                   ]}
                 />
                 <Text style={styles.detailName}>
-                  {titleCase(activeStation.name)}
+                  {categoryLabel(activeStation.name)}
                 </Text>
                 <Text
                   style={[
                     styles.detailAmount,
                     {
-                      color: LINE_COLORS[activeIndex % LINE_COLORS.length],
+                      color: lineColor(activeStation.name),
                     },
                   ]}
                 >
@@ -404,7 +455,7 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
                   <View key={tx.id} style={styles.txRow}>
                     <View style={styles.txLeft}>
                       <Text style={styles.txDesc} numberOfLines={1}>
-                        {titleCase(tx.description || tx.category)}
+                        {categoryLabel(tx.description || tx.category)}
                       </Text>
                       <Text style={styles.txDate}>
                         {new Date(tx.date).toLocaleDateString(undefined, {
@@ -425,44 +476,6 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
         </>
       )}
 
-      {/* Fare strip — spent vs plan. Belongs to every non-empty state, map or
-          list; it is the panel's bottom line either way. */}
-      {stations.length > 0 &&
-        (safeToSpend > 0 ? (
-          <View style={styles.fareStrip}>
-            <View style={styles.fareRow}>
-              <Text style={styles.fareSpent}>
-                Spent{' '}
-                <Text style={styles.fareSpentValue}>
-                  {Money.format(spend, { zeroDecimals: true })}
-                </Text>{' '}
-                of {Money.format(safeToSpend, { zeroDecimals: true })} plan
-              </Text>
-              <Text style={[styles.fareLeft, over && styles.fareOver]}>
-                {over
-                  ? `${Money.format(-remaining, { zeroDecimals: true })} over`
-                  : `${Money.format(remaining, { zeroDecimals: true })} left`}
-              </Text>
-            </View>
-            <View style={styles.fareTrack}>
-              <View
-                style={[
-                  styles.fareFill,
-                  {
-                    // A 2%-of-plan spend rendered as a 2%-wide sliver read as a
-                    // rendering fault; floor it so the fill is always a bar.
-                    width: `${Math.max(pct * 100, 2)}%`,
-                    backgroundColor: over ? EN.danger : EN.success,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        ) : (
-          <Text style={styles.fareHint}>
-            Add income to set this month's spending plan
-          </Text>
-        ))}
     </View>
   );
 };
@@ -478,6 +491,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
+  actBreak: {
+    height: 1,
+    backgroundColor: EN.border,
+    marginTop: 24,
+    marginBottom: 20,
+  },
   panelTitle: {
     fontSize: 15,
     fontFamily: 'Satoshi-Bold',
@@ -488,15 +507,22 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
   },
+  // A real button, not a text link: it is the only way out of the panel and
+  // was previously indistinguishable from the labels around it.
   reportLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 3,
+    backgroundColor: EN.card,
+    paddingLeft: 12,
+    paddingRight: 9,
+    paddingVertical: 7,
+    borderRadius: 999,
   },
   reportLinkText: {
-    fontSize: 13,
-    fontFamily: 'Satoshi-Medium',
-    color: EN.textSecondary,
+    fontSize: 12,
+    fontFamily: 'Satoshi-Bold',
+    color: EN.textPrimary,
   },
   emptyState: {
     alignItems: 'center',
@@ -563,10 +589,21 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
-  sparseHint: {
-    fontSize: 12,
-    fontFamily: 'Satoshi-Regular',
-    color: EN.textSecondary,
+  sparseCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingLeft: 12,
+    paddingRight: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: `${EN.success}1F`,
+  },
+  sparseCtaText: {
+    fontSize: 13,
+    fontFamily: 'Satoshi-Bold',
+    color: EN.success,
   },
   detail: {
     borderTopWidth: 1,
@@ -622,50 +659,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Satoshi-Bold',
     color: EN.textPrimary,
-  },
-  fareStrip: {
-    borderTopWidth: 1,
-    borderTopColor: EN.border,
-    paddingTop: 12,
-  },
-  fareRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  fareSpent: {
-    fontSize: 13,
-    fontFamily: 'Satoshi-Regular',
-    color: EN.textSecondary,
-  },
-  fareSpentValue: {
-    fontFamily: 'Satoshi-Bold',
-    color: EN.textPrimary,
-  },
-  fareLeft: {
-    fontSize: 13,
-    fontFamily: 'Satoshi-Bold',
-    color: EN.success,
-  },
-  fareOver: {
-    color: EN.danger,
-  },
-  fareTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: EN.surfaceSunken,
-    overflow: 'hidden',
-  },
-  fareFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  fareHint: {
-    fontSize: 12,
-    fontFamily: 'Satoshi-Regular',
-    color: EN.textSecondary,
-    paddingTop: 8,
   },
 });
 

@@ -4,23 +4,49 @@ export type GroupedRow =
   | { type: 'header'; label: string; key: string }
   | { type: 'row'; tx: Transaction; key: string };
 
-const dayKey = (iso: string): string => iso.slice(0, 10);
+/**
+ * The local calendar day a timestamp falls on.
+ *
+ * This used to be `iso.slice(0, 10)` — the UTC date carved off the string —
+ * while the header label was rendered with `toLocaleDateString`, i.e. in local
+ * time. The two disagree for every timestamp after 18:30 IST, so two different
+ * UTC days produced two separate groups carrying the *same* local label, and
+ * the list showed "9 August 2026" twice in a row.
+ *
+ * It also broke Today/Yesterday every evening in India, which is the entire
+ * user base: at 23:00 IST the UTC date is already tomorrow, so "Today" stopped
+ * matching the day the user was actually having.
+ *
+ * Key and label must be derived from the same clock. Both are local now.
+ */
+const dayKey = (value: string | Date): string => {
+  const d = value instanceof Date ? value : new Date(value);
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+};
 
-const dayLabel = (iso: string): string => {
+const dayLabel = (iso: string, now: Date): string => {
   const date = new Date(iso);
-  const today = dayKey(new Date().toISOString());
-  const yesterday = dayKey(new Date(Date.now() - 86400000).toISOString());
-  const key = dayKey(iso);
+  const key = dayKey(date);
 
-  if (key === today) return 'Today';
-  if (key === yesterday) return 'Yesterday';
-  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  if (key === dayKey(now)) return 'Today';
+  if (key === dayKey(new Date(now.getTime() - 86400000))) return 'Yesterday';
+
+  return date.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 };
 
 // Assumes transactions are already sorted newest-first (transactionStore
 // loads them with `ORDER BY t.occurred_at DESC`) — this only groups, it
 // does not re-sort.
-export const groupTransactionsByDate = (transactions: Transaction[]): GroupedRow[] => {
+export const groupTransactionsByDate = (
+  transactions: Transaction[],
+  now: Date = new Date(),
+): GroupedRow[] => {
   const rows: GroupedRow[] = [];
   let currentKey: string | null = null;
 
@@ -28,7 +54,11 @@ export const groupTransactionsByDate = (transactions: Transaction[]): GroupedRow
     const key = dayKey(tx.date);
     if (key !== currentKey) {
       currentKey = key;
-      rows.push({ type: 'header', label: dayLabel(tx.date), key: `header-${key}` });
+      rows.push({
+        type: 'header',
+        label: dayLabel(tx.date, now),
+        key: `header-${key}`,
+      });
     }
     rows.push({ type: 'row', tx, key: tx.id });
   }

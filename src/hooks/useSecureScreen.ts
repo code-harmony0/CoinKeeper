@@ -8,10 +8,16 @@
 import { useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { enableSecureScreen, disableSecureScreen } from '../native/SecureScreen';
+import { SECURE_SCREEN_ENABLED } from '../config/buildFlags';
 
 export const useSecureScreen = () => {
   useFocusEffect(
     useCallback(() => {
+      // Off in development so screenshots and screen recording work — with
+      // FLAG_SECURE on, every `adb screencap` of a money screen comes back
+      // solid black, which makes visual review impossible. Hardcoded on in
+      // release by `__DEV__`; see buildFlags.ts.
+      if (!SECURE_SCREEN_ENABLED) return undefined;
       enableSecureScreen();
       return () => disableSecureScreen();
     }, [])

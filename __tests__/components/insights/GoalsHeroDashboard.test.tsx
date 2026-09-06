@@ -19,7 +19,7 @@ describe('GoalsHeroDashboard', () => {
     const { getByText } = render(
       <GoalsHeroDashboard rankedGoals={[rankedGoal()]} contributedThisMonthPaise={20000} contributedLastMonthPaise={10000} />,
     );
-    expect(getByText(/Laptop is on track/)).toBeTruthy();
+    expect(getByText(/Laptop is your top priority/)).toBeTruthy();
   });
 
   it('shows an improving trend when this month exceeds last month', () => {

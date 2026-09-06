@@ -5,7 +5,7 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-platform :ios, min_ios_version_supported
+platform :ios, '15.5'
 prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
@@ -33,5 +33,21 @@ target 'CoinKeeper' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # fmt 11.0.2 (hard-pinned by RCT-Folly) fails to compile under Xcode 26's
+    # Clang: its consteval format-string checking is no longer a constant
+    # expression in format-inl.h. Upstream fixed this in fmt 11.1.
+    # base.h #defines FMT_USE_CONSTEVAL unconditionally, so a -D flag gets
+    # overwritten -- the header itself has to be edited.
+    base_h = File.join(__dir__, 'Pods/fmt/include/fmt/base.h')
+    if File.exist?(base_h)
+      src = File.read(base_h)
+      patched = src.gsub('#  define FMT_USE_CONSTEVAL 1', '#  define FMT_USE_CONSTEVAL 0')
+      if patched != src
+        FileUtils.chmod(0644, base_h)
+        File.write(base_h, patched)
+        Pod::UI.puts 'Patched fmt/base.h: FMT_USE_CONSTEVAL -> 0 (Xcode 26 compat)'
+      end
+    end
   end
 end

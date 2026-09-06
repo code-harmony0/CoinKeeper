@@ -7,7 +7,12 @@ import { useSpecTheme } from '../../theme/specTheme';
 
 interface Props {
   title: string;
-  onBack: () => void;
+  /**
+   * Omit on a root tab screen. A back arrow is a promise that there is
+   * somewhere to go back to; on a tab root there isn't, and pressing it either
+   * does nothing or drops the user out of the tab they chose.
+   */
+  onBack?: () => void;
   rightActions?: React.ReactNode;
 }
 
@@ -21,12 +26,16 @@ export const AppHeader: React.FC<Props> = ({ title, onBack, rightActions }) => {
 
   return (
     <View style={styles.headerRow}>
-      <PressableScale
-        onPress={onBack}
-        style={[styles.backButton, { backgroundColor: colors.chipBg }]}
-      >
-        <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
-      </PressableScale>
+      {onBack ? (
+        <PressableScale
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={[styles.backButton, { backgroundColor: colors.chipBg }]}
+        >
+          <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+        </PressableScale>
+      ) : null}
       <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
       {rightActions ? <View style={styles.rightActions}>{rightActions}</View> : null}
     </View>

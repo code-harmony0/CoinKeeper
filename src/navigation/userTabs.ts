@@ -1,3 +1,5 @@
+export const KAZA_PINNED_KEY = 'kazaPinned';
+
 export type ModuleFlags = {
   /** Chit fund module — pro flavor only. */
   chitFund: boolean;

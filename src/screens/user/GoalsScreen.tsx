@@ -17,6 +17,14 @@ import { GoalsHeroDashboard } from '../../components/insights/GoalsHeroDashboard
 import { GoalCelebrationModal } from '../../components/insights/GoalCelebrationModal';
 import { Money } from '../../utils/money';
 import { useGoalIntelligence } from '../../hooks/useGoalIntelligence';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import {
+  DURATION,
+  EXPRESSIVE,
+  STAGGER,
+  sequenceDelay,
+  useReducedMotion,
+} from '../../theme/motion';
 
 const isInMonth = (dateStr: string, monthsAgo: number): boolean => {
   const d = new Date(dateStr);
@@ -34,6 +42,7 @@ export const GoalsScreen = () => {
   const { addGoal, getEmergencyFundTarget, updateGoalProgress, deleteGoal } = useGoalStore();
   const { transactions } = useTransactionStore();
   const { rankedGoals, savingsBudgetRemainingPaise } = useGoalIntelligence();
+  const reduced = useReducedMotion();
 
   const [showAdd, setShowAdd] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<{ id: string, name: string } | null>(null);
@@ -139,18 +148,31 @@ export const GoalsScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <PressableScale onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <ChevronLeft color={colors.textPrimary} size={24} />
         </PressableScale>
         <Text variant="h2" style={{ color: colors.textPrimary }}>Goals</Text>
-        <PressableScale onPress={() => setShowAdd(!showAdd)} style={styles.backBtn}>
+        <PressableScale
+          onPress={() => setShowAdd(true)}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Add a goal"
+        >
           <Plus color={colors.textPrimary} size={24} />
         </PressableScale>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {rankedGoals.length === 0 ? (
-          <View style={styles.emptyState}>
+          <Animated.View
+            style={styles.emptyState}
+            entering={FadeInDown.duration(DURATION.entrance).reduceMotion(EXPRESSIVE)}
+          >
             <View style={[styles.emptyIcon, { backgroundColor: `${colors.primaryAccent}15` }]}>
               <Target color={colors.primaryAccent} size={48} />
             </View>
@@ -158,12 +180,16 @@ export const GoalsScreen = () => {
             <Text variant="caption" style={{ color: colors.textSecondary, marginTop: 4, textAlign: 'center', paddingHorizontal: 40, lineHeight: 20 }}>
               Whether it's a new laptop or an emergency fund, every great journey starts with a single goal.
             </Text>
-            <Button 
-              title="Create First Goal" 
+            {/* The empty state's one bit of forward motion — a number to aim at, not just an invitation to start. */}
+            <Text variant="caption" style={{ color: colors.success, fontFamily: 'Satoshi-Bold', marginTop: 12 }}>
+              Your first ₹500 is the hardest one.
+            </Text>
+            <Button
+              title="Create First Goal"
               onPress={() => setShowAdd(true)}
               style={{ marginTop: 32, paddingHorizontal: 32 }}
             />
-          </View>
+          </Animated.View>
         ) : (
           <>
             <GoalsHeroDashboard
@@ -187,6 +213,10 @@ export const GoalsScreen = () => {
                     deep={goalDeeps[0]}
                     onPress={() => setSelectedGoal({ id: rankedGoals[0].goal.id, name: rankedGoals[0].goal.name })}
                     onAddFunds={() => setSelectedGoal({ id: rankedGoals[0].goal.id, name: rankedGoals[0].goal.name })}
+                    // Long-press to delete worked on every card except the top
+                    // one, which made the #1 goal the only undeletable goal in
+                    // the app — you had to fund it past the top spot first.
+                    onLongPress={() => handleDelete(rankedGoals[0].goal.id)}
                   />
                 </View>
               )}
@@ -195,8 +225,14 @@ export const GoalsScreen = () => {
                 <>
                   <Text variant="caption" style={[styles.eyebrow, { marginBottom: 16 }]}>Other Active Goals</Text>
                   {rankedGoals.slice(1).map((ranked, index) => (
-                    <SecondaryGoalCard
+                    <Animated.View
                       key={ranked.goal.id}
+                      entering={FadeInDown
+                        .delay(sequenceDelay(900 + index * STAGGER.normal, reduced))
+                        .duration(DURATION.entrance)
+                        .reduceMotion(EXPRESSIVE)}
+                    >
+                    <SecondaryGoalCard
                       name={ranked.goal.name}
                       currentAmount={ranked.goal.currentAmount}
                       targetAmount={ranked.goal.targetAmount}
@@ -205,15 +241,25 @@ export const GoalsScreen = () => {
                       onPress={() => setSelectedGoal({ id: ranked.goal.id, name: ranked.goal.name })}
                       onLongPress={() => handleDelete(ranked.goal.id)}
                     />
+                    </Animated.View>
                   ))}
                 </>
               )}
 
               {goalTransfers.length > 0 && (
-                <View style={{ marginTop: 32 }}>
+                <Animated.View
+                  style={{ marginTop: 32 }}
+                  entering={FadeIn.delay(sequenceDelay(1100, reduced)).duration(DURATION.entrance).reduceMotion(EXPRESSIVE)}
+                >
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <Text variant="caption" style={styles.eyebrow}>Recent Activity</Text>
-                    <PressableScale onPress={() => (navigation as any).navigate('Transactions')} style={{ paddingVertical: 8, paddingHorizontal: 4 }}>
+                    <PressableScale
+                      onPress={() => (navigation as any).navigate('Transactions')}
+                      accessibilityRole="button"
+                      accessibilityLabel="View all goal transfers"
+                      // Was a ~34pt row; 44pt is the floor for a touch target.
+                      style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 }}
+                    >
                       <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.skyDeep }}>View All</Text>
                     </PressableScale>
                   </View>
@@ -238,7 +284,7 @@ export const GoalsScreen = () => {
                       </View>
                     ))}
                   </View>
-                </View>
+                </Animated.View>
               )}
             </View>
           </>
@@ -304,7 +350,10 @@ const makeStyles = (colors: any) =>
       marginBottom: 16,
     },
     eyebrow: {
-      color: colors.textSecondary,
+      // textSecondary lands at ~4.0:1 on the light-blue canvas and fails AA.
+      // specTheme ships sectionLabel (~6.6:1) for exactly this — the eyebrows
+      // here were still on the failing token. See DESIGN.md §2.
+      color: colors.sectionLabel,
       fontFamily: 'Satoshi-Bold',
       fontSize: 11,
       letterSpacing: 0.8,

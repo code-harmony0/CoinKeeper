@@ -1,0 +1,1543 @@
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/results.bin b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/results.bin
+new file mode 100644
+index 0000000..7ed749e
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/results.bin
+@@ -0,0 +1 @@
++o/bundleLibRuntimeToDirDebug
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.dex
+new file mode 100644
+index 0000000..683c8ae
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.dex
+new file mode 100644
+index 0000000..474a289
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/BuildConfig.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/BuildConfig.dex
+new file mode 100644
+index 0000000..8ec54d1
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/BuildConfig.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassImagePickerModule$Companion.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassImagePickerModule$Companion.dex
+new file mode 100644
+index 0000000..cfe63cb
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassImagePickerModule$Companion.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassImagePickerModule$activityListener$1.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassImagePickerModule$activityListener$1.dex
+new file mode 100644
+index 0000000..a535d67
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassImagePickerModule$activityListener$1.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassImagePickerModule.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassImagePickerModule.dex
+new file mode 100644
+index 0000000..57a3497
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassImagePickerModule.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassPackage.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassPackage.dex
+new file mode 100644
+index 0000000..75f41ad
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassPackage.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$Companion.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$Companion.dex
+new file mode 100644
+index 0000000..e6f8d10
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$Companion.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$SpringValue.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$SpringValue.dex
+new file mode 100644
+index 0000000..40d7cc4
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$SpringValue.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$interactionAnimation$1.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$interactionAnimation$1.dex
+new file mode 100644
+index 0000000..119d7e9
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$interactionAnimation$1.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$periodicRefreshRunnable$1.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$periodicRefreshRunnable$1.dex
+new file mode 100644
+index 0000000..9149094
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView$periodicRefreshRunnable$1.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView.dex
+new file mode 100644
+index 0000000..c5db6f0
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassView.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassViewManager$Companion.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassViewManager$Companion.dex
+new file mode 100644
+index 0000000..4805e90
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassViewManager$Companion.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassViewManager.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassViewManager.dex
+new file mode 100644
+index 0000000..01cab16
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/liquidglasskit/LiquidGlassViewManager.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin
+new file mode 100644
+index 0000000..601f245
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/70a2f088ac2447bf7abb7c3a2e10b0e4/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/72c525ff6a60c55da6c397212bbe7a90/results.bin b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/72c525ff6a60c55da6c397212bbe7a90/results.bin
+new file mode 100644
+index 0000000..0d259dd
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/72c525ff6a60c55da6c397212bbe7a90/results.bin
+@@ -0,0 +1 @@
++o/classes
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/.transforms/72c525ff6a60c55da6c397212bbe7a90/transformed/classes/classes_dex/classes.dex b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/72c525ff6a60c55da6c397212bbe7a90/transformed/classes/classes_dex/classes.dex
+new file mode 100644
+index 0000000..45a465b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/.transforms/72c525ff6a60c55da6c397212bbe7a90/transformed/classes/classes_dex/classes.dex differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/buildConfig/debug/com/liquidglasskit/BuildConfig.java b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/buildConfig/debug/com/liquidglasskit/BuildConfig.java
+new file mode 100644
+index 0000000..65c362f
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/buildConfig/debug/com/liquidglasskit/BuildConfig.java
+@@ -0,0 +1,10 @@
++/**
++ * Automatically generated file. DO NOT MODIFY
++ */
++package com.liquidglasskit;
++
++public final class BuildConfig {
++  public static final boolean DEBUG = Boolean.parseBoolean("true");
++  public static final String LIBRARY_PACKAGE_NAME = "com.liquidglasskit";
++  public static final String BUILD_TYPE = "debug";
++}
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.java b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.java
+new file mode 100644
+index 0000000..8ea29c0
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.java
+@@ -0,0 +1,90 @@
++/**
++* This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++*
++* Do not edit this file as changes may cause incorrect behavior and will be lost
++* once the code is regenerated.
++*
++* @generated by codegen project: GeneratePropsJavaDelegate.js
++*/
++
++package com.facebook.react.viewmanagers;
++
++import android.view.View;
++import androidx.annotation.Nullable;
++import com.facebook.react.bridge.ColorPropConverter;
++import com.facebook.react.uimanager.BaseViewManager;
++import com.facebook.react.uimanager.BaseViewManagerDelegate;
++import com.facebook.react.uimanager.LayoutShadowNode;
++
++public class RNLiquidGlassViewManagerDelegate<T extends View, U extends BaseViewManager<T, ? extends LayoutShadowNode> & RNLiquidGlassViewManagerInterface<T>> extends BaseViewManagerDelegate<T, U> {
++  public RNLiquidGlassViewManagerDelegate(U viewManager) {
++    super(viewManager);
++  }
++  @Override
++  public void setProperty(T view, String propName, @Nullable Object value) {
++    switch (propName) {
++      case "interactive":
++        mViewManager.setInteractive(view, value == null ? true : (boolean) value);
++        break;
++      case "blurRadius":
++        mViewManager.setBlurRadius(view, value == null ? 8f : ((Double) value).floatValue());
++        break;
++      case "cornerRadius":
++        mViewManager.setCornerRadius(view, value == null ? 32f : ((Double) value).floatValue());
++        break;
++      case "saturation":
++        mViewManager.setSaturation(view, value == null ? 1f : ((Double) value).floatValue());
++        break;
++      case "tintColor":
++        mViewManager.setTintColor(view, ColorPropConverter.getColor(value, view.getContext()));
++        break;
++      case "refractionStrength":
++        mViewManager.setRefractionStrength(view, value == null ? 0.16f : ((Double) value).floatValue());
++        break;
++      case "chromaticAberration":
++        mViewManager.setChromaticAberration(view, value == null ? 0.04f : ((Double) value).floatValue());
++        break;
++      case "edgeGlowIntensity":
++        mViewManager.setEdgeGlowIntensity(view, value == null ? 0f : ((Double) value).floatValue());
++        break;
++      case "fresnelPower":
++        mViewManager.setFresnelPower(view, value == null ? 4f : ((Double) value).floatValue());
++        break;
++      case "glareIntensity":
++        mViewManager.setGlareIntensity(view, value == null ? 0.16f : ((Double) value).floatValue());
++        break;
++      case "borderIntensity":
++        mViewManager.setBorderIntensity(view, value == null ? 0.12f : ((Double) value).floatValue());
++        break;
++      case "plainBorder":
++        mViewManager.setPlainBorder(view, value == null ? false : (boolean) value);
++        break;
++      case "edgeWidth":
++        mViewManager.setEdgeWidth(view, value == null ? 0.4f : ((Double) value).floatValue());
++        break;
++      case "refractionHeightFraction":
++        mViewManager.setRefractionHeightFraction(view, value == null ? -1f : ((Double) value).floatValue());
++        break;
++      case "depthEffect":
++        mViewManager.setDepthEffect(view, value == null ? false : (boolean) value);
++        break;
++      case "liquidPower":
++        mViewManager.setLiquidPower(view, value == null ? 1.5f : ((Double) value).floatValue());
++        break;
++      case "lightAngle":
++        mViewManager.setLightAngle(view, value == null ? 0.8f : ((Double) value).floatValue());
++        break;
++      case "brightness":
++        mViewManager.setBrightness(view, value == null ? 1f : ((Double) value).floatValue());
++        break;
++      case "noiseIntensity":
++        mViewManager.setNoiseIntensity(view, value == null ? 0.01f : ((Double) value).floatValue());
++        break;
++      case "iridescence":
++        mViewManager.setIridescence(view, value == null ? 0f : ((Double) value).floatValue());
++        break;
++      default:
++        super.setProperty(view, propName, value);
++    }
++  }
++}
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.java b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.java
+new file mode 100644
+index 0000000..0a8a0d6
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.java
+@@ -0,0 +1,37 @@
++/**
++* This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++*
++* Do not edit this file as changes may cause incorrect behavior and will be lost
++* once the code is regenerated.
++*
++* @generated by codegen project: GeneratePropsJavaInterface.js
++*/
++
++package com.facebook.react.viewmanagers;
++
++import android.view.View;
++import androidx.annotation.Nullable;
++import com.facebook.react.uimanager.ViewManagerWithGeneratedInterface;
++
++public interface RNLiquidGlassViewManagerInterface<T extends View> extends ViewManagerWithGeneratedInterface {
++  void setInteractive(T view, boolean value);
++  void setBlurRadius(T view, float value);
++  void setCornerRadius(T view, float value);
++  void setSaturation(T view, float value);
++  void setTintColor(T view, @Nullable Integer value);
++  void setRefractionStrength(T view, float value);
++  void setChromaticAberration(T view, float value);
++  void setEdgeGlowIntensity(T view, float value);
++  void setFresnelPower(T view, float value);
++  void setGlareIntensity(T view, float value);
++  void setBorderIntensity(T view, float value);
++  void setPlainBorder(T view, boolean value);
++  void setEdgeWidth(T view, float value);
++  void setRefractionHeightFraction(T view, float value);
++  void setDepthEffect(T view, boolean value);
++  void setLiquidPower(T view, float value);
++  void setLightAngle(T view, float value);
++  void setBrightness(T view, float value);
++  void setNoiseIntensity(T view, float value);
++  void setIridescence(T view, float value);
++}
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/CMakeLists.txt b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/CMakeLists.txt
+new file mode 100644
+index 0000000..25f5c7c
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/CMakeLists.txt
+@@ -0,0 +1,36 @@
++# Copyright (c) Meta Platforms, Inc. and affiliates.
++#
++# This source code is licensed under the MIT license found in the
++# LICENSE file in the root directory of this source tree.
++
++cmake_minimum_required(VERSION 3.13)
++set(CMAKE_VERBOSE_MAKEFILE on)
++
++file(GLOB react_codegen_SRCS CONFIGURE_DEPENDS *.cpp react/renderer/components/RNLiquidGlassSpec/*.cpp)
++
++add_library(
++  react_codegen_RNLiquidGlassSpec
++  OBJECT
++  ${react_codegen_SRCS}
++)
++
++target_include_directories(react_codegen_RNLiquidGlassSpec PUBLIC . react/renderer/components/RNLiquidGlassSpec)
++
++target_link_libraries(
++  react_codegen_RNLiquidGlassSpec
++  fbjni
++  jsi
++  # We need to link different libraries based on whether we are building rncore or not, that's necessary
++  # because we want to break a circular dependency between react_codegen_rncore and reactnative
++  reactnative
++)
++
++target_compile_options(
++  react_codegen_RNLiquidGlassSpec
++  PRIVATE
++  -DLOG_TAG=\"ReactNative\"
++  -fexceptions
++  -frtti
++  -std=c++20
++  -Wall
++)
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/RNLiquidGlassSpec-generated.cpp b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/RNLiquidGlassSpec-generated.cpp
+new file mode 100644
+index 0000000..c0368fe
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/RNLiquidGlassSpec-generated.cpp
+@@ -0,0 +1,22 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateModuleJniCpp.js
++ */
++
++#include "RNLiquidGlassSpec.h"
++
++namespace facebook::react {
++
++
++
++std::shared_ptr<TurboModule> RNLiquidGlassSpec_ModuleProvider(const std::string &moduleName, const JavaTurboModule::InitParams &params) {
++
++  return nullptr;
++}
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/RNLiquidGlassSpec.h b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/RNLiquidGlassSpec.h
+new file mode 100644
+index 0000000..a5727ae
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/RNLiquidGlassSpec.h
+@@ -0,0 +1,24 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateModuleJniH.js
++ */
++
++#pragma once
++
++#include <ReactCommon/JavaTurboModule.h>
++#include <ReactCommon/TurboModule.h>
++#include <jsi/jsi.h>
++
++namespace facebook::react {
++
++
++
++JSI_EXPORT
++std::shared_ptr<TurboModule> RNLiquidGlassSpec_ModuleProvider(const std::string &moduleName, const JavaTurboModule::InitParams &params);
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ComponentDescriptors.cpp b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ComponentDescriptors.cpp
+new file mode 100644
+index 0000000..60c39d7
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ComponentDescriptors.cpp
+@@ -0,0 +1,22 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateComponentDescriptorCpp.js
++ */
++
++#include <react/renderer/components/RNLiquidGlassSpec/ComponentDescriptors.h>
++#include <react/renderer/core/ConcreteComponentDescriptor.h>
++#include <react/renderer/componentregistry/ComponentDescriptorProviderRegistry.h>
++
++namespace facebook::react {
++
++void RNLiquidGlassSpec_registerComponentDescriptorsFromCodegen(
++  std::shared_ptr<const ComponentDescriptorProviderRegistry> registry) {
++registry->add(concreteComponentDescriptorProvider<RNLiquidGlassViewComponentDescriptor>());
++}
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ComponentDescriptors.h b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ComponentDescriptors.h
+new file mode 100644
+index 0000000..a3aea4d
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ComponentDescriptors.h
+@@ -0,0 +1,24 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateComponentDescriptorH.js
++ */
++
++#pragma once
++
++#include <react/renderer/components/RNLiquidGlassSpec/ShadowNodes.h>
++#include <react/renderer/core/ConcreteComponentDescriptor.h>
++#include <react/renderer/componentregistry/ComponentDescriptorProviderRegistry.h>
++
++namespace facebook::react {
++
++using RNLiquidGlassViewComponentDescriptor = ConcreteComponentDescriptor<RNLiquidGlassViewShadowNode>;
++
++void RNLiquidGlassSpec_registerComponentDescriptorsFromCodegen(
++  std::shared_ptr<const ComponentDescriptorProviderRegistry> registry);
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/EventEmitters.cpp b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/EventEmitters.cpp
+new file mode 100644
+index 0000000..f690898
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/EventEmitters.cpp
+@@ -0,0 +1,16 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateEventEmitterCpp.js
++ */
++
++#include <react/renderer/components/RNLiquidGlassSpec/EventEmitters.h>
++
++
++namespace facebook::react {
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/EventEmitters.h b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/EventEmitters.h
+new file mode 100644
+index 0000000..6dfb081
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/EventEmitters.h
+@@ -0,0 +1,23 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateEventEmitterH.js
++ */
++#pragma once
++
++#include <react/renderer/components/view/ViewEventEmitter.h>
++
++
++namespace facebook::react {
++class RNLiquidGlassViewEventEmitter : public ViewEventEmitter {
++ public:
++  using ViewEventEmitter::ViewEventEmitter;
++
++  
++  
++};
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/Props.cpp b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/Props.cpp
+new file mode 100644
+index 0000000..44faa95
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/Props.cpp
+@@ -0,0 +1,44 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GeneratePropsCpp.js
++ */
++
++#include <react/renderer/components/RNLiquidGlassSpec/Props.h>
++#include <react/renderer/core/PropsParserContext.h>
++#include <react/renderer/core/propsConversions.h>
++
++namespace facebook::react {
++
++RNLiquidGlassViewProps::RNLiquidGlassViewProps(
++    const PropsParserContext &context,
++    const RNLiquidGlassViewProps &sourceProps,
++    const RawProps &rawProps): ViewProps(context, sourceProps, rawProps),
++
++    interactive(convertRawProp(context, rawProps, "interactive", sourceProps.interactive, {true})),
++    blurRadius(convertRawProp(context, rawProps, "blurRadius", sourceProps.blurRadius, {8.0})),
++    cornerRadius(convertRawProp(context, rawProps, "cornerRadius", sourceProps.cornerRadius, {32.0})),
++    saturation(convertRawProp(context, rawProps, "saturation", sourceProps.saturation, {1.0})),
++    tintColor(convertRawProp(context, rawProps, "tintColor", sourceProps.tintColor, {})),
++    refractionStrength(convertRawProp(context, rawProps, "refractionStrength", sourceProps.refractionStrength, {0.16})),
++    chromaticAberration(convertRawProp(context, rawProps, "chromaticAberration", sourceProps.chromaticAberration, {0.04})),
++    edgeGlowIntensity(convertRawProp(context, rawProps, "edgeGlowIntensity", sourceProps.edgeGlowIntensity, {0.0})),
++    fresnelPower(convertRawProp(context, rawProps, "fresnelPower", sourceProps.fresnelPower, {4.0})),
++    glareIntensity(convertRawProp(context, rawProps, "glareIntensity", sourceProps.glareIntensity, {0.16})),
++    borderIntensity(convertRawProp(context, rawProps, "borderIntensity", sourceProps.borderIntensity, {0.12})),
++    plainBorder(convertRawProp(context, rawProps, "plainBorder", sourceProps.plainBorder, {false})),
++    edgeWidth(convertRawProp(context, rawProps, "edgeWidth", sourceProps.edgeWidth, {0.4})),
++    refractionHeightFraction(convertRawProp(context, rawProps, "refractionHeightFraction", sourceProps.refractionHeightFraction, {-1.0})),
++    depthEffect(convertRawProp(context, rawProps, "depthEffect", sourceProps.depthEffect, {false})),
++    liquidPower(convertRawProp(context, rawProps, "liquidPower", sourceProps.liquidPower, {1.5})),
++    lightAngle(convertRawProp(context, rawProps, "lightAngle", sourceProps.lightAngle, {0.8})),
++    brightness(convertRawProp(context, rawProps, "brightness", sourceProps.brightness, {1.0})),
++    noiseIntensity(convertRawProp(context, rawProps, "noiseIntensity", sourceProps.noiseIntensity, {0.01})),
++    iridescence(convertRawProp(context, rawProps, "iridescence", sourceProps.iridescence, {0.0}))
++      {}
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/Props.h b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/Props.h
+new file mode 100644
+index 0000000..7759a83
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/Props.h
+@@ -0,0 +1,47 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GeneratePropsH.js
++ */
++#pragma once
++
++#include <react/renderer/components/view/ViewProps.h>
++#include <react/renderer/core/PropsParserContext.h>
++#include <react/renderer/graphics/Color.h>
++
++namespace facebook::react {
++
++class RNLiquidGlassViewProps final : public ViewProps {
++ public:
++  RNLiquidGlassViewProps() = default;
++  RNLiquidGlassViewProps(const PropsParserContext& context, const RNLiquidGlassViewProps &sourceProps, const RawProps &rawProps);
++
++#pragma mark - Props
++
++  bool interactive{true};
++  Float blurRadius{8.0};
++  Float cornerRadius{32.0};
++  Float saturation{1.0};
++  SharedColor tintColor{};
++  Float refractionStrength{0.16};
++  Float chromaticAberration{0.04};
++  Float edgeGlowIntensity{0.0};
++  Float fresnelPower{4.0};
++  Float glareIntensity{0.16};
++  Float borderIntensity{0.12};
++  bool plainBorder{false};
++  Float edgeWidth{0.4};
++  Float refractionHeightFraction{-1.0};
++  bool depthEffect{false};
++  Float liquidPower{1.5};
++  Float lightAngle{0.8};
++  Float brightness{1.0};
++  Float noiseIntensity{0.01};
++  Float iridescence{0.0};
++};
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/RNLiquidGlassSpecJSI-generated.cpp b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/RNLiquidGlassSpecJSI-generated.cpp
+new file mode 100644
+index 0000000..5089c99
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/RNLiquidGlassSpecJSI-generated.cpp
+@@ -0,0 +1,17 @@
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateModuleCpp.js
++ */
++
++#include "RNLiquidGlassSpecJSI.h"
++
++namespace facebook::react {
++
++
++
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/RNLiquidGlassSpecJSI.h b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/RNLiquidGlassSpecJSI.h
+new file mode 100644
+index 0000000..ec16260
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/RNLiquidGlassSpecJSI.h
+@@ -0,0 +1,19 @@
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateModuleH.js
++ */
++
++#pragma once
++
++#include <ReactCommon/TurboModule.h>
++#include <react/bridging/Bridging.h>
++
++namespace facebook::react {
++
++
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ShadowNodes.cpp b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ShadowNodes.cpp
+new file mode 100644
+index 0000000..13c55d3
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ShadowNodes.cpp
+@@ -0,0 +1,17 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateShadowNodeCpp.js
++ */
++
++#include <react/renderer/components/RNLiquidGlassSpec/ShadowNodes.h>
++
++namespace facebook::react {
++
++extern const char RNLiquidGlassViewComponentName[] = "RNLiquidGlassView";
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ShadowNodes.h b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ShadowNodes.h
+new file mode 100644
+index 0000000..eaf7b17
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/ShadowNodes.h
+@@ -0,0 +1,32 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateShadowNodeH.js
++ */
++
++#pragma once
++
++#include <react/renderer/components/RNLiquidGlassSpec/EventEmitters.h>
++#include <react/renderer/components/RNLiquidGlassSpec/Props.h>
++#include <react/renderer/components/RNLiquidGlassSpec/States.h>
++#include <react/renderer/components/view/ConcreteViewShadowNode.h>
++#include <jsi/jsi.h>
++
++namespace facebook::react {
++
++JSI_EXPORT extern const char RNLiquidGlassViewComponentName[];
++
++/*
++ * `ShadowNode` for <RNLiquidGlassView> component.
++ */
++using RNLiquidGlassViewShadowNode = ConcreteViewShadowNode<
++    RNLiquidGlassViewComponentName,
++    RNLiquidGlassViewProps,
++    RNLiquidGlassViewEventEmitter,
++    RNLiquidGlassViewState>;
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/States.cpp b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/States.cpp
+new file mode 100644
+index 0000000..3aaf17d
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/States.cpp
+@@ -0,0 +1,16 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateStateCpp.js
++ */
++#include <react/renderer/components/RNLiquidGlassSpec/States.h>
++
++namespace facebook::react {
++
++
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/States.h b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/States.h
+new file mode 100644
+index 0000000..6ead9a5
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/jni/react/renderer/components/RNLiquidGlassSpec/States.h
+@@ -0,0 +1,29 @@
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateStateH.js
++ */
++#pragma once
++
++#ifdef ANDROID
++#include <folly/dynamic.h>
++#endif
++
++namespace facebook::react {
++
++class RNLiquidGlassViewState {
++public:
++  RNLiquidGlassViewState() = default;
++
++#ifdef ANDROID
++  RNLiquidGlassViewState(RNLiquidGlassViewState const &previousState, folly::dynamic data){};
++  folly::dynamic getDynamic() const {
++    return {};
++  };
++#endif
++};
++
++} // namespace facebook::react
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/schema.json b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/schema.json
+new file mode 100644
+index 0000000..be41223
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/generated/source/codegen/schema.json
+@@ -0,0 +1 @@
++{"modules":{"RNLiquidGlassView":{"type":"Component","components":{"RNLiquidGlassView":{"extendsProps":[{"type":"ReactNativeBuiltInType","knownTypeName":"ReactNativeCoreViewProps"}],"events":[],"props":[{"name":"interactive","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":true}},{"name":"blurRadius","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":8}},{"name":"cornerRadius","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":32}},{"name":"saturation","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":1}},{"name":"tintColor","optional":true,"typeAnnotation":{"type":"ReservedPropTypeAnnotation","name":"ColorPrimitive"}},{"name":"refractionStrength","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":0.16}},{"name":"chromaticAberration","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":0.04}},{"name":"edgeGlowIntensity","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":0}},{"name":"fresnelPower","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":4}},{"name":"glareIntensity","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":0.16}},{"name":"borderIntensity","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":0.12}},{"name":"plainBorder","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":false}},{"name":"edgeWidth","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":0.4}},{"name":"refractionHeightFraction","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":-1}},{"name":"depthEffect","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":false}},{"name":"liquidPower","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":1.5}},{"name":"lightAngle","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":0.8}},{"name":"brightness","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":1}},{"name":"noiseIntensity","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":0.01}},{"name":"iridescence","optional":true,"typeAnnotation":{"type":"FloatTypeAnnotation","default":0}}],"commands":[]}}}}}
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+new file mode 100644
+index 0000000..0d7d2e5
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.liquidglasskit" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+new file mode 100644
+index 0000000..2fbf6b2
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+@@ -0,0 +1,18 @@
++{
++  "version": 3,
++  "artifactType": {
++    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
++    "kind": "Directory"
++  },
++  "applicationId": "com.liquidglasskit",
++  "variantName": "debug",
++  "elements": [
++    {
++      "type": "SINGLE",
++      "filters": [],
++      "attributes": [],
++      "outputFile": "AndroidManifest.xml"
++    }
++  ],
++  "elementType": "File"
++}
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+new file mode 100644
+index 0000000..1211b1e
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+@@ -0,0 +1,6 @@
++aarFormatVersion=1.0
++aarMetadataVersion=1.0
++minCompileSdk=1
++minCompileSdkExtension=0
++minAndroidGradlePluginVersion=1.0.0
++coreLibraryDesugaringEnabled=false
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+new file mode 100644
+index 0000000..9e26dfe
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+@@ -0,0 +1 @@
++{}
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar
+new file mode 100644
+index 0000000..f7e7b76
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
+new file mode 100644
+index 0000000..b119e6b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+new file mode 100644
+index 0000000..21bea5c
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+@@ -0,0 +1 @@
++#Sun Aug 23 16:03:17 IST 2026
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+new file mode 100644
+index 0000000..edfd66f
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/build/generated/res/resValues/debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/build/generated/res/resValues/debug"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/mergeDebugAssets/merger.xml b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
+new file mode 100644
+index 0000000..af69200
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/assets"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/debug/assets"/></dataSet><dataSet config="generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/build/intermediates/shader_assets/debug/compileDebugShaders/out"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+new file mode 100644
+index 0000000..51ee838
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/jniLibs"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/debug/jniLibs"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/mergeDebugShaders/merger.xml b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+new file mode 100644
+index 0000000..3edde6c
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/shaders"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/debug/shaders"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/react-native-liquid-glass-kit_debug.kotlin_module b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/react-native-liquid-glass-kit_debug.kotlin_module
+new file mode 100644
+index 0000000..9dbc290
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/react-native-liquid-glass-kit_debug.kotlin_module differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.class
+new file mode 100644
+index 0000000..5bb579f
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.class
+new file mode 100644
+index 0000000..7ca24d4
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/liquidglasskit/BuildConfig.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/liquidglasskit/BuildConfig.class
+new file mode 100644
+index 0000000..1a7d128
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/liquidglasskit/BuildConfig.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+new file mode 100644
+index 0000000..78ac5b8
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+@@ -0,0 +1,2 @@
++R_DEF: Internal format may change without notice
++local
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+new file mode 100644
+index 0000000..886e6b2
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+@@ -0,0 +1,7 @@
++1<?xml version="1.0" encoding="utf-8"?>
++2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++3    package="com.liquidglasskit" >
++4
++5    <uses-sdk android:minSdkVersion="24" />
++6
++7</manifest>
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+new file mode 100644
+index 0000000..0d7d2e5
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.liquidglasskit" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+new file mode 100644
+index 0000000..0637a08
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+@@ -0,0 +1 @@
++[]
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+new file mode 100644
+index 0000000..08f4ebe
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+@@ -0,0 +1 @@
++0 Warning/Error
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/META-INF/react-native-liquid-glass-kit_debug.kotlin_module b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/META-INF/react-native-liquid-glass-kit_debug.kotlin_module
+new file mode 100644
+index 0000000..9dbc290
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/META-INF/react-native-liquid-glass-kit_debug.kotlin_module differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.class
+new file mode 100644
+index 0000000..5bb579f
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerDelegate.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.class
+new file mode 100644
+index 0000000..7ca24d4
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNLiquidGlassViewManagerInterface.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/BuildConfig.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/BuildConfig.class
+new file mode 100644
+index 0000000..1a7d128
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/BuildConfig.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassImagePickerModule$Companion.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassImagePickerModule$Companion.class
+new file mode 100644
+index 0000000..a8685c0
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassImagePickerModule$Companion.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassImagePickerModule$activityListener$1.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassImagePickerModule$activityListener$1.class
+new file mode 100644
+index 0000000..5afeebd
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassImagePickerModule$activityListener$1.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassImagePickerModule.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassImagePickerModule.class
+new file mode 100644
+index 0000000..93ca2d6
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassImagePickerModule.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassPackage.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassPackage.class
+new file mode 100644
+index 0000000..44e4c88
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassPackage.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$Companion.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$Companion.class
+new file mode 100644
+index 0000000..715abc0
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$Companion.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$SpringValue.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$SpringValue.class
+new file mode 100644
+index 0000000..60349f1
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$SpringValue.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$interactionAnimation$1.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$interactionAnimation$1.class
+new file mode 100644
+index 0000000..2d3361f
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$interactionAnimation$1.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$periodicRefreshRunnable$1.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$periodicRefreshRunnable$1.class
+new file mode 100644
+index 0000000..22c7107
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView$periodicRefreshRunnable$1.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView.class
+new file mode 100644
+index 0000000..ae9f7a0
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassView.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassViewManager$Companion.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassViewManager$Companion.class
+new file mode 100644
+index 0000000..d85f878
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassViewManager$Companion.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassViewManager.class b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassViewManager.class
+new file mode 100644
+index 0000000..ca86c63
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/liquidglasskit/LiquidGlassViewManager.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar
+new file mode 100644
+index 0000000..e32c0e9
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+new file mode 100644
+index 0000000..03e481b
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+@@ -0,0 +1 @@
++com.liquidglasskit
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab
+new file mode 100644
+index 0000000..558284e
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream
+new file mode 100644
+index 0000000..0989565
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len
+new file mode 100644
+index 0000000..882bc80
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len
+new file mode 100644
+index 0000000..93a595b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at
+new file mode 100644
+index 0000000..d23fc8b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i
+new file mode 100644
+index 0000000..46bbf92
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab
+new file mode 100644
+index 0000000..d09e40a
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream
+new file mode 100644
+index 0000000..422791e
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len
+new file mode 100644
+index 0000000..1c7f6c4
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len
+new file mode 100644
+index 0000000..fa606b6
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at
+new file mode 100644
+index 0000000..de0b0a4
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i
+new file mode 100644
+index 0000000..4303d2c
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab
+new file mode 100644
+index 0000000..0feff24
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream
+new file mode 100644
+index 0000000..422791e
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len
+new file mode 100644
+index 0000000..1c7f6c4
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len
+new file mode 100644
+index 0000000..fa606b6
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at
+new file mode 100644
+index 0000000..42532f8
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i
+new file mode 100644
+index 0000000..4303d2c
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab
+new file mode 100644
+index 0000000..bdf584a
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream
+new file mode 100644
+index 0000000..81584bf
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len
+new file mode 100644
+index 0000000..25c4d2f
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len
+new file mode 100644
+index 0000000..2a17e6e
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at
+new file mode 100644
+index 0000000..7fff805
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i
+new file mode 100644
+index 0000000..97ef272
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab
+new file mode 100644
+index 0000000..47e9721
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream
+new file mode 100644
+index 0000000..b16c75e
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len
+new file mode 100644
+index 0000000..3355dc7
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len
+new file mode 100644
+index 0000000..a541356
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at
+new file mode 100644
+index 0000000..895faa0
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i
+new file mode 100644
+index 0000000..573b978
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab
+new file mode 100644
+index 0000000..0d48f9c
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream
+new file mode 100644
+index 0000000..5ec70eb
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len
+new file mode 100644
+index 0000000..4a8abb8
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len
+new file mode 100644
+index 0000000..eb0b8a0
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at
+new file mode 100644
+index 0000000..3f6af74
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i
+new file mode 100644
+index 0000000..5be4cda
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab
+new file mode 100644
+index 0000000..ba9168c
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream
+new file mode 100644
+index 0000000..0989565
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len
+new file mode 100644
+index 0000000..882bc80
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len
+new file mode 100644
+index 0000000..93a595b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at
+new file mode 100644
+index 0000000..4408002
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i
+new file mode 100644
+index 0000000..46bbf92
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab
+new file mode 100644
+index 0000000..aa54c1b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream
+new file mode 100644
+index 0000000..145eb15
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len
+new file mode 100644
+index 0000000..468508e
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len
+new file mode 100644
+index 0000000..ec8f944
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at
+new file mode 100644
+index 0000000..4ec1558
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i
+new file mode 100644
+index 0000000..2304d4b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab
+new file mode 100644
+index 0000000..62525dd
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream
+new file mode 100644
+index 0000000..b4354e2
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len
+new file mode 100644
+index 0000000..a6e77fe
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len
+new file mode 100644
+index 0000000..93a595b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at
+new file mode 100644
+index 0000000..d4eda79
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i
+new file mode 100644
+index 0000000..1de9fad
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab
+new file mode 100644
+index 0000000..26d3b09
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab
+@@ -0,0 +1,2 @@
++4
++0
+\ No newline at end of file
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab
+new file mode 100644
+index 0000000..4d06ad2
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream
+new file mode 100644
+index 0000000..0989565
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len
+new file mode 100644
+index 0000000..882bc80
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len
+new file mode 100644
+index 0000000..93a595b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at
+new file mode 100644
+index 0000000..3e23c2a
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i
+new file mode 100644
+index 0000000..46bbf92
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab
+new file mode 100644
+index 0000000..2b7c37e
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream
+new file mode 100644
+index 0000000..6e7a926
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len
+new file mode 100644
+index 0000000..eb52963
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len
+new file mode 100644
+index 0000000..93a595b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at
+new file mode 100644
+index 0000000..ce31a84
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i
+new file mode 100644
+index 0000000..6936967
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab
+new file mode 100644
+index 0000000..194b0fd
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream
+new file mode 100644
+index 0000000..ab8bf7e
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len
+new file mode 100644
+index 0000000..d06a092
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len
+new file mode 100644
+index 0000000..419046b
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at
+new file mode 100644
+index 0000000..1d9db20
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i
+new file mode 100644
+index 0000000..40e73fc
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin
+new file mode 100644
+index 0000000..0438ecc
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin
+new file mode 100644
+index 0000000..4adaf9c
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin
+new file mode 100644
+index 0000000..2a8b444
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/react-native-liquid-glass-kit/android/build/outputs/logs/manifest-merger-debug-report.txt
+new file mode 100644
+index 0000000..b33849c
+--- /dev/null
++++ b/node_modules/react-native-liquid-glass-kit/android/build/outputs/logs/manifest-merger-debug-report.txt
+@@ -0,0 +1,16 @@
++-- Merging decision tree log ---
++manifest
++ADDED from /Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/AndroidManifest.xml:1:1-72
++INJECTED from /Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/AndroidManifest.xml:1:1-72
++	package
++		INJECTED from /Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/AndroidManifest.xml
++	xmlns:android
++		ADDED from /Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/AndroidManifest.xml:1:11-69
++uses-sdk
++INJECTED from /Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
++INJECTED from /Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/AndroidManifest.xml
++INJECTED from /Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/AndroidManifest.xml
++	android:targetSdkVersion
++		INJECTED from /Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/AndroidManifest.xml
++	android:minSdkVersion
++		INJECTED from /Users/codeaura/Projects/CoinKeeper/node_modules/react-native-liquid-glass-kit/android/src/main/AndroidManifest.xml
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin b/node_modules/react-native-liquid-glass-kit/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin
+new file mode 100644
+index 0000000..b30769e
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/META-INF/react-native-liquid-glass-kit_debug.kotlin_module b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/META-INF/react-native-liquid-glass-kit_debug.kotlin_module
+new file mode 100644
+index 0000000..9dbc290
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/META-INF/react-native-liquid-glass-kit_debug.kotlin_module differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassImagePickerModule$Companion.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassImagePickerModule$Companion.class
+new file mode 100644
+index 0000000..a8685c0
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassImagePickerModule$Companion.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassImagePickerModule$activityListener$1.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassImagePickerModule$activityListener$1.class
+new file mode 100644
+index 0000000..5afeebd
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassImagePickerModule$activityListener$1.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassImagePickerModule.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassImagePickerModule.class
+new file mode 100644
+index 0000000..93ca2d6
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassImagePickerModule.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassPackage.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassPackage.class
+new file mode 100644
+index 0000000..44e4c88
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassPackage.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$Companion.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$Companion.class
+new file mode 100644
+index 0000000..715abc0
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$Companion.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$SpringValue.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$SpringValue.class
+new file mode 100644
+index 0000000..60349f1
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$SpringValue.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$interactionAnimation$1.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$interactionAnimation$1.class
+new file mode 100644
+index 0000000..2d3361f
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$interactionAnimation$1.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$periodicRefreshRunnable$1.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$periodicRefreshRunnable$1.class
+new file mode 100644
+index 0000000..22c7107
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView$periodicRefreshRunnable$1.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView.class
+new file mode 100644
+index 0000000..ae9f7a0
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassView.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassViewManager$Companion.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassViewManager$Companion.class
+new file mode 100644
+index 0000000..d85f878
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassViewManager$Companion.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassViewManager.class b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassViewManager.class
+new file mode 100644
+index 0000000..ca86c63
+Binary files /dev/null and b/node_modules/react-native-liquid-glass-kit/android/build/tmp/kotlin-classes/debug/com/liquidglasskit/LiquidGlassViewManager.class differ
+diff --git a/node_modules/react-native-liquid-glass-kit/android/src/main/java/com/liquidglasskit/LiquidGlassView.kt b/node_modules/react-native-liquid-glass-kit/android/src/main/java/com/liquidglasskit/LiquidGlassView.kt
+index ec2984c..b65c9ba 100644
+--- a/node_modules/react-native-liquid-glass-kit/android/src/main/java/com/liquidglasskit/LiquidGlassView.kt
++++ b/node_modules/react-native-liquid-glass-kit/android/src/main/java/com/liquidglasskit/LiquidGlassView.kt
+@@ -233,6 +233,37 @@ class LiquidGlassView(context: Context) : ReactViewGroup(context) {
+     true
+   }
+ 
++  // Re-captures the shared backdrop bitmap at a fixed cadence so scrolling
++  // content, navigation, or live data updates behind the glass don't leave
++  // a stale snapshot showing through (the one-shot capture only refreshes
++  // on a background-view resize, not on a content change).
++  private val periodicRefreshRunnable: Runnable = object : Runnable {
++    override fun run() {
++      if (isAttachedToWindow && captureLeader === this@LiquidGlassView) {
++        if (!isSharedCapturing) requestSharedCapture(force = true)
++        postDelayed(this, CONTENT_REFRESH_INTERVAL_MS)
++      }
++    }
++  }
++
++  private fun startPeriodicRefreshIfLeader() {
++    if (captureLeader == null || captureLeader?.isAttachedToWindow != true) {
++      captureLeader = this
++    }
++    if (captureLeader === this) {
++      removeCallbacks(periodicRefreshRunnable)
++      postDelayed(periodicRefreshRunnable, CONTENT_REFRESH_INTERVAL_MS)
++    }
++  }
++
++  private fun stopPeriodicRefreshAndHandoff() {
++    removeCallbacks(periodicRefreshRunnable)
++    if (captureLeader === this) {
++      captureLeader = allInstances.firstOrNull { it !== this && it.isAttachedToWindow }
++      captureLeader?.startPeriodicRefreshIfLeader()
++    }
++  }
++
+   companion object {
+     private var sharedBgBitmap: Bitmap? = null
+     private var sharedBgView: View? = null
+@@ -240,9 +271,11 @@ class LiquidGlassView(context: Context) : ReactViewGroup(context) {
+     private var sharedBgH = 0f
+     private var isSharedCapturing = false
+     private var sharedBitmapVersion = 0
++    private var captureLeader: LiquidGlassView? = null
+ 
+     private const val MAX_STARTUP_RETRIES = 80
+     private const val MIN_VALID_ALPHA = 10
++    private const val CONTENT_REFRESH_INTERVAL_MS = 120L
+     private var activeInstances = 0
+     private val allInstances = mutableSetOf<LiquidGlassView>()
+     private const val TAG = "RNLiquidGlassView"
+@@ -472,6 +505,29 @@ class LiquidGlassView(context: Context) : ReactViewGroup(context) {
+             }
+         """
+ 
++    /**
++     * Climbs from a glass leaf view up through single-child "pass-through"
++     * wrapper views, stopping at the first ancestor that actually has
++     * sibling views at its own level. Excluding *that* node (instead of just
++     * the glass leaf) keeps the glass surface's own sibling content — e.g.
++     * the floating tab bar's own labels/icons sitting next to its glass
++     * material — out of its own backdrop capture, while every branch is a
++     * long single-child chain (as most RN layouts are), a single-node
++     * exclude would otherwise still let the search wander back down through
++     * that same chain, or worse, only find the excluded chain has no
++     * siblings at all and give up early. Stopping at the first fork keeps
++     * unrelated screen content, which lives on a sibling branch, searchable.
++     */
++    private const val EXCLUDE_ANCESTOR_LEVELS = 2
++
++    private fun excludableAncestor(leaf: View): View {
++      var node: View = leaf
++      repeat(EXCLUDE_ANCESTOR_LEVELS) {
++        node = node.parent as? View ?: return node
++      }
++      return node
++    }
++
+     fun findBackgroundInTree(root: View, exclude: View): View? {
+       var bestImageArea = 0L
+       var bestImageView: ImageView? = null
+@@ -510,6 +566,7 @@ class LiquidGlassView(context: Context) : ReactViewGroup(context) {
+       sharedBgW = 0f
+       sharedBgH = 0f
+       sharedBitmapVersion++
++      captureLeader = null
+       for (view in allInstances) {
+         view.localBitmapShader = null
+         view.localBitmapVersion = -1
+@@ -550,6 +607,7 @@ class LiquidGlassView(context: Context) : ReactViewGroup(context) {
+     }
+     propsDirty = true
+     viewTreeObserver.addOnPreDrawListener(preDrawListener)
++    startPeriodicRefreshIfLeader()
+     val bmp = sharedBgBitmap
+     val bg = sharedBgView
+     if (
+@@ -582,6 +640,7 @@ class LiquidGlassView(context: Context) : ReactViewGroup(context) {
+     super.onDetachedFromWindow()
+     allInstances.remove(this)
+     viewTreeObserver.removeOnPreDrawListener(preDrawListener)
++    stopPeriodicRefreshAndHandoff()
+     removeCallbacks(retryCaptureRunnable)
+     retryCapturePosted = false
+     localBitmapShader = null
+@@ -815,7 +874,16 @@ class LiquidGlassView(context: Context) : ReactViewGroup(context) {
+ 
+   private fun requestSharedCapture(force: Boolean = false) {
+     if (isSharedCapturing || width <= 0 || height <= 0) return
+-    val bgView = findBackgroundInTree(rootView, this)
++    val excludeBoundary = excludableAncestor(this)
++    // `findBackgroundInTree` almost always resolves to the DecorView (it's
++    // full-screen and has a background, so it wins the "largest candidate"
++    // heuristic outright) — selection-based exclusion can never keep the
++    // glass surface's own subtree out of that capture, since draw() on any
++    // ancestor rasterizes everything beneath it, glass bar included. The
++    // only reliable fix is hiding that subtree for the single synchronous
++    // draw() call below, then restoring it immediately — no real frame is
++    // ever rendered to the screen in between.
++    val bgView = findBackgroundInTree(rootView, excludeBoundary)
+     if (bgView == null || bgView.width <= 0 || bgView.height <= 0) { scheduleRetry(); return }
+     val existing = sharedBgBitmap
+     if (
+@@ -834,7 +902,13 @@ class LiquidGlassView(context: Context) : ReactViewGroup(context) {
+     isSharedCapturing = true
+     try {
+       val bmp = Bitmap.createBitmap(bgView.width, bgView.height, Bitmap.Config.ARGB_8888)
+-      Canvas(bmp).also { c -> bgView.draw(c) }
++      val previousVisibility = excludeBoundary.visibility
++      excludeBoundary.visibility = View.INVISIBLE
++      try {
++        Canvas(bmp).also { c -> bgView.draw(c) }
++      } finally {
++        excludeBoundary.visibility = previousVisibility
++      }
+ 
+       if (!isBitmapValid(bmp)) { bmp.recycle(); scheduleRetry(); return }
+ 

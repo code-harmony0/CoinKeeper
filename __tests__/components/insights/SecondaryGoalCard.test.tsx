@@ -41,7 +41,7 @@ describe('SecondaryGoalCard', () => {
     const { getByText, queryByText } = render(
       <SecondaryGoalCard {...baseProps} health={healthOf({ state: 'stalled', daysSinceLastContribution: Infinity })} />,
     );
-    expect(getByText(/No contribution in a while/)).toBeTruthy();
+    expect(getByText(/Quiet for a while/)).toBeTruthy();
     expect(queryByText(/Infinity/)).toBeNull();
   });
 });

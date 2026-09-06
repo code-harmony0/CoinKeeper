@@ -1,4 +1,5 @@
 import { initEncryptedDb, getDb } from '../db';
+import { seedDevDataIfNeeded } from '../db/devSeed';
 
 export { getDb };
 
@@ -12,6 +13,7 @@ export { getDb };
 export const initDatabase = async (): Promise<void> => {
   try {
     await initEncryptedDb();
+    await seedDevDataIfNeeded();
   } catch (error) {
     console.error('[database] initDatabase error:', error);
     throw error;

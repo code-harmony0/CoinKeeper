@@ -22,7 +22,16 @@ import Animated, {
   interpolateColor,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { X, Calendar, Edit3, ChevronDown, ChevronUp, Repeat, Bell, FileText, Zap } from 'lucide-react-native';
+import {
+  X,
+  Calendar,
+  Edit3,
+  ChevronDown,
+  ChevronUp,
+  Repeat,
+  FileText,
+  Zap,
+} from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
@@ -33,7 +42,16 @@ const SHEET_SPRING = { damping: 15, stiffness: 300 };
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (data: { name: string; amount: string; dueDay: string; isRecurring: boolean; repeatInterval?: string; reminderDaysBefore?: number; notes?: string; autoPayEnabled?: boolean; }) => Promise<void>;
+  onSubmit: (data: {
+    name: string;
+    amount: string;
+    dueDay: string;
+    isRecurring: boolean;
+    repeatInterval?: string;
+    reminderDaysBefore?: number;
+    notes?: string;
+    autoPayEnabled?: boolean;
+  }) => Promise<void>;
 }
 
 export const AddBillSheet: React.FC<Props> = ({
@@ -51,7 +69,7 @@ export const AddBillSheet: React.FC<Props> = ({
   const [amount, setAmount] = useState('');
   const [dueDay, setDueDay] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Advanced Settings State
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isRecurring, setIsRecurring] = useState(true);
@@ -63,9 +81,17 @@ export const AddBillSheet: React.FC<Props> = ({
   // Smart Detection
   const isSub = (n: string) => {
     const txt = n.toLowerCase();
-    return txt.includes('netflix') || txt.includes('spotify') || txt.includes('prime') || txt.includes('gym') || txt.includes('apple') || txt.includes('icloud');
+    return (
+      txt.includes('netflix') ||
+      txt.includes('spotify') ||
+      txt.includes('prime') ||
+      txt.includes('gym') ||
+      txt.includes('apple') ||
+      txt.includes('icloud')
+    );
   };
-  const detectedCategory = name.length > 2 ? (isSub(name) ? 'Subscription' : 'Utility') : null;
+  const detectedCategory =
+    name.length > 2 ? (isSub(name) ? 'Subscription' : 'Utility') : null;
 
   useEffect(() => {
     if (visible) {
@@ -85,7 +111,9 @@ export const AddBillSheet: React.FC<Props> = ({
       ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.4)'],
     ),
   }));
-  const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const handleClose = () => {
     ReactNativeHapticFeedback.trigger('impactLight');
@@ -94,7 +122,7 @@ export const AddBillSheet: React.FC<Props> = ({
 
   const handleSubmit = async () => {
     if (!name || !amount || !dueDay) return;
-    
+
     setIsSubmitting(true);
     try {
       await onSubmit({
@@ -127,7 +155,13 @@ export const AddBillSheet: React.FC<Props> = ({
   const isDisabled = !name || !amount || !dueDay || isSubmitting;
 
   return (
-    <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={handleClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={handleClose}
+    >
       <View style={styles.container}>
         <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
@@ -142,7 +176,11 @@ export const AddBillSheet: React.FC<Props> = ({
         >
           <View style={[styles.handle, { backgroundColor: colors.chipBg }]} />
 
-          <PressableScale onPress={handleClose} style={styles.closeBtn} haptic="none">
+          <PressableScale
+            onPress={handleClose}
+            style={styles.closeBtn}
+            haptic="none"
+          >
             <X size={22} color={colors.textSecondary} />
           </PressableScale>
 
@@ -150,18 +188,36 @@ export const AddBillSheet: React.FC<Props> = ({
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.flex}
           >
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-              
-              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>New Bill</Text>
-              
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+                New Bill
+              </Text>
+
               <View style={styles.amountSection}>
-                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Amount</Text>
+                <Text
+                  style={[styles.sectionLabel, { color: colors.textSecondary }]}
+                >
+                  Amount
+                </Text>
                 <View style={styles.amountRow}>
-                  <Text style={[styles.currencySymbol, { color: colors.textPrimary }]}>₹</Text>
+                  <Text
+                    style={[
+                      styles.currencySymbol,
+                      { color: colors.textPrimary },
+                    ]}
+                  >
+                    ₹
+                  </Text>
                   <TextInput
                     style={[styles.amountInput, { color: colors.textPrimary }]}
                     value={amount}
-                    onChangeText={text => setAmount(text.replace(/[^0-9.]/g, ''))}
+                    onChangeText={text =>
+                      setAmount(text.replace(/[^0-9.]/g, ''))
+                    }
                     placeholder="0"
                     placeholderTextColor={colors.textSecondary}
                     keyboardType="decimal-pad"
@@ -171,8 +227,20 @@ export const AddBillSheet: React.FC<Props> = ({
 
               <View style={styles.formGrid}>
                 <View style={[styles.section, { flex: 2 }]}>
-                  <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Bill Name</Text>
-                  <View style={[styles.inputRow, { backgroundColor: colors.inputBg }]}>
+                  <Text
+                    style={[
+                      styles.sectionLabel,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Bill Name
+                  </Text>
+                  <View
+                    style={[
+                      styles.inputRow,
+                      { backgroundColor: colors.inputBg },
+                    ]}
+                  >
                     <Edit3 size={18} color={colors.textSecondary} />
                     <TextInput
                       style={[styles.input, { color: colors.textPrimary }]}
@@ -183,20 +251,42 @@ export const AddBillSheet: React.FC<Props> = ({
                     />
                   </View>
                   {detectedCategory && (
-                    <Text style={{ fontSize: 11, fontFamily: 'Satoshi-Bold', color: colors.primaryAccent, marginTop: 4, marginLeft: 4 }}>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontFamily: 'Satoshi-Bold',
+                        color: colors.primaryAccent,
+                        marginTop: 4,
+                        marginLeft: 4,
+                      }}
+                    >
                       Auto-detected as {detectedCategory}
                     </Text>
                   )}
                 </View>
 
                 <View style={[styles.section, { flex: 1, marginLeft: 12 }]}>
-                  <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Due Day</Text>
-                  <View style={[styles.inputRow, { backgroundColor: colors.inputBg }]}>
+                  <Text
+                    style={[
+                      styles.sectionLabel,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Due Day
+                  </Text>
+                  <View
+                    style={[
+                      styles.inputRow,
+                      { backgroundColor: colors.inputBg },
+                    ]}
+                  >
                     <Calendar size={18} color={colors.textSecondary} />
                     <TextInput
                       style={[styles.input, { color: colors.textPrimary }]}
                       value={dueDay}
-                      onChangeText={text => setDueDay(text.replace(/[^0-9]/g, ''))}
+                      onChangeText={text =>
+                        setDueDay(text.replace(/[^0-9]/g, ''))
+                      }
                       placeholder="1-31"
                       placeholderTextColor={colors.textSecondary}
                       keyboardType="number-pad"
@@ -206,60 +296,135 @@ export const AddBillSheet: React.FC<Props> = ({
                 </View>
               </View>
 
-              <TouchableOpacity 
-                style={styles.advancedToggle} 
+              <TouchableOpacity
+                style={styles.advancedToggle}
                 activeOpacity={0.7}
                 onPress={() => {
                   ReactNativeHapticFeedback.trigger('selection');
                   setShowAdvanced(!showAdvanced);
                 }}
               >
-                <Text style={[styles.advancedText, { color: colors.primaryAccent }]}>Advanced Settings</Text>
-                {showAdvanced ? <ChevronUp size={16} color={colors.primaryAccent} /> : <ChevronDown size={16} color={colors.primaryAccent} />}
+                <Text
+                  style={[styles.advancedText, { color: colors.primaryAccent }]}
+                >
+                  Advanced Settings
+                </Text>
+                {showAdvanced ? (
+                  <ChevronUp size={16} color={colors.primaryAccent} />
+                ) : (
+                  <ChevronDown size={16} color={colors.primaryAccent} />
+                )}
               </TouchableOpacity>
 
               {showAdvanced && (
-                <View style={[styles.advancedContainer, { backgroundColor: colors.surfaceSunken }]}>
+                <View
+                  style={[
+                    styles.advancedContainer,
+                    { backgroundColor: colors.surfaceSunken },
+                  ]}
+                >
                   {/* Recurring Toggle */}
-                  <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
+                  <View
+                    style={[
+                      styles.settingRow,
+                      { borderBottomColor: colors.border },
+                    ]}
+                  >
                     <View style={styles.settingLeft}>
-                      <View style={[styles.settingIconBox, { backgroundColor: `${colors.primaryAccent}1A`, borderRadius: iconContainerRadius }]}>
+                      <View
+                        style={[
+                          styles.settingIconBox,
+                          {
+                            backgroundColor: `${colors.primaryAccent}1A`,
+                            borderRadius: iconContainerRadius,
+                          },
+                        ]}
+                      >
                         <Repeat size={16} color={colors.primaryAccent} />
                       </View>
-                      <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Recurring Bill</Text>
+                      <Text
+                        style={[
+                          styles.settingLabel,
+                          { color: colors.textPrimary },
+                        ]}
+                      >
+                        Recurring Bill
+                      </Text>
                     </View>
                     <Switch
                       value={isRecurring}
                       onValueChange={setIsRecurring}
-                      trackColor={{ false: colors.border, true: colors.primaryAccent }}
+                      trackColor={{
+                        false: colors.border,
+                        true: colors.primaryAccent,
+                      }}
                       style={{ transform: [{ scale: 0.8 }] }}
                     />
                   </View>
 
                   {/* Auto Pay Toggle */}
-                  <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
+                  <View
+                    style={[
+                      styles.settingRow,
+                      { borderBottomColor: colors.border },
+                    ]}
+                  >
                     <View style={styles.settingLeft}>
-                      <View style={[styles.settingIconBox, { backgroundColor: 'rgba(255, 204, 0, 0.1)', borderRadius: iconContainerRadius }]}>
-                        <Zap size={16} color="#FFCC00" />
+                      <View
+                        style={[
+                          styles.settingIconBox,
+                          {
+                            backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                            borderRadius: iconContainerRadius,
+                          },
+                        ]}
+                      >
+                        <Zap size={16} color="#007AFF" />
                       </View>
-                      <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Auto-Pay</Text>
+                      <Text
+                        style={[
+                          styles.settingLabel,
+                          { color: colors.textPrimary },
+                        ]}
+                      >
+                        Auto-Pay
+                      </Text>
                     </View>
                     <Switch
                       value={autoPayEnabled}
                       onValueChange={setAutoPayEnabled}
-                      trackColor={{ false: colors.border, true: colors.primaryAccent }}
+                      trackColor={{
+                        false: colors.border,
+                        true: colors.primaryAccent,
+                      }}
                       style={{ transform: [{ scale: 0.8 }] }}
                     />
                   </View>
 
                   {/* Notes */}
-                  <View style={[styles.settingRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
+                  <View
+                    style={[
+                      styles.settingRow,
+                      { borderBottomWidth: 0, paddingBottom: 0 },
+                    ]}
+                  >
                     <View style={styles.settingLeft}>
-                      <View style={[styles.settingIconBox, { backgroundColor: colors.card, borderRadius: iconContainerRadius }]}>
+                      <View
+                        style={[
+                          styles.settingIconBox,
+                          {
+                            backgroundColor: colors.card,
+                            borderRadius: iconContainerRadius,
+                          },
+                        ]}
+                      >
                         <FileText size={16} color={colors.textSecondary} />
                       </View>
                       <TextInput
-                        style={[styles.settingInput, { color: colors.textPrimary }]}
+                        style={[
+                          styles.settingInput,
+                          { color: colors.textPrimary },
+                        ]}
                         value={notes}
                         onChangeText={setNotes}
                         placeholder="Add notes..."
@@ -270,9 +435,9 @@ export const AddBillSheet: React.FC<Props> = ({
                 </View>
               )}
 
-              <PressableScale 
-                onPress={handleSubmit} 
-                disabled={isDisabled} 
+              <PressableScale
+                onPress={handleSubmit}
+                disabled={isDisabled}
                 haptic="none"
               >
                 <View
@@ -282,7 +447,9 @@ export const AddBillSheet: React.FC<Props> = ({
                     isDisabled && styles.submitButtonDisabled,
                   ]}
                 >
-                  <Text style={styles.submitButtonText}>{isSubmitting ? 'Saving...' : 'Save Bill'}</Text>
+                  <Text style={styles.submitButtonText}>
+                    {isSubmitting ? 'Saving...' : 'Save Bill'}
+                  </Text>
                 </View>
               </PressableScale>
             </ScrollView>
@@ -308,7 +475,13 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingHorizontal: 24,
   },
-  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 8 },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
   closeBtn: {
     position: 'absolute',
     top: 16,
@@ -328,10 +501,19 @@ const styles = StyleSheet.create({
 
   // Amount
   amountSection: { marginBottom: 24 },
-  sectionLabel: { fontSize: 13, fontFamily: 'Satoshi-Medium', marginBottom: 10 },
+  sectionLabel: {
+    fontSize: 13,
+    fontFamily: 'Satoshi-Medium',
+    marginBottom: 10,
+  },
   amountRow: { flexDirection: 'row', alignItems: 'center' },
   currencySymbol: { fontSize: 36, fontFamily: 'Satoshi-Black', marginRight: 8 },
-  amountInput: { flex: 1, fontSize: 42, fontFamily: 'Satoshi-Regular', padding: 0 },
+  amountInput: {
+    flex: 1,
+    fontSize: 42,
+    fontFamily: 'Satoshi-Regular',
+    padding: 0,
+  },
 
   // Standard inputs
   formGrid: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
@@ -400,7 +582,17 @@ const styles = StyleSheet.create({
   },
 
   // Submit
-  submitButton: { height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
+  submitButton: {
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
   submitButtonDisabled: { opacity: 0.5 },
-  submitButtonText: { fontSize: 16, fontFamily: 'Satoshi-Bold', color: '#FFFFFF' },
+  submitButtonText: {
+    fontSize: 16,
+    fontFamily: 'Satoshi-Bold',
+    color: '#FFFFFF',
+  },
 });

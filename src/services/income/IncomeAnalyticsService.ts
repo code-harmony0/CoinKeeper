@@ -1,9 +1,25 @@
 import { Transaction as SQLiteTransaction } from '@op-engineering/op-sqlite';
+import { getDb } from '../../store/database';
 
 /** Returned when there isn't enough history to score a factor honestly. */
 export const NOT_ENOUGH_DATA = -1;
 
 const DAY = 24 * 60 * 60 * 1000;
+
+/** One calendar month of income. */
+export interface IncomeMonth {
+  /** YYYY-MM, for keys and ordering. */
+  key: string;
+  /** Three-letter month, for axis labels. */
+  label: string;
+  totalPaise: number;
+}
+
+/** One income source's share of a window. */
+export interface IncomeSource {
+  name: string;
+  totalPaise: number;
+}
 
 const clamp = (n: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, n));
@@ -120,5 +136,65 @@ export const IncomeAnalyticsService = {
     // Six months of the detected recurring amounts, capped at what actually
     // arrived — patterns are estimates and must never exceed observed income.
     return Math.round(clamp((recurringMonthly * 6) / total, 0, 1) * 100);
+  },
+
+  /**
+   * Income per calendar month, oldest first, with empty months present as
+   * zeroes. The gaps are the point: a volatile income reads as a sawtooth only
+   * if the months with nothing in them still occupy the x-axis.
+   */
+  async getMonthlyTrend(months = 6): Promise<IncomeMonth[]> {
+    const db = getDb();
+    const now = new Date();
+    const from = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+    const to = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const result = await db.execute(
+      `SELECT strftime('%Y-%m', occurred_at / 1000, 'unixepoch', 'localtime') AS key,
+              COALESCE(SUM(amount_paise), 0) AS total
+         FROM transactions
+        WHERE type = 'income' AND occurred_at >= ? AND occurred_at < ?
+        GROUP BY key`,
+      [from.getTime(), to.getTime()],
+    );
+
+    const totals = new Map<string, number>(
+      ((result.rows ?? []) as any[]).map(r => [r.key, Number(r.total ?? 0)]),
+    );
+
+    return Array.from({ length: months }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i), 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      return {
+        key,
+        label: d.toLocaleDateString(undefined, { month: 'short' }),
+        totalPaise: totals.get(key) ?? 0,
+      };
+    });
+  },
+
+  /**
+   * Income by category over the trailing window — the slices behind the
+   * diversity score, so the number and the picture can never disagree.
+   */
+  async getIncomeBySource(months = 6): Promise<IncomeSource[]> {
+    const db = getDb();
+    const since = Date.now() - months * 30.44 * DAY;
+
+    const result = await db.execute(
+      `SELECT COALESCE(c.name, 'Other') AS name,
+              SUM(t.amount_paise) AS total
+         FROM transactions t
+         LEFT JOIN categories c ON c.id = t.category_id
+        WHERE t.type = 'income' AND t.occurred_at >= ?
+        GROUP BY name
+        ORDER BY total DESC`,
+      [since],
+    );
+
+    return ((result.rows ?? []) as any[]).map(r => ({
+      name: String(r.name),
+      totalPaise: Number(r.total ?? 0),
+    }));
   },
 };

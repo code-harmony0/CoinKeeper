@@ -2,7 +2,7 @@
  * ReportsScreen — Spec Theme Design
  * Left-aligned header, income/expense summary, animated segmented filter, category breakdown
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Text, LayoutChangeEvent } from 'react-native';
 import Animated, {
   FadeInDown,
@@ -75,6 +75,21 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
   React.useEffect(() => {
     FinancialIntelligenceEngine.getReportForMonth(currentDate).then(setReport);
   }, [currentDate]);
+
+  /**
+   * A category row is the natural place to ask "what did I actually buy?" —
+   * it used to be a dead tap. Hands the name to the Transactions tab, which
+   * filters on an exact match and shows a chip the user can clear.
+   */
+  const openCategory = useCallback(
+    (categoryName: string) => {
+      navigation.navigate('UserTabs', {
+        screen: 'Transactions',
+        params: { category: categoryName },
+      } as never);
+    },
+    [navigation],
+  );
 
   const activeCategories = useMemo(() => {
     if (!report) return [];
@@ -449,8 +464,14 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
               <Animated.View
                 key={cat.categoryName}
                 entering={FadeInDown.delay(180 + index * 20).springify()}
-                style={[styles.categoryCard, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}
               >
+                <PressableScale
+                  haptic="impactLight"
+                  accessibilityRole="button"
+                  accessibilityLabel={`See ${cat.categoryName} transactions`}
+                  onPress={() => openCategory(cat.categoryName)}
+                  style={[styles.categoryCard, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}
+                >
                 <View style={styles.categoryRow}>
                   <View style={[styles.categoryIcon, { backgroundColor: colors.chipBg }]}>
                     <Icon size={20} color={colors.textPrimary} strokeWidth={2} />
@@ -477,6 +498,7 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
                     </Text>
                   </View>
                 </View>
+                </PressableScale>
               </Animated.View>
             );
           })

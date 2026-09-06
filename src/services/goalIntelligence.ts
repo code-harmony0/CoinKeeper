@@ -44,6 +44,36 @@ const computeMonthlyVelocity = (contributions: GoalContribution[], nowMs: number
   return Math.round(recentTotal / 3);
 };
 
+/**
+ * When a goal arrives if nothing changes — "March 2027 at this pace".
+ *
+ * A month the user can picture, not a duration they have to convert. "7
+ * months" is an interval; a date is something they can hold a plan against,
+ * which is the point of giving a goal a name in the first place.
+ *
+ * The "at this pace" qualifier is not decoration. This extrapolates from three
+ * months of velocity, and a bare date would read as a promise the app has no
+ * business making — the same rule `project()` follows in homeNarrative.ts.
+ *
+ * Lives here as one function because `simulateWhatIf` used to carry its own
+ * copy of this construction, which meant the goal card and the AddFunds
+ * preview were free to phrase the same projection two different ways.
+ */
+const paceEtaLabel = (
+  remainingPaise: number,
+  monthlyVelocityPaise: number,
+  nowMs: number,
+): string => {
+  const monthsToGo = Math.ceil(remainingPaise / monthlyVelocityPaise);
+  const arrival = new Date(nowMs);
+  arrival.setMonth(arrival.getMonth() + monthsToGo);
+  const when = arrival.toLocaleDateString('en-IN', {
+    month: 'long',
+    year: 'numeric',
+  });
+  return `${when} at this pace`;
+};
+
 export const computeGoalHealth = (
   goal: Goal,
   contributions: GoalContribution[],
@@ -86,8 +116,7 @@ export const computeGoalHealth = (
     const deadlineDate = new Date(deadlineMs);
     etaLabel = `by ${deadlineDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
   } else if (deadlineMs === null && monthlyVelocityPaise > 0) {
-    const monthsToGo = Math.ceil(remainingPaise / monthlyVelocityPaise);
-    etaLabel = `~${monthsToGo} month${monthsToGo === 1 ? '' : 's'} at current pace`;
+    etaLabel = paceEtaLabel(remainingPaise, monthlyVelocityPaise, nowMs);
   }
 
   const isStalled = daysSinceLastContribution >= STALL_DAYS_THRESHOLD;
@@ -120,6 +149,92 @@ export interface RankedGoal {
   priorityRank: number; // 1-based
   priorityReason: string;
 }
+
+export type GoalTone = 'accent' | 'good' | 'warn' | 'bad';
+
+/**
+ * The colour a goal's *progress bar* takes.
+ *
+ * Deliberately not the same as `goalTone`. Driving the bar from status too
+ * turned three of four cards amber the moment a couple of goals drifted, and a
+ * screen where everything warns is a screen where nothing does — the exact
+ * failure DESIGN.md records for the home plan bar. It also wiped out the
+ * accent rotation that makes goals recognisable from one screen to the next.
+ *
+ * The split that holds: **the status line carries the verdict, the bar carries
+ * the quantity.** A bar is a measurement of how full something is, not an
+ * opinion about it, so it keeps the goal's own ink — and only surrenders it
+ * when the bar itself is the news: finished, or past its deadline.
+ */
+export const goalBarTone = (state: GoalState): GoalTone => {
+  if (state === 'completed') return 'good';
+  if (state === 'overdue') return 'bad';
+  return 'accent';
+};
+
+/**
+ * The single place a goal's state becomes a colour.
+ *
+ * Both goal cards used to paint their progress fill and percentage from the
+ * accent rotation regardless of state, so a card could read "Behind pace" in
+ * red directly above a confident blue bar — two verdicts on one card, and no
+ * way to know which one to believe.
+ *
+ * `healthy` deliberately stays on the accent rotation rather than turning
+ * green: green everywhere would flatten the five-accent identity (DESIGN.md
+ * §2) and, worse, spend the success colour on the default case so it means
+ * nothing when a goal actually completes. Status colour *overrides* the accent
+ * only when there is something to say.
+ */
+export const goalTone = (state: GoalState): GoalTone => {
+  switch (state) {
+    case 'completed':
+      return 'good';
+    case 'overdue':
+      return 'bad';
+    case 'at_risk':
+    case 'stalled':
+      return 'warn';
+    default:
+      return 'accent';
+  }
+};
+
+/**
+ * A goal with nothing in it yet is not a goal that has gone quiet — it is one
+ * that hasn't started. The stall rule (`daysSinceLastContribution >= 21`) is
+ * satisfied by `Infinity`, so a goal created this morning was being told it
+ * had "no contribution in a while". Callers use this to swap the reproach for
+ * an invitation.
+ */
+export const isUnstarted = (health: GoalHealth): boolean =>
+  health.progressPercent === 0 && !Number.isFinite(health.daysSinceLastContribution);
+
+/**
+ * The status line under a goal, in the app's voice: what is true, then what to
+ * do about it, in one line. These used to be bare state read-outs ("Behind
+ * pace for its deadline") that described the data without telling anyone what
+ * it meant for them.
+ */
+export const goalStatusCopy = (health: GoalHealth): string => {
+  if (health.state === 'completed') return 'Fully funded';
+  if (isUnstarted(health)) return 'Nothing in yet — your first ₹500 starts it';
+
+  const daysLabel = Number.isFinite(health.daysSinceLastContribution)
+    ? `${health.daysSinceLastContribution} days`
+    : 'a while';
+
+  switch (health.state) {
+    case 'overdue':
+      return 'Deadline passed — move the date or add funds';
+    case 'at_risk':
+      return "Behind pace — you'll miss the deadline at this rate";
+    case 'stalled':
+      return `Quiet for ${daysLabel} — one contribution restarts it`;
+    default:
+      return health.etaLabel ?? `${health.progressPercent}% of the way there`;
+  }
+};
 
 const priorityReasonFor = (goal: Goal, health: GoalHealth): string => {
   if (health.state === 'completed') return 'Already complete';
@@ -202,6 +317,7 @@ export const simulateWhatIf = (
   goal: Goal,
   health: GoalHealth,
   extraMonthlyPaise: number,
+  nowMs: number = Date.now(),
 ): { etaLabel: string | null } => {
   const hypotheticalVelocity = health.monthlyVelocityPaise + extraMonthlyPaise;
   const remainingPaise = goal.targetAmount - goal.currentAmount;
@@ -210,8 +326,9 @@ export const simulateWhatIf = (
     return { etaLabel: null };
   }
 
-  const monthsToGo = Math.ceil(remainingPaise / hypotheticalVelocity);
-  return { etaLabel: `~${monthsToGo} month${monthsToGo === 1 ? '' : 's'} at current pace` };
+  return {
+    etaLabel: paceEtaLabel(remainingPaise, hypotheticalVelocity, nowMs),
+  };
 };
 
 /**
@@ -239,21 +356,41 @@ export const recommendContribution = (
   return Math.max(0, Math.min(idealPaise, remainingAffordablePaise, remainingGapPaise));
 };
 
+/**
+ * The coach line above the goal cards.
+ *
+ * Deliberately says something the card below it does not. It used to open with
+ * "${name} is on track — ${etaLabel}", which is the card's own status line
+ * word for word, one row higher — the same fact twice, and the banner earning
+ * none of its space. The coach's job is the number you can act on: what is
+ * left, or what per month closes the gap.
+ */
 export const generateRecommendationCopy = (
   goal: Goal,
   health: GoalHealth,
-  priorityReason: string,
+  _priorityReason: string,
 ): string => {
-  if (health.state === 'completed') return `${goal.name} is fully funded — nice work.`;
-  if (health.state === 'overdue') return `${goal.name} passed its deadline. Update the date or add funds to get back on track.`;
-  if (health.state === 'at_risk') return `${goal.name} is behind pace — ${priorityReason.toLowerCase()}.`;
-  if (health.state === 'stalled') {
-    const daysLabel = Number.isFinite(health.daysSinceLastContribution)
-      ? `${health.daysSinceLastContribution} days`
-      : 'a while';
-    return `${goal.name} hasn't moved in ${daysLabel}.`;
+  const remainingPaise = Math.max(0, goal.targetAmount - goal.currentAmount);
+  const remaining = Money.format(remainingPaise, { zeroDecimals: true });
+
+  if (health.state === 'completed') return `${goal.name} is fully funded. Pick your next one.`;
+  if (isUnstarted(health)) return `${goal.name} starts the moment you put ₹500 in. That's the whole trick.`;
+
+  if (health.state === 'overdue') {
+    return `${goal.name} is past its deadline. Push the date out, or close the last ${remaining}.`;
   }
-  return health.etaLabel
-    ? `${goal.name} is on track — ${health.etaLabel}.`
-    : `${goal.name} is on track.`;
+
+  if (health.state === 'at_risk' && goal.deadline) {
+    const monthsLeft = monthsBetween(Date.now(), new Date(goal.deadline).getTime());
+    const perMonth = Money.format(
+      Math.ceil(monthsLeft > 0 ? remainingPaise / monthsLeft : remainingPaise),
+      { zeroDecimals: true },
+    );
+    return `${goal.name} needs ${perMonth} a month to land on time. You're putting in less.`;
+  }
+
+  if (health.state === 'at_risk') return `${goal.name} is behind pace — ${remaining} still to go.`;
+  if (health.state === 'stalled') return `${goal.name} has ${remaining} to go. Even ₹500 gets it moving again.`;
+
+  return `${goal.name} is your top priority — ${remaining} to go.`;
 };

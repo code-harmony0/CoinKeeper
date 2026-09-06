@@ -24,4 +24,20 @@ describe('onboarding sequence includes PIN setup', () => {
     const pinIndex = source.lastIndexOf('SetupPinScreen');
     expect(pinIndex).toBeGreaterThan(acceptIndex);
   });
+
+  it('runs the first-run setup between privacy and PIN', () => {
+    // Setup writes income, the budget split and the first goal to the
+    // database, so it must sit after privacy acceptance (the user has agreed
+    // to local storage) and before the PIN screen that ends the flow.
+    //
+    // Asserted on the handler bodies, not on source order: the render is a
+    // ternary chain written last-step-first, so the position of a screen in
+    // the file is the reverse of its position in the flow.
+    expect(source).toMatch(
+      /handlePrivacyAccept = \(\) => \{[^}]*setShowSetup\(true\)/,
+    );
+    expect(source).toMatch(
+      /handleSetupComplete = \(\) => \{[\s\S]*?setShowPinSetup\(true\)/,
+    );
+  });
 });

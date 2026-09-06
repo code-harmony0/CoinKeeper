@@ -95,7 +95,13 @@ export const FinancialLedgerService = {
    * Funds a goal. Updates the goal currentAmount AND inserts a transfer transaction
    * categorised as a Saving, so it counts correctly in the Money Plan.
    */
-  async fundGoal(goalId: string, amountPaise: number): Promise<void> {
+  /**
+   * `note` overrides the default "Transfer to <goal>" description. Round-ups
+   * pass their own ("Round-up from Swiggy") so a goal's contribution history
+   * distinguishes the ₹3 the user never thought about from the ₹5,000 they
+   * decided on — they are the same row type but not the same behaviour.
+   */
+  async fundGoal(goalId: string, amountPaise: number, note?: string): Promise<void> {
     const db = getDb();
     const newTxId = generateTxId();
 
@@ -115,7 +121,7 @@ export const FinancialLedgerService = {
         `INSERT INTO transactions
            (id, amount_paise, type, category_id, account_id, description, occurred_at, payment_method, upi_ref, sms_hash, goal_id)
          VALUES (?, ?, 'transfer_to_goal', ?, NULL, ?, ?, 'Transfer', NULL, NULL, ?)`,
-        [newTxId, amountPaise, categoryId, `Transfer to ${goal.name}`, Date.now(), goalId],
+        [newTxId, amountPaise, categoryId, note ?? `Transfer to ${goal.name}`, Date.now(), goalId],
       );
     });
 

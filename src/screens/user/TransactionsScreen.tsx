@@ -45,23 +45,19 @@ import { CountUp, PressableScale } from '../../components/anim';
 import { PiggyBankIllustration } from '../../components/illustrations';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { groupTransactionsByDate, GroupedRow } from '../../utils/groupTransactionsByDate';
+import { categoryLabel } from '../../utils/categoryLabel';
 import { resolveCategoryIcon } from '../../utils/categoryIcon';
 import { isWithinPeriod, PeriodFilter } from '../../utils/transactionPeriod';
 import { TransactionFiltersSheet } from '../../components/transaction/TransactionFiltersSheet';
 import { TransactionDetailSheet } from '../../components/transaction/TransactionDetailSheet';
-import { AmountDateFilter, matchesAmountDateFilter, isFilterActive } from '../../utils/transactionFilters';
+import { AmountDateFilter, matchesAmountDateFilter, isFilterActive, matchesCategory } from '../../utils/transactionFilters';
 
 type Props = NativeStackScreenProps<any, 'Transactions'>;
 
 type FilterTab = 'all' | 'income' | 'expense' | 'transfer_to_goal';
 const TABS: FilterTab[] = ['all', 'income', 'expense', 'transfer_to_goal'];
-const TAB_LABELS = {
-  all: 'All',
-  income: 'Income',
-  expense: 'Expense',
-};
 
-export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
+export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
   useSecureScreen();
   const insets = useSafeAreaInsets();
   const { colors, cardRadius, spring, iconShadow } = useSpecTheme();
@@ -81,6 +77,11 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   const [period, setPeriod] = useState<PeriodFilter>('month');
   const [segmentWidth, setSegmentWidth] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  // Set when the user drills in from a Reports category. Held as state, not read
+  // straight from params, so clearing the chip sticks instead of springing back.
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(
+    (route?.params as { category?: string } | undefined)?.category ?? null,
+  );
   const [amountDateFilter, setAmountDateFilter] = useState<AmountDateFilter>({});
   const [showFilters, setShowFilters] = useState(false);
   const [detailTx, setDetailTx] = useState<Transaction | null>(null);
@@ -137,6 +138,14 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     [transactions, period],
   );
 
+  // The Transactions tab stays mounted, so a second drill-down from Reports
+  // arrives as a param change on a live screen — useState's initial value alone
+  // would silently keep showing the first category.
+  const routeCategory = (route?.params as { category?: string } | undefined)?.category;
+  useEffect(() => {
+    if (routeCategory) setCategoryFilter(routeCategory);
+  }, [routeCategory]);
+
   const searched = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return inPeriod;
@@ -146,8 +155,13 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
   }, [inPeriod, searchQuery]);
 
   const filtered = useMemo(
-    () => searched.filter(t => matchesAmountDateFilter(t, amountDateFilter)),
-    [searched, amountDateFilter],
+    () =>
+      searched.filter(
+        t =>
+          matchesAmountDateFilter(t, amountDateFilter) &&
+          matchesCategory(t, categoryFilter),
+      ),
+    [searched, amountDateFilter, categoryFilter],
   );
 
   const grouped = useMemo(
@@ -175,6 +189,23 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     expense: expenseCount,
     transfer_to_goal: transferCount,
   };
+
+  /**
+   * Only offer a filter that would actually filter something.
+   *
+   * "Transfers (0)" sat in this row on every account that had never moved
+   * money to a goal — a control that does nothing, taking the width that
+   * pushed the row past the right edge and clipped its own label. A filter
+   * for an empty bucket is chrome, not a feature.
+   *
+   * The currently-selected tab always stays visible, so the row can never
+   * yank the option out from under a user whose filter just emptied.
+   */
+  const visibleTabs = useMemo(
+    () => TABS.filter(t => t === 'all' || t === activeTab || tabCounts[t] > 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeTab, allCount, incomeCount, expenseCount, transferCount],
+  );
 
   // Material Snackbar pattern: commit the previous pending delete immediately
   // when a new swipe arrives, then start a fresh 5-second window for the new
@@ -260,10 +291,14 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     indicatorX.value = withSpring(index * segmentWidth, spring);
   };
 
+  // Both the slot width and the resting position key off `visibleTabs`, not
+  // the full TABS list — hiding an empty filter changes how many slots there
+  // are, and an indicator sized for four slots under a row of three sits
+  // permanently offset from the label it is supposed to be under.
   const onSegmentLayout = (e: LayoutChangeEvent) => {
-    const width = (e.nativeEvent.layout.width - 8) / TABS.length;
+    const width = (e.nativeEvent.layout.width - 8) / visibleTabs.length;
     setSegmentWidth(width);
-    indicatorX.value = TABS.indexOf(activeTab) * width;
+    indicatorX.value = Math.max(0, visibleTabs.indexOf(activeTab)) * width;
   };
 
   const indicatorStyle = useAnimatedStyle(() => ({
@@ -298,7 +333,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             style={[styles.row, isSelected && { backgroundColor: colors.chipBg }]}
             accessible={true}
             accessibilityRole="button"
-            accessibilityLabel={`${item.description || item.category}. ${item.category}. ${isIncome ? 'Income' : 'Expense'} of ${formatAmount(item.amountPaise)} rupees`}
+            accessibilityLabel={`${item.description || categoryLabel(item.category)}. ${categoryLabel(item.category)}. ${isIncome ? 'Income' : 'Expense'} of ${formatAmount(item.amountPaise)} rupees`}
           >
             <View
               testID={`row-icon-${item.id}`}
@@ -308,11 +343,13 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <View style={styles.rowInfo}>
               <Text style={[styles.rowTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-                {item.description || item.category}
+                {item.description || categoryLabel(item.category)}
               </Text>
               <Text style={[styles.rowMeta, { color: colors.textSecondary }]}>
-                {item.category}
-                {item.paymentMethod && ` • ${item.paymentMethod}`}
+                {categoryLabel(item.category)}
+                {item.paymentMethod && item.paymentMethod.toLowerCase() !== 'manual'
+                  ? ` • ${item.paymentMethod}`
+                  : ''}
               </Text>
             </View>
             <View style={styles.rowRight}>
@@ -364,7 +401,6 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
           <Animated.View entering={FadeInDown.delay(20).springify()} style={styles.headerRow}>
             <AppHeader
               title="Transactions"
-              onBack={() => navigation.goBack()}
               rightActions={
                 <>
                   <PressableScale
@@ -431,7 +467,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
                 ]}
               />
             )}
-            {TABS.map((tab, index) => {
+            {visibleTabs.map((tab, index) => {
               const isActive = activeTab === tab;
               return (
                 <Pressable
@@ -455,6 +491,23 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
             })}
           </View>
         </Animated.View>
+
+        {categoryFilter && (
+          <Animated.View entering={FadeInDown.springify()} style={styles.categoryChipRow}>
+            <Pressable
+              testID="clear-category-filter"
+              accessibilityRole="button"
+              accessibilityLabel={`Showing ${categoryFilter} only. Clear this filter`}
+              onPress={() => setCategoryFilter(null)}
+              style={[styles.categoryChip, { backgroundColor: colors.chipBg }]}
+            >
+              <Text style={[styles.categoryChipText, { color: colors.textPrimary }]}>
+                {categoryFilter}
+              </Text>
+              <X size={14} color={colors.textSecondary} />
+            </Pressable>
+          </Animated.View>
+        )}
 
         <Animated.View entering={FadeInDown.delay(120).springify()} style={[styles.searchRow, { backgroundColor: colors.inputBg }]}>
           <Search size={18} color={colors.textSecondary} strokeWidth={2} />
@@ -527,6 +580,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
         onClose={() => setDetailTx(null)}
         onSave={handleSaveDetail}
         onDelete={handleDeleteDetail}
+        allTransactions={transactions}
       />
 
       {pendingDelete && (
@@ -535,7 +589,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
           style={[styles.undoBanner, { backgroundColor: colors.primaryAccent, bottom: insets.bottom + 24 }]}
         >
           <Text style={styles.undoText} numberOfLines={1}>
-            {pendingDelete.description || pendingDelete.category} deleted
+            {pendingDelete.description || categoryLabel(pendingDelete.category)} deleted
           </Text>
           <Pressable onPress={undoDelete}>
             <Text style={styles.undoAction}>Undo</Text>
@@ -635,6 +689,23 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Bold',
   },
 
+  categoryChipRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    marginBottom: 10,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+  },
+  categoryChipText: {
+    fontSize: 13,
+    fontFamily: 'PlusJakartaSans-SemiBold',
+  },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',

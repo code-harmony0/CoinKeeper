@@ -34,7 +34,7 @@ describe('FocusGoalHeroCard', () => {
     const { getByText } = render(
       <FocusGoalHeroCard {...baseProps} health={healthOf({ state: 'stalled', daysSinceLastContribution: 34, etaLabel: null })} priorityRank={1} />,
     );
-    expect(getByText(/No contribution in 34 days/)).toBeTruthy();
+    expect(getByText(/Quiet for 34 days/)).toBeTruthy();
   });
 
   it('shows an at-risk indicator when pace is behind the deadline', () => {
@@ -56,7 +56,7 @@ describe('FocusGoalHeroCard', () => {
     const { getByText, queryByText } = render(
       <FocusGoalHeroCard {...baseProps} health={healthOf({ state: 'stalled', daysSinceLastContribution: Infinity, etaLabel: null })} priorityRank={1} />,
     );
-    expect(getByText(/No contribution in a while/)).toBeTruthy();
+    expect(getByText(/Quiet for a while/)).toBeTruthy();
     expect(queryByText(/Infinity/)).toBeNull();
   });
 });

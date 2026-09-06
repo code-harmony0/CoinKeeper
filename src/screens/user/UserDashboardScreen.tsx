@@ -10,21 +10,45 @@
  * before the user sees anything adds a decision where the evidence says
  * removing decisions drives action.
  */
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, StyleSheet, Text, Alert } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, StyleSheet, Text, Alert, Dimensions } from 'react-native';
 import Animated, {
   FadeInDown,
   useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Sparkles, Plus, Target, Flame } from 'lucide-react-native';
+import { Sparkles, Plus, Target } from 'lucide-react-native';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { MoneyMap } from '../../components/insights/MoneyMap';
 import { GoalsStrip } from '../../components/insights/GoalsStrip';
+import { InsightPillRail } from '../../components/insights/InsightPillRail';
+import { IncomeHealthCard } from '../../components/income/IncomeHealthCard';
+import { AddFundsSheet } from '../../components/modals/AddFundsSheet';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
 import { useSecureScreen } from '../../hooks/useSecureScreen';
+import { useMonthLedger } from '../../hooks/useMonthLedger';
+import { useIncomeHealth } from '../../hooks/useIncomeHealth';
 import { useSpecTheme } from '../../theme/specTheme';
-import { PressableScale, BlueRefreshControl } from '../../components/anim';
+import {
+  PressableScale,
+  BlueRefreshControl,
+  BadgeCelebration,
+} from '../../components/anim';
+import { useBillStore } from '../../store/billStore';
+import { useGoalStore } from '../../store/goalStore';
+import {
+  buildStatus,
+  buildInsightPills,
+  type PillTarget,
+} from '../../services/homeNarrative';
+import {
+  headlineBadge,
+  takeUncelebrated,
+  type Badge,
+} from '../../services/badges';
+import { computeAgeOfMoney } from '../../services/ageOfMoney';
+import { buildWeeklyStory } from '../../services/weeklyStory';
+import { WeeklyStoryCard } from '../../components/insights/WeeklyStoryCard';
 import {
   generateInsights,
   getBudgetStreak,
@@ -39,6 +63,8 @@ import { TransactionDraft } from '../../types/transactionDraft';
 import { IncomeDistribution } from '../../services/income/IncomeRoutingEngine';
 import { IncomeEngine } from '../../services/income/IncomeEngine';
 import { financialEventBus } from '../../services/EventBus';
+import { Money } from '../../utils/money';
+import { EXPRESSIVE, STAGGER } from '../../theme/motion';
 
 // Guarded require, not a static import: CHITFUND_ENABLED is inlined as a
 // literal at build time, so Metro drops this branch — and the whole
@@ -55,15 +81,30 @@ const greeting = (): string => {
   return 'Good evening';
 };
 
+const CONTENT_W = Dimensions.get('window').width - 48 - 32;
+
 /**
- * Past a month, an escalating daily counter stops reading as an achievement
- * and starts reading as something fragile the user can destroy. Switching to
- * months slows the tick and reframes it as a durable record.
+ * Arrival for anything below the hero.
+ *
+ * The hero owns the opening sequence; these cards are usually below the fold
+ * when it plays, so tying them to a fixed delay would spend their entrance on
+ * an empty viewport and leave them already-there when scrolled to. Reanimated's
+ * `entering` fires on mount, and this list mounts as one — so the stagger is
+ * carried here as a per-card index.
  */
-const streakLabel = (days: number): string =>
-  days >= 30
-    ? `${Math.floor(days / 30)} month${days >= 60 ? 's' : ''} under budget`
-    : `${days}d under budget`;
+const OnEnter: React.FC<{ index: number; children: React.ReactNode }> = ({
+  index,
+  children,
+}) => (
+  <Animated.View
+    entering={FadeInDown.springify()
+      .damping(18)
+      .delay(index * STAGGER.normal)
+      .reduceMotion(EXPRESSIVE)}
+  >
+    {children}
+  </Animated.View>
+);
 
 type MonthSnapshot = {
   safeToSpend: number;
@@ -75,7 +116,8 @@ type MonthSnapshot = {
 export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   useSecureScreen();
   const insets = useSafeAreaInsets();
-  const { colors, cardRadius, cardShadow, chipRadius } = useSpecTheme();
+  const { colors, cardRadius, cardShadow, chipRadius, iconShadow } =
+    useSpecTheme();
   const { transactions, refreshTransactions } = useTransactions();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -84,11 +126,36 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [streakDays, setStreakDays] = useState(0);
   const [isIncomeFlowVisible, setIncomeFlowVisible] = useState(false);
   const [snapshot, setSnapshot] = useState<MonthSnapshot | null>(null);
+  const [celebrating, setCelebrating] = useState<Badge | null>(null);
+  const [fundingGoalId, setFundingGoalId] = useState<string | null>(null);
 
   // Same ranking (rankGoalPriority) and the same goalStore-backed goal list
   // that GoalsScreen's Focus card uses — one source of truth for "which goal
   // is #1", so Dashboard and Goals can never disagree about it.
-  const { rankedGoals } = useGoalIntelligence();
+  const { rankedGoals, savingsBudgetRemainingPaise } = useGoalIntelligence();
+  const { updateGoalProgress } = useGoalStore();
+  const { bills, loadBills } = useBillStore();
+  const incomeHealth = useIncomeHealth();
+
+  // One pass over the ledger feeds the ring, the status line, the plan bar and
+  // the pills, so none of them can disagree about the same month.
+  const ledger = useMonthLedger(transactions);
+
+  // Deliberately not scoped to the month like `ledger` is — the whole point of
+  // this figure is that it spans however far back the ledger goes.
+  const ageOfMoney = useMemo(
+    () => computeAgeOfMoney(transactions),
+    [transactions],
+  );
+
+  const weeklyStory = useMemo(
+    () => buildWeeklyStory(transactions),
+    [transactions],
+  );
+
+  useEffect(() => {
+    loadBills();
+  }, [loadBills]);
 
   const handleIncomeSubmit = async (
     draft: TransactionDraft,
@@ -154,8 +221,8 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   }, [navigation]);
 
   const st = useMemo(
-    () => makeStyles(colors, cardRadius, cardShadow, chipRadius),
-    [colors, cardRadius, cardShadow, chipRadius],
+    () => makeStyles(colors, cardRadius, cardShadow, chipRadius, iconShadow),
+    [colors, cardRadius, cardShadow, chipRadius, iconShadow],
   );
 
   // Feeds the shared scroll offset the tab bar reads to auto-hide.
@@ -165,6 +232,17 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
       scrollY.value = event.contentOffset.y;
     },
   });
+
+  // No hero parallax. It shipped briefly as `translateY: scrollY * 0.5` and
+  // broke the screen: a transform does not affect layout, so sliding the hero
+  // down pushed it *over* the cards below it, and the panel's `cardShadow`
+  // elevation made it paint on top — the insight pills and the "Add a
+  // category" button rendered underneath the panel.
+  //
+  // Parallax on a vertical list only works when the moving layer is behind
+  // everything (a background image) or is given real layout room to move
+  // through. Here the hero is a card in the flow, so the effect costs a
+  // genuine layout bug and buys a drift nobody asked twice about.
 
   const monthPlan = snapshot
     ? {
@@ -181,6 +259,87 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
     targetAmount: goal.targetAmount,
     currentAmount: goal.currentAmount,
   }));
+
+  const planPaise = snapshot?.safeToSpend ?? 0;
+
+  const status = useMemo(
+    () =>
+      buildStatus({
+        spendPaise: ledger.spendPaise,
+        planPaise,
+        safeTodayPaise: snapshot?.safeToSpendToday ?? 0,
+        todaySpendPaise: ledger.todaySpendPaise,
+        bills,
+      }),
+    [ledger.spendPaise, ledger.todaySpendPaise, planPaise, snapshot, bills],
+  );
+
+  const pills = useMemo(
+    () =>
+      buildInsightPills({
+        weekByCategory: ledger.weekByCategory,
+        bills,
+        spendPaise: ledger.spendPaise,
+        priorSpendSameSpanPaise: ledger.priorSpendSameSpanPaise,
+      }),
+    [ledger, bills],
+  );
+
+  // The celebration check keys off these three numbers, not off the goal
+  // objects — a new array identity on an unrelated render must not re-run it.
+  const goalSavedPaise = goals.reduce((sum, g) => sum + g.currentAmount, 0);
+  const bestGoalProgress = goals.reduce(
+    (best, g) =>
+      g.targetAmount > 0 ? Math.max(best, g.currentAmount / g.targetAmount) : best,
+    0,
+  );
+
+  const badgeContext = useMemo(
+    () => ({ streakDays, goalSavedPaise, bestGoalProgress }),
+    [streakDays, goalSavedPaise, bestGoalProgress],
+  );
+
+  // Fires once per badge, ever — takeUncelebrated marks what it hands back.
+  useEffect(() => {
+    let cancelled = false;
+    takeUncelebrated(badgeContext).then(fresh => {
+      if (!cancelled && fresh.length > 0) setCelebrating(fresh[0]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [badgeContext]);
+
+  const fundingGoal = rankedGoals.find(r => r.goal.id === fundingGoalId);
+
+  const handleAddFunds = async (amountStr: string) => {
+    if (!fundingGoalId) return;
+    const paise = Money.toPaise(amountStr);
+    if (paise <= 0) {
+      Alert.alert('Enter an amount', 'Add an amount greater than zero.');
+      return;
+    }
+    try {
+      await updateGoalProgress(fundingGoalId, paise);
+      setFundingGoalId(null);
+    } catch (e) {
+      console.error('[handleAddFunds]', e);
+      Alert.alert(
+        'Could not add money',
+        e instanceof Error ? e.message : 'Please try again.',
+      );
+    }
+  };
+
+  // Home is a tab screen, so 'Transactions' resolves as a sibling tab and the
+  // root-stack routes bubble up from here.
+  const PILL_ROUTES: Record<PillTarget, string> = {
+    bills: 'Bills',
+    reports: 'Reports',
+    transactions: 'Transactions',
+  };
+  const openPillTarget = (target: PillTarget) =>
+    navigation.navigate(PILL_ROUTES[target]);
 
   return (
     <View style={st.root}>
@@ -201,12 +360,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         <Animated.View entering={FadeInDown.springify()} style={st.topRow}>
           <View style={st.greetCol}>
             <Text style={st.greeting}>{greeting()}</Text>
-            {streakDays > 0 && (
-              <View style={st.streak}>
-                <Flame size={13} color={colors.peachDeep} strokeWidth={2.5} />
-                <Text style={st.streakText}>{streakLabel(streakDays)}</Text>
-              </View>
-            )}
+            <Text style={st.subGreeting}>Here’s where the month stands</Text>
           </View>
           <View style={st.actions}>
             <PressableScale
@@ -231,18 +385,32 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         </Animated.View>
 
         <View style={st.stack}>
-          {/* Hero — carries the PaceRing and the month's spending story */}
+          {/* Hero — the gauge, the story, and the month's spending map */}
           <MoneyMap
-            transactions={transactions}
+            ledger={ledger}
+            incomePaise={snapshot?.income ?? 0}
             monthPlan={monthPlan}
             onOpenReports={navigateToReports}
+            onAddCategory={() => navigation.navigate('Categories')}
+            streakDays={streakDays}
+            badge={headlineBadge(badgeContext)}
+            ageOfMoney={ageOfMoney}
+            status={status}
+            replayToken={refreshToken}
           />
 
+          <OnEnter index={0}>
+            <InsightPillRail pills={pills} onPress={openPillTarget} />
+          </OnEnter>
+
           {goals.length > 0 ? (
-            <GoalsStrip
-              goals={goals}
-              onPress={() => navigation.navigate('Goals')}
-            />
+            <OnEnter index={1}>
+              <GoalsStrip
+                goals={goals}
+                onPress={() => navigation.navigate('Goals')}
+                onAddMoney={setFundingGoalId}
+              />
+            </OnEnter>
           ) : (
             <View style={st.empty}>
               <View style={st.emptyIcon}>
@@ -268,6 +436,13 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             </View>
           )}
 
+          <OnEnter index={2}>
+            <WeeklyStoryCard
+              story={weeklyStory}
+              onOpenReports={navigateToReports}
+            />
+          </OnEnter>
+
           {insights.map((insight, index) => (
             <SmartInsightCard
               key={insight.id}
@@ -276,11 +451,26 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             />
           ))}
 
-          <IncomeSummaryRow
-            hasIncome={hasIncome}
-            onOpenDetail={() => navigation.navigate('IncomeDetail')}
-            onAddIncome={() => setIncomeFlowVisible(true)}
-          />
+          {/* The Income Health card owns income on this screen. An
+              `IncomeSummaryRow` used to sit directly beneath it restating the
+              same score with the same chevron to the same destination — one
+              fact, two cards, so the second was deleted. Its only unique job,
+              prompting for a first income, is covered below. */}
+          <OnEnter index={3}>
+            <IncomeHealthCard
+              health={incomeHealth}
+              contentWidth={CONTENT_W}
+              onOpenDetail={() => navigation.navigate('IncomeDetail')}
+            />
+          </OnEnter>
+
+          {!hasIncome && (
+            <IncomeSummaryRow
+              hasIncome={false}
+              onOpenDetail={() => navigation.navigate('IncomeDetail')}
+              onAddIncome={() => setIncomeFlowVisible(true)}
+            />
+          )}
 
           {DashboardChitsSection ? (
             <DashboardChitsSection
@@ -296,6 +486,23 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         onClose={() => setIncomeFlowVisible(false)}
         onSubmit={handleIncomeSubmit}
       />
+
+      {/* Adding to a goal from home opens the same sheet the Goals screen
+          uses, rather than a second, simpler one that would drift from it. */}
+      <AddFundsSheet
+        visible={fundingGoalId !== null}
+        goalName={fundingGoal?.goal.name}
+        goal={fundingGoal?.goal}
+        health={fundingGoal?.health}
+        savingsBudgetRemainingPaise={savingsBudgetRemainingPaise}
+        onClose={() => setFundingGoalId(null)}
+        onSubmit={handleAddFunds}
+      />
+
+      <BadgeCelebration
+        badge={celebrating}
+        onDismiss={() => setCelebrating(null)}
+      />
     </View>
   );
 };
@@ -305,6 +512,7 @@ const makeStyles = (
   cardRadius: number,
   cardShadow: any,
   chipRadius: number,
+  iconShadow: any,
 ) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.background },
@@ -318,34 +526,28 @@ const makeStyles = (
     },
     greetCol: { flex: 1, gap: 6 },
     greeting: {
-      fontSize: 15,
-      fontFamily: 'Satoshi-Bold',
+      fontSize: 20,
+      fontFamily: 'Satoshi-Black',
       color: colors.textPrimary,
+      letterSpacing: -0.3,
     },
-    streak: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      alignSelf: 'flex-start',
-      backgroundColor: colors.peach,
-      borderRadius: chipRadius,
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-    },
-    streakText: {
-      fontSize: 12,
-      fontFamily: 'Satoshi-Bold',
-      color: colors.peachDeep,
+    subGreeting: {
+      fontSize: 13,
+      fontFamily: 'Satoshi-Regular',
+      color: colors.textSecondary,
     },
     actions: { flexDirection: 'row', gap: 8 },
+    // Raised pills, not flat chips: these are the only two actions in the
+    // header and they were previously indistinguishable from the canvas.
     actionPill: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
-      backgroundColor: colors.chipBg,
+      backgroundColor: colors.card,
       paddingHorizontal: 14,
       paddingVertical: 9,
       borderRadius: chipRadius,
+      ...iconShadow,
     },
     actionText: {
       fontSize: 13,

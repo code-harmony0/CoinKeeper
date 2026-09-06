@@ -16,15 +16,18 @@ import {
   User,
   Bell,
   ChevronRight,
+  Coins,
   Moon,
   PieChart,
   Receipt,
   Target,
+  DatabaseBackup,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSpecTheme } from '../../theme/specTheme';
 import { useOptionalAuth } from '../../hooks/useOptionalAuth';
 import { getPreference, setPreference } from '../../store/database';
+import { isRoundUpEnabled, setRoundUpEnabled } from '../../services/roundUp';
 import {
   cancelAllReminders,
   rescheduleBillReminders,
@@ -58,6 +61,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
     useSpecTheme();
   const { userProfile, signOut, isAvailable } = useOptionalAuth();
   const [notifications, setNotifications] = useState(true);
+  const [roundUps, setRoundUps] = useState(true);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
@@ -68,6 +72,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       if (value !== null) {
         setNotifications(value === 'on');
       }
+      setRoundUps(await isRoundUpEnabled());
     };
     loadPref();
   }, []);
@@ -108,6 +113,12 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         error,
       );
     }
+  }, []);
+
+  const handleToggleRoundUps = useCallback(async (val: boolean) => {
+    ReactNativeHapticFeedback.trigger('impactLight');
+    setRoundUps(val);
+    await setRoundUpEnabled(val);
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -256,6 +267,26 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
               }
             />
             <SettingsDivider />
+            {/* The description is the "why", not a restatement of the label.
+                A toggle whose consequence is invisible gets switched off the
+                first time a user audits this screen — telling them what ₹3 a
+                day becomes is what keeps it on. */}
+            <SettingsRow
+              icon={Coins}
+              tint="green"
+              label="Round-ups"
+              description="Round spending up to the nearest ₹10 and put the change toward your goal. About ₹3 a chai — roughly ₹1,000 a year you never had to decide to save."
+              rightElement={
+                <Switch
+                  value={roundUps}
+                  onValueChange={handleToggleRoundUps}
+                  accessibilityLabel="Round-ups"
+                  trackColor={{ false: colors.inputBg, true: colors.success }}
+                  thumbColor="#FFFFFF"
+                />
+              }
+            />
+            <SettingsDivider />
             <SettingsRow
               icon={PieChart}
               tint="green"
@@ -275,6 +306,14 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
               tint="purple"
               label="Savings Goals"
               onPress={() => navigation.navigate('Goals')}
+            />
+            <SettingsDivider />
+            <SettingsRow
+              icon={DatabaseBackup}
+              tint="indigo"
+              label="Backup & Restore"
+              description="Save your data, or bring it back on a new phone"
+              onPress={() => navigation.navigate('BackupRestore')}
             />
           </SettingsCard>
         </Animated.View>

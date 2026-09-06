@@ -6,7 +6,8 @@ import { useSpecTheme } from '../../theme/specTheme';
 import { Transaction } from '../../types/transaction';
 import { resolveCategoryIcon } from '../../utils/categoryIcon';
 import { Money } from '../../utils/money';
-import { Trash2, Tag } from 'lucide-react-native';
+import { Trash2, Tag, TrendingUp } from 'lucide-react-native';
+import { transactionInsight } from '../../services/transactionInsight';
 
 interface Props {
   visible: boolean;
@@ -14,9 +15,15 @@ interface Props {
   onClose: () => void;
   onSave: (id: string, updates: Partial<Transaction>) => void;
   onDelete: (id: string) => void;
+  /**
+   * The full ledger, so this one transaction can be described in the context
+   * of the pattern it belongs to. Optional: the sheet is fully usable without
+   * it, it just has nothing to observe.
+   */
+  allTransactions?: Transaction[];
 }
 
-export const TransactionDetailSheet: React.FC<Props> = ({ visible, transaction, onClose, onSave, onDelete }) => {
+export const TransactionDetailSheet: React.FC<Props> = ({ visible, transaction, onClose, onSave, onDelete, allTransactions }) => {
   const { colors, cardRadius } = useSpecTheme();
   const [amountInput, setAmountInput] = useState('');
   const [description, setDescription] = useState('');
@@ -54,9 +61,25 @@ export const TransactionDetailSheet: React.FC<Props> = ({ visible, transaction, 
     onClose();
   };
 
+  // Null unless this purchase is part of a real repeat — see transactionInsight,
+  // which stays quiet rather than filling this slot on every row.
+  const insight =
+    transaction && allTransactions
+      ? transactionInsight(transaction, allTransactions)
+      : null;
+
   return (
     <>
       <TransactionEntryShell visible={visible} onClose={onClose} headerContext="Transaction Details">
+        {insight && (
+          <View style={[styles.insight, { backgroundColor: colors.chipBg }]}>
+            <TrendingUp size={16} color={colors.textSecondary} strokeWidth={2.5} />
+            <Text style={[styles.insightText, { color: colors.textPrimary }]}>
+              {insight}
+            </Text>
+          </View>
+        )}
+
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Amount</Text>
           <TextInput
@@ -137,6 +160,17 @@ export const TransactionDetailSheet: React.FC<Props> = ({ visible, transaction, 
 
 const styles = StyleSheet.create({
   field: { paddingHorizontal: 20, marginBottom: 20 },
+  insight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  insightText: { flex: 1, fontSize: 14, fontFamily: 'Satoshi-Medium', lineHeight: 19 },
   label: { fontSize: 12, fontFamily: 'Satoshi-Bold', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   amountInput: { fontSize: 32, fontFamily: 'Satoshi-Black' },
   textInput: { fontSize: 16, fontFamily: 'Satoshi-Medium', borderRadius: 12, paddingHorizontal: 14, height: 48 },

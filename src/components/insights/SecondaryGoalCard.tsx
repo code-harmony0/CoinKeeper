@@ -10,7 +10,8 @@ import { Text } from '../ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim/PressableScale';
 import { Money } from '../../utils/money';
-import { GoalHealth } from '../../services/goalIntelligence';
+import { GoalHealth, goalBarTone, goalStatusCopy, goalTone, isUnstarted } from '../../services/goalIntelligence';
+import { INFORMATIONAL, SPRING } from '../../theme/motion';
 
 interface Props {
   name: string;
@@ -34,22 +35,46 @@ export const SecondaryGoalCard: React.FC<Props> = ({
   const { colors, cardRadius, cardShadow, iconShadow, iconContainerRadius } = useSpecTheme();
 
   const percentage = health.progressPercent;
-  const isComplete = health.state === 'completed';
+  const unstarted = isUnstarted(health);
 
   const fillWidth = useSharedValue(0);
-  
+
   useEffect(() => {
-    fillWidth.value = withSpring(percentage, { damping: 20, stiffness: 90 });
+    // The bar IS the percentage, so it shortens under reduce-motion rather
+    // than snapping — it carried no reduceMotion policy at all before.
+    fillWidth.value = withSpring(percentage, { ...SPRING.settle, reduceMotion: INFORMATIONAL });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [percentage]);
-  
+
   const fillStyle = useAnimatedStyle(() => ({
     width: `${fillWidth.value}%`
   }));
 
-  const accentColor = isComplete ? colors.success : themeColor;
+  // The status line carries the verdict; an unstarted goal is an invitation
+  // rather than a warning and stays on its own ink.
+  const tone = unstarted ? 'accent' : goalTone(health.state);
+  const statusColor =
+    tone === 'good' ? colors.success
+    : tone === 'warn' ? colors.warning
+    : tone === 'bad' ? colors.danger
+    : themeColor;
+
+  // The bar and the percentage measure fullness, not health — driving them
+  // from status turned every drifting goal amber at once and erased the accent
+  // rotation that tells these cards apart.
+  const barTone = goalBarTone(health.state);
+  const accentColor =
+    barTone === 'good' ? colors.success
+    : barTone === 'bad' ? colors.danger
+    : themeColor;
 
   return (
-    <PressableScale onPress={onPress} onLongPress={onLongPress}>
+    <PressableScale
+      onPress={onPress}
+      onLongPress={onLongPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${name}. ${Money.format(currentAmount, { zeroDecimals: true })} of ${Money.format(targetAmount, { zeroDecimals: true })}, ${percentage} percent. ${goalStatusCopy(health)}`}
+    >
       <View style={[
         styles.card,
         cardShadow,
@@ -80,22 +105,26 @@ export const SecondaryGoalCard: React.FC<Props> = ({
           <View style={[styles.completeBadge, { backgroundColor: colors.success }]}>
             <Text variant="label" style={{ color: '#FFFFFF' }}>Complete</Text>
           </View>
-        ) : health.state === 'stalled' ? (
-          <Text variant="caption" style={{ color: colors.textSecondary, marginTop: 4 }}>
-            No contribution in {Number.isFinite(health.daysSinceLastContribution) ? `${health.daysSinceLastContribution} days` : 'a while'}
+        ) : (
+          <Text
+            variant="caption"
+            numberOfLines={1}
+            style={{ color: tone === 'accent' ? colors.textSecondary : statusColor, marginTop: 4, marginBottom: 8 }}
+          >
+            {goalStatusCopy(health)}
           </Text>
-        ) : (health.state === 'at_risk' || health.state === 'overdue') ? (
-          <Text variant="caption" style={{ color: colors.danger, marginTop: 4 }}>
-            {health.state === 'overdue' ? 'Past deadline' : 'Behind pace'}
-          </Text>
-        ) : null}
+        )}
 
-        <View style={[styles.track, { backgroundColor: colors.chipBg }]}>
-          <Animated.View style={[
-            styles.fill, 
-            { backgroundColor: accentColor },
-            fillStyle
-          ]} />
+        {/* Dashed slot rather than a solid empty bar — see FocusGoalHeroCard. */}
+        <View style={[
+          styles.track,
+          unstarted
+            ? { backgroundColor: 'transparent', borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.border }
+            : { backgroundColor: colors.chipBg },
+        ]}>
+          {!unstarted && (
+            <Animated.View style={[styles.fill, { backgroundColor: accentColor }, fillStyle]} />
+          )}
         </View>
         
       </View>
@@ -130,13 +159,13 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
   },
   track: {
-    height: 6,
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
   },
   completeBadge: {
     alignSelf: 'flex-start',

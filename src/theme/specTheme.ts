@@ -22,6 +22,10 @@ export const specLight = {
   primaryAccent: '#121723',
   success: '#34C759',
   danger: '#FF3B30',
+  // The third state between "fine" and "over". Introduced when the home hero
+  // gained a pacing ring that needs to say "approaching" without borrowing
+  // danger's red — peachDeep is an accent-rotation ink, not a status color.
+  warning: '#FF9500',
   textPrimary: '#1A1A1A',
   textSecondary: '#6B7280',
   // Section eyebrows/labels on the light-blue canvas — textSecondary fails
@@ -60,6 +64,7 @@ export const specDark = {
   primaryAccent: '#F5F7FA',
   success: '#4CAF50',
   danger: '#FF6B6B',
+  warning: '#FFA726',
   textPrimary: '#F5F7FA',
   textSecondary: '#A0AEC0',
   sectionLabel: '#A0AEC0',
@@ -82,6 +87,37 @@ export const specDark = {
   pinkDeep: '#E2B6CF',
   sky: '#1E3A4A',
   skyDeep: '#B8E6F5',
+};
+
+// ============================================
+// ENAMEL — the home hero's dark panel
+// ============================================
+/**
+ * The one dark surface in the app (DESIGN.md §7). Exported from here because
+ * three components draw on it and each used to keep its own private copy of
+ * these values — three copies that could and did drift apart.
+ *
+ * The ground is neutral rather than the blue-black it started as: the gauge
+ * well sits on it as a lighter *neutral* step, and a grey well on a blue-black
+ * ground reads as two unrelated darks rather than one surface catching light.
+ */
+export const enamel = {
+  ...specDark,
+  /** Panel ground. */
+  background: '#1C1C1E',
+  /** Layered up, not down — the gauge and the small pills sit on this. */
+  card: '#2C2C2E',
+  /** The gauge well's outer edge, so the well can fall off into the ground. */
+  wellEdge: '#1C1C1E',
+  surfaceSunken: '#161618',
+  border: 'rgba(255,255,255,0.08)',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#8E8E93',
+  success: '#34C759',
+  successBright: '#30D158',
+  warning: '#FF9500',
+  danger: '#FF3B30',
+  dangerBright: '#FF453A',
 };
 
 // ============================================

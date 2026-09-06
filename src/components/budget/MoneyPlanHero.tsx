@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Text as RNText } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Canvas, Skia, Path, Circle } from '@shopify/react-native-skia';
 import Animated, {
   useSharedValue,
@@ -13,7 +13,7 @@ import { Text } from '../ui/Text';
 import { CountUp } from '../anim/CountUp';
 import { PressableScale } from '../anim/PressableScale';
 import { useSpecTheme } from '../../theme/specTheme';
-import { Money } from '../../utils/money';
+import { INFORMATIONAL, SPRING } from '../../theme/motion';
 
 import { PresetOutcome } from '../../services/moneyPlanIntelligence';
 
@@ -43,17 +43,15 @@ const ARC_CY = ARC_SIZE / 2;
 const START_ANGLE = -210; // degrees, open at bottom-left
 const SWEEP_TOTAL = 240; // degrees of travel
 
-const deg2rad = (d: number) => (d * Math.PI) / 180;
-
 export const MoneyPlanHero: React.FC<Props> = ({
-  income,
+  income: _income,
   previewOutcome,
   hasIncome,
   isBalanced,
   onAddIncome,
   colors,
 }) => {
-  const { cardRadius, cardShadow, iconShadow } = useSpecTheme();
+  const { cardRadius, cardShadow } = useSpecTheme();
   const { label: scoreLabel, color: scoreColor, confidence } = getScoreState(previewOutcome.budgetHealthScore, colors);
 
   // ── Arc animation ─────────────────────────────────────────────────────────
@@ -63,9 +61,14 @@ export const MoneyPlanHero: React.FC<Props> = ({
     // Entrance animation: arc draws in from 0 → score
     arcProgress.value = withDelay(
       300,
-      withSpring(hasIncome ? previewOutcome.budgetHealthScore / 100 : 0, { damping: 18, stiffness: 80 })
+      // The arc draws to a value — informational motion, so it plays even
+      // when the system asks for reduced motion (see theme/motion.ts).
+      withSpring(hasIncome ? previewOutcome.budgetHealthScore / 100 : 0, {
+        ...SPRING.settle,
+        reduceMotion: INFORMATIONAL,
+      }),
     );
-  }, [previewOutcome.budgetHealthScore, hasIncome]);
+  }, [previewOutcome.budgetHealthScore, hasIncome, arcProgress]);
 
   const sweepAngle = useDerivedValue(
     () => arcProgress.value * SWEEP_TOTAL
@@ -101,24 +104,18 @@ export const MoneyPlanHero: React.FC<Props> = ({
             <CountUp value={previewOutcome.safeToSpendToday} prefix="₹" isPaise style={[styles.bigNumber, { color: colors.textPrimary }]} />
             
             <View style={styles.metricsGrid} accessible={true}>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Monthly Remaining</Text>
-                <CountUp value={previewOutcome.monthlyRemaining} prefix="₹" isPaise style={[styles.metricValue, { color: colors.skyDeep }]} />
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Savings Goal</Text>
-                <CountUp value={previewOutcome.monthlySavings} prefix="₹" isPaise style={[styles.metricValue, { color: colors.mintDeep }]} />
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Budget Health</Text>
-                <Text style={[styles.metricValue, { color: scoreColor }]}>{previewOutcome.budgetHealthScore}/100 (Grade {previewOutcome.grade})</Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Freedom Progress</Text>
-                <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-                  {previewOutcome.emergencyFundMonths ? `E-Fund in ${previewOutcome.emergencyFundMonths} mos` : 'No E-Fund'}
-                </Text>
-              </View>
+              {/* "Monthly Remaining" lived here and again as the Money Flow
+                  card's "Safe to spend this month" pill — the same ₹ figure
+                  twice on one screen. The pill won: it sits directly beneath
+                  the bar that produces it. This card now carries only facts
+                  nothing else states. */}
+              <Text style={[styles.metricValue, { color: colors.textSecondary }]}>
+                {previewOutcome.emergencyFundMonths
+                  ? `You'll have an emergency fund in ${
+                      previewOutcome.emergencyFundMonths
+                    } month${previewOutcome.emergencyFundMonths === 1 ? '' : 's'}.`
+                  : 'No emergency fund yet — savings will build one.'}
+              </Text>
             </View>
 
             {/* Recommendation / confidence line */}
@@ -214,15 +211,6 @@ export const MoneyPlanHero: React.FC<Props> = ({
 
 // ── Skia arc helpers ──────────────────────────────────────────────────────────
 
-interface ArcPathProps {
-  cx: number;
-  cy: number;
-  r: number;
-  startAngle: number;
-  sweepAngle: number | Animated.SharedValue<number>;
-  color: string;
-  stroke: number;
-}
 
 /**
  * Static arc drawn as a Path (Skia Arc takes degrees, this matches).
@@ -325,7 +313,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingRight: 12,
+    // Without a gap and a shrinkable label these collided: "Budget
+    // Health100/100 (Grade A)" rendered as one run-on string. The label
+    // yields space, the value never truncates.
+    gap: 12,
   },
+  metricLabelFlex: { flexShrink: 1 },
   metricLabel: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 12,

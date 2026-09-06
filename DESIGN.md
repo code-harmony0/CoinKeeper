@@ -52,6 +52,7 @@ Every screen composes from three surface tiers:
 | `primaryAccent`                             | `#007AFF`             | primary CTA / FAB / active segment — iOS blue                                                                        |
 | `success`                                   | `#34C759`             |                                                                                                                      |
 | `danger`                                    | `#FF3B30`             |                                                                                                                      |
+| `warning`                                   | `#FF9500`             | the state between fine and over — "approaching the limit", "faster than plan". Never substitute `peachDeep` here: that is an accent-rotation ink, not a status colour |
 | `textPrimary`                               | `#1A1A1A`             | headlines, hero numbers                                                                                              |
 | `textSecondary`                             | `#6B7280`             | labels, captions, muted body                                                                                         |
 | `sectionLabel`                              | `#4B5563`             | settings section eyebrows on the canvas — `textSecondary` fails 4.5:1 on `#E6F0FA` (≈4.0:1), this clears it (≈6.6:1) |
@@ -80,6 +81,7 @@ The rotation order is **lavender → pink → mint → peach → sky** (indices 
 | `surfaceElevated`                           | `#1E2530`               |
 | `primaryAccent`                             | `#4DA2FF`               |
 | `success` / `danger`                        | `#4CAF50` / `#FF6B6B`   |
+| `warning`                                   | `#FFA726`               |
 | `textPrimary`                               | `#F5F7FA`               |
 | `textSecondary`                             | `#A0AEC0`               |
 | `sectionLabel`                              | `#A0AEC0`               |
@@ -220,43 +222,81 @@ The home screen's month-at-a-glance panel — the **one sanctioned exception** t
 Behavior:
 
 - **Transit metaphor** — income is the central hub (filled `specDark.textPrimary`, INCOME label + compact value), the top-5 expense categories are stations on **45°/90° spokes only**, spent-vs-plan is a **fare strip** at the panel foot (fill `success`, flips to `danger` when over).
-- **The boundary ring is the game** — the dashed ring is a track, and spend fills it clockwise from 12 o'clock (`strokeDasharray` over `RING_C`, rotated -90°). A **pace marker** tick sits where an even draw-down of the month's plan would put you today. Racing that marker — not the raw total — is the loop: the ring reads `success` when under pace, `danger` when spending faster than plan, and the verdict is stated in words under the panel title. Budget pacing (actual ÷ expected cumulative spend) is a real, named finance metric; the ring must never imply a target the plan doesn't set.
+- **Two acts, one panel, one rule between them.** Act one is the hero — the gauge, the story row, the status line, the KPI pills, the plan bar (see PaceRing and Hero narrative below). Act two is the transit map. A 1px `border` rule separates them; without it the panel reads as one undifferentiated column. The hero says how the month is going, the map says where the money went.
+- **The fare strip is gone**, replaced by the hero's `PlanBar` — same figures, thicker bar, and it expands into the category breakdown instead of stating a total the map already draws.
 - **Station labels sit on the far side of the station from the hub** (`labelDy` per station) — labels placed hub-side get a 6.5px route stroke drawn straight through the text.
 - **Below three categories the map degrades to a ranked bar list** — one or two spokes read as a lollipop under a screen of dead panel, so the same data pays its way as rows with proportional bars.
 - **Line inks are the accent rotation** — `specLight.lavender/pink/mint/peach/sky` in that fixed order (§2), glowing on the dark ground. Rotation order is load-bearing here too.
 - **One line burns** — tapping a station makes its route the burning line (opacity animates 0.28 → 1 via `AnimatedPath`) and shows that category's last 3 transactions below the map.
 - **Geometry** — viewBox 340×306, hub at center (170,150, r=32), ring r=100, `mapW = min(screenW−80, 340)`. E-station labels shift left 36px to clear the viewBox edge.
 - **Empty state** — dashed ring + solid hub only, "Your money map fills in as you add expenses".
-- **Fare strip** — hidden when `safeToSpend` is 0, replaced by "Add income to set this month's spending plan".
 
-Money Map reads its month plan from `FinancialIntelligenceEngine.getCurrentSnapshot()` and carries the `PaceRing` as the home's hero.
+Money Map reads its month plan from `FinancialIntelligenceEngine.getCurrentSnapshot()` and its aggregates from `useMonthLedger` (passed in as `ledger`, never re-derived here). It carries the `PaceRing` and the hero narrative as the home's first act.
 
 ### PaceRing — the home hero (`src/components/insights/PaceRing.tsx`)
 
-One object answering three questions, sitting at the top of the Money Map panel:
+Three concentric rings sitting at the top of the Money Map panel, ordered inside-out from the most immediate answer to the most structural. They are read together, never summed:
 
-| Zone | Question | Content |
-| --- | --- | --- |
-| Centre | "Can I spend right now?" | `safeToSpendToday` at Display-40 `Satoshi-Black`, labelled "Safe to spend today" |
-| Ring | "Am I on track?" | Spend fills clockwise from 12 o'clock; a marker tick sits at the even-draw-down position for today |
-| Verdict | — | The pace status in words, under the ring |
+| Ring | Question | Fill | Colour |
+| --- | --- | --- | --- |
+| Inner | "Can I spend right now?" | today's spend ÷ today's allowance | `success`, `warning` at 60% used, `danger` at 100% |
+| Middle | "Am I on track this month?" | month spend ÷ plan, plus a marker tick at the even-draw-down position for today | `success` ahead, `sky` on pace, `warning` fast |
+| Outer | "Is the plan itself sane?" | plan ÷ income | `textPrimary` at 55% opacity — structural, not a status |
 
+The centre carries `safeToSpendToday` in `Satoshi-Black`, counting up from zero, labelled "Safe to spend today".
+
+- **The legend is not optional.** `RingLegend` sits directly under the gauge and names all three rings with their values. A chart with more than one series always carries a key; three unlabelled arcs are three things the reader has to guess at. This was shipped once without it and the first question asked was "what do the different circle lines represent" — which is the only test that matters. Each swatch is drawn at its ring's **exact stroke weight and colour**, so the pairing is carried by thickness as well as hue and does not rest on colour alone.
+- **Weight is the hierarchy.** Strokes are 12 / 8 / 4 inside-out, at 100% / 85% / 40% strength. Three equal rings are three rings competing; the inner ring is the answer and the outer two are context. Never even them up.
+- **Ring semantics are fixed.** Inner is a day, middle is a month, outer is the plan's claim on income. Never repurpose a ring for a fourth metric, and never add a fifth ring — three is already the ceiling for what a glance can separate.
+- **The centre glow is a gradient to transparent, never a blurred solid.** A blurred filled circle over a dark ground is a stain — the amber state rendered the centre olive-brown. A radial gradient falling to `00` alpha is what light actually does.
+- **The glow is neutral white, and its *rhythm* carries the state — not its hue.** Tinting it with the day's colour put an amber wash behind the hero figure at the exact moment the ring around it also went amber, and the whole centre read warm and muddy. The state is already said three times (inner ring, legend row, status line); a fourth encoding that dirties the well is not worth having. Calm breathes on a 3s cycle, past 60% of today's allowance on a 1.5s one. A cool neutral centre also lets the coloured rings read at full strength against it.
+- **One derivation of the ring colours.** `ringTones()` is the only place the colour ladder lives, consumed by both the gauge and `RingLegend`. They previously each carried their own copy — they agreed, but only by two edits happening to stay in step, and a legend that contradicts the ring it explains is worse than none. Pinned by tests, including that today's state can never leak into the month ring.
+- **`warning` on the middle ring, `danger` reserved.** Spending faster than plan is amber; red is kept for actually being over. A ring that goes red before anything has gone wrong teaches the user to ignore red.
 - **Skia draws geometry only; every string is a React Native `<Text>` layered over the `Canvas`.** This is deliberate and load-bearing: it avoids loading Satoshi into Skia via `useFont`, keeps type crisp at any density, and leaves the numbers reachable by TalkBack. Never render hero text inside the Skia canvas.
-- **Pacing is `src/services/budgetPacing.ts`** (`computePace`), a pure unit-tested module — never re-derive pace inline in a component. `ratio > 1.05` is `fast` (`danger`), `< 0.85` is `ahead` (`success`), between is `on` (`sky`). Budget pacing (actual ÷ expected cumulative spend) is a real named finance metric; the ring must never imply a target the plan doesn't set.
-- **Motion is one authored moment**: the arc springs `0 → current` after a 200ms delay, and the marker fades in at 900ms so the eye lands on the verdict last. Both carry `ReduceMotion.System`.
+- **The gauge sits in a well** — a `specDark.card` circle behind the rings. The panel layers *up* for the hero rather than down; this is the one depth cue on a dark surface, since §5 forbids heavier shadows.
+- **The glow behind the centre number breathes only when calm.** It pulses at the safe state and holds steady at warning and danger — a pulsing red reads as an alarm the user cannot dismiss.
+- **Pacing is `src/services/budgetPacing.ts`** (`computePace`), a pure unit-tested module — never re-derive pace inline in a component. `ratio > 1.05` is `fast`, `< 0.85` is `ahead`, between is `on`. Budget pacing (actual ÷ expected cumulative spend) is a real named finance metric; the ring must never imply a target the plan doesn't set.
+- **Motion is one authored moment**, sequenced outside-in so the eye finishes at the centre: outer at 120ms, middle at 240ms, inner at 380ms, marker at 900ms. All carry `ReduceMotion.System`.
+- **The ring sizes off the screen** (`min(screenW − 104, 288)`) and the hero number steps down by string length — a fixed 56px would clip a five-figure amount inside the inner ring.
+- **`replayToken` rewinds and redraws** on pull-to-refresh: the rings wind to zero, then draw again, so a refresh reads as the same gesture repeating rather than as numbers jumping.
 - **With no plan** (`planPaise === 0`) the centre reads "Add income to set a plan" — never a ₹0 hero.
+
+### Hero narrative — `HeroStats.tsx` + `services/homeNarrative.ts`
+
+Under the ring, in descending order of how quickly the user can act: story row → status line → KPI pills → plan bar.
+
+- **Every sentence is generated in `homeNarrative.ts`, a pure unit-tested module.** No component assembles hero copy from numbers inline. Nothing in that file invents a figure; where the data can't support a claim, the narrative says less rather than guessing.
+- **The status line is priority-ordered, not concatenated**: over plan → today's allowance spent or 60% gone → nearest bill within 7 days → projection → reassurance. Exactly one shows. Reassurance is last because it is the only one that costs nothing to miss.
+- **Projections are straight-line and never shown before day 2** — one lunch on the 1st extrapolates to a catastrophe.
+- **The plan bar opens into its own breakdown.** The bar provokes "spent on what?", so the categories expand in place rather than sitting a screen away.
+- **Icons are drawn, never emoji.** The storytelling row uses `lucide-react-native` at the same stroke weight as the rest of the app; a 🔥 in place of `Flame` is a bug.
 
 ### Home structure — one scroll (`src/screens/user/UserDashboardScreen.tsx`)
 
-A single vertical scroll: greeting + streak + quick actions, then Money Map (hero), goals strip, insights, income row, chits (pro only).
+A single vertical scroll: greeting + quick actions, then Money Map (hero), insight pill rail, goals strip, insights, income health card, income row, chits (pro only).
 
 - **No room switcher.** A Spending/Goals/Income segmented control shipped here once and was removed: it forced a choice before the user saw anything, and two of three rooms rendered a single card above a screen of void. Evidence runs the other way — Google Pay's 2022 home cut visible options 40% and lifted transaction initiation 22%; Empower's single-primary-number dashboard with detail one level deeper held 70% six-month retention against a 35–40% industry average. Do not reintroduce sibling rooms on this screen.
-- **Numbers appear once.** The ring owns safe-to-spend-today and budget-left, so the dashboard filters the engine's `safe-spending` and `no-income` insights out of the list. Any new surface that restates a hero figure is a bug.
-- **Streak framing is capped, not escalating.** Past 30 days the chip switches from days to months. Loss-aversion research on long streaks (Silverman & Barasch, JCR 2023; Octalysis streak-design analysis) finds that beyond ~30–60 days an escalating daily counter stops reading as an achievement and becomes something fragile the user fears destroying, and that broken streaks durably suppress re-engagement. Never ship an uncapped day counter here, and never dramatize breaking one.
-- **Summary first, detail on demand.** `GoalsStrip` shows every goal compactly and opens Goals; `IncomeSummaryRow` replaces three self-nulling widgets with one row opening `IncomeDetail`. A component that returns `null` without data must never be the only thing in a region.
+- **Numbers appear once.** The ring owns safe-to-spend-today and budget-left, so the dashboard filters the engine's `safe-spending` and `no-income` insights out of the list. Any new surface that restates a hero figure is a bug. This rule caught a real one on device: the story row and the status line both rendered "On track to save ₹48,800", one directly above the other. The status line won — it is contextual and drops the projection when something more urgent outranks it — and `StoryRow` no longer takes a projection at all.
+- **With no plan there is no gauge.** `planPaise === 0` renders a compact prompt, not a 288dp triple ring with nothing in it. Spending the largest object on the screen to say "no data" is the most expensive possible empty state.
+- **Dev-only flags** (`APP_LOCK_ENABLED`, `SECURE_SCREEN_ENABLED`, both `!__DEV__`) turn off the PIN gate and `FLAG_SECURE` in debug builds. `FLAG_SECURE` in particular makes every `adb screencap` return solid black, which silently blocks all visual review — if a screenshot of a money screen comes back black, that is why, not a render bug.
+- **Streak framing is capped, not escalating.** Past 30 days the label switches from days to months. Loss-aversion research on long streaks (Silverman & Barasch, JCR 2023; Octalysis streak-design analysis) finds that beyond ~30–60 days an escalating daily counter stops reading as an achievement and becomes something fragile the user fears destroying, and that broken streaks durably suppress re-engagement. Never ship an uncapped day counter here, and never dramatize breaking one. The streak now lives in the hero's story row rather than as a chip beside the greeting.
+- **Badges are earned by money, celebrated once, and lost in silence.** Every rule in `services/badges.ts` reads the ledger — a streak of real under-budget days or real savings — never app opens. `takeUncelebrated` persists what has already been shown, so `BadgeCelebration` fires on the load after a threshold is crossed and never again. Losing a badge is silent: it stops showing, and nothing announces it. Dramatizing a loss would undo the streak-capping rule above through the back door.
+- **Summary first, detail on demand.** `GoalsStrip` shows every goal compactly and opens Goals; `IncomeHealthCard` summarises income health and opens `IncomeDetail`. A component that returns `null` without data must never be the only thing in a region.
 - **Empty states are real** — icon in a `chipBg` circle, title, one explanatory line, `primaryAccent` CTA.
+- **One derivation of the month.** `useMonthLedger` makes a single pass over the transaction list and feeds the ring, the status line, the plan bar and the pills. Never re-sum the month inside a component — two summations are two chances to disagree about the same figure.
 
-Quick actions (`+ Income`, `Ask AI`) are `chipBg` pills in the top row beside a time-of-day greeting. There is no "Overview" screen title — the hero number is the screen's identity.
+Quick actions (`+ Income`, `Ask AI`) are raised `card` pills with `iconShadow` in the top row beside a time-of-day greeting. There is no "Overview" screen title — the hero number is the screen's identity.
+
+### Income Health — card (`components/income/IncomeHealthCard.tsx`) and detail (`screens/user/IncomeDetailScreen.tsx`)
+
+- **The card shows position, the screen shows meaning.** Home gets the score, a charge bar against its own zones, three arc gauges, a six-month sparkline, and the single weakest pillar with one action. Definitions, tips, the interactive chart and the source donut live one tap deeper.
+- **`useIncomeHealth` is the only read path.** Card and screen consume the same hook, so they cannot show different numbers for the same day. It re-reads on every `financialEventBus` event, which is how adding income updates the score without a manual refresh.
+- **Band colours are fixed everywhere**: `danger` ≤30, `warning` ≤60, `success` above. A colour learned on the card means the same thing on the screen.
+- **Three empty states, three distinct marks.** *Dashed outline* = no data yet ("Not yet"); *solid track + fill* = measured; *solid track + dot* = measured and genuinely zero. `NOT_ENOUGH_DATA` and a real 0 are different facts and must never render alike — rendering the first as 0 is a lie about the user's finances. The Goals ring uses the same dashed language for an untouched goal.
+- **Dash a semicircle with a `Path` arc, never a dashed `Circle`.** The circle track relies on a `half circumference` dash to become a semicircle; adding `3 4` on top gives an odd-length array, which SVG duplicates into "3 on, 4 off, C on" — a couple of dashes then a long solid run. It shipped once looking solid, which is exactly the "broken component" reading the dashed state exists to prevent.
+- **All pillar copy lives in `services/income/incomeHealthCopy.ts`.** One place decides what a score means and what to do about it. Every tip names a concrete action; "improve your stability" is not a tip.
+- **The card hides itself with no cached score.** An empty health card implies the app knows something it doesn't.
+- **The trend chart draws the average as a dotted rule and rings the extremes**, because the useful question about an irregular income is the spread, not any one month. It has no pinch-to-zoom: six points across the card width are already at their most readable.
 
 ### Other components
 
@@ -270,10 +310,45 @@ Quick actions (`+ Income`, `Ask AI`) are `chipBg` pills in the top row beside a 
 
 ## 8. Motion Rules
 
-- Spring config app-wide: `{ damping: 16, stiffness: 140, mass: 1 }` (`spring` in `specTheme.ts`) — the same config used by `ExpandingTabBar`'s tab-expand animation (damping 15/stiffness 120 is a deliberate, slightly snappier variant for that one interaction; don't treat it as the new global default).
-- `PressableScale`, `CountUp`, `AnimatedProgressBar` stay as-is (0.96 press scale, spring feedback).
-- Card entrances: `FadeInDown.springify()`, short stagger.
+**All motion constants, springs, and the home choreography live in `src/theme/motion.ts`. Never hardcode a duration or a spring in a component.**
+
+### The reduce-motion split — read this before adding any animation
+
+Every animation in the app once carried `ReduceMotion.System`. That reads as conscientious and is a bug: when the OS reports reduce-motion, Reanimated **skips** the animation and jumps to the end value. Applied to everything, one OS flag removed all motion in the entire app — including the gauges and counters whose movement is the only thing communicating the number.
+
+**This is confirmed, not theoretical.** React Native derives Android's `isReduceMotionEnabled()` from `Settings.Global.TRANSITION_ANIMATION_SCALE`. On the project's own emulator:
+
+```
+transition_animation_scale = 0
+window_animation_scale     = 0
+animator_duration_scale    = 0
+```
+
+Every animation in the app was therefore being skipped on the primary test device, which is exactly the "no animation at all" report that triggered this rewrite. Note what that setting actually means: someone turned animation scale off to make the device feel faster. "I turned off window transitions" and "motion makes me ill" are not the same request, and one blanket constant cannot serve both.
+
+Check it with `adb shell settings get global transition_animation_scale` before ever concluding an animation is broken.
+
+So there are exactly two classes, and every animation must pick one:
+
+| Class | Constant | What it covers | Under reduce-motion |
+| --- | --- | --- | --- |
+| **Expressive** | `EXPRESSIVE` | scale, translate, rotation, parallax, looping pulses, shimmer, card entrances | suppressed entirely |
+| **Informational** | `INFORMATIONAL` | an arc drawing to its value, a bar filling to its percentage, a figure counting to its total | **always plays**, shortened via `informationalDuration()` |
+
+Informational motion *is* the content — suppressing it doesn't calm the screen, it deletes information. This is the split WCAG 2.3.3 already draws: it targets non-essential motion and exempts motion essential to conveying information. Pinned by `__tests__/theme/motion.test.ts`.
+
+- **`LayoutAnimation` is dead here.** This app runs `newArchEnabled=true`, where it is a no-op — a "animated" expand built on it never animated at all. Use Reanimated `entering` / `exiting` / `layout`.
+- **`CountUp` counts from zero and always settles.** It starts at 0 (a component named CountUp that seeds itself with its final value never animates) and carries a guaranteed `setTimeout` settle, so a stalled frame loop can never leave a money figure reading ₹0. The currency prefix is static — a ₹ that fades in with its digits reads as a string loading, not a number climbing.
+- **Springs**: `SPRING.press` (mass 1 / stiffness 400 / damping 25) going down, `SPRING.release` with overshoot coming back up, `SPRING.settle` for a value landing, `SPRING.entrance` for a card arriving.
+- **The home entrance is one sequence, declared as data** in `HOME_SEQUENCE` — outside-in through the rings, then the hero count, then top-to-bottom through the copy, finishing at 1500ms. A choreography spread across the six components it animates is one nobody can see or correct.
 - Haptic feedback on all interactive presses (`react-native-haptic-feedback`), matching the tab bar's existing convention.
+
+### Colour encoding — run the validator, don't eyeball it
+
+- **A ranked list of categories gets ONE ink** (`barInk`), not a hue per row. Every row already carries its name and its amount; a third encoding of the same fact is decoration. This is also forced by measurement: checked all-pairs against the dark panel inside the dark-mode lightness band (OKLCH L 0.48–0.67), **no five-hue or even four-hue categorical palette clears the ΔE 15 normal-vision separation floor** — best five-slot result from a 220-sample search was 6.5 (deuteranopia) / 12.7 (normal). Equal-lightness hue wheels are worse: deuteranopia collapses red–green, so red and green at matched lightness become one colour.
+- **The transit map keeps distinct route inks**, because there colour follows a stroke across a diagram away from its label. Even there it is the *third* channel behind fixed spoke position and a direct text label, and only one route is highlighted at a time.
+- **A status colour never travels alone.** `good` / `warn` / `bad` always ship with an icon and a label — a bare coloured dot carries no meaning for a colour-blind reader or in forced-colours mode.
+- **One colour story per surface.** The status line and the plan bar are driven by the same `tone` from `homeNarrative`, so the panel can never show an amber warning above a bright green remaining figure again.
 
 ---
 
@@ -307,8 +382,47 @@ Before any component ships, confirm:
 - ✅ `ExpandingTabBar` fixed — icon clipping (label now absolutely positioned so it takes zero layout space; only `width`/`opacity`/`translateX`/`scale` animate) and FAB centering (FAB pinned to screen-center, invisible ghost slots balance tab sides so the FAB is always centered regardless of tab count).
 - ✅ **Money Map** home hero shipped (`src/components/insights/MoneyMap.tsx`, documented in §7) — transit diagram of the month's money, wired as the `UserDashboardScreen` hero with `FinancialIntelligenceEngine` month-plan data; dead chart-card styles removed from the dashboard.
 
+**Done in the home + income-health pass:**
+
+- ✅ `warning` (`#FF9500` / `#FFA726`) added to both palettes as a real status token — the third state between fine and over. Previously screens borrowed `peachDeep`, an accent-rotation ink.
+- ✅ `PaceRing` rebuilt as a three-ring gauge (today / month / plan-vs-income) with a layered gauge well, a state-tinted glow that breathes only when calm, screen-derived sizing, and a `replayToken` rewind for pull-to-refresh.
+- ✅ Hero narrative shipped — `services/homeNarrative.ts` (pure, unit-tested: priority-ordered status line, straight-line projection, bill roll-forward, insight pills) rendered by `components/insights/HeroStats.tsx` as story row → status line → KPI pills → expandable plan bar. The Money Map fare strip was removed in its favour.
+- ✅ `services/badges.ts` + `components/anim/BadgeCelebration.tsx` — ledger-earned badges, celebrated once via an AsyncStorage record, lost in silence.
+- ✅ `useMonthLedger` — one pass over the transaction list feeding every home surface; `MoneyMap` no longer re-derives the month.
+- ✅ `InsightPillRail` — edge-bleeding chip rail built only from facts the ledger can prove (bills due, month-on-month delta, top week categories).
+- ✅ `GoalsStrip` gained a per-goal mini ring, an inline **Add** action opening the same `AddFundsSheet` the Goals screen uses, and next-milestone microcopy.
+- ✅ Income health rebuilt end to end — `IncomeAnalyticsService.getMonthlyTrend` / `getIncomeBySource` (real SQL), `services/income/incomeHealthCopy.ts`, `hooks/useIncomeHealth.ts`, `components/income/incomeVisuals.tsx` (health bar, arc gauge, score ring, sparkline, donut), `IncomeHealthCard` on home, and a rebuilt `IncomeDetailScreen`.
+- ✅ `CountUp` now actually counts up from zero on mount, with a guaranteed settle so a stalled animation driver can never leave a money figure reading ₹0.
+- ✅ `ExpandingTabBar`'s FAB gained press feedback (scale to 0.9, spring back) on its own shared value, multiplied into the existing idle pulse.
+
+**Done in the first-run setup pass:**
+
+- ✅ `screens/onboarding/FirstRunSetupScreen.tsx` + `services/firstRunPlan.ts` — the setup flow between the privacy screen and PIN setup. Income (pre-filled ₹25,000, one-tap presets) → a pre-checked three-row plan (track salary, set aside 10%, start My Safety Net) → confirmation. Every row writes to infrastructure that already exists: `RecurringIncomeService.createTemplate`, `budget_settings`' savings share, and a real `goalStore` goal.
+- ✅ **No simulated first save.** The spec this flow came from opened the app with a fictional ₹500 "welcome bonus" to manufacture endowed progress. The goal starts at zero because it is zero, and the salary template only materializes months that have actually happened (`salaryStartMonth`). Endowed progress here is the *plan* existing, not a balance the app made up — inventing a figure would break the same rule `homeNarrative.ts` and `badges.ts` are built on.
+- ✅ Every step is skippable and each write is independently guarded, so a user who taps straight through, or one whose goal insert fails, still lands in a working app.
+
+**Done in the Age of Money + weekly story pass:**
+
+- ✅ `services/ageOfMoney.ts` — FIFO income-to-spending matching, surfaced as the first item in the hero's story row (`HeroStats.StoryRow`, threaded through `MoneyMap`). It leads that row because it is the only figure there describing the user's *position* rather than their recent behaviour, and the only one that doesn't reset with the calendar month. Three tone bands (under a week / under a month / a month or more), because `Tone` is a three-colour vocabulary and a fourth band would need a colour the palette doesn't have.
+- ✅ **Age of Money returns null rather than guessing.** Spending the app can't trace to recorded income is skipped, not scored as "0 days old" — that would report a crisis that is really a gap in the ledger. Under three funded expenses it makes no claim at all.
+- ✅ `services/weeklyStory.ts` + `components/insights/WeeklyStoryCard.tsx` — the one backward-looking surface on home, below the hero so it never competes for the first glance. A tone-coloured 4px rule instead of a tinted card, for the same reason. Hides itself entirely on an empty week.
+- ✅ **The weekly story never compares against an absent week.** A prior week with nothing recorded is missing data, not a week of zero spending; comparing against it would manufacture a dramatic rise out of the user having installed the app eight days ago. Drift under 10% reads as "about the same", so the card doesn't cry news over noise.
+
+**Done in the transactions-psychology pass:**
+
+- ✅ `services/roundUp.ts` — every logged expense rounds to the nearest ₹10 and earmarks the change to a goal through the existing `FinancialLedgerService.fundGoal`. `fundGoal` gained an optional `note`, so a round-up row reads "Round-up from Swiggy" and stays distinguishable from a deliberate contribution in the same goal's history. Surfaced as a pre-checked first-run row and a Settings toggle.
+- ✅ **A round-up can never cost the user their transaction.** It runs after the expense has saved, outside the try that guards it, and swallows its own errors. Losing a recorded expense because a ₹3 bonus write failed would be an absurd trade.
+- ✅ **Settings rows now carry the "why", not a restatement of the label.** The round-up row explains what ₹3 a chai becomes over a year. A toggle whose consequence is invisible gets switched off the first time a user audits the screen.
+- ✅ `services/transactionInsight.ts` — one observation per transaction in `TransactionDetailSheet` ("Your 3rd Swiggy order this week — ₹1,240 altogether"), silent below three occurrences and silent on most rows by design. An insight on every row is wallpaper; the user stops reading them and the one that mattered goes unnoticed with the rest.
+- ✅ **The insight reports, it never judges.** "Your 4th Swiggy order this week" is a fact the user can act on; "you're spending too much on Swiggy" is a verdict nobody asked this app for. A unit test asserts the copy contains no verdict language, the same rule `homeNarrative.buildStatus` and the weekly story follow.
+
 **Still needed — verification pass:**
 
+- 🔲 **Round-ups have not been exercised on a device** — the earmark path (expense saves → goal grows → both appear in the ledger) is covered by unit tests on the pure half only; the `fundGoal` write itself is untested end to end here.
+- 🔲 **`WeeklyStoryCard` and the story row's Age of Money item have not been seen on a device** — the story row now holds up to three items (age, streak, badge) and its wrapping behaviour at small widths is unverified.
+- 🔲 **`FirstRunSetupScreen` has not been run on a device** — verified by `tsc`, ESLint and 305 unit tests only. The keyboard-avoidance on the income step (number pad over a bottom-pinned CTA) is the specific thing that wants a real screen.
+
+- 🔲 **The home and income-health screens have not been run on a device in this pass** — everything above is verified by `tsc`, ESLint, and 242 unit tests (5 pre-existing failures in `goalStore` / `insightsEngine` / `MoneyPlanShell`, unrelated). Ring geometry at small screen widths, the gauge well against the enamel panel, and the badge celebration's confetti timing all want a real screen before shipping.
 - 🔲 All user-side screens need to be **re-checked visually** against the new palette. `PastelCard`/`StatRing` and other token-driven components auto-cascade the new colors via `specTheme.ts`, but none have been visually re-verified on-device since this specific swap (previous verification passes were against the now-retired v2/v3 pastel-lavender system).
 - 🔲 Confirm every user screen's canvas actually renders `#E6F0FA` (not a stale hardcoded off-white left over from v2) — grep for old v2 hex literals (`#F7F5F1`, `#EFEDE7`, `#E7E3FB`, etc.) across `src/screens/user/` and `src/components/`.
 - 🔲 Confirm no screen still imports `userFintechTheme` or `UserCapsuleTabBar` directly.
