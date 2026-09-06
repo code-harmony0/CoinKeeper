@@ -17,13 +17,11 @@ export const BACKUP_TABLES: readonly string[] = [
   'income_rules',
   'income_allocations',
   'income_accounts',
-  'employer_learning',
   'merchant_learning',
   'merchant_aliases',
   'merchant_category_map',
   'favorite_merchants',
   'recent_merchants',
-  'quick_templates',
   'transaction_drafts',
   'receipt_history',
   'kaza_prayers',
@@ -38,7 +36,11 @@ export const EXCLUDED_TABLES: readonly string[] = [
   'income_forecasts',
   'income_insights_cache',
   'income_health_cache',
-  // Zero reads or writes anywhere in the app.
+  // Zero reads or writes anywhere in the app. quick_templates and
+  // employer_learning joined this list when the only services that touched
+  // them turned out to be unreachable and were deleted.
+  'quick_templates',
+  'employer_learning',
   'accounts',
   'merchants',
   'ai_memory',

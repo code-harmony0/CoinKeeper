@@ -103,3 +103,10 @@ GEMINI.md
 
 # Git worktrees
 .worktrees/
+
+# Local agent tooling — per-developer config, not project code
+.codex/
+opencode.json
+
+# One-off codemod kept from a refactor; not part of the app
+bento_refactor.js
