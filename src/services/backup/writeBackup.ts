@@ -24,7 +24,13 @@ export const writeBackup = async ({
   fileName = 'coinkeeper-backup.ckbackup',
   passphrase,
 }: WriteBackupOptions): Promise<string> => {
-  const file = open({ name: fileName, location: path, encryptionKey: passphrase });
+  // op-sqlite checks hasProperty then calls .asString(), so an explicit
+  // `encryptionKey: undefined` throws on the device. The key must be absent.
+  const file = open({
+    name: fileName,
+    location: path,
+    ...(passphrase ? { encryptionKey: passphrase } : {}),
+  });
 
   try {
     await file.execute(

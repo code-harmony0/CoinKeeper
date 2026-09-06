@@ -1,4 +1,5 @@
 interface WriteBackupCall {
+  path: string;
   schemaVersion: number;
   fileName?: string;
   passphrase?: string;
@@ -25,6 +26,10 @@ jest.mock('../../../src/services/backup/schemaVersion', () => ({
 }));
 jest.mock('react-native-share', () => ({
   open: (options: { url: string }) => mockShareOpen(options),
+}));
+jest.mock('react-native-fs', () => ({
+  CachesDirectoryPath: '/caches',
+  DocumentDirectoryPath: '/docs',
 }));
 
 import { createAndShareBackup } from '../../../src/services/backup';
@@ -73,9 +78,25 @@ describe('createAndShareBackup', () => {
     );
   });
 
+  it('writes into the cache directory, the only root the share sheet serves', async () => {
+    // react-native-share's FileProvider declares cache-path and external
+    // Download/ only. A file in the app's private files/ dir cannot be shared.
+    await createAndShareBackup();
+    expect(mockWriteBackup.mock.calls[0][0].path).toBe('/caches');
+  });
+
   it('does not treat a cancelled share sheet as a failure', async () => {
     mockShareOpen.mockRejectedValueOnce(new Error('User did not share'));
     await expect(createAndShareBackup()).resolves.toBeUndefined();
+  });
+
+  it('surfaces a real share failure instead of calling it a dismissal', async () => {
+    // Swallowing every share error is how a totally broken share path looked
+    // like a user cancelling on the device.
+    mockShareOpen.mockRejectedValueOnce(
+      new Error("Attempt to invoke virtual method 'Uri.getScheme()' on a null object"),
+    );
+    await expect(createAndShareBackup()).rejects.toThrow(/getScheme/);
   });
 
   it('surfaces a real write failure instead of reporting success', async () => {

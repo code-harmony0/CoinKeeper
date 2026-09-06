@@ -33,7 +33,11 @@ export const readBackup = async (
 
   let file;
   try {
-    file = open({ name, location, encryptionKey: passphrase });
+    file = open({
+      name,
+      location,
+      ...(passphrase ? { encryptionKey: passphrase } : {}),
+    });
   } catch {
     // SQLCipher cannot distinguish "encrypted" from "wrong key" — both surface
     // as an unreadable file, and both are answered by asking for the passphrase.

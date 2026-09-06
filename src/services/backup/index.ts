@@ -30,7 +30,10 @@ export const createAndShareBackup = async (passphrase?: string): Promise<void> =
   const path = await writeBackup({
     rows,
     schemaVersion,
-    path: RNFS.DocumentDirectoryPath,
+    // The cache directory, not documents: react-native-share's FileProvider
+    // serves cache-path and external Download/ only, so a file written to the
+    // app's private files/ dir cannot be handed to the share sheet at all.
+    path: RNFS.CachesDirectoryPath,
     fileName: backupFileName(),
     passphrase,
   });
@@ -38,8 +41,12 @@ export const createAndShareBackup = async (passphrase?: string): Promise<void> =
   try {
     await Share.open({ url: `file://${path}` });
   } catch (error) {
-    // Dismissing the share sheet rejects. The backup file is already written, so
-    // that is not a failure the user needs reported as one.
-    console.warn('[backup] share sheet dismissed:', error);
+    // Dismissing the sheet rejects with this exact message, and the file is
+    // already written, so that is genuinely not a failure. Anything else is,
+    // and must not be swallowed — doing so once hid a completely broken
+    // share path behind a message that read like a user cancelling.
+    const dismissed =
+      error instanceof Error && /User did not share/i.test(error.message);
+    if (!dismissed) throw error;
   }
 };

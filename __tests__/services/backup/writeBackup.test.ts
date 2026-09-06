@@ -28,7 +28,10 @@ describe('writeBackup', () => {
 
   it('writes an unencrypted file when no passphrase is given', async () => {
     await writeBackup({ rows, schemaVersion: 16, path: '/tmp' });
-    expect(mockOpen.mock.calls[0][0].encryptionKey).toBeUndefined();
+    // Not merely undefined: op-sqlite checks hasProperty and then calls
+    // .asString() on it, so a present-but-undefined key throws
+    // "Value is undefined, expected a String" on the device.
+    expect('encryptionKey' in mockOpen.mock.calls[0][0]).toBe(false);
   });
 
   it('records the schema version so restore can refuse a newer file', async () => {
