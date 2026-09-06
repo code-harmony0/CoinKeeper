@@ -89,13 +89,15 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({
         console.error('[TransactionsContext] syncRecurringIncome error:', e);
       }
       // Android silently drops any notification posted to a channel that was
-      // never created, so this has to run before anything tries to notify —
-      // without it bill reminders and budget alerts alike vanish without error.
-      try {
-        await initializeNotifications();
-      } catch (e) {
-        console.error('[TransactionsContext] initializeNotifications error:', e);
-      }
+      // never created, so the channels have to exist before anything notifies —
+      // without this, bill reminders and budget alerts vanish with no error.
+      //
+      // Deliberately not awaited: it asks for the notification permission, and
+      // a user sitting on that dialog (or never answering it) must not hold the
+      // app on its splash screen. Nothing here is load-bearing for opening.
+      void initializeNotifications().catch(e =>
+        console.error('[TransactionsContext] initializeNotifications error:', e),
+      );
       await loadTransactions();
       setIsDbReady(true);
     } catch (error: any) {
