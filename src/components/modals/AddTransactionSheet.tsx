@@ -208,7 +208,9 @@ export const AddTransactionSheet: React.FC<Props> = ({
       }
       setSmsDrafts(parsed);
     } catch (e) {
-      setSmsError('Could not read SMS inbox.');
+      // A denied permission is recoverable, so show the real reason rather than
+      // a generic failure the user can't act on.
+      setSmsError(e instanceof Error ? e.message : 'Could not read SMS inbox.');
     } finally {
       setSmsLoading(false);
     }

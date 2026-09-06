@@ -62,7 +62,10 @@ export const SmsReviewScreen: React.FC<any> = ({ navigation }) => {
       loadCategoryNames(parsed.map(d => d.category_id).filter((id): id is string => !!id));
     } catch (e) {
       console.warn(e);
-      Alert.alert('Error', 'Failed to read SMS');
+      Alert.alert(
+        'Cannot read SMS',
+        e instanceof Error ? e.message : 'Failed to read SMS',
+      );
     } finally {
       setLoading(false);
     }

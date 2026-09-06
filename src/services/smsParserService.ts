@@ -1,4 +1,4 @@
-import { NativeModules } from 'react-native';
+import { NativeModules, PermissionsAndroid } from 'react-native';
 import { MerchantLearningService } from './MerchantLearningService';
 import { TransactionDraftService } from './TransactionDraftService';
 import { TransactionDraft } from '../types/transactionDraft';
@@ -27,11 +27,35 @@ const creditRegexList = [
   /received (?:rs\.?|inr) ?([\d,]+\.?\d*).*?(?:from|by) (.*?)(?: on| via|\.|$)/i,
 ];
 
+/** Shown to the user when READ_SMS is not granted. Callers surface this verbatim. */
+export const SMS_PERMISSION_DENIED =
+  'CoinKeeper needs permission to read your bank SMS. Enable SMS access to import transactions automatically.';
+
+/**
+ * Every SMS read routes through here, so the runtime permission request lives here too.
+ * The AndroidManifest declaration alone is not enough on Android 6+: without this the
+ * native content://sms/inbox query throws SecurityException and the inbox reads empty.
+ */
 export const fetchRecentSms = async (limit: number = 500): Promise<SmsMessage[]> => {
   if (!SmsModule) {
     console.warn('SmsModule is not available. Are you on iOS?');
     return [];
   }
+
+  const granted = await PermissionsAndroid.request(
+    PermissionsAndroid.PERMISSIONS.READ_SMS,
+    {
+      title: 'Read your bank messages',
+      message:
+        'CoinKeeper reads only bank and payment SMS to fill in transactions for you. Messages never leave your phone.',
+      buttonNegative: 'Not now',
+      buttonPositive: 'Allow',
+    },
+  );
+  if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+    throw new Error(SMS_PERMISSION_DENIED);
+  }
+
   return await SmsModule.getSmsMessages(limit);
 };
 

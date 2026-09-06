@@ -16,7 +16,9 @@ const SRC = readFileSync(join(ROOT, 'src/components/shared/ExpandingTabBar.tsx')
 describe('ExpandingTabBar hook ordering', () => {
   const body = SRC.slice(
     SRC.indexOf('export const ExpandingTabBar'),
-    SRC.indexOf('// Enhanced Expanding Tab'),
+    // End of the ExpandingTabBar component: the banner that starts the next
+    // one. Kept in sync with the section header in the source file.
+    SRC.indexOf('// LiquidGlassTab — Individual tab'),
   );
 
   it('locates the component body (guards against the slice silently breaking)', () => {
