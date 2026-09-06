@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Transaction } from '../types/transaction';
 import { getDb } from './database';
+import { checkBudgetAlert } from '../services/budgetAlert';
 import { toPaise, fromPaise } from '../utils/money';
 import { classifyBudgetBucket } from '../utils/budgetBucket';
 import { financialEventBus } from '../services/EventBus';
@@ -151,6 +152,9 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
         transactions: [newTx, ...state.transactions],
       }));
       financialEventBus.emit();
+
+      // Fire and forget: a budget warning is never worth failing a save for.
+      void checkBudgetAlert();
     } catch (error) {
       console.error('[transactionStore] addTransaction error:', error);
       throw error;

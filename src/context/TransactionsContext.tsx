@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, ReactNod
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Transaction } from '../types/transaction';
 import { initDatabase } from '../store/database';
+import { initializeNotifications } from '../services/notificationService';
 import { useTransactionStore } from '../store/transactionStore';
 import { RecurringIncomeService } from '../services/income/RecurringIncomeService';
 
@@ -86,6 +87,14 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({
         await RecurringIncomeService.syncRecurringIncome();
       } catch (e) {
         console.error('[TransactionsContext] syncRecurringIncome error:', e);
+      }
+      // Android silently drops any notification posted to a channel that was
+      // never created, so this has to run before anything tries to notify —
+      // without it bill reminders and budget alerts alike vanish without error.
+      try {
+        await initializeNotifications();
+      } catch (e) {
+        console.error('[TransactionsContext] initializeNotifications error:', e);
       }
       await loadTransactions();
       setIsDbReady(true);
