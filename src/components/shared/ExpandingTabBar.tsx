@@ -155,6 +155,15 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
     () => scrollY.value,
     (current, previous) => {
       if (previous === null || previous === undefined) return;
+
+      // Near the top the bar is always its full self. Without this it could be
+      // left shrunk — icons crammed, no active pill, hit areas moved — by the
+      // last scroll on some other screen, with no gesture available to undo it.
+      if (current <= 20) {
+        minimizeProgress.value = withSpring(0, MINIMIZE_SPRING);
+        return;
+      }
+
       const diff = current - previous;
 
       if (Math.abs(diff) > 4) {

@@ -15,6 +15,10 @@ import { migrate013LedgerFoundation } from './013_ledger_foundation';
 import { migrate014LedgerTransfers } from './014_ledger_transfers';
 import { migrate015GoalContributionLink } from './015_goal_contribution_link';
 import { migrate016GoalIdIndex } from './016_goal_id_index';
+import { migrate017SmsParseMisses } from './017_sms_parse_misses';
+import { migrate018TransactionBank } from './018_transaction_bank';
+import { migrate019MoneyThatReturns } from './019_money_that_returns';
+import { migrate020BillIntervalMonths } from './020_bill_interval_months';
 
 /**
  * Versioned via PRAGMA user_version — the plan called for migration tests
@@ -104,5 +108,25 @@ export const runMigrations = async (db: DB): Promise<void> => {
   if (currentVersion < 16) {
     await migrate016GoalIdIndex(db);
     await db.execute('PRAGMA user_version = 16;');
+  }
+
+  if (currentVersion < 17) {
+    await migrate017SmsParseMisses(db);
+    await db.execute('PRAGMA user_version = 17;');
+  }
+
+  if (currentVersion < 18) {
+    await migrate018TransactionBank(db);
+    await db.execute('PRAGMA user_version = 18;');
+  }
+
+  if (currentVersion < 19) {
+    await migrate019MoneyThatReturns(db);
+    await db.execute('PRAGMA user_version = 19;');
+  }
+
+  if (currentVersion < 20) {
+    await migrate020BillIntervalMonths(db);
+    await db.execute('PRAGMA user_version = 20;');
   }
 };

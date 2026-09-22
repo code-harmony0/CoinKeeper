@@ -15,6 +15,8 @@ export interface Bill {
   dueDay: number; // 1-31
   isRecurring: boolean;
   repeatInterval?: string;
+  /** How many months between payments. Absent means monthly, same as before this existed. */
+  intervalMonths?: number;
   reminderDaysBefore?: number;
   notes?: string;
   color?: string;
@@ -58,6 +60,7 @@ export const useBillStore = create<BillStoreState>((set) => ({
         dueDay: row.due_day,
         isRecurring: row.is_recurring === 1,
         repeatInterval: row.repeat_interval || undefined,
+        intervalMonths: row.interval_months ?? undefined,
         reminderDaysBefore: row.reminder_days_before ?? undefined,
         notes: row.notes || undefined,
         color: row.color || undefined,
@@ -82,8 +85,8 @@ export const useBillStore = create<BillStoreState>((set) => ({
     try {
       const db = getDb();
       await db.execute(
-        `INSERT INTO bills (id, name, amount_paise, category_id, due_day, is_recurring, repeat_interval, reminder_days_before, notes, color, icon, auto_pay_enabled, last_paid_at, notification_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        `INSERT INTO bills (id, name, amount_paise, category_id, due_day, is_recurring, repeat_interval, interval_months, reminder_days_before, notes, color, icon, auto_pay_enabled, last_paid_at, notification_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         [
           id,
           billData.name,
@@ -92,6 +95,7 @@ export const useBillStore = create<BillStoreState>((set) => ({
           billData.dueDay,
           billData.isRecurring ? 1 : 0,
           billData.repeatInterval || null,
+          billData.intervalMonths ?? null,
           billData.reminderDaysBefore ?? null,
           billData.notes || null,
           billData.color || null,

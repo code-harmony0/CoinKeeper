@@ -16,7 +16,9 @@ import {
   Upload,
   Download,
   AlertTriangle,
+  FileSpreadsheet,
 } from 'lucide-react-native';
+import RNFS from 'react-native-fs';
 import { pick, keepLocalCopy } from '@react-native-documents/picker';
 import { Text } from '../../components/ui/Text';
 import { useSpecTheme } from '../../theme/specTheme';
@@ -29,6 +31,10 @@ import {
   type RestoreMode,
 } from '../../services/backup';
 import type { CollectedRows } from '../../services/backup';
+import {
+  exportAndShareTransactionsCsv,
+  importTransactionsFromCsv,
+} from '../../services/csv';
 
 interface Props {
   navigation: any;
@@ -150,6 +156,64 @@ export const BackupRestoreScreen: React.FC<Props> = ({ navigation }) => {
     },
     [pending],
   );
+
+  const handleExportCsv = useCallback(async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      const count = await exportAndShareTransactionsCsv();
+      if (count === 0) {
+        setError('There are no transactions to export yet.');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not create the CSV.');
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  const handleImportCsv = useCallback(async () => {
+    setError(null);
+
+    let localPath: string;
+    try {
+      const [file] = await pick();
+      if (!file?.uri) return;
+
+      const [copy] = await keepLocalCopy({
+        files: [{ uri: file.uri, fileName: file.name ?? 'transactions.csv' }],
+        destination: 'cachesDirectory',
+      });
+      if (copy.status !== 'success') {
+        setError('Could not open that file.');
+        return;
+      }
+      localPath = copy.localUri.replace('file://', '');
+    } catch (e) {
+      // Cancelling the picker is not an error worth reporting.
+      console.warn('[csv] file selection ended:', e);
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const text = await RNFS.readFile(localPath, 'utf8');
+      const { imported, skipped, errors: rowErrors } = await importTransactionsFromCsv(text);
+
+      const parts = [`Added ${imported} transaction${imported === 1 ? '' : 's'}.`];
+      if (skipped > 0) parts.push(`${skipped} were already here.`);
+      if (rowErrors.length > 0) parts.push(`${rowErrors.length} row(s) could not be read.`);
+
+      Alert.alert('Import finished', parts.join(' '));
+      // The rows themselves say what went wrong, so surface the first few
+      // rather than a bare count the user cannot act on.
+      if (rowErrors.length > 0) setError(rowErrors.slice(0, 3).join('\n'));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not read that file.');
+    } finally {
+      setBusy(false);
+    }
+  }, []);
 
   const confirmReplace = useCallback(() => {
     Alert.alert(
@@ -325,6 +389,43 @@ export const BackupRestoreScreen: React.FC<Props> = ({ navigation }) => {
               </PressableScale>
             </View>
           )}
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.delay(160).springify()}
+          style={[styles.card, { backgroundColor: colors.card, borderRadius: cardRadius }]}
+        >
+          <View style={styles.cardHead}>
+            <FileSpreadsheet size={20} color={colors.textPrimary} strokeWidth={2.2} />
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+              Spreadsheet (CSV)
+            </Text>
+          </View>
+          <Text style={[styles.body, { color: colors.textSecondary }]}>
+            Move transactions in or out as a CSV file you can open in Excel or
+            Google Sheets. A backup keeps everything; a CSV keeps transactions
+            only.
+          </Text>
+
+          <PressableScale
+            onPress={handleExportCsv}
+            haptic="impactLight"
+            style={[styles.action, { backgroundColor: colors.chipBg }]}
+          >
+            <Text style={[styles.actionText, { color: colors.textPrimary }]}>
+              Export transactions
+            </Text>
+          </PressableScale>
+
+          <PressableScale
+            onPress={handleImportCsv}
+            haptic="impactLight"
+            style={[styles.action, { backgroundColor: colors.chipBg }]}
+          >
+            <Text style={[styles.actionText, { color: colors.textPrimary }]}>
+              Import from a CSV
+            </Text>
+          </PressableScale>
         </Animated.View>
 
         {busy && <ActivityIndicator style={styles.busy} color={colors.primaryAccent} />}

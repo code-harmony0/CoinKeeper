@@ -11,6 +11,14 @@ export interface Transaction {
   description?: string;
   date: string;
   paymentMethod?: string;
+  /** Which bank the SMS came from. Absent for manual and CSV entries. */
+  bankId?: string;
+  /** Inbox message id an SMS import came from, so a rescan skips it. Write-only. */
+  smsId?: string;
+  /** Money the user expects back — lent out, or moved to their own account. */
+  awaitingReturn?: boolean;
+  /** The transaction this one repays. Set on the incoming half of a settled pair. */
+  settlementOf?: string;
   incomeType?: IncomeType;
   incomeSourceId?: string;
 }

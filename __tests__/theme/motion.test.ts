@@ -42,10 +42,9 @@ describe('motion policy', () => {
 });
 
 describe('home entrance choreography', () => {
-  it('runs outside-in so the eye finishes on the hero figure', () => {
-    expect(HOME_SEQUENCE.ringOuter).toBeLessThan(HOME_SEQUENCE.ringMiddle);
-    expect(HOME_SEQUENCE.ringMiddle).toBeLessThan(HOME_SEQUENCE.ringInner);
-    expect(HOME_SEQUENCE.ringInner).toBeLessThan(HOME_SEQUENCE.heroCount);
+  it('fills the dial before the hero figure counts', () => {
+    expect(HOME_SEQUENCE.card).toBeLessThan(HOME_SEQUENCE.ring);
+    expect(HOME_SEQUENCE.ring).toBeLessThan(HOME_SEQUENCE.heroCount);
   });
 
   it('reads top to bottom after the gauge lands', () => {

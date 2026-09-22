@@ -48,11 +48,6 @@ jest.mock('../../src/services/TransactionPredictionService', () => ({
   },
 }));
 
-jest.mock('../../src/services/EcosystemIntegrationService', () => ({
-  EcosystemIntegrationService: {
-    notifyDraftSaved: jest.fn(async () => undefined),
-  },
-}));
 
 describe('AddTransactionSheet validation', () => {
   beforeEach(() => jest.clearAllMocks());

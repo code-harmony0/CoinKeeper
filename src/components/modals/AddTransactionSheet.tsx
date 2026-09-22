@@ -17,7 +17,6 @@ import { getDb } from '../../store/database';
 import { MerchantLearningService } from '../../services/MerchantLearningService';
 import { TransactionDraftService } from '../../services/TransactionDraftService';
 import { TransactionPredictionService, PredictionResult } from '../../services/TransactionPredictionService';
-import { EcosystemIntegrationService } from '../../services/EcosystemIntegrationService';
 import { ReceiptScanService } from '../../services/ReceiptScanService';
 import { fetchRecentSms, parseSmsToDraft, SmsMessage } from '../../services/smsParserService';
 import { EntrySource, TransactionDraft } from '../../types/transactionDraft';
@@ -35,7 +34,15 @@ import { ReceiptPreviewCard } from '../transaction/ReceiptPreviewCard';
 import { SmsInboxRow } from '../transaction/SmsInboxRow';
 import { StickySaveBar } from '../transaction/StickySaveBar';
 
-const SMS_INBOX_LIMIT = 5;
+/**
+ * How many messages back to look. A real inbox is mostly network and delivery
+ * chatter — on this user's phone the five newest messages were all promos, so
+ * a small window showed "no transactions found" however many bank alerts sat
+ * just behind it.
+ */
+const SMS_INBOX_LIMIT = 300;
+/** How many of the found transactions to offer; this is a quick-pick, not the inbox. */
+const SMS_INBOX_SHOWN = 10;
 
 interface Props {
   visible: boolean;
@@ -203,8 +210,11 @@ export const AddTransactionSheet: React.FC<Props> = ({
       const messages: SmsMessage[] = await fetchRecentSms(SMS_INBOX_LIMIT);
       const parsed: TransactionDraft[] = [];
       for (const m of messages) {
-        const result = await parseSmsToDraft(m);
+        // Rules only: the model would run per unrecognised message and stall
+        // the sheet. The full inbox scan on the Inbox screen does the same.
+        const result = await parseSmsToDraft(m, { useModel: false });
         if (result) parsed.push(result);
+        if (parsed.length === SMS_INBOX_SHOWN) break;
       }
       setSmsDrafts(parsed);
     } catch (e) {
@@ -348,8 +358,6 @@ export const AddTransactionSheet: React.FC<Props> = ({
       await MerchantLearningService.learnCorrection(finalDraft.merchant_name, finalCategory);
       await MerchantLearningService.updateFrequency(finalDraft.merchant_name, finalCategory);
     }
-
-    await EcosystemIntegrationService.notifyDraftSaved(finalDraft);
 
     setIsSuccess(true);
     setTimeout(() => {

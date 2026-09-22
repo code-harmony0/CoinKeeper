@@ -20,6 +20,9 @@ export const specLight = {
   // blobTheme.ts's `accent` — colors.primary (#007AFF) is theme-declared but
   // barely used. Mirror the color admin ACTUALLY paints buttons with.
   primaryAccent: '#121723',
+  /** Text and icons drawn ON primaryAccent. Never hardcode white: the dark
+   *  palette's accent is near-white, so white-on-accent vanished entirely. */
+  onAccent: '#FFFFFF',
   success: '#34C759',
   danger: '#FF3B30',
   // The third state between "fine" and "over". Introduced when the home hero
@@ -62,6 +65,8 @@ export const specDark = {
   card: '#1E2530',
   surfaceElevated: '#1E2530',
   primaryAccent: '#F5F7FA',
+  /** The dark accent is near-white, so what sits on it must be near-black. */
+  onAccent: '#0F1419',
   success: '#4CAF50',
   danger: '#FF6B6B',
   warning: '#FFA726',

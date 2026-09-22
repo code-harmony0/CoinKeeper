@@ -9,6 +9,7 @@ import { TabBarScrollProvider } from './src/context/TabBarScrollContext';
 import { AppLockProvider } from './src/context/AppLockContext';
 import { RootNavigator } from './src/navigation';
 import { LogBox } from 'react-native';
+import { disableSecureScreen } from './src/native/SecureScreen';
 
 LogBox.ignoreLogs([
   'forwardRef render functions accept exactly two parameters',
@@ -30,6 +31,16 @@ if (process.env.CK_CHITFUND === '1') {
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+
+  // FLAG_SECURE lives on the window, so it outlives the screen that set it: if
+  // the focus cleanup misses once (backgrounded mid-screen, a reload), every
+  // later screen inherits it and the whole app stops being screenshottable.
+  // Clearing it once on mount costs nothing — screens that want it set it again
+  // on focus. It has to be an effect: at module scope there is no Activity yet
+  // and the native call quietly does nothing.
+  React.useEffect(() => {
+    disableSecureScreen();
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

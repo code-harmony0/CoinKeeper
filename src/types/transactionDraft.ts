@@ -19,9 +19,19 @@ export interface TransactionDraft {
   date?: string;
   notes?: string;
   confidence?: number;
+  /**
+   * How the message was read: our own patterns, the bundled parser library, or
+   * the on-device model. Shown on the row, because "was this AI or not?" is a
+   * question about *this* transaction, not a setting buried in a menu.
+   */
+  parse_route?: 'rules' | 'library' | 'model';
   source: EntrySource;
   receipt_image_uri?: string;
   sms_id?: string;
+  /** Grouping key from the SMS sender, e.g. 'FEDERAL'. See bankRegistry. */
+  bank_id?: string;
+  /** Display name for bank_id, e.g. 'Federal Bank'. */
+  bank_name?: string;
   prediction_reason?: string;
   is_recurring_candidate?: boolean;
   is_duplicate?: boolean;

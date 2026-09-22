@@ -235,40 +235,44 @@ Money Map reads its month plan from `FinancialIntelligenceEngine.getCurrentSnaps
 
 ### PaceRing — the home hero (`src/components/insights/PaceRing.tsx`)
 
-Three concentric rings sitting at the top of the Money Map panel, ordered inside-out from the most immediate answer to the most structural. They are read together, never summed:
+**One open dial, not three concentric rings.** The v4 triple ring (inner = today, middle = month pace, outer = plan ÷ income) is **retired**. It failed on device for a reason a mock-up hides: on an ordinary morning two of the three arcs were empty tracks and the only one carrying ink was the least important — three near-identical grey circles reading as moiré, with the ring the user needed invisible inside them. Two of the three also restated what the panel says lower down in words (`PlanBar`, the `MONTHLY PLAN` KPI), and the whole thing cost a three-row legend to explain. A chart that needs a key to survive a glance is not a glance.
 
-| Ring | Question | Fill | Colour |
-| --- | --- | --- | --- |
-| Inner | "Can I spend right now?" | today's spend ÷ today's allowance | `success`, `warning` at 60% used, `danger` at 100% |
-| Middle | "Am I on track this month?" | month spend ÷ plan, plus a marker tick at the even-draw-down position for today | `success` ahead, `sky` on pace, `warning` fast |
-| Outer | "Is the plan itself sane?" | plan ÷ income | `textPrimary` at 55% opacity — structural, not a status |
+The dial is a 264° arc, open 96° at the foot, drawn at `18 × SCALE` stroke with round caps.
 
-The centre carries `safeToSpendToday` in `Satoshi-Black`, counting up from zero, labelled "Safe to spend today".
+| Element | Says | Fill |
+| --- | --- | --- |
+| Arc | "How much can I spend for the rest of today?" | what is **left** of today's allowance — the same figure the centre prints |
+| Hour scale | "How much of the day is left to spend it in?" | 24 ticks from midnight at the top, lit to the current hour, with a brighter tick at now |
+| Centre | the answer, in `Satoshi-Black`, counting up from zero | `safeToSpendToday`, labelled "Safe to spend today" |
+| Foot | the other half of that sentence | "₹X spent today", inside the arc's gap |
 
-- **The legend is not optional.** `RingLegend` sits directly under the gauge and names all three rings with their values. A chart with more than one series always carries a key; three unlabelled arcs are three things the reader has to guess at. This was shipped once without it and the first question asked was "what do the different circle lines represent" — which is the only test that matters. Each swatch is drawn at its ring's **exact stroke weight and colour**, so the pairing is carried by thickness as well as hue and does not rest on colour alone.
-- **Weight is the hierarchy.** Strokes are 12 / 8 / 4 inside-out, at 100% / 85% / 40% strength. Three equal rings are three rings competing; the inner ring is the answer and the outer two are context. Never even them up.
-- **Ring semantics are fixed.** Inner is a day, middle is a month, outer is the plan's claim on income. Never repurpose a ring for a fourth metric, and never add a fifth ring — three is already the ceiling for what a glance can separate.
+- **The arc and the number are the same fact.** The dial draws what is left, and the centre prints what is left, so the mark and the figure can never disagree — and a full dial at 8am is an honest picture rather than an empty circle that reads as a broken widget. A ₹0 allowance is an **empty** dial: `todayLeft` is forced to 0 when `safeTodayPaise === 0`, or a spent-out day draws a complete arc around a ₹0 hero.
+- **No legend, because there is nothing to key.** One series, labelled in place. If a second series is ever added back here, it needs a key again — which is the argument for not adding one.
+- **The scale is the day, not the plan.** The hour ticks are the comparison a daily allowance actually invites (how much of the day is gone against how much of the money is), and they give the mark structure at 0% spent, which an empty ring never has. They replaced the old floating pace tick, which read as a rendering artefact at the ring's edge. The scale clears the arc by 13px — at 9px the long ticks grazed it and read as scratches on the dial.
+- **The month lives on `PlanBar`, not on an arc.** Spend ÷ plan, plus a marker at the even-draw-down position for today, plus the verdict word ("Under pace" / "On pace" / "Ahead of plan"). Two positions on a straight track is one comparison; two arcs is a comparison the eye has to unroll first. The marker is drawn **inside** the clipped track and is always named by the key beneath it — an unnamed tick is an artefact.
+- **The plan's claim on income is a caption, not a ring.** "80% of income" sits under the `MONTHLY PLAN` KPI, beside the number it is a ratio of.
+- **Colour ladder: `ringTones(todayUsed)`.** `success` below 60% of today's allowance spent, `warning` from 60%, `danger` only once it is gone. One function, one consumer, pinned by tests. `danger` stays reserved for actually being over — a gauge that reddens before anything is wrong teaches the reader to ignore red.
 - **The centre glow is a gradient to transparent, never a blurred solid.** A blurred filled circle over a dark ground is a stain — the amber state rendered the centre olive-brown. A radial gradient falling to `00` alpha is what light actually does.
-- **The glow is neutral white, and its *rhythm* carries the state — not its hue.** Tinting it with the day's colour put an amber wash behind the hero figure at the exact moment the ring around it also went amber, and the whole centre read warm and muddy. The state is already said three times (inner ring, legend row, status line); a fourth encoding that dirties the well is not worth having. Calm breathes on a 3s cycle, past 60% of today's allowance on a 1.5s one. A cool neutral centre also lets the coloured rings read at full strength against it.
-- **One derivation of the ring colours.** `ringTones()` is the only place the colour ladder lives, consumed by both the gauge and `RingLegend`. They previously each carried their own copy — they agreed, but only by two edits happening to stay in step, and a legend that contradicts the ring it explains is worse than none. Pinned by tests, including that today's state can never leak into the month ring.
-- **`warning` on the middle ring, `danger` reserved.** Spending faster than plan is amber; red is kept for actually being over. A ring that goes red before anything has gone wrong teaches the user to ignore red.
+- **The glow is neutral white, and its *rhythm* carries the state — not its hue.** Tinting it put an amber wash behind the hero figure at the exact moment the arc around it also went amber, and the whole centre read warm and muddy. Calm breathes on a 3s cycle, past 60% of today's allowance on a 1.5s one.
+- **The well stops inside the arc.** A `specDark.card` radial disc under the dial, ending at the arc's inner edge — the wider version was the muddy grey circle the triple ring floated on. The panel layers *up* for the hero rather than down; this is the one depth cue on a dark surface, since §5 forbids heavier shadows.
 - **Skia draws geometry only; every string is a React Native `<Text>` layered over the `Canvas`.** This is deliberate and load-bearing: it avoids loading Satoshi into Skia via `useFont`, keeps type crisp at any density, and leaves the numbers reachable by TalkBack. Never render hero text inside the Skia canvas.
-- **The gauge sits in a well** — a `specDark.card` circle behind the rings. The panel layers *up* for the hero rather than down; this is the one depth cue on a dark surface, since §5 forbids heavier shadows.
-- **The glow behind the centre number breathes only when calm.** It pulses at the safe state and holds steady at warning and danger — a pulsing red reads as an alarm the user cannot dismiss.
-- **Pacing is `src/services/budgetPacing.ts`** (`computePace`), a pure unit-tested module — never re-derive pace inline in a component. `ratio > 1.05` is `fast`, `< 0.85` is `ahead`, between is `on`. Budget pacing (actual ÷ expected cumulative spend) is a real named finance metric; the ring must never imply a target the plan doesn't set.
-- **Motion is one authored moment**, sequenced outside-in so the eye finishes at the centre: outer at 120ms, middle at 240ms, inner at 380ms, marker at 900ms. All carry `ReduceMotion.System`.
-- **The ring sizes off the screen** (`min(screenW − 104, 288)`) and the hero number steps down by string length — a fixed 56px would clip a five-figure amount inside the inner ring.
-- **`replayToken` rewinds and redraws** on pull-to-refresh: the rings wind to zero, then draw again, so a refresh reads as the same gesture repeating rather than as numbers jumping.
-- **With no plan** (`planPaise === 0`) the centre reads "Add income to set a plan" — never a ₹0 hero.
+- **Pacing is `src/services/budgetPacing.ts`** (`computePace`), a pure unit-tested module — never re-derive pace inline in a component. `ratio > 1.05` is `fast`, `< 0.85` is `ahead`, between is `on`. Budget pacing (actual ÷ expected cumulative spend) is a real named finance metric; nothing here may imply a target the plan doesn't set.
+- **Motion is one authored moment**: the dial fills at `HOME_SEQUENCE.ring` (300ms), the hero counts at 900ms, and one pass of light travels the arc after the panel has landed. The choreography has **one** ring slot — the old outer/middle/inner stagger belonged to a gauge that no longer exists.
+- **The dial sizes off the screen** (`min(screenW − 112, 268)`) and the hero number steps down by string length — a fixed 54px would clip a five-figure amount inside the arc.
+- **`replayToken` rewinds and redraws** on pull-to-refresh: the dial winds to empty, then fills again, so a refresh reads as the same gesture repeating rather than as a number jumping.
+- **With no plan** (`planPaise === 0`) there is no dial at all — a compact "Add income to set a plan" prompt instead, never a ₹0 hero.
+
 
 ### Hero narrative — `HeroStats.tsx` + `services/homeNarrative.ts`
 
-Under the ring, in descending order of how quickly the user can act: story row → status line → KPI pills → plan bar.
+Under the dial, in descending order of how quickly the user can act: story row → status line → KPI pills → plan bar.
 
 - **Every sentence is generated in `homeNarrative.ts`, a pure unit-tested module.** No component assembles hero copy from numbers inline. Nothing in that file invents a figure; where the data can't support a claim, the narrative says less rather than guessing.
 - **The status line is priority-ordered, not concatenated**: over plan → today's allowance spent or 60% gone → nearest bill within 7 days → projection → reassurance. Exactly one shows. Reassurance is last because it is the only one that costs nothing to miss.
 - **Projections are straight-line and never shown before day 2** — one lunch on the 1st extrapolates to a catastrophe.
 - **The plan bar opens into its own breakdown.** The bar provokes "spent on what?", so the categories expand in place rather than sitting a screen away.
+- **The plan bar carries the month's pace**, since the gauge no longer does: a marker at the even-draw-down position for today, clipped inside the track, with a key row beneath it ("Even pace by today") and the verdict on the right in the bar's own tone. The marker and the key ship together — a tick nobody can name is an artefact, which is exactly how the old ring's floating pace tick read.
+- **The `MONTHLY PLAN` pill carries "N% of income"** — the retired outer ring's whole content, stated beside the number it is a ratio of.
 - **Icons are drawn, never emoji.** The storytelling row uses `lucide-react-native` at the same stroke weight as the rest of the app; a 🔥 in place of `Flame` is a bug.
 
 ### Home structure — one scroll (`src/screens/user/UserDashboardScreen.tsx`)

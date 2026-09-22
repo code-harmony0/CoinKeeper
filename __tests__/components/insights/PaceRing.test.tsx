@@ -2,12 +2,11 @@ import React from 'react';
 import { act, render } from '@testing-library/react-native';
 import {
   PaceRing,
-  RingLegend,
+  dayElapsed,
   ringTones,
   todayUsedRatio,
 } from '../../../src/components/insights/PaceRing';
-import { computePace } from '../../../src/services/budgetPacing';
-import { enamel, specLight } from '../../../src/theme/specTheme';
+import { enamel } from '../../../src/theme/specTheme';
 
 const base = {
   safeTodayPaise: 53600,
@@ -15,7 +14,7 @@ const base = {
   spendPaise: 21000,
   planPaise: 1200000,
   incomePaise: 1500000,
-  now: new Date(2026, 5, 15),
+  now: new Date(2026, 5, 15, 9, 30),
 };
 
 describe('PaceRing', () => {
@@ -37,6 +36,18 @@ describe('PaceRing', () => {
     expect(getByText('Safe to spend today')).toBeTruthy();
   });
 
+  /**
+   * The dial draws what is left and the centre prints what is left; the other
+   * half of the same sentence — what today has already cost — is the one fact
+   * the mark itself cannot show, so it sits in the dial's foot.
+   */
+  it('states the day’s spend in the dial’s foot', () => {
+    const { getByText } = render(
+      <PaceRing {...base} todaySpendPaise={12000} />,
+    );
+    expect(getByText('₹120 spent today')).toBeTruthy();
+  });
+
   it('prompts for income instead of showing ₹0 when there is no plan', () => {
     const { getByText, queryByText } = render(
       <PaceRing {...base} planPaise={0} safeTodayPaise={0} />,
@@ -45,82 +56,55 @@ describe('PaceRing', () => {
     expect(queryByText('₹0')).toBeNull();
   });
 
-  it('describes all three rings to a screen reader', () => {
+  it('describes the dial to a screen reader', () => {
     const { getByLabelText } = render(<PaceRing {...base} />);
-    // The rings are geometry; the label is the only way this reaches TalkBack.
+    // The dial is geometry; the label is the only way this reaches TalkBack.
     expect(
-      getByLabelText(/safe to spend today.*Under pace.*80% of income/i),
+      getByLabelText(/safe to spend for the rest of today.*spent today/i),
     ).toBeTruthy();
   });
 });
 
 /**
- * A multi-series chart without a key is decoration. These assertions exist
- * because the gauge shipped once with three unlabelled arcs and the ring
- * semantics living only in DESIGN.md, where the person reading the gauge
- * could not see them.
- */
-describe('RingLegend', () => {
-  it('names every ring the gauge draws', () => {
-    const { getByText } = render(<RingLegend {...base} />);
-    expect(getByText('Today')).toBeTruthy();
-    expect(getByText('This month')).toBeTruthy();
-    expect(getByText('Plan size')).toBeTruthy();
-  });
-
-  it('gives each ring its own number rather than a colour alone', () => {
-    const { getByText } = render(<RingLegend {...base} />);
-    expect(getByText('₹0 of ₹536 used')).toBeTruthy();
-    expect(getByText('2% of plan spent')).toBeTruthy();
-    expect(getByText('80% of income')).toBeTruthy();
-  });
-
-  it('says nothing at all when there is no plan to explain', () => {
-    const { queryByText } = render(<RingLegend {...base} planPaise={0} />);
-    expect(queryByText('Today')).toBeNull();
-  });
-});
-
-/**
- * A legend that disagrees with the ring it explains is worse than no legend:
- * it is confidently wrong. The gauge and the key derive their colours from
- * this one function precisely so they cannot drift apart, and these cases pin
- * the ladder itself.
+ * The gauge is one mark saying one thing, so its colour ladder is about the
+ * day and nothing else. `danger` stays reserved for the allowance actually
+ * being gone — a gauge that reddens before anything is wrong teaches the
+ * reader to ignore red.
  */
 describe('ringTones', () => {
-  const MID_MONTH = new Date(2026, 5, 15); // day 15 of 30
-
-  it('greens the month ring when spending is under pace', () => {
-    // 10% spent at the halfway mark is well under an even draw-down.
-    const pace = computePace(120000, 1200000, MID_MONTH);
-    expect(pace?.status).toBe('ahead');
-    expect(ringTones(0, pace?.status).month).toBe(enamel.success);
+  it('stays green while most of the day’s allowance is intact', () => {
+    expect(ringTones(0).today).toBe(enamel.success);
+    expect(ringTones(0.4).today).toBe(enamel.success);
   });
 
-  it('ambers the month ring only when spending outruns the plan', () => {
-    const pace = computePace(900000, 1200000, MID_MONTH);
-    expect(pace?.status).toBe('fast');
-    expect(ringTones(0, pace?.status).month).toBe(enamel.warning);
+  it('ambers past 60% of the allowance spent', () => {
+    expect(ringTones(0.6).today).toBe(enamel.warning);
+    expect(ringTones(0.99).today).toBe(enamel.warning);
   });
 
-  it('keeps "on pace" neutral rather than claiming a win', () => {
-    const pace = computePace(600000, 1200000, MID_MONTH);
-    expect(pace?.status).toBe('on');
-    expect(ringTones(0, pace?.status).month).toBe(specLight.sky);
-  });
-
-  it('never lets today’s state leak into the month ring', () => {
-    // Today blown at 91%, month still comfortably ahead: the rings must
-    // disagree, because they are measuring different spans.
-    const pace = computePace(120000, 1200000, MID_MONTH);
-    const tones = ringTones(0.91, pace?.status);
-    expect(tones.today).toBe(enamel.warning);
-    expect(tones.month).toBe(enamel.success);
+  it('reddens only once the allowance is gone', () => {
+    expect(ringTones(1).today).toBe(enamel.danger);
+    expect(ringTones(1.4).today).toBe(enamel.danger);
   });
 
   it('reads today’s allowance as fully spent when there is none left', () => {
     expect(todayUsedRatio(0, 5000)).toBe(1);
     expect(todayUsedRatio(0, 0)).toBe(0);
     expect(todayUsedRatio(10000, 9100)).toBeCloseTo(0.91);
+  });
+});
+
+/** The hour scale — how much of the day is gone, drawn beside the money. */
+describe('dayElapsed', () => {
+  it('reads midnight as the start of the scale', () => {
+    expect(dayElapsed(new Date(2026, 5, 15, 0, 0))).toBe(0);
+  });
+
+  it('reads midday as half the dial', () => {
+    expect(dayElapsed(new Date(2026, 5, 15, 12, 0))).toBeCloseTo(0.5);
+  });
+
+  it('never reaches a full turn', () => {
+    expect(dayElapsed(new Date(2026, 5, 15, 23, 59))).toBeLessThan(1);
   });
 });

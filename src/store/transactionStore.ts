@@ -12,14 +12,27 @@ interface MonthlyStats {
   net: number;
 }
 
+type NewTransaction = Omit<Transaction, 'id' | 'date' | 'categoryId'> & { date?: string };
+
 interface TransactionStore {
   transactions: Transaction[];
   loading: boolean;
   loadTransactions: () => Promise<void>;
-  addTransaction: (
-    transaction: Omit<Transaction, 'id' | 'date' | 'categoryId'> & { date?: string },
-  ) => Promise<void>;
+  addTransaction: (transaction: NewTransaction) => Promise<void>;
+  /** Saves many at once with a single ledger event. Returns how many were saved, in order. */
+  addTransactions: (
+    transactions: NewTransaction[],
+    onProgress?: (saved: number) => void,
+  ) => Promise<number>;
   deleteTransaction: (id: string) => Promise<void>;
+  /** Removes every transaction that came from an SMS import. Returns how many. */
+  deleteImportedSmsTransactions: () => Promise<number>;
+  /** Removes every transaction, however it got here. Returns how many. */
+  deleteAllTransactions: () => Promise<number>;
+  /** Flags money the user expects back, so it stops counting as spending. */
+  markAwaitingReturn: (id: string, awaiting: boolean) => Promise<void>;
+  /** Records that `incomingId` is `outgoingId` coming back. Neither then counts. */
+  settleWith: (outgoingId: string, incomingId: string) => Promise<void>;
   updateTransaction: (
     id: string,
     updates: Partial<Transaction>,
@@ -83,7 +96,8 @@ const ROW_QUERY = `
          c.id AS categoryId,
          COALESCE(c.icon, 'other') AS categoryIcon,
          c.color AS categoryColor,
-         t.description, t.occurred_at, t.payment_method AS paymentMethod
+         t.description, t.occurred_at, t.payment_method AS paymentMethod, t.bank_id AS bankId,
+         t.awaiting_return AS awaitingReturn, t.settlement_of AS settlementOf
   FROM transactions t
   LEFT JOIN categories c ON c.id = t.category_id
   WHERE t.type IN ('income', 'expense', 'transfer_to_goal')
@@ -100,7 +114,58 @@ const rowToTransaction = (row: any): Transaction => ({
   description: row.description ?? undefined,
   date: new Date(row.occurred_at).toISOString(),
   paymentMethod: row.paymentMethod ?? undefined,
+  // Written on every SMS import but never read back until now, so nothing
+  // downstream could tell which bank a transaction came from.
+  bankId: row.bankId ?? undefined,
+  awaitingReturn: row.awaitingReturn === 1,
+  settlementOf: row.settlementOf ?? undefined,
 });
+
+/**
+ * SMS imports are keyed as `sms:<id>` in sms_hash. Older rows keep raw SMS
+ * text in that column, so the prefix keeps the two from ever colliding.
+ */
+const SMS_HASH_PREFIX = 'sms:';
+
+/** Ids of inbox messages already saved, so a rescan does not offer them again. */
+export const getImportedSmsIds = async (): Promise<Set<string>> => {
+  const result = await getDb().execute(
+    `SELECT sms_hash FROM transactions WHERE sms_hash LIKE '${SMS_HASH_PREFIX}%';`,
+  );
+  return new Set(
+    ((result?.rows ?? []) as any[]).map(row => String(row.sms_hash).slice(SMS_HASH_PREFIX.length)),
+  );
+};
+
+const insertTransaction = async (
+  transaction: NewTransaction,
+  executor?: SqlExecutor,
+  knownCategoryId?: string,
+): Promise<Transaction> => {
+  const db = executor ?? getDb();
+  const date = transaction.date || new Date().toISOString();
+  const categoryId =
+    knownCategoryId ?? (await resolveCategoryId(db, transaction.category, transaction.categoryIcon));
+  const newTx: Transaction = { ...transaction, id: generateId(), date, categoryId };
+
+  await db.execute(
+    `INSERT INTO transactions
+      (id, amount_paise, type, category_id, account_id, description, occurred_at, payment_method, upi_ref, sms_hash, bank_id)
+     VALUES (?, ?, ?, ?, NULL, ?, ?, ?, NULL, ?, ?);`,
+    [
+      newTx.id,
+      newTx.amountPaise,
+      newTx.type,
+      categoryId,
+      newTx.description ?? null,
+      new Date(newTx.date).getTime(),
+      newTx.paymentMethod ?? null,
+      newTx.smsId ? `${SMS_HASH_PREFIX}${newTx.smsId}` : null,
+      newTx.bankId ?? null,
+    ],
+  );
+  return newTx;
+};
 
 export const useTransactionStore = create<TransactionStore>((set, get) => ({
   transactions: [],
@@ -124,29 +189,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       throw new Error('Invalid amount');
     }
     try {
-      const id = generateId();
-      const date = transaction.date || new Date().toISOString();
-
-      const db = getDb();
-      const categoryId = await resolveCategoryId(db, transaction.category, transaction.categoryIcon);
-
-      const newTx: Transaction = { ...transaction, id, date, categoryId };
-      const amountPaise = newTx.amountPaise;
-
-      await db.execute(
-        `INSERT INTO transactions
-          (id, amount_paise, type, category_id, account_id, description, occurred_at, payment_method, upi_ref, sms_hash)
-         VALUES (?, ?, ?, ?, NULL, ?, ?, ?, NULL, NULL);`,
-        [
-          newTx.id,
-          amountPaise,
-          newTx.type,
-          categoryId,
-          newTx.description ?? null,
-          new Date(newTx.date).getTime(),
-          newTx.paymentMethod ?? null,
-        ],
-      );
+      const newTx = await insertTransaction(transaction);
 
       set(state => ({
         transactions: [newTx, ...state.transactions],
@@ -158,6 +201,119 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
     } catch (error) {
       console.error('[transactionStore] addTransaction error:', error);
       throw error;
+    }
+  },
+
+  // Every ledger event makes each subscriber refetch, so importing an inbox
+  // one addTransaction at a time froze the app for as many rounds as messages.
+  addTransactions: async (transactions, onProgress) => {
+    const added: Transaction[] = [];
+    try {
+      // One commit for the whole import, and each category resolved once
+      // rather than per row — separately committed inserts turned a few
+      // hundred SMS into a minutes-long freeze.
+      const categoryIds = new Map<string, string>();
+      await getDb().transaction(async tx => {
+        for (const transaction of transactions) {
+          if (!(transaction.amountPaise > 0)) throw new Error('Invalid amount');
+
+          const key = `${transaction.category}|${transaction.categoryIcon ?? ''}`;
+          let categoryId = categoryIds.get(key);
+          if (!categoryId) {
+            categoryId = await resolveCategoryId(tx, transaction.category, transaction.categoryIcon);
+            categoryIds.set(key, categoryId);
+          }
+
+          added.push(await insertTransaction(transaction, tx, categoryId));
+          onProgress?.(added.length);
+        }
+      });
+    } catch (error) {
+      // Stops at the first failure; everything before it is already saved.
+      console.error('[transactionStore] addTransactions error:', error);
+    }
+
+    if (added.length > 0) {
+      set(state => ({ transactions: [...added, ...state.transactions] }));
+      financialEventBus.emit();
+      void checkBudgetAlert();
+    }
+    return added.length;
+  },
+
+  // Re-importing is the way to pick up better parsing of messages already
+  // read: the rows came from SMS, so SMS can produce them again. Manual and
+  // CSV entries have no sms_hash and are left alone.
+  deleteImportedSmsTransactions: async () => {
+    try {
+      const db = getDb();
+      // Counted first rather than read from rowsAffected: op-sqlite does not
+      // report it for this statement, so the user was told "0 removed" while
+      // hundreds of rows disappeared.
+      const before = await db.execute(
+        `SELECT COUNT(*) AS total FROM transactions WHERE sms_hash LIKE '${SMS_HASH_PREFIX}%';`,
+      );
+      const removed = (((before?.rows ?? []) as any[])[0]?.total ?? 0) as number;
+
+      await db.execute(`DELETE FROM transactions WHERE sms_hash LIKE '${SMS_HASH_PREFIX}%';`);
+      await get().loadTransactions();
+      financialEventBus.emit();
+      return removed;
+    } catch (error) {
+      console.error('[transactionStore] deleteImportedSmsTransactions error:', error);
+      return 0;
+    }
+  },
+
+  markAwaitingReturn: async (id, awaiting) => {
+    try {
+      await getDb().execute('UPDATE transactions SET awaiting_return = ? WHERE id = ?;', [
+        awaiting ? 1 : 0,
+        id,
+      ]);
+      await get().loadTransactions();
+      financialEventBus.emit();
+    } catch (error) {
+      console.error('[transactionStore] markAwaitingReturn error:', error);
+      throw error;
+    }
+  },
+
+  // The two halves are flagged separately on purpose: the outgoing row carries
+  // "this was never spending", the incoming row carries "this was never
+  // income". Each is true on its own, so a half-recorded pair still keeps the
+  // totals honest.
+  settleWith: async (outgoingId, incomingId) => {
+    try {
+      const db = getDb();
+      await db.transaction(async tx => {
+        await tx.execute('UPDATE transactions SET settlement_of = ? WHERE id = ?;', [
+          outgoingId,
+          incomingId,
+        ]);
+        await tx.execute('UPDATE transactions SET awaiting_return = 1 WHERE id = ?;', [outgoingId]);
+      });
+      await get().loadTransactions();
+      financialEventBus.emit();
+    } catch (error) {
+      console.error('[transactionStore] settleWith error:', error);
+      throw error;
+    }
+  },
+
+  deleteAllTransactions: async () => {
+    try {
+      const db = getDb();
+      const before = await db.execute('SELECT COUNT(*) AS total FROM transactions;');
+      const removed = (((before?.rows ?? []) as any[])[0]?.total ?? 0) as number;
+
+      await db.execute('DELETE FROM transactions;');
+      set({ transactions: [] });
+      financialEventBus.emit();
+      return removed;
+    } catch (error) {
+      console.error('[transactionStore] deleteAllTransactions error:', error);
+      return 0;
     }
   },
 
@@ -220,6 +376,11 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       (acc, tx) => {
         const txDate = new Date(tx.date);
         if (txDate.getMonth() !== month || txDate.getFullYear() !== year) {
+          return acc;
+        }
+        // Money lent out and money coming back are the same money passing
+        // through. Counting either side inflates the month on both ends.
+        if (tx.awaitingReturn || tx.settlementOf) {
           return acc;
         }
 

@@ -23,6 +23,7 @@ import { GoalsScreen } from '../screens/user/GoalsScreen';
 import { ProfileScreen } from '../screens/settings/ProfileScreen';
 import { SmsReviewScreen } from '../screens/user/SmsReviewScreen';
 import { BackupRestoreScreen } from '../screens/user/BackupRestoreScreen';
+import { SmartParsingScreen } from '../screens/user/SmartParsingScreen';
 import { UnlockScreen } from '../screens/auth/UnlockScreen';
 import { SetupPinScreen } from '../screens/auth/SetupPinScreen';
 import { useAppLock } from '../context/AppLockContext';
@@ -222,6 +223,7 @@ export const RootNavigator = () => {
         <Stack.Screen name="Goals" component={GoalsScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="BackupRestore" component={BackupRestoreScreen} />
+        <Stack.Screen name="SmartParsing" component={SmartParsingScreen} />
         <Stack.Screen name="SmsReview" component={SmsReviewScreen} />
         <Stack.Screen name="AskAi" component={AskAiScreen} />
         <Stack.Screen name="IncomeDetail" component={IncomeDetailScreen} />

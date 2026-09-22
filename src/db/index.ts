@@ -25,19 +25,19 @@ export const initEncryptedDb = async (): Promise<DB> => {
       try {
         await runMigrations(connection);
       } catch (error: any) {
-        // If the DB was previously unencrypted (or encrypted with a different key),
-        // SQLCipher will fail to read it and throw "file is not a database".
+        try { connection.close(); } catch (e) {}
+
+        // "file is not a database" means the key did not match the file — the
+        // data is still there, encrypted. This used to delete it and start
+        // fresh, so one bad key read cost the user everything. Nothing is
+        // destroyed here: say so, and let them retry or reset deliberately.
         if (error.message?.includes('file is not a database')) {
-          console.warn('[db] Stale or unencrypted database detected. Wiping and recreating...');
-          try { connection.close(); } catch (e) {}
-          try { connection.delete(); } catch (e) {}
-          
-          // Re-open fresh and run migrations
-          connection = open({ name: 'coinkeeper.db', encryptionKey });
-          await runMigrations(connection);
-        } else {
-          throw error;
+          throw new Error(
+            'Your data could not be unlocked with the key on this device. Nothing has been deleted. ' +
+              'Close and reopen CoinKeeper, or use Reset in Settings to start over.',
+          );
         }
+        throw error;
       }
 
       db = connection;

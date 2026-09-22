@@ -8,3 +8,6 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# llama.rn native bridge — reflection-loaded, must survive minification.
+-keep class com.rnllama.** { *; }

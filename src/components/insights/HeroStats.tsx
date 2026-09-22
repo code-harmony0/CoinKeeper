@@ -53,13 +53,20 @@ import {
   Medal,
   PiggyBank,
   Target,
+  TrendingUp,
   Trophy,
 } from 'lucide-react-native';
 import { enamel } from '../../theme/specTheme';
 import { barInk } from '../../theme/categoryColors';
 import { Money } from '../../utils/money';
 import { categoryLabel } from '../../utils/categoryLabel';
-import { computePace } from '../../services/budgetPacing';
+import {
+  computePace,
+  type Pace,
+  type PaceStatus,
+} from '../../services/budgetPacing';
+import { projectMonthEnd } from '../../services/monthEndForecast';
+import type { AnalysableTransaction } from '../../services/spendingAnalysis';
 import { PressableScale } from '../anim';
 import type { Badge } from '../../services/badges';
 import type { AgeOfMoney } from '../../services/ageOfMoney';
@@ -240,9 +247,20 @@ export const KpiPills: React.FC<KpiPillsProps> = ({
   planPaise,
 }) => {
   const reduced = useReducedMotion();
+  // "80% of income" was the outer ring of the old triple gauge — a whole arc
+  // spent on a ratio that is one line of text beside the number it is a ratio
+  // of. It reads here, against the plan itself, instead of as a third circle.
   const pills = [
-    { key: 'income', label: 'INCOME', value: incomePaise },
-    { key: 'plan', label: 'MONTHLY PLAN', value: planPaise },
+    { key: 'income', label: 'INCOME', value: incomePaise, caption: null },
+    {
+      key: 'plan',
+      label: 'MONTHLY PLAN',
+      value: planPaise,
+      caption:
+        incomePaise > 0
+          ? `${Math.round((planPaise / incomePaise) * 100)}% of income`
+          : null,
+    },
   ];
 
   return (
@@ -261,6 +279,9 @@ export const KpiPills: React.FC<KpiPillsProps> = ({
           <Text style={styles.kpiValue}>
             {Money.format(pill.value, { zeroDecimals: true })}
           </Text>
+          {pill.caption && (
+            <Text style={styles.kpiCaption}>{pill.caption}</Text>
+          )}
         </Animated.View>
       ))}
     </View>
@@ -362,11 +383,17 @@ interface PlanBarProps {
 const planTone = (
   spendPaise: number,
   planPaise: number,
-  now?: Date,
+  pace: Pace | null,
 ): Tone => {
   if (spendPaise > planPaise) return 'bad';
-  const pace = computePace(spendPaise, planPaise, now ?? new Date());
   return pace?.status === 'fast' ? 'warn' : 'good';
+};
+
+/** The verdict the marker exists to make readable, in three words or fewer. */
+const PACE_VERDICT: Record<PaceStatus, string> = {
+  ahead: 'Under pace',
+  on: 'On pace',
+  fast: 'Ahead of plan',
 };
 
 /**
@@ -385,8 +412,17 @@ export const PlanBar: React.FC<PlanBarProps> = ({
   const over = remaining < 0;
   const progress = planPaise > 0 ? Math.min(1, spendPaise / planPaise) : 0;
 
-  const barTone = planTone(spendPaise, planPaise, now);
+  const pace = computePace(spendPaise, planPaise, now ?? new Date());
+  const barTone = planTone(spendPaise, planPaise, pace);
   const accent = TONE_COLOR[barTone];
+
+  // Where an even draw-down of the plan would have you by today. This was the
+  // middle ring of the old triple gauge, where "am I ahead or behind" meant
+  // unrolling an arc against a tick floating at its edge. On a straight track
+  // it is one comparison of two positions, which is what the question is.
+  const marker = pace && pace.elapsed > 0.02 && pace.elapsed < 0.98
+    ? pace.elapsed
+    : null;
 
   return (
     <View style={styles.planBlock}>
@@ -427,7 +463,27 @@ export const PlanBar: React.FC<PlanBarProps> = ({
             progress={over ? 1 : progress}
             colors={TONE_GRADIENT[barTone]}
           />
+          {marker !== null && (
+            <View
+              pointerEvents="none"
+              style={[styles.planMarker, { left: `${marker * 100}%` }]}
+            />
+          )}
         </View>
+
+        {/* A marker nobody can name is an artefact, so the track says what the
+            tick is and the verdict says which side of it the bar is on. */}
+        {pace && (
+          <View style={styles.planFootRow}>
+            <View style={styles.planFootKey}>
+              <View style={styles.planFootTick} />
+              <Text style={styles.planFootText}>Even pace by today</Text>
+            </View>
+            <Text style={[styles.planFootVerdict, { color: accent }]}>
+              {PACE_VERDICT[pace.status]}
+            </Text>
+          </View>
+        )}
       </PressableScale>
 
       {/* Reanimated layout, not LayoutAnimation: this app runs the New
@@ -484,6 +540,59 @@ export const PlanBar: React.FC<PlanBarProps> = ({
         </Animated.View>
       )}
     </View>
+  );
+};
+
+/* --------------------------------------------------------------- forecast */
+
+interface ForecastLineProps {
+  transactions: readonly AnalysableTransaction[];
+  planPaise: number;
+  /** Bills still unpaid this cycle — cadence-aware, from `billsSummary`. */
+  unpaidBillsPaise: number;
+  /** injectable for tests */
+  now?: Date;
+}
+
+/**
+ * Where the month is heading, not just where it stands — the plan bar above
+ * answers "how am I doing", this answers "and so what". Framed against the
+ * plan rather than a bank balance CoinKeeper cannot see: only a handful of
+ * this user's own bank SMS out of over a thousand ever quote one, so a
+ * balance figure here would be a guess dressed as a fact.
+ *
+ * Renders nothing until `projectMonthEnd` has enough of the month to say
+ * anything — a one-day extrapolation is noise, not a forecast.
+ */
+export const ForecastLine: React.FC<ForecastLineProps> = ({
+  transactions,
+  planPaise,
+  unpaidBillsPaise,
+  now,
+}) => {
+  const reduced = useReducedMotion();
+  const forecast = projectMonthEnd(transactions, planPaise, unpaidBillsPaise, now ?? new Date());
+  if (!forecast) return null;
+
+  const tone = forecast.status === 'over' ? TONE_COLOR.warn : TONE_COLOR.good;
+  const message =
+    forecast.status === 'under'
+      ? `At this pace, you'll finish ${Money.format(forecast.diffPaise, { zeroDecimals: true })} under plan`
+      : `At this pace, you'll finish ${Money.format(forecast.diffPaise, { zeroDecimals: true })} over plan`;
+
+  return (
+    <Animated.View
+      entering={FadeIn.delay(
+        sequenceDelay(HOME_SEQUENCE.statusLine, reduced),
+      ).reduceMotion(EXPRESSIVE)}
+      style={[styles.statusRow, { backgroundColor: `${tone}14`, borderLeftColor: tone }]}
+      accessibilityLabel={message}
+    >
+      <TrendingUp size={16} color={tone} strokeWidth={2.4} />
+      <Text style={[styles.statusText, { color: tone }]} numberOfLines={2}>
+        {message}
+      </Text>
+    </Animated.View>
   );
 };
 
@@ -553,6 +662,12 @@ const styles = StyleSheet.create({
     color: enamel.textPrimary,
     marginTop: 4,
   },
+  kpiCaption: {
+    fontSize: 12,
+    fontFamily: 'Satoshi-Medium',
+    color: enamel.textSecondary,
+    marginTop: 2,
+  },
 
   planBlock: { marginTop: 20 },
   planRow: {
@@ -570,12 +685,48 @@ const styles = StyleSheet.create({
   planLeft: { fontSize: 13, fontFamily: 'Satoshi-Bold' },
   chevronOpen: { transform: [{ rotate: '180deg' }] },
   planTrack: {
-    height: 8,
-    borderRadius: 4,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
   },
-  planFill: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  planFill: { height: 10, borderRadius: 5, overflow: 'hidden' },
+  // Inside the track, not straddling it: the track clips its children, and a
+  // tick that pokes out of a 10px bar reads as a stray hairline rather than a
+  // position on the scale.
+  planMarker: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 2,
+    marginLeft: -1,
+    borderRadius: 1,
+    backgroundColor: enamel.textPrimary,
+    opacity: 0.85,
+  },
+  planFootRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  planFootKey: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  planFootTick: {
+    width: 2,
+    height: 10,
+    borderRadius: 1,
+    backgroundColor: enamel.textPrimary,
+    opacity: 0.85,
+  },
+  planFootText: {
+    fontSize: 12,
+    fontFamily: 'Satoshi-Medium',
+    color: enamel.textSecondary,
+  },
+  planFootVerdict: {
+    fontSize: 12,
+    fontFamily: 'Satoshi-Bold',
+  },
   shine: { ...StyleSheet.absoluteFillObject, width: '55%' },
 
   breakdown: { marginTop: 16, gap: 14 },

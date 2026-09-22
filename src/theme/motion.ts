@@ -105,9 +105,9 @@ export const STAGGER = {
  */
 export const HOME_SEQUENCE = {
   card: 0,
-  ringOuter: 200,
-  ringMiddle: 450,
-  ringInner: 700,
+  /** The dial fills. One gauge, one slot — the old outer/middle/inner
+      staggering belonged to a triple ring that no longer exists. */
+  ring: 300,
   heroCount: 900,
   heroLabel: 1000,
   storyRow: 1100,

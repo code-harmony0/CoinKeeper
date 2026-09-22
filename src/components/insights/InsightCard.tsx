@@ -10,9 +10,12 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 interface Props {
   insight: FinancialInsight;
   index: number;
+  /** Replaces navigating to `actionRoute`, for insights the screen acts on itself. */
+  onPress?: () => void;
+  children?: React.ReactNode;
 }
 
-export const InsightCard: React.FC<Props> = ({ insight, index }) => {
+export const InsightCard: React.FC<Props> = ({ insight, index, onPress, children }) => {
   const { colors, cardRadius } = useSpecTheme();
   const navigation = useNavigation<any>();
 
@@ -33,7 +36,7 @@ export const InsightCard: React.FC<Props> = ({ insight, index }) => {
   return (
     <Animated.View entering={FadeInUp.delay(index * 100)}>
       <PressableScale 
-        onPress={() => insight.actionRoute && navigation.navigate(insight.actionRoute)}
+        onPress={onPress ?? (() => insight.actionRoute && navigation.navigate(insight.actionRoute))}
         style={[styles.card, { backgroundColor: tint + '15', borderRadius: cardRadius }]}
       >
         <View style={styles.header}>
@@ -41,6 +44,7 @@ export const InsightCard: React.FC<Props> = ({ insight, index }) => {
           <Text style={[styles.title, { color: tint }]}>{insight.title}</Text>
         </View>
         <Text style={[styles.desc, { color: colors.textPrimary }]}>{insight.description}</Text>
+        {children}
       </PressableScale>
     </Animated.View>
   );

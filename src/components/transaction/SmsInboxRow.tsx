@@ -13,9 +13,11 @@ interface Props {
   onApprove: () => void;
   onReject: () => void;
   onChangeCategory: () => void;
+  /** Off inside a virtualized list, where recycled rows would re-animate on every scroll. */
+  animate?: boolean;
 }
 
-export const SmsInboxRow: React.FC<Props> = ({ item, categoryName, onApprove, onReject, onChangeCategory }) => {
+export const SmsInboxRow: React.FC<Props> = ({ item, categoryName, onApprove, onReject, onChangeCategory, animate = true }) => {
   const { colors, cardRadius } = useSpecTheme();
 
   const renderRightActions = () => {
@@ -34,7 +36,11 @@ export const SmsInboxRow: React.FC<Props> = ({ item, categoryName, onApprove, on
   const confidenceLevel = (item.confidence || 0) >= 90 ? 'high' : (item.confidence || 0) >= 60 ? 'medium' : 'low';
 
   return (
-    <Animated.View entering={FadeInUp} exiting={FadeOutDown} style={{ marginBottom: 12 }}>
+    <Animated.View
+      entering={animate ? FadeInUp : undefined}
+      exiting={animate ? FadeOutDown : undefined}
+      style={{ marginBottom: 12 }}
+    >
       <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
         <View style={[styles.card, { backgroundColor: colors.card, borderRadius: cardRadius }]}>
           <View style={styles.header}>
@@ -74,6 +80,36 @@ export const SmsInboxRow: React.FC<Props> = ({ item, categoryName, onApprove, on
                 <Text style={[styles.confidenceText, { color: colors.danger }]}>Duplicate?</Text>
               </View>
             )}
+
+            {/* Whether AI read this message belongs on the message, not in a
+                settings menu — it is a fact about this one transaction. */}
+            {item.parse_route && (
+              <View style={[styles.confidenceBadge, { backgroundColor: colors.chipBg }]}>
+                <Text style={[styles.confidenceText, { color: colors.textSecondary }]}>
+                  {item.parse_route === 'model' ? '🤖 Read by AI' : '📋 Read by rules'}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Swiping still works, but nobody finds a swipe-only action. */}
+          <View style={styles.actions}>
+            <PressableScale
+              onPress={onReject}
+              testID={`skip-btn-${item.id}`}
+              style={[styles.actionPill, { backgroundColor: colors.chipBg }]}
+            >
+              <X size={16} color={colors.textSecondary} />
+              <Text style={[styles.actionText, { color: colors.textSecondary }]}>Skip</Text>
+            </PressableScale>
+            <PressableScale
+              onPress={onApprove}
+              testID={`add-btn-${item.id}`}
+              style={[styles.actionPill, { backgroundColor: colors.success }]}
+            >
+              <Check size={16} color="#fff" />
+              <Text style={[styles.actionText, { color: '#fff' }]}>Add</Text>
+            </PressableScale>
           </View>
         </View>
       </Swipeable>
@@ -92,6 +128,9 @@ const styles = StyleSheet.create({
   categoryText: { fontSize: 13, fontFamily: 'Satoshi-Bold' },
   confidenceBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
   confidenceText: { fontSize: 12, fontFamily: 'Satoshi-Bold' },
+  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },
+  actionPill: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 16, borderRadius: 100 },
+  actionText: { fontSize: 13, fontFamily: 'Satoshi-Bold' },
   actionWrap: { flexDirection: 'row', width: 120 },
   actionBtn: { flex: 1, justifyContent: 'center', alignItems: 'center' }
 });

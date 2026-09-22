@@ -7,6 +7,22 @@ import { PressableScale } from '../../components/anim';
 import { InsightEngine, FinancialInsight } from '../../services/InsightEngine';
 import { InsightCard } from '../../components/insights/InsightCard';
 import { AIProvider } from '../../services/AIProvider';
+import { AppDialog, type DialogAction } from '../../components/ui/AppDialog';
+import { useBillStore } from '../../store/billStore';
+import { useTransactionStore } from '../../store/transactionStore';
+import { scheduleBillReminder } from '../../services/notificationService';
+import { suggestBills, type BillSuggestion } from '../../services/billSuggestions';
+import { Money } from '../../utils/money';
+import { findRecurring } from '../../services/spendingAnalysis';
+
+const cadenceLabel = (intervalMonths: number): string => {
+  switch (intervalMonths) {
+    case 3: return 'Quarterly';
+    case 6: return 'Half-yearly';
+    case 12: return 'Yearly';
+    default: return 'Monthly';
+  }
+};
 
 interface ChatMessage {
   id: string;
@@ -15,7 +31,7 @@ interface ChatMessage {
   structuredData?: any;
 }
 
-export const AskAiScreen: React.FC<any> = () => {
+export const AskAiScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { colors, cardRadius, iconShadow } = useSpecTheme();
 
@@ -23,6 +39,12 @@ export const AskAiScreen: React.FC<any> = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [dialog, setDialog] = useState<{
+    title: string;
+    message?: string;
+    actions: DialogAction[];
+  } | null>(null);
+  const [billSuggestions, setBillSuggestions] = useState<BillSuggestion[]>([]);
 
   useEffect(() => {
     loadDashboard();
@@ -33,6 +55,61 @@ export const AskAiScreen: React.FC<any> = () => {
     await InsightEngine.generateDailyInsights();
     const data = await InsightEngine.getCachedInsights();
     setInsights(data);
+    setBillSuggestions(await findBillSuggestions());
+  };
+
+  const findBillSuggestions = async () => {
+    const { bills, loadBills } = useBillStore.getState();
+    if (bills.length === 0) await loadBills();
+    // Same ledger the insight was built from: money expected back is not a bill.
+    const ledger = useTransactionStore
+      .getState()
+      .transactions.filter(t => !t.awaitingReturn && !t.settlementOf);
+    return suggestBills(findRecurring(ledger), useBillStore.getState().bills);
+  };
+
+  const addBills = async (suggestions: BillSuggestion[]) => {
+    const { addBill, updateNotificationId } = useBillStore.getState();
+    for (const s of suggestions) {
+      const bill = {
+        name: s.name,
+        amountPaise: s.amountPaise,
+        dueDay: s.dueDay,
+        isRecurring: true,
+        reminderDaysBefore: 3,
+        intervalMonths: s.intervalMonths,
+        repeatInterval: cadenceLabel(s.intervalMonths),
+        // The reminder schedule anchors a multi-month cycle to this date —
+        // without it, a half-yearly bill would look due every month.
+        lastPaidAt: new Date(s.lastSeen).getTime(),
+      };
+      const id = await addBill(bill);
+      // Only the new bills: rescheduling every bill would stack a second
+      // reminder on the ones that already have one.
+      const notificationId = await scheduleBillReminder({ ...bill, id });
+      if (notificationId) await updateNotificationId(id, notificationId);
+    }
+    setBillSuggestions(await findBillSuggestions());
+    setDialog({
+      title: 'Reminders set',
+      message: `${suggestions.length} bill${suggestions.length === 1 ? '' : 's'} will now remind you 3 days before they land.`,
+      actions: [{ label: 'Done', cancel: true }],
+    });
+  };
+
+  // Shown before anything is written: a repeating payment is not always a bill.
+  const handleRemindBills = () => {
+    const suggestions = billSuggestions;
+    setDialog({
+      title: `Add ${suggestions.length} bill${suggestions.length === 1 ? '' : 's'}?`,
+      message: suggestions
+        .map(s => `${s.name} · ${Money.format(s.amountPaise, { zeroDecimals: true })} · ${cadenceLabel(s.intervalMonths).toLowerCase()}, due on day ${s.dueDay}`)
+        .join('\n'),
+      actions: [
+        { label: 'Add these', onPress: () => void addBills(suggestions) },
+        { label: 'Cancel', cancel: true },
+      ],
+    });
   };
 
   const handleSend = async () => {
@@ -75,7 +152,27 @@ export const AskAiScreen: React.FC<any> = () => {
             <View style={styles.dashboard}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Today's Overview</Text>
               {insights.map((insight, idx) => (
-                <InsightCard key={insight.id} insight={insight} index={idx} />
+                insight.actionRoute === 'SuggestBills' ? (
+                  // The button appears only when there is a monthly bill to offer;
+                  // otherwise the card leads to Bills as before.
+                  <InsightCard
+                    key={insight.id}
+                    insight={insight}
+                    index={idx}
+                    onPress={billSuggestions.length > 0 ? handleRemindBills : () => navigation.navigate('Bills')}
+                  >
+                    {billSuggestions.length > 0 && (
+                      <PressableScale
+                        onPress={handleRemindBills}
+                        style={[styles.actionBtn, { backgroundColor: colors.primaryAccent }]}
+                      >
+                        <Text style={[styles.actionText, { color: colors.onAccent }]}>Remind me before each charge</Text>
+                      </PressableScale>
+                    )}
+                  </InsightCard>
+                ) : (
+                  <InsightCard key={insight.id} insight={insight} index={idx} />
+                )
               ))}
             </View>
           )}
@@ -131,6 +228,14 @@ export const AskAiScreen: React.FC<any> = () => {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      <AppDialog
+        visible={!!dialog}
+        title={dialog?.title ?? ''}
+        message={dialog?.message}
+        actions={dialog?.actions ?? []}
+        onClose={() => setDialog(null)}
+      />
     </View>
   );
 };
@@ -145,6 +250,8 @@ const styles = StyleSheet.create({
   dashboard: { marginBottom: 32 },
   sectionTitle: { fontSize: 18, fontFamily: 'Satoshi-Bold', marginBottom: 16 },
   chatArea: { gap: 16 },
+  actionBtn: { marginTop: 12, paddingVertical: 12, borderRadius: 100, alignItems: 'center' },
+  actionText: { fontSize: 14, fontFamily: 'Satoshi-Bold' },
   bubbleWrap: { maxWidth: '85%' },
   bubbleUserWrap: { alignSelf: 'flex-end' },
   bubbleAiWrap: { alignSelf: 'flex-start' },

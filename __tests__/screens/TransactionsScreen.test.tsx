@@ -186,8 +186,7 @@ describe('TransactionsScreen', () => {
       <TransactionsScreen navigation={navigation} route={{} as any} />,
     );
 
-    // Default period is "This Month" — the Paycheck (₹5,000, dated 2026-08-01)
-    // is within August, so it counts toward Income.
+    // Default period is "All Time", so the Paycheck (₹5,000) counts toward Income.
     expect(getByTestId('summary-income').props.children).toContain('5,000');
 
     fireEvent.press(getByTestId('period-week'));

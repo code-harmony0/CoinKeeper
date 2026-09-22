@@ -65,6 +65,7 @@ import { IncomeEngine } from '../../services/income/IncomeEngine';
 import { financialEventBus } from '../../services/EventBus';
 import { Money } from '../../utils/money';
 import { EXPRESSIVE, STAGGER } from '../../theme/motion';
+import { billsSummary } from '../../services/billSchedule';
 
 // Guarded require, not a static import: CHITFUND_ENABLED is inlined as a
 // literal at build time, so Metro drops this branch — and the whole
@@ -136,6 +137,9 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   const { updateGoalProgress } = useGoalStore();
   const { bills, loadBills } = useBillStore();
   const incomeHealth = useIncomeHealth();
+  // Cadence-aware: a half-yearly bill only counts here when it is actually
+  // due this cycle, not every month.
+  const unpaidBillsPaise = useMemo(() => billsSummary(bills).unpaidPaise, [bills]);
 
   // One pass over the ledger feeds the ring, the status line, the plan bar and
   // the pills, so none of them can disagree about the same month.
@@ -397,6 +401,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             ageOfMoney={ageOfMoney}
             status={status}
             replayToken={refreshToken}
+            unpaidBillsPaise={unpaidBillsPaise}
           />
 
           <OnEnter index={0}>

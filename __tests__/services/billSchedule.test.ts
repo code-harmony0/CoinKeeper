@@ -38,6 +38,24 @@ describe('nextDueDate', () => {
     expect(due.getMonth()).toBe(6);
     expect(due.getDate()).toBe(3);
   });
+
+  // intervalMonths + anchor: not every bill is monthly. A half-yearly Wi-Fi
+  // rental only falls due in the months it was actually last paid in.
+  it('keeps a half-yearly bill on its real months, not every month', () => {
+    const anchor = new Date(2026, 3, 19); // paid 19 Apr 2026
+    const due = nextDueDate(19, new Date(2026, 4, 1), 6, anchor); // 1 May 2026
+    expect(due).toEqual(new Date(2026, 9, 19)); // next real due date: 19 Oct
+  });
+
+  it('steps a half-yearly bill across a year boundary', () => {
+    const anchor = new Date(2026, 3, 19);
+    const due = nextDueDate(19, new Date(2026, 10, 1), 6, anchor); // 1 Nov, past Oct's due date
+    expect(due).toEqual(new Date(2027, 3, 19));
+  });
+
+  it('defaults to plain monthly behaviour when interval and anchor are omitted', () => {
+    expect(nextDueDate(3, new Date(2026, 5, 20))).toEqual(nextDueDate(3, new Date(2026, 5, 20), 1, new Date(2026, 5, 20)));
+  });
 });
 
 describe('daysUntilDue — the month-end blind spot', () => {
@@ -115,6 +133,32 @@ describe('billStatus', () => {
     // It used to be neither overdue nor due — it simply disappeared.
     const status = billStatus(bill('Rent', 31), new Date(2026, 3, 29));
     expect(status).toBe('due-soon');
+  });
+
+  it('does not call an unpaid monthly bill overdue before this month’s due day arrives', () => {
+    // Last paid two cycles ago, but the 25th has not happened yet this month —
+    // judged against the current cycle only, exactly as an unpaid bill with
+    // no history at all would be.
+    const paidTwoMonthsAgo = new Date(2026, 5, 25).getTime();
+    const status = billStatus(bill('Rent', 25, paidTwoMonthsAgo), new Date(2026, 7, 10));
+    expect(status).toBe('upcoming');
+  });
+
+  it('reads a half-yearly bill as paid for the whole cycle it covers', () => {
+    // Wi-Fi paid in April covers May through September — never "due" again
+    // until the real cycle, October, comes around.
+    const wifi: Bill = { id: 'w', name: 'Wi-Fi', amountPaise: 300300, dueDay: 19, isRecurring: true, intervalMonths: 6, lastPaidAt: new Date(2026, 3, 19).getTime() };
+    expect(billStatus(wifi, new Date(2026, 6, 15))).toBe('paid');
+  });
+
+  it('marks a half-yearly bill overdue once its real cycle has passed unpaid', () => {
+    const wifi: Bill = { id: 'w', name: 'Wi-Fi', amountPaise: 300300, dueDay: 19, isRecurring: true, intervalMonths: 6, lastPaidAt: new Date(2026, 3, 19).getTime() };
+    expect(billStatus(wifi, new Date(2026, 9, 25))).toBe('overdue'); // 25 Oct, past the 19th
+  });
+
+  it('does not call a half-yearly bill overdue before its next real cycle', () => {
+    const wifi: Bill = { id: 'w', name: 'Wi-Fi', amountPaise: 300300, dueDay: 19, isRecurring: true, intervalMonths: 6, lastPaidAt: new Date(2026, 3, 19).getTime() };
+    expect(billStatus(wifi, new Date(2026, 9, 5))).toBe('upcoming'); // 5 Oct, before the 19th
   });
 });
 

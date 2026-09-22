@@ -193,3 +193,12 @@ jest.mock('react-native-share', () => ({
   default: { open: jest.fn(async () => ({ success: true })) },
   open: jest.fn(async () => ({ success: true })),
 }));
+
+// llama.rn is a JSI native module. Tests that exercise the model path inject
+// their own extractor; this stub just keeps imports from exploding.
+jest.mock('llama.rn', () => ({
+  initLlama: jest.fn(async () => ({
+    completion: jest.fn(async () => ({ text: '' })),
+    release: jest.fn(async () => undefined),
+  })),
+}));

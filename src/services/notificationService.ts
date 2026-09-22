@@ -6,6 +6,7 @@ import notifee, {
 } from '@notifee/react-native';
 import { Bill, useBillStore } from '../store/billStore';
 import { getPreference } from '../store/database';
+import { nextDueDate } from './billSchedule';
 
 export const CHANNELS = {
   BILLS: 'bills_reminders',
@@ -57,53 +58,26 @@ export const scheduleBillReminder = async (
       return null;
     }
     const now = new Date();
-    // Schedule for 3 days before the due day at 10 AM.
-    // If due day is e.g. 15th, alarm is on 12th.
-    // If due day is 2nd, alarm is on 29th/30th of previous month.
-    let targetMonth = now.getMonth();
-    let targetYear = now.getFullYear();
-    let targetDay = bill.dueDay - 3;
+    // Not every bill is monthly — a half-yearly or yearly one only falls due
+    // in specific months, which `bill.lastPaidAt` (or, for a bill with no
+    // history yet, today) anchors. Absent intervalMonths means monthly,
+    // unchanged from before this field existed.
+    const intervalMonths = bill.intervalMonths ?? 1;
+    const anchor = bill.lastPaidAt ? new Date(bill.lastPaidAt) : now;
 
-    if (targetDay <= 0) {
-      targetMonth -= 1;
-      if (targetMonth < 0) {
-        targetMonth = 11;
-        targetYear -= 1;
-      }
-      const daysInPrevMonth = new Date(
-        targetYear,
-        targetMonth + 1,
-        0,
-      ).getDate();
-      targetDay = daysInPrevMonth + targetDay;
-    }
+    let dueDate = nextDueDate(bill.dueDay, now, intervalMonths, anchor);
+    let triggerDate = new Date(dueDate.getTime() - 3 * 24 * 60 * 60 * 1000);
+    triggerDate.setHours(10, 0, 0, 0);
 
-    const triggerDate = new Date(targetYear, targetMonth, targetDay, 10, 0, 0);
-
-    // If this date has already passed this month, schedule for next month
+    // The 3-day-before reminder itself must still be in the future — a due
+    // date 1 or 2 days out would otherwise get a reminder for a moment that
+    // already passed. The day after `dueDate` as `now` forces the search past
+    // `dueDate` itself, to the cycle after.
     if (triggerDate.getTime() < now.getTime()) {
-      targetMonth += 1;
-      if (targetMonth > 11) {
-        targetMonth = 0;
-        targetYear += 1;
-      }
-      targetDay = bill.dueDay - 3;
-      if (targetDay <= 0) {
-        targetMonth -= 1;
-        if (targetMonth < 0) {
-          targetMonth = 11;
-          targetYear -= 1;
-        }
-        const daysInPrevMonth = new Date(
-          targetYear,
-          targetMonth + 1,
-          0,
-        ).getDate();
-        targetDay = daysInPrevMonth + targetDay;
-      }
-      triggerDate.setFullYear(targetYear);
-      triggerDate.setMonth(targetMonth);
-      triggerDate.setDate(targetDay);
+      const dayAfterDue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate() + 1);
+      dueDate = nextDueDate(bill.dueDay, dayAfterDue, intervalMonths, dueDate);
+      triggerDate = new Date(dueDate.getTime() - 3 * 24 * 60 * 60 * 1000);
+      triggerDate.setHours(10, 0, 0, 0);
     }
 
     const trigger: TimestampTrigger = {
@@ -126,34 +100,11 @@ export const scheduleBillReminder = async (
       trigger,
     );
 
-    // Schedule day-of reminder
-    // The day-of reminder is scheduled for 9 AM on the exact due day.
-    let dayOfMonth = now.getMonth();
-    let yearOf = now.getFullYear();
-    let dayOfDate = bill.dueDay;
-
-    // Check if the due day exists in the current month (e.g. Feb 30 -> Feb 28)
-    let daysInMonth = new Date(yearOf, dayOfMonth + 1, 0).getDate();
-    if (dayOfDate > daysInMonth) {
-      dayOfDate = daysInMonth;
-    }
-
-    let dayOfTriggerDate = new Date(yearOf, dayOfMonth, dayOfDate, 9, 0, 0); // 9 AM
-
-    // If the due day this month has already passed, schedule for next month
-    if (dayOfTriggerDate.getTime() < now.getTime()) {
-      dayOfMonth += 1;
-      if (dayOfMonth > 11) {
-        dayOfMonth = 0;
-        yearOf += 1;
-      }
-      dayOfDate = bill.dueDay;
-      daysInMonth = new Date(yearOf, dayOfMonth + 1, 0).getDate();
-      if (dayOfDate > daysInMonth) {
-        dayOfDate = daysInMonth;
-      }
-      dayOfTriggerDate = new Date(yearOf, dayOfMonth, dayOfDate, 9, 0, 0);
-    }
+    // Schedule day-of reminder, at 9 AM on the same due date the 3-day
+    // reminder above already settled on — so the two never disagree about
+    // which cycle's payment they are for.
+    const dayOfTriggerDate = new Date(dueDate);
+    dayOfTriggerDate.setHours(9, 0, 0, 0);
 
     // Only schedule if it's in the future
     let dayOfNotificationId = '';

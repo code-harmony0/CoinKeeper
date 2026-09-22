@@ -42,6 +42,18 @@ describe('resolveCategory', () => {
     expect(resolveCategory('shoping', CATEGORIES)?.reason).toBe('fuzzy');
   });
 
+  it('reads a brand-prefixed service by what it actually is', () => {
+    // "Jio-bp Pump" is a petrol pump. Taking the first keyword filed every
+    // fill-up under Bills because the name starts with a telecom brand.
+    expect(resolveCategory('Jio-bp Pump', CATEGORIES)?.categoryId).toBe('transport');
+  });
+
+  it('recognises a recharge by what the message says, not by its amount', () => {
+    expect(resolveCategory('Airtel Mobile', CATEGORIES)?.categoryId).toBe('bills');
+    expect(resolveCategory('Jio Prepaid Recharges', CATEGORIES)?.categoryId).toBe('bills');
+    expect(resolveCategory('Airtel Wi-Fi', CATEGORIES)?.categoryId).toBe('bills');
+  });
+
   it('skips a keyword whose category is not in this user list', () => {
     // No Health category present, so a pharmacy must not resolve anywhere else.
     expect(resolveCategory('Apollo Pharmacy', CATEGORIES)).toBeNull();

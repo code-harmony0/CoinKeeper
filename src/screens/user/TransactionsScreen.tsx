@@ -37,6 +37,7 @@ import {
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
+import { useTransactionStore } from '../../store/transactionStore';
 import { Money } from '../../utils/money';
 import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useSpecTheme } from '../../theme/specTheme';
@@ -73,8 +74,12 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
     [scrollY],
   );
   const { transactions, deleteTransaction, updateTransaction } = useTransactions();
+  const markAwaitingReturn = useTransactionStore(state => state.markAwaitingReturn);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
-  const [period, setPeriod] = useState<PeriodFilter>('month');
+  // "All Time" by default: an SMS import brings in months of history, and
+  // scoping to the current month hid all of it behind a filter nobody knew
+  // to change — the import looked like it had done nothing.
+  const [period, setPeriod] = useState<PeriodFilter>('all');
   const [segmentWidth, setSegmentWidth] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   // Set when the user drills in from a Reports category. Held as state, not read
@@ -120,9 +125,16 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
     };
   }, [deleteTransaction]);
 
+  // Money that left and came back is not spending and not income — it belongs
+  // on the Lent & returned screen, not in this list or its totals.
+  const settled = useMemo(
+    () => transactions.filter(t => !t.awaitingReturn && !t.settlementOf),
+    [transactions],
+  );
+
   const filteredTx = useMemo(
-    () => (activeTab === 'all' ? transactions.filter(t => t.type !== 'transfer_to_goal') : transactions.filter(t => t.type === activeTab)),
-    [transactions, activeTab],
+    () => (activeTab === 'all' ? settled.filter(t => t.type !== 'transfer_to_goal') : settled.filter(t => t.type === activeTab)),
+    [settled, activeTab],
   );
 
   const inPeriod = useMemo(
@@ -134,8 +146,8 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
   // stay stable across the type tabs — only `inPeriod` (used for the visible list) is
   // scoped to `activeTab`.
   const inPeriodAllTabs = useMemo(
-    () => transactions.filter(t => isWithinPeriod(t.date, period)),
-    [transactions, period],
+    () => settled.filter(t => isWithinPeriod(t.date, period)),
+    [settled, period],
   );
 
   // The Transactions tab stays mounted, so a second drill-down from Reports
@@ -276,7 +288,13 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const handleSaveDetail = async (id: string, updates: Partial<Transaction>) => {
-    await updateTransaction(id, updates);
+    // "I'll get this back" is its own column with its own action — updateTransaction
+    // writes the money fields and would drop it silently.
+    const { awaitingReturn, ...moneyFields } = updates;
+    await updateTransaction(id, moneyFields);
+    if (awaitingReturn !== undefined) {
+      await markAwaitingReturn(id, awaitingReturn);
+    }
     setDetailTx(null);
   };
 
@@ -309,7 +327,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
   const formatAmount = (amount: number) => Money.format(amount, { zeroDecimals: true });
 
   const renderRow = (item: Transaction, index: number) => {
-    const Icon = resolveCategoryIcon(item.categoryId, item.categoryIcon);
+    const Icon = resolveCategoryIcon(item.categoryId, item.categoryIcon, item.description);
     const isIncome = item.type === 'income';
     const isSelected = selectedIds.has(item.id);
 
@@ -479,6 +497,9 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
                   accessibilityState={{ selected: isActive }}
                 >
                   <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
                     style={[
                       styles.segmentText,
                       { color: isActive ? colors.segmentActiveText : colors.segmentInactiveText },
@@ -539,13 +560,13 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
           keyExtractor={item => item.key}
           renderItem={renderItem}
           getItemType={item => item.type}
+          // FlashList ignores width/alignment on its content container, and
+          // setting them there left the list measuring wrong — rows drew behind
+          // the tab bar with empty space above. Centring belongs on the parent.
           contentContainerStyle={{
             paddingHorizontal: 24,
             paddingTop: 4,
             paddingBottom: insets.bottom + 144,
-            maxWidth: 600,
-            alignSelf: 'center',
-            width: '100%',
           }}
           onScroll={handleScroll}
           scrollEventThrottle={16}
@@ -560,7 +581,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
                 Add your first expense to get started
               </Text>
               <PressableScale onPress={() => navigation.navigate('Add')} style={[styles.quickAddBtn, { backgroundColor: colors.primaryAccent, borderRadius: cardRadius }]}>
-                <Text style={[styles.quickAddText, { color: '#FFF' }]}>Quick Add</Text>
+                <Text style={[styles.quickAddText, { color: colors.onAccent }]}>Quick Add</Text>
               </PressableScale>
             </View>
           }
@@ -588,11 +609,11 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
           entering={FadeInDown.springify()}
           style={[styles.undoBanner, { backgroundColor: colors.primaryAccent, bottom: insets.bottom + 24 }]}
         >
-          <Text style={styles.undoText} numberOfLines={1}>
+          <Text style={[styles.undoText, { color: colors.onAccent }]} numberOfLines={1}>
             {pendingDelete.description || categoryLabel(pendingDelete.category)} deleted
           </Text>
           <Pressable onPress={undoDelete}>
-            <Text style={styles.undoAction}>Undo</Text>
+            <Text style={[styles.undoAction, { color: colors.onAccent }]}>Undo</Text>
           </Pressable>
         </Animated.View>
       )}
@@ -680,6 +701,10 @@ const styles = StyleSheet.create({
   },
   segmentItem: {
     flex: 1,
+    // Flex children refuse to shrink below their content without this, so a
+    // long label ("Transfers (10)") pushed the row wider than its container —
+    // and overflow:hidden then clipped the neighbouring tab out of sight.
+    minWidth: 0,
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -687,6 +712,10 @@ const styles = StyleSheet.create({
   segmentText: {
     fontSize: 14,
     fontFamily: 'Satoshi-Bold',
+    // Four tabs on a 360dp screen leave ~85dp each; the label scales down to
+    // fit its slot rather than spilling into the tab beside it.
+    textAlign: 'center',
+    paddingHorizontal: 4,
   },
 
   categoryChipRow: {
@@ -730,6 +759,9 @@ const styles = StyleSheet.create({
   },
 
   content: {
+    // Nothing but flex here on purpose: a maxWidth/alignSelf wrapper left
+    // FlashList resolving its width a frame late, and a long list then failed
+    // to paint at all until a scroll nudged it.
     flex: 1,
   },
 

@@ -35,8 +35,8 @@ import { useSpecTheme, enamel } from '../../theme/specTheme';
 import { categoryInk } from '../../theme/categoryColors';
 import { Money } from '../../utils/money';
 import { categoryLabel } from '../../utils/categoryLabel';
-import { PaceRing, RingLegend } from './PaceRing';
-import { StoryRow, StatusLine, KpiPills, PlanBar } from './HeroStats';
+import { PaceRing } from './PaceRing';
+import { StoryRow, StatusLine, KpiPills, PlanBar, ForecastLine } from './HeroStats';
 import { PressableScale } from '../anim';
 import type { Badge } from '../../services/badges';
 import type { AgeOfMoney } from '../../services/ageOfMoney';
@@ -107,6 +107,8 @@ interface MoneyMapProps {
   status: HomeStatus;
   /** Bumped on pull-to-refresh to rewind and redraw the gauge. */
   replayToken?: number;
+  /** Bills still unpaid this cycle — cadence-aware, from `billsSummary`. */
+  unpaidBillsPaise: number;
 }
 
 const compactINR = (paise: number): string => {
@@ -159,6 +161,7 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
   ageOfMoney,
   status,
   replayToken = 0,
+  unpaidBillsPaise,
 }) => {
   const { cardRadius, cardShadow } = useSpecTheme();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -262,7 +265,9 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
         </PressableScale>
       </View>
 
-      {/* Hero: the three rings, then the story, the status, and the frame. */}
+      {/* Hero: one dial — how much of today's allowance is still standing.
+          The month's pace lives on the PlanBar below, where a marker on a
+          straight track compares two positions instead of two arcs. */}
       <View style={styles.heroRing}>
         <PaceRing
           safeTodayPaise={monthPlan?.safeToSpendToday ?? 0}
@@ -271,15 +276,6 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
           planPaise={safeToSpend}
           incomePaise={income}
           replayToken={replayToken}
-        />
-        {/* The key to the three rings. Without it the gauge is decoration:
-            three arcs the reader has to guess the meaning of. */}
-        <RingLegend
-          safeTodayPaise={monthPlan?.safeToSpendToday ?? 0}
-          todaySpendPaise={todaySpend}
-          spendPaise={spend}
-          planPaise={safeToSpend}
-          incomePaise={income}
         />
       </View>
 
@@ -291,6 +287,13 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
           spendPaise={spend}
           planPaise={safeToSpend}
           categories={breakdown}
+        />
+      )}
+      {safeToSpend > 0 && (
+        <ForecastLine
+          transactions={expenses}
+          planPaise={safeToSpend}
+          unpaidBillsPaise={unpaidBillsPaise}
         />
       )}
 

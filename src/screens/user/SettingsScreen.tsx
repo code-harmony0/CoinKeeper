@@ -22,11 +22,15 @@ import {
   Receipt,
   Target,
   DatabaseBackup,
+  Sparkles,
+  RotateCcw,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSpecTheme } from '../../theme/specTheme';
 import { useOptionalAuth } from '../../hooks/useOptionalAuth';
 import { getPreference, setPreference } from '../../store/database';
+import { useTransactionStore } from '../../store/transactionStore';
+import { AppDialog, type DialogAction } from '../../components/ui/AppDialog';
 import { isRoundUpEnabled, setRoundUpEnabled } from '../../services/roundUp';
 import {
   cancelAllReminders,
@@ -120,6 +124,64 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
     setRoundUps(val);
     await setRoundUpEnabled(val);
   }, []);
+
+  // One dialog at a time, in the app's own colours: Android's alerts stack
+  // invisibly when a second opens over the first, which reads as one that will
+  // not close.
+  const [dialog, setDialog] = useState<{
+    title: string;
+    message?: string;
+    actions: DialogAction[];
+  } | null>(null);
+
+  const confirmDeleteAll = useCallback(() => {
+    setDialog({
+      title: 'Delete all transactions?',
+      message: 'Every transaction goes — imported and hand-entered alike. This cannot be undone.',
+      actions: [
+        {
+          label: 'Delete everything',
+          destructive: true,
+          onPress: async () => {
+            const removed = await useTransactionStore.getState().deleteAllTransactions();
+            setDialog({
+              title: 'Reset',
+              message: `${removed} transaction${removed === 1 ? '' : 's'} deleted.`,
+              actions: [{ label: 'Done', cancel: true }],
+            });
+          },
+        },
+        { label: 'Cancel', cancel: true },
+      ],
+    });
+  }, []);
+
+  /**
+   * Two kinds of starting over, kept apart on purpose: re-reading SMS is
+   * routine and safe, while throwing away everything is neither.
+   */
+  const handleReset = useCallback(() => {
+    ReactNativeHapticFeedback.trigger('impactMedium');
+    setDialog({
+      title: 'Reset',
+      message: 'What should CoinKeeper clear?',
+      actions: [
+        {
+          label: 'Remove SMS imports',
+          onPress: async () => {
+            const removed = await useTransactionStore.getState().deleteImportedSmsTransactions();
+            setDialog({
+              title: 'Reset',
+              message: `${removed} imported transaction${removed === 1 ? '' : 's'} removed. Anything you typed in yourself is still here, and the Inbox can read your messages again.`,
+              actions: [{ label: 'Done', cancel: true }],
+            });
+          },
+        },
+        { label: 'Delete all transactions', destructive: true, onPress: confirmDeleteAll },
+        { label: 'Cancel', cancel: true },
+      ],
+    });
+  }, [confirmDeleteAll]);
 
   const handleLogout = useCallback(() => {
     ReactNativeHapticFeedback.trigger('impactMedium');
@@ -315,6 +377,22 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
               description="Save your data, or bring it back on a new phone"
               onPress={() => navigation.navigate('BackupRestore')}
             />
+            <SettingsDivider />
+            <SettingsRow
+              icon={Sparkles}
+              tint="purple"
+              label="Smarter SMS reading"
+              description="Optional on-device model for unknown bank formats"
+              onPress={() => navigation.navigate('SmartParsing')}
+            />
+            <SettingsDivider />
+            <SettingsRow
+              icon={RotateCcw}
+              tint="orange"
+              label="Reset"
+              description="Remove imported transactions, or start over"
+              onPress={handleReset}
+            />
           </SettingsCard>
         </Animated.View>
 
@@ -327,6 +405,14 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
           <LogoutButton onPress={handleLogout} />
         </Animated.View>
       </Animated.ScrollView>
+
+      <AppDialog
+        visible={!!dialog}
+        title={dialog?.title ?? ''}
+        message={dialog?.message}
+        actions={dialog?.actions ?? []}
+        onClose={() => setDialog(null)}
+      />
     </View>
   );
 };

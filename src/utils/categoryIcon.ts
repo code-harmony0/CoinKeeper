@@ -17,7 +17,19 @@ const DEFAULT_ID_TO_ICON: Record<string, keyof typeof Icons> = {
   others: 'MoreHorizontal',
 };
 
-export const resolveCategoryIcon = (id: string, iconName: string | undefined) => {
+/**
+ * A fill-up is not a car. Transport covers cabs, trains and fuel alike, so the
+ * category icon alone says "car" for a petrol pump — the label is what tells
+ * these apart.
+ */
+const FUEL = /\b(fuel|petrol|diesel|pump|jio-?bp|iocl|hpcl|indian\s?oil|bharat\s?petroleum)\b/i;
+
+export const resolveCategoryIcon = (
+  id: string,
+  iconName: string | undefined,
+  label?: string,
+) => {
+  if (label && FUEL.test(label)) return Icons.Fuel;
   if (iconName && (Icons as any)[iconName]) {
     return (Icons as any)[iconName];
   }

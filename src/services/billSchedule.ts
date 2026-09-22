@@ -42,39 +42,91 @@ const occurrenceIn = (dueDay: number, year: number, month: number): Date => {
   return new Date(year, month, Math.min(dueDay, daysInMonth(probe)));
 };
 
-/** The next time this bill falls due, today included. */
-export const nextDueDate = (dueDay: number, now: Date = new Date()): Date => {
+/**
+ * The next time this bill falls due, today included.
+ *
+ * `intervalMonths` and `anchor` generalise this beyond monthly bills: a
+ * half-yearly or yearly one only falls due in specific months (the ones the
+ * anchor — normally the bill's own last due date — actually landed on), not
+ * every month whose day-of-month happens to match. Both default to plain
+ * monthly behaviour, identical to before either parameter existed.
+ */
+export const nextDueDate = (
+  dueDay: number,
+  now: Date = new Date(),
+  intervalMonths = 1,
+  anchor: Date = now,
+): Date => {
   const today = startOfDay(now);
-  const thisMonth = occurrenceIn(dueDay, now.getFullYear(), now.getMonth());
-  if (thisMonth.getTime() >= today.getTime()) return thisMonth;
-  return occurrenceIn(dueDay, now.getFullYear(), now.getMonth() + 1);
+  const year = anchor.getFullYear();
+  let month = anchor.getMonth();
+  let date = occurrenceIn(dueDay, year, month);
+
+  // JS Date normalises a month past 11 into the following year, so stepping
+  // needs no manual carry — `occurrenceIn(dueDay, year, 14)` is already March
+  // of `year + 1`.
+  while (date.getTime() < today.getTime()) {
+    month += intervalMonths;
+    date = occurrenceIn(dueDay, year, month);
+  }
+  return date;
 };
 
-/** The most recent time this bill fell due, today included. */
+/**
+ * The occurrence that belongs to whichever cycle today falls inside —
+ * regardless of whether that occurrence's day-of-month has actually passed
+ * yet. For a monthly bill this is always "this month's due day", exactly as
+ * before either parameter existed: a bill due on the 25th is judged against
+ * the 25th all month, whether today is the 1st or the 26th.
+ *
+ * `intervalMonths` and `anchor` place that same idea on a longer cycle: a
+ * half-yearly bill anchored to April is "inside" the April cycle every month
+ * from April through September, not just in April itself.
+ */
 export const currentCycleStart = (
   dueDay: number,
   now: Date = new Date(),
+  intervalMonths = 1,
+  anchor: Date = now,
 ): Date => {
-  const today = startOfDay(now);
-  const thisMonth = occurrenceIn(dueDay, now.getFullYear(), now.getMonth());
-  if (thisMonth.getTime() <= today.getTime()) return thisMonth;
-  return occurrenceIn(dueDay, now.getFullYear(), now.getMonth() - 1);
+  const elapsedMonths =
+    (now.getFullYear() - anchor.getFullYear()) * 12 + (now.getMonth() - anchor.getMonth());
+  const windowIndex = Math.floor(elapsedMonths / intervalMonths);
+  return occurrenceIn(dueDay, anchor.getFullYear(), anchor.getMonth() + windowIndex * intervalMonths);
 };
 
 /** Whole days from today until the next due date; 0 means today. */
-export const daysUntilDue = (dueDay: number, now: Date = new Date()): number =>
+export const daysUntilDue = (
+  dueDay: number,
+  now: Date = new Date(),
+  intervalMonths = 1,
+  anchor: Date = now,
+): number =>
   Math.round(
-    (nextDueDate(dueDay, now).getTime() - startOfDay(now).getTime()) / DAY_MS,
+    (nextDueDate(dueDay, now, intervalMonths, anchor).getTime() - startOfDay(now).getTime()) / DAY_MS,
   );
+
+/**
+ * A bill's own cadence and anchor, pulled from the record itself. Absent
+ * `intervalMonths` means monthly; a bill with no payment history yet anchors
+ * to today, exactly as every bill behaved before either field existed.
+ */
+const cadenceOf = (bill: Bill, now: Date): { intervalMonths: number; anchor: Date } => ({
+  intervalMonths: bill.intervalMonths ?? 1,
+  anchor: bill.lastPaidAt ? new Date(bill.lastPaidAt) : now,
+});
 
 /**
  * Settled for the cycle that is currently running — not merely "paid sometime
  * this calendar month". Paying next month's rent on the 31st settles the next
- * cycle, not this one.
+ * cycle, not this one. For a half-yearly bill, the payment that last covered
+ * it settles every month in between too: it is not "due" again until the
+ * cycle actually comes back around.
  */
 export const isPaidForCycle = (bill: Bill, now: Date = new Date()): boolean => {
   if (!bill.lastPaidAt) return false;
-  return bill.lastPaidAt >= currentCycleStart(bill.dueDay, now).getTime();
+  const { intervalMonths, anchor } = cadenceOf(bill, now);
+  return bill.lastPaidAt >= currentCycleStart(bill.dueDay, now, intervalMonths, anchor).getTime();
 };
 
 export type BillStatus = 'paid' | 'overdue' | 'due-soon' | 'upcoming';
@@ -85,14 +137,17 @@ export const DUE_SOON_DAYS = 2;
 export const billStatus = (bill: Bill, now: Date = new Date()): BillStatus => {
   if (isPaidForCycle(bill, now)) return 'paid';
 
-  // Overdue is judged against *this month's* occurrence, not the current
-  // cycle. Keying it to the cycle made every unpaid bill overdue — there is
-  // always a previous cycle, so a bill due on the 12th read as overdue on the
-  // 10th, which is two days before it is due at all.
-  const thisMonth = occurrenceIn(bill.dueDay, now.getFullYear(), now.getMonth());
-  if (thisMonth.getTime() < startOfDay(now).getTime()) return 'overdue';
+  const { intervalMonths, anchor } = cadenceOf(bill, now);
 
-  return daysUntilDue(bill.dueDay, now) <= DUE_SOON_DAYS
+  // Overdue is judged against the *current cycle's* occurrence, not simply
+  // "this calendar month" — a half-yearly bill is not due every month its
+  // day-of-month matches. Keying this to a raw previous cycle made every
+  // unpaid bill overdue, since there is always one; this only fires once the
+  // bill's own cycle has actually started.
+  const cycleStart = currentCycleStart(bill.dueDay, now, intervalMonths, anchor);
+  if (cycleStart.getTime() < startOfDay(now).getTime()) return 'overdue';
+
+  return daysUntilDue(bill.dueDay, now, intervalMonths, anchor) <= DUE_SOON_DAYS
     ? 'due-soon'
     : 'upcoming';
 };
@@ -104,7 +159,14 @@ export const urgentBills = (bills: Bill[], now: Date = new Date()): Bill[] =>
       const s = billStatus(b, now);
       return s === 'overdue' || s === 'due-soon';
     })
-    .sort((a, b) => daysUntilDue(a.dueDay, now) - daysUntilDue(b.dueDay, now));
+    .sort((a, b) => {
+      const ca = cadenceOf(a, now);
+      const cb = cadenceOf(b, now);
+      return (
+        daysUntilDue(a.dueDay, now, ca.intervalMonths, ca.anchor) -
+        daysUntilDue(b.dueDay, now, cb.intervalMonths, cb.anchor)
+      );
+    });
 
 export interface DueBill {
   name: string;
@@ -124,11 +186,14 @@ export const upcomingBills = (
   withinDays = 30,
 ): DueBill[] =>
   bills
-    .map(bill => ({
-      name: bill.name,
-      amountPaise: bill.amountPaise,
-      daysAway: daysUntilDue(bill.dueDay, now),
-    }))
+    .map(bill => {
+      const { intervalMonths, anchor } = cadenceOf(bill, now);
+      return {
+        name: bill.name,
+        amountPaise: bill.amountPaise,
+        daysAway: daysUntilDue(bill.dueDay, now, intervalMonths, anchor),
+      };
+    })
     .filter(b => b.daysAway <= withinDays)
     .sort((a, b) => a.daysAway - b.daysAway);
 
@@ -172,7 +237,10 @@ export const billsSummary = (
     }
     unpaidPaise += b.amountPaise;
     if (status === 'overdue') overduePaise += b.amountPaise;
-    else if (daysUntilDue(b.dueDay, now) === 0) dueTodayPaise += b.amountPaise;
+    else {
+      const { intervalMonths, anchor } = cadenceOf(b, now);
+      if (daysUntilDue(b.dueDay, now, intervalMonths, anchor) === 0) dueTodayPaise += b.amountPaise;
+    }
   }
 
   const tone: BillsSummary['tone'] =

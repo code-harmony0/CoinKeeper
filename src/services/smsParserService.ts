@@ -3,6 +3,11 @@ import { MerchantLearningService } from './MerchantLearningService';
 import { TransactionDraftService } from './TransactionDraftService';
 import { TransactionDraft } from '../types/transactionDraft';
 import { TransactionPredictionService } from './TransactionPredictionService';
+import { mentionsMoney, parseSmsSmart } from './sms/parseSmsSmart';
+import { LlmService } from './llm/LlmService';
+import { isNeverATransaction } from './sms/parseSmsBody';
+import { SmsMissLog } from './sms/smsMissLog';
+import { resolveBank } from './sms/bankRegistry';
 
 const { SmsModule } = NativeModules;
 
@@ -13,19 +18,6 @@ export interface SmsMessage {
   body: string;
   type: string;
 }
-
-const debitRegexList = [
-  /spent (?:rs\.?|inr) ?([\d,]+\.?\d*).*? (?:at|on|to) (.*?)(?: on| via|\.|$)/i,
-  /(?:rs\.?|inr) ?([\d,]+\.?\d*) (?:debited|deducted).*?(?:to|for) (.*?)(?: on| via|\.|$)/i,
-  /debited (?:rs\.?|inr) ?([\d,]+\.?\d*).*?(?:to|for) (.*?)(?: on| via|\.|$)/i,
-  /payment of (?:rs\.?|inr) ?([\d,]+\.?\d*).*?to (.*?)(?: on| via|\.|$)/i,
-];
-
-const creditRegexList = [
-  /(?:rs\.?|inr) ?([\d,]+\.?\d*) credited.*?(?:from|by) (.*?)(?: on| via|\.|$)/i,
-  /credited (?:with )?(?:rs\.?|inr) ?([\d,]+\.?\d*).*?(?:from|by) (.*?)(?: on| via|\.|$)/i,
-  /received (?:rs\.?|inr) ?([\d,]+\.?\d*).*?(?:from|by) (.*?)(?: on| via|\.|$)/i,
-];
 
 /** Shown to the user when READ_SMS is not granted. Callers surface this verbatim. */
 export const SMS_PERMISSION_DENIED =
@@ -59,57 +51,55 @@ export const fetchRecentSms = async (limit: number = 500): Promise<SmsMessage[]>
   return await SmsModule.getSmsMessages(limit);
 };
 
-const cleanAmount = (amountStr: string) => parseFloat(amountStr.replace(/,/g, ''));
-
-export const parseSmsToDraft = async (message: SmsMessage): Promise<TransactionDraft | null> => {
-  const sms = message.body;
+export const parseSmsToDraft = async (
+  message: SmsMessage,
+  // A whole-inbox scan passes false: one model call per unrecognised message,
+  // across thousands of messages, is what made the scan look frozen.
+  { useModel = true }: { useModel?: boolean } = {},
+): Promise<TransactionDraft | null> => {
   const messageDate = new Date(Number(message.date) || Date.now()).toISOString();
-  
-  if (/otp|verification code|password|promotional/i.test(sms)) {
+
+  // Rules first; the on-device model is consulted only for formats the rules
+  // do not recognise, and only when it has been downloaded.
+  const parsed = await parseSmsSmart(message.body, useModel ? LlmService.extractSms : undefined);
+  if (!parsed) {
+    // A rejected message is a correct refusal, not a gap in coverage, and a
+    // message with no amount is chatter. Only unrecognised money messages are
+    // worth recording as evidence.
+    if (mentionsMoney(message.body) && !isNeverATransaction(message.body)) {
+      await SmsMissLog.record({
+        id: message.id,
+        body: message.body,
+        sender: message.address,
+        receivedAt: Number(message.date) || null,
+      }).catch(() => undefined);
+    }
     return null;
   }
 
-  let extractedAmount = 0;
-  let extractedMerchant = '';
-  let txType: 'debit' | 'credit' | null = null;
-  let regexConfidence = 0;
-
-  for (const regex of debitRegexList) {
-    const match = sms.match(regex);
-    if (match) {
-      extractedAmount = cleanAmount(match[1]);
-      extractedMerchant = match[2]?.trim().substring(0, 30);
-      txType = 'debit';
-      regexConfidence = 80;
-      break;
-    }
-  }
-
-  if (!txType) {
-    for (const regex of creditRegexList) {
-      const match = sms.match(regex);
-      if (match) {
-        extractedAmount = cleanAmount(match[1]);
-        extractedMerchant = match[2]?.trim().substring(0, 30);
-        txType = 'credit';
-        regexConfidence = 80;
-        break;
-      }
-    }
-  }
-
-  if (!txType) return null;
+  const bank = resolveBank(message.address);
+  const { amountPaise } = parsed;
+  // Some alerts genuinely name no counterparty — a fee, an ATM withdrawal. The
+  // bank that sent the message is still more use to the user than "Unknown".
+  const extractedMerchant = parsed.merchant || bank.name;
+  // A credit is income. Without this every salary SMS imported as an expense.
+  const txType = parsed.type === 'credit' ? 'income' : 'expense';
+  const regexConfidence = parsed.confidence;
 
   // Predict Category
   const mlPred = await MerchantLearningService.predictCategory(extractedMerchant);
   
   // Create Draft
   const draft = TransactionDraftService.createDraft('sms', {
-    amount_paise: extractedAmount * 100, // convert to paise
+    type: txType,
+    amount_paise: amountPaise,
     merchant_name: extractedMerchant,
     category_id: mlPred.categoryId || undefined,
     date: messageDate,
+    parse_route: parsed.via,
     sms_id: message.id,
+    bank_id: bank.id,
+    bank_name: bank.name,
     confidence: Math.min(regexConfidence + (mlPred.confidence * 0.2), 100),
     draft_status: 'reviewing',
   });

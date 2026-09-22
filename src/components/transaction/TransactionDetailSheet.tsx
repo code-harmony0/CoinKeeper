@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Switch } from 'react-native';
 import { TransactionEntryShell } from './TransactionEntryShell';
 import { CategoryPickerSheet, PickableCategory } from './CategoryPickerSheet';
 import { useSpecTheme } from '../../theme/specTheme';
@@ -33,6 +33,8 @@ export const TransactionDetailSheet: React.FC<Props> = ({ visible, transaction, 
   const [categoryColor, setCategoryColor] = useState<string | undefined>(undefined);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  /** Money the user expects back: lent out, or moved to an account of their own. */
+  const [awaitingReturn, setAwaitingReturn] = useState(false);
 
   useEffect(() => {
     if (!transaction) return;
@@ -43,6 +45,7 @@ export const TransactionDetailSheet: React.FC<Props> = ({ visible, transaction, 
     setCategoryIcon(transaction.categoryIcon);
     setCategoryColor(transaction.categoryColor);
     setConfirmingDelete(false);
+    setAwaitingReturn(!!transaction.awaitingReturn);
   }, [transaction]);
 
   if (!transaction) return null;
@@ -57,6 +60,7 @@ export const TransactionDetailSheet: React.FC<Props> = ({ visible, transaction, 
       categoryId,
       categoryIcon,
       categoryColor,
+      awaitingReturn,
     });
     onClose();
   };
@@ -79,6 +83,24 @@ export const TransactionDetailSheet: React.FC<Props> = ({ visible, transaction, 
             </Text>
           </View>
         )}
+
+        {/* Money lent to someone, or moved to another account of your own, is
+            neither spending nor income — it is the same money passing through. */}
+        <Pressable
+          testID="detail-awaiting-return"
+          onPress={() => setAwaitingReturn(value => !value)}
+          style={[styles.returnToggle, { backgroundColor: colors.chipBg, borderRadius: cardRadius }]}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.returnLabel, { color: colors.textPrimary }]}>
+              I'll get this back
+            </Text>
+            <Text style={[styles.returnHint, { color: colors.textSecondary }]}>
+              Lent out, or sent to your own account. Kept out of income and expenses.
+            </Text>
+          </View>
+          <Switch value={awaitingReturn} onValueChange={setAwaitingReturn} />
+        </Pressable>
 
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Amount</Text>
@@ -160,6 +182,17 @@ export const TransactionDetailSheet: React.FC<Props> = ({ visible, transaction, 
 
 const styles = StyleSheet.create({
   field: { paddingHorizontal: 20, marginBottom: 20 },
+  returnToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  returnLabel: { fontSize: 15, fontFamily: 'Satoshi-Bold', marginBottom: 2 },
+  returnHint: { fontSize: 12, fontFamily: 'Satoshi-Medium', lineHeight: 16 },
   insight: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,9 +1,13 @@
 const mockExecute = jest.fn();
 jest.mock('../../src/store/database', () => ({
-  getDb: () => ({ execute: mockExecute }),
+  getDb: () => ({
+    execute: mockExecute,
+    // op-sqlite hands the callback a transaction handle with the same execute.
+    transaction: (fn: (tx: { execute: jest.Mock }) => Promise<void>) => fn({ execute: mockExecute }),
+  }),
 }));
 
-import { useTransactionStore } from '../../src/store/transactionStore';
+import { getImportedSmsIds, useTransactionStore } from '../../src/store/transactionStore';
 
 beforeEach(() => {
   mockExecute.mockReset();
@@ -62,6 +66,75 @@ describe('transactionStore', () => {
 
     // args: [id, normalized, icon, budget_bucket] — 'Rent' should classify as 'needs'
     expect(insertedArgs[3]).toBe('needs');
+  });
+
+  describe('SMS inbox import', () => {
+    const sms = (smsId: string, amountPaise = 10000) => ({
+      amountPaise,
+      type: 'expense' as const,
+      category: 'Food',
+      categoryIcon: 'food',
+      smsId,
+    });
+
+    const okDb = () =>
+      mockExecute.mockImplementation((sql: string) =>
+        Promise.resolve(sql.startsWith('SELECT id, icon FROM categories') ? { rows: [{ id: 'food' }] } : { rows: [] }),
+      );
+
+    it('addTransactions saves every row with one ledger event, not one per row', async () => {
+      okDb();
+      const { financialEventBus } = require('../../src/services/EventBus');
+      const emit = jest.spyOn(financialEventBus, 'emit').mockImplementation(() => undefined);
+
+      const saved = await useTransactionStore.getState().addTransactions([sms('1'), sms('2'), sms('3')]);
+
+      expect(saved).toBe(3);
+      expect(emit).toHaveBeenCalledTimes(1);
+      expect(useTransactionStore.getState().transactions).toHaveLength(3);
+      emit.mockRestore();
+    });
+
+    it('records which inbox message each import came from', async () => {
+      okDb();
+      await useTransactionStore.getState().addTransactions([sms('42')]);
+
+      const insert = mockExecute.mock.calls.find(([sql]) => sql.startsWith('INSERT INTO transactions'));
+      expect(insert![1]).toContain('sms:42');
+    });
+
+    it('addTransactions stops at the first failure and reports how many were saved', async () => {
+      let inserts = 0;
+      mockExecute.mockImplementation((sql: string) => {
+        if (sql.startsWith('INSERT INTO transactions') && ++inserts === 2) return Promise.reject(new Error('disk full'));
+        return Promise.resolve({ rows: [{ id: 'food' }] });
+      });
+
+      expect(await useTransactionStore.getState().addTransactions([sms('1'), sms('2'), sms('3')])).toBe(1);
+    });
+
+    it('deleteImportedSmsTransactions removes only the SMS-imported rows', async () => {
+      // Counted before deleting: op-sqlite reports no rowsAffected for this
+      // statement, which had the app announcing "0 removed" after clearing
+      // hundreds of rows.
+      mockExecute.mockImplementation((sql: string) =>
+        Promise.resolve(
+          sql.startsWith('SELECT COUNT(*)') ? { rows: [{ total: 531 }] } : { rows: [] },
+        ),
+      );
+
+      const removed = await useTransactionStore.getState().deleteImportedSmsTransactions();
+
+      expect(removed).toBe(531);
+      const [sql] = mockExecute.mock.calls.find(([s]) => s.startsWith('DELETE FROM transactions'))!;
+      expect(sql).toContain("sms_hash LIKE 'sms:%'");
+    });
+
+    it('getImportedSmsIds returns the message ids already saved', async () => {
+      mockExecute.mockResolvedValue({ rows: [{ sms_hash: 'sms:7' }, { sms_hash: 'sms:9' }] });
+
+      expect(await getImportedSmsIds()).toEqual(new Set(['7', '9']));
+    });
   });
 
   it('deleteTransaction propagates a DB failure', async () => {

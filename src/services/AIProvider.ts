@@ -1,23 +1,17 @@
 import { FinancialContextService } from './FinancialContextService';
+import { answerFinancialQuestion, type StructuredReply } from './financialQnA';
 
 export const AIProvider = {
   /**
-   * Mocks a call to an LLM, returning a structured JSON response.
-   * In production, this would call fetch('https://api.openai.com/...').
+   * Answers a question about the user's money.
+   *
+   * Runs entirely on-device against the local ledger — nothing is sent
+   * anywhere, and every figure in the reply is read from the database rather
+   * than generated. Questions outside what the ledger can answer get an
+   * explicit "I can't answer that".
    */
-  async askQuestion(prompt: string): Promise<any> {
+  async askQuestion(question: string): Promise<{ structuredReply: StructuredReply }> {
     const context = await FinancialContextService.buildContext();
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Basic heuristic mock response based on the structured context
-    return {
-      structuredReply: {
-        title: "Financial Analysis",
-        body: `Based on your recent transactions, you have spent ₹${(context.monthlyExpensesPaise / 100).toLocaleString()} this month. Your safe-to-spend balance is ₹${(context.safeToSpendPaise / 100).toLocaleString()} after accounting for upcoming bills.`,
-        action: "View Budget"
-      }
-    };
-  }
+    return { structuredReply: answerFinancialQuestion(question, context) };
+  },
 };

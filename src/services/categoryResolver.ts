@@ -42,6 +42,7 @@ const KEYWORD_SEED: Record<string, string> = {
   indigo: 'Transport', vistara: 'Transport', redbus: 'Transport',
   petrol: 'Transport', diesel: 'Transport', fuel: 'Transport',
   metro: 'Transport', fastag: 'Transport', parking: 'Transport',
+  pump: 'Transport', iocl: 'Transport', indianoil: 'Transport', hpcl: 'Transport',
   // Shopping
   amazon: 'Shopping', flipkart: 'Shopping', myntra: 'Shopping',
   meesho: 'Shopping', ajio: 'Shopping', nykaa: 'Shopping', ikea: 'Shopping',
@@ -50,6 +51,8 @@ const KEYWORD_SEED: Record<string, string> = {
   jio: 'Bills', airtel: 'Bills', vodafone: 'Bills', bsnl: 'Bills',
   electricity: 'Bills', bescom: 'Bills', broadband: 'Bills', recharge: 'Bills',
   gas: 'Bills', water: 'Bills', rent: 'Bills', insurance: 'Bills',
+  wifi: 'Bills', fiber: 'Bills', jiofiber: 'Bills', prepaid: 'Bills',
+  postpaid: 'Bills', dth: 'Bills', tatasky: 'Bills',
   // Health
   apollo: 'Health', pharmeasy: 'Health', netmeds: 'Health', '1mg': 'Health',
   pharmacy: 'Health', hospital: 'Health', clinic: 'Health', medical: 'Health',
@@ -113,12 +116,18 @@ export const resolveCategory = (
   }
 
   // Rung 2 — a known merchant keyword, mapped back to a category the user has.
+  //
+  // The last match wins, because these names read brand-first: "Jio-bp Pump"
+  // is fuel, not a Jio phone bill, and taking the first token filed every
+  // fill-up under Bills.
+  let keywordMatch: string | null = null;
   for (const token of tokens) {
     const targetName = KEYWORD_SEED[token];
     if (!targetName) continue;
     const id = byName.get(normalize(targetName));
-    if (id) return { categoryId: id, reason: 'keyword' };
+    if (id) keywordMatch = id;
   }
+  if (keywordMatch) return { categoryId: keywordMatch, reason: 'keyword' };
 
   // Rung 3 — bounded fuzzy match, so "shoping" reaches Shopping but noise
   // reaches nothing. Requires an unambiguous single best candidate.

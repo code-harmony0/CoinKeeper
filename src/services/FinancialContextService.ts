@@ -1,5 +1,7 @@
 import { getDb } from '../store/database';
 import { FinancialIntelligenceEngine } from './FinancialIntelligenceEngine';
+import { billsSummary } from './billSchedule';
+import type { Bill } from '../store/billStore';
 
 export interface FinancialContext {
   totalBalancePaise: number;
@@ -8,62 +10,75 @@ export interface FinancialContext {
   upcomingBillsPaise: number;
   safeToSpendPaise: number;
   recentTransactions: {
-    amount: number;
+    amountPaise: number;
     merchant: string;
     category: string;
     date: string;
   }[];
 }
 
+const monthStart = (now: Date): number =>
+  new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
 export const FinancialContextService = {
   /**
-   * Aggregates current financial state for AI prompts.
+   * Aggregates current financial state — the only payload that ever describes
+   * the user's money to a summarising layer. Every figure is read from the
+   * database so it agrees with what the rest of the app shows.
    */
   async buildContext(): Promise<FinancialContext> {
     const db = getDb();
-    
-    // Hardcoded for now. In a real app, query `transactions` and `bills`.
-    // This provides the structural foundation for the LLM context payload.
-    const result = await db.execute(`
-      SELECT amount_paise, type, category_id, description, occurred_at 
-      FROM transactions 
-      ORDER BY occurred_at DESC 
-      LIMIT 10
-    `);
-    
-    const recentTx = ((result?.rows ?? []) as any[]).map(row => ({
-      amount: row.amount_paise / 100,
-      merchant: row.description,
-      category: row.category_id,
-      date: new Date(row.occurred_at).toISOString().split('T')[0],
-      type: row.type
-    }));
+    const now = new Date();
 
-    let expenses = 0;
-    let income = 0;
-    recentTx.forEach(t => {
-      if (t.type === 'expense') expenses += t.amount;
-      if (t.type === 'income') income += t.amount;
-    });
+    const [recent, totals, bills, accounts, snapshot] = await Promise.all([
+      db.execute(
+        `SELECT amount_paise, type, category_id, description, occurred_at
+         FROM transactions
+         ORDER BY occurred_at DESC
+         LIMIT 10;`,
+      ),
+      db.execute(
+        `SELECT type, SUM(amount_paise) AS total
+         FROM transactions
+         WHERE occurred_at >= ?
+         GROUP BY type;`,
+        [monthStart(now)],
+      ),
+      db.execute('SELECT * FROM bills;'),
+      db.execute('SELECT SUM(balance_paise) AS total FROM income_accounts;'),
+      FinancialIntelligenceEngine.getCurrentSnapshot(),
+    ]);
 
-    // Mock calculations for upcoming bills
-    const upcomingBills = 4500; // Mock derived from `bills` table
-    const totalBalance = 24000;
-    
-    const snapshot = await FinancialIntelligenceEngine.getCurrentSnapshot();
+    let monthlyIncomePaise = 0;
+    let monthlyExpensesPaise = 0;
+    for (const row of (totals?.rows ?? []) as any[]) {
+      if (row.type === 'income') monthlyIncomePaise = row.total ?? 0;
+      if (row.type === 'expense') monthlyExpensesPaise = row.total ?? 0;
+    }
+
+    const billRows = ((bills?.rows ?? []) as any[]).map(
+      (row): Bill => ({
+        id: row.id,
+        name: row.name,
+        amountPaise: row.amount_paise,
+        dueDay: row.due_day,
+        isRecurring: row.is_recurring === 1,
+        lastPaidAt: row.last_paid_at ?? undefined,
+      }),
+    );
 
     return {
-      totalBalancePaise: totalBalance * 100,
-      monthlyIncomePaise: income * 100,
-      monthlyExpensesPaise: expenses * 100,
-      upcomingBillsPaise: upcomingBills * 100,
+      totalBalancePaise: ((accounts?.rows ?? []) as any[])[0]?.total ?? 0,
+      monthlyIncomePaise,
+      monthlyExpensesPaise,
+      upcomingBillsPaise: billsSummary(billRows, now).unpaidPaise,
       safeToSpendPaise: snapshot.safeToSpend,
-      recentTransactions: recentTx.map(t => ({
-        amount: t.amount,
-        merchant: t.merchant,
-        category: t.category,
-        date: t.date
-      }))
+      recentTransactions: ((recent?.rows ?? []) as any[]).map(row => ({
+        amountPaise: row.amount_paise,
+        merchant: row.description,
+        category: row.category_id,
+        date: new Date(row.occurred_at).toISOString().split('T')[0],
+      })),
     };
-  }
+  },
 };
