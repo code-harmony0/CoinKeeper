@@ -52,7 +52,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/coinkeeper.git
+git clone https://github.com/code-harmony0/CoinKeeper.git
 cd coinkeeper
 
 # Install dependencies
@@ -226,7 +226,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Developer**: Your Name
 **Email**: your.email@example.com
-**Project Link**: [https://github.com/yourusername/coinkeeper](https://github.com/yourusername/coinkeeper)
+**Project Link**: [https://github.com/code-harmony0/CoinKeeper](https://github.com/code-harmony0/CoinKeeper)
 
 ---
 
