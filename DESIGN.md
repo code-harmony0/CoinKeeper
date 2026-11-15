@@ -467,9 +467,13 @@ One primary number or action per screen, shown first. Detail is revealed progres
 ### Kaza
 Kaza follows the system. Its only own piece is `PRAYER_TINT` (`theme/kazaTheme.ts`): each prayer wears the palette tint of its hour. Its hero uses `enamel`.
 
+### Home: the orbit dial (v5, user-chosen structure)
+The safe-to-spend dial owns the first screen; the rest of the money picture orbits it as four tonal squircle satellites (Bills, Goals, Income health, Insights), each showing one live value with a caption and, for Bills, an attention dot when something is overdue or due soon. Tapping one springs open a `SheetModal` holding the full detail (`BillsPeek`, `GoalsStrip`, `IncomeHealthCard`, insights/weekly story). Nothing was removed from Home, only moved one tap from the dial. Motion: satellites spring in with a stagger, then drift on separate phases (off under reduce-motion). Components: `components/home/OrbitDial.tsx`, `BillsPeek.tsx`; `components/shared/SheetModal.tsx` is the one bottom sheet (Kaza uses it too). The same pattern (one decisive number, detail one tap away) is the template for the other screens.
+
 ### Rollout order and status
 1. ✅ Foundation: tokens, limits, lint script, this section.
 2. ✅ Kaza migrated.
+2b. ✅ Home redesigned as the orbit dial (structure chosen by the user from three dealt options).
 3. 🔲 Home, Transactions, Add, Bills, Reports, Settings, Goals, Budget, then the rest. Verify each on the emulator in light, dark and 1.3× font scale.
 4. 🔲 Retire `designTokens` (21 files) and legacy `useTheme` colour use (11 files).
 5. 🔲 Turn `lint:design --strict` on in CI when the baseline reaches zero. Baseline at v5 start: 106 files, 553 violations.

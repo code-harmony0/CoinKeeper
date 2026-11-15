@@ -11,13 +11,13 @@
  * removing decisions drives action.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Text, Alert, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, Alert, Dimensions, ScrollView } from 'react-native';
 import Animated, {
   FadeInDown,
   useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Sparkles, Plus, Target } from 'lucide-react-native';
+import { Sparkles, Plus, Target, Receipt, Activity, Lightbulb } from 'lucide-react-native';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { MoneyMap } from '../../components/insights/MoneyMap';
 import { GoalsStrip } from '../../components/insights/GoalsStrip';
@@ -65,7 +65,11 @@ import { IncomeEngine } from '../../services/income/IncomeEngine';
 import { financialEventBus } from '../../services/EventBus';
 import { Money } from '../../utils/money';
 import { EXPRESSIVE, STAGGER } from '../../theme/motion';
-import { billsSummary } from '../../services/billSchedule';
+import { billsSummary, billStatus } from '../../services/billSchedule';
+import { SheetModal } from '../../components/shared/SheetModal';
+import { BillsPeek } from '../../components/home/BillsPeek';
+import type { OrbitItem } from '../../components/home/OrbitDial';
+import { NOT_ENOUGH_DATA } from '../../services/income/IncomeAnalyticsService';
 
 // Guarded require, not a static import: CHITFUND_ENABLED is inlined as a
 // literal at build time, so Metro drops this branch — and the whole
@@ -129,6 +133,10 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [snapshot, setSnapshot] = useState<MonthSnapshot | null>(null);
   const [celebrating, setCelebrating] = useState<Badge | null>(null);
   const [fundingGoalId, setFundingGoalId] = useState<string | null>(null);
+  // Which orbit satellite's detail sheet is open.
+  const [orbitSheet, setOrbitSheet] = useState<
+    'bills' | 'goals' | 'income' | 'insights' | null
+  >(null);
 
   // Same ranking (rankGoalPriority) and the same goalStore-backed goal list
   // that GoalsScreen's Focus card uses — one source of truth for "which goal
@@ -316,6 +324,57 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const fundingGoal = rankedGoals.find(r => r.goal.id === fundingGoalId);
 
+  // The four satellites around the dial: one live figure each.
+  const orbit = useMemo<OrbitItem[]>(() => {
+    const now = new Date();
+    const open = bills.filter(b => billStatus(b, now) !== 'paid');
+    const late = open.filter(b => billStatus(b, now) === 'overdue').length;
+    const soon = open.filter(b => billStatus(b, now) === 'due-soon').length;
+    const topGoal = goals[0];
+    const goalPct =
+      topGoal && topGoal.targetAmount > 0
+        ? Math.round((topGoal.currentAmount / topGoal.targetAmount) * 100)
+        : null;
+    const score = incomeHealth.score;
+    const insightCount = insights.length + pills.length;
+    return [
+      {
+        id: 'bills',
+        label: 'Bills',
+        value: bills.length === 0 ? 'Add' : open.length === 0 ? 'Paid' : `${open.length} due`,
+        icon: Receipt,
+        tint: 'peach',
+        urgent: late + soon > 0,
+        onPress: () => setOrbitSheet('bills'),
+      },
+      {
+        id: 'goals',
+        label: 'Goals',
+        value: goalPct === null ? 'Set' : `${goalPct}%`,
+        icon: Target,
+        tint: 'mint',
+        onPress: () => setOrbitSheet('goals'),
+      },
+      {
+        id: 'income',
+        label: 'Income health',
+        value: score === NOT_ENOUGH_DATA || incomeHealth.empty ? 'New' : String(score),
+        icon: Activity,
+        tint: 'lavender',
+        onPress: () => setOrbitSheet('income'),
+      },
+      {
+        id: 'insights',
+        label: 'Insights',
+        value: insightCount > 0 ? String(insightCount) : '0',
+        icon: Lightbulb,
+        tint: 'sky',
+        urgent: false,
+        onPress: () => setOrbitSheet('insights'),
+      },
+    ];
+  }, [bills, goals, incomeHealth.score, incomeHealth.empty, insights.length, pills.length]);
+
   const handleAddFunds = async (amountStr: string) => {
     if (!fundingGoalId) return;
     const paise = Money.toPaise(amountStr);
@@ -402,72 +461,8 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             status={status}
             replayToken={refreshToken}
             unpaidBillsPaise={unpaidBillsPaise}
+            orbit={orbit}
           />
-
-          <OnEnter index={0}>
-            <InsightPillRail pills={pills} onPress={openPillTarget} />
-          </OnEnter>
-
-          {goals.length > 0 ? (
-            <OnEnter index={1}>
-              <GoalsStrip
-                goals={goals}
-                onPress={() => navigation.navigate('Goals')}
-                onAddMoney={setFundingGoalId}
-              />
-            </OnEnter>
-          ) : (
-            <View style={st.empty}>
-              <View style={st.emptyIcon}>
-                <Target
-                  size={22}
-                  color={colors.textSecondary}
-                  strokeWidth={2}
-                />
-              </View>
-              <Text style={st.emptyTitle}>No goals yet</Text>
-              <Text style={st.emptyBody}>
-                Set a savings goal and CoinKeeper will track your progress and
-                flag what's drifting.
-              </Text>
-              <PressableScale
-                onPress={() => navigation.navigate('Goals')}
-                style={st.emptyCta}
-                accessibilityRole="button"
-                accessibilityLabel="Set a goal"
-              >
-                <Text style={st.emptyCtaText}>Set a goal</Text>
-              </PressableScale>
-            </View>
-          )}
-
-          <OnEnter index={2}>
-            <WeeklyStoryCard
-              story={weeklyStory}
-              onOpenReports={navigateToReports}
-            />
-          </OnEnter>
-
-          {insights.map((insight, index) => (
-            <SmartInsightCard
-              key={insight.id}
-              insight={insight}
-              delay={index * 20}
-            />
-          ))}
-
-          {/* The Income Health card owns income on this screen. An
-              `IncomeSummaryRow` used to sit directly beneath it restating the
-              same score with the same chevron to the same destination — one
-              fact, two cards, so the second was deleted. Its only unique job,
-              prompting for a first income, is covered below. */}
-          <OnEnter index={3}>
-            <IncomeHealthCard
-              health={incomeHealth}
-              contentWidth={CONTENT_W}
-              onOpenDetail={() => navigation.navigate('IncomeDetail')}
-            />
-          </OnEnter>
 
           {!hasIncome && (
             <IncomeSummaryRow
@@ -485,6 +480,92 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
           ) : null}
         </View>
       </Animated.ScrollView>
+
+      <SheetModal
+        visible={orbitSheet === 'bills'}
+        title="Bills"
+        onClose={() => setOrbitSheet(null)}
+      >
+        <BillsPeek
+          bills={bills}
+          onOpenBills={() => {
+            setOrbitSheet(null);
+            navigation.navigate('Bills');
+          }}
+        />
+      </SheetModal>
+
+      <SheetModal
+        visible={orbitSheet === 'goals'}
+        title="Goals"
+        onClose={() => setOrbitSheet(null)}
+      >
+        {goals.length > 0 ? (
+          <GoalsStrip
+            goals={goals}
+            onPress={() => {
+              setOrbitSheet(null);
+              navigation.navigate('Goals');
+            }}
+            onAddMoney={id => {
+              setOrbitSheet(null);
+              setFundingGoalId(id);
+            }}
+          />
+        ) : (
+          <PressableScale
+            onPress={() => {
+              setOrbitSheet(null);
+              navigation.navigate('Goals');
+            }}
+            style={st.emptyCta}
+            accessibilityRole="button"
+            accessibilityLabel="Set a goal"
+          >
+            <Text style={st.emptyCtaText}>Set a goal</Text>
+          </PressableScale>
+        )}
+      </SheetModal>
+
+      <SheetModal
+        visible={orbitSheet === 'income'}
+        title="Income health"
+        onClose={() => setOrbitSheet(null)}
+      >
+        <IncomeHealthCard
+          health={incomeHealth}
+          contentWidth={CONTENT_W}
+          onOpenDetail={() => {
+            setOrbitSheet(null);
+            navigation.navigate('IncomeDetail');
+          }}
+        />
+      </SheetModal>
+
+      <SheetModal
+        visible={orbitSheet === 'insights'}
+        title="Insights"
+        onClose={() => setOrbitSheet(null)}
+      >
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={st.sheetStack}>
+            <InsightPillRail pills={pills} onPress={target => {
+              setOrbitSheet(null);
+              openPillTarget(target);
+            }} />
+            <WeeklyStoryCard
+              story={weeklyStory}
+              onOpenReports={() => {
+                setOrbitSheet(null);
+                navigateToReports();
+              }}
+            />
+            {insights.map((insight, index) => (
+              <SmartInsightCard key={insight.id} insight={insight} delay={index * 20} />
+            ))}
+          </View>
+        </ScrollView>
+      </SheetModal>
 
       <IncomeTransactionFlow
         visible={isIncomeFlowVisible}
@@ -560,6 +641,7 @@ const makeStyles = (
       color: colors.textPrimary,
     },
     stack: { gap: 16, paddingBottom: 24 },
+    sheetStack: { gap: 16, paddingBottom: 8 },
 
     empty: {
       backgroundColor: colors.card,
