@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Target, Plus, AlertTriangle, CheckCircle2 } from 'lucide-react-native';
 import { Text } from '../ui/Text';
-import { useSpecTheme } from '../../theme/specTheme';
+import { enamel, useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim/PressableScale';
 import { CountUp } from '../anim/CountUp';
 import { Money } from '../../utils/money';
@@ -190,8 +190,8 @@ export const FocusGoalHeroCard: React.FC<Props> = ({
           >
             {isComplete ? (
               <View style={[styles.completeBadge, { backgroundColor: colors.success, flexDirection: 'row', alignItems: 'center' }]}>
-                <CheckCircle2 color="#FFFFFF" size={14} />
-                <Text variant="caption" style={{ color: '#FFFFFF', fontFamily: 'Satoshi-Bold', marginLeft: 6 }}>Goal Achieved</Text>
+                <CheckCircle2 color={enamel.textPrimary} size={14} />
+                <Text variant="caption" style={{ color: enamel.textPrimary, fontFamily: 'Satoshi-Bold', marginLeft: 6 }}>Goal Achieved</Text>
               </View>
             ) : (
               <>
@@ -225,8 +225,8 @@ export const FocusGoalHeroCard: React.FC<Props> = ({
                   accessibilityLabel={`Add funds to ${name}`}
                   style={[styles.addBtn, { backgroundColor: colors.primaryAccent }]}
                 >
-                  <Plus color="#FFFFFF" size={16} />
-                  <Text variant="caption" style={{ color: '#FFFFFF', fontFamily: 'Satoshi-Bold', marginLeft: 4 }}>
+                  <Plus color={colors.onAccent} size={16} />
+                  <Text variant="caption" style={{ color: colors.onAccent, fontFamily: 'Satoshi-Bold', marginLeft: 4 }}>
                     {unstarted ? 'Start' : 'Add Funds'}
                   </Text>
                 </PressableScale>

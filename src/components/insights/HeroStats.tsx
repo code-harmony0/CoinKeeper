@@ -94,9 +94,9 @@ const TONE_COLOR: Record<Tone, string> = {
 /** The gradient each tone fills its bar with. */
 const TONE_GRADIENT: Record<Tone, string[]> = {
   good: [enamel.success, enamel.successBright],
-  warn: [enamel.warning, '#FFB340'],
+  warn: [enamel.warning, enamel.warningBright],
   bad: [enamel.danger, enamel.dangerBright],
-  neutral: [enamel.textSecondary, '#AEAEB2'],
+  neutral: [enamel.textSecondary, enamel.neutralBright],
 };
 
 
@@ -349,7 +349,7 @@ const GradientFill: React.FC<{
       />
       <Animated.View style={[styles.shine, shineStyle]} pointerEvents="none">
         <LinearGradient
-          colors={['#FFFFFF00', '#FFFFFF59', '#FFFFFF00']}
+          colors={[`${enamel.textPrimary}00`, `${enamel.textPrimary}59`, `${enamel.textPrimary}00`]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={StyleSheet.absoluteFill}
@@ -607,15 +607,15 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 14,
+    borderRadius: 12,
     backgroundColor: enamel.card,
   },
   // 11px was below this design system's own caption floor (12–13px) and
   // unreadable at arm's length on a phone. Achievements the user earned should
   // not be the smallest type on the screen.
   storyText: {
-    fontSize: 13,
-    lineHeight: 17,
+    fontSize: 14,
+    lineHeight: 20,
     fontFamily: 'Satoshi-Bold',
     color: enamel.textPrimary,
   },
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
     backgroundColor: enamel.card,
   },
   kpiLabel: {
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: 1,
     fontFamily: 'Satoshi-Bold',
     color: enamel.textSecondary,
@@ -677,12 +677,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   planSpent: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Satoshi-Medium',
     color: enamel.textSecondary,
   },
   planLeftGroup: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  planLeft: { fontSize: 13, fontFamily: 'Satoshi-Bold' },
+  planLeft: { fontSize: 14, fontFamily: 'Satoshi-Bold' },
   chevronOpen: { transform: [{ rotate: '180deg' }] },
   planTrack: {
     height: 10,
@@ -739,12 +739,12 @@ const styles = StyleSheet.create({
   },
   breakdownName: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Satoshi-Medium',
     color: enamel.textPrimary,
   },
   breakdownAmount: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Satoshi-Bold',
     color: enamel.textPrimary,
   },

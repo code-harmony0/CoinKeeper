@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   panelTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Satoshi-Bold',
     color: EN.textPrimary,
   },
@@ -532,13 +532,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   emptyTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Satoshi-Bold',
     color: EN.textPrimary,
     marginTop: 4,
   },
   emptySubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Satoshi-Regular',
     color: EN.textSecondary,
     marginTop: 4,
@@ -554,14 +554,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   sparseIncomeLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Satoshi-Bold',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     color: EN.textSecondary,
   },
   sparseIncomeValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontFamily: 'Satoshi-Black',
     color: EN.textPrimary,
   },
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${EN.success}1F`,
   },
   sparseCtaText: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Satoshi-Bold',
     color: EN.success,
   },
@@ -648,18 +648,18 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   txDesc: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Satoshi-Medium',
     color: EN.textPrimary,
   },
   txDate: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Satoshi-Regular',
     color: EN.textSecondary,
     marginTop: 1,
   },
   txAmount: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Satoshi-Bold',
     color: EN.textPrimary,
   },

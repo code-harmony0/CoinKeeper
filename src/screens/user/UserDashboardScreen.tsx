@@ -537,7 +537,7 @@ const makeStyles = (
       letterSpacing: -0.3,
     },
     subGreeting: {
-      fontSize: 13,
+      fontSize: 14,
       fontFamily: 'Satoshi-Regular',
       color: colors.textSecondary,
     },
@@ -555,7 +555,7 @@ const makeStyles = (
       ...iconShadow,
     },
     actionText: {
-      fontSize: 13,
+      fontSize: 14,
       fontFamily: 'Satoshi-Bold',
       color: colors.textPrimary,
     },
@@ -571,7 +571,7 @@ const makeStyles = (
     emptyIcon: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: 24,
       backgroundColor: colors.chipBg,
       alignItems: 'center',
       justifyContent: 'center',
@@ -601,7 +601,7 @@ const makeStyles = (
     emptyCtaText: {
       fontSize: 14,
       fontFamily: 'Satoshi-Bold',
-      color: '#FFFFFF',
+      color: colors.onAccent,
     },
   });
 

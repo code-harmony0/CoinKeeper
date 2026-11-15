@@ -123,6 +123,9 @@ export const enamel = {
   warning: '#FF9500',
   danger: '#FF3B30',
   dangerBright: '#FF453A',
+  warningBright: '#FFB340',
+  neutralBright: '#AEAEB2',
+  gold: '#FFD60A',
 };
 
 // ============================================

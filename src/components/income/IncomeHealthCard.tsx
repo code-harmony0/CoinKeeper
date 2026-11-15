@@ -147,13 +147,13 @@ const makeStyles = (colors: any, cardRadius: number, chipRadius: number) =>
       justifyContent: 'center',
     },
     title: {
-      fontSize: 15,
+      fontSize: 16,
       fontFamily: 'Satoshi-Bold',
       color: colors.textPrimary,
     },
     scoreBlock: { marginBottom: 12 },
     verdict: {
-      fontSize: 13,
+      fontSize: 14,
       fontFamily: 'Satoshi-Medium',
       color: colors.textSecondary,
       marginTop: 2,
@@ -169,18 +169,18 @@ const makeStyles = (colors: any, cardRadius: number, chipRadius: number) =>
     pillar: { flex: 1, alignItems: 'center', gap: 8 },
     pillarLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     pillarLabel: {
-      fontSize: 11,
+      fontSize: 12,
       fontFamily: 'Satoshi-Medium',
       color: colors.textSecondary,
     },
     pillarScore: {
-      fontSize: 15,
+      fontSize: 16,
       fontFamily: 'Satoshi-Bold',
       color: colors.textPrimary,
     },
     trend: { marginTop: 20, gap: 6 },
     trendLabel: {
-      fontSize: 11,
+      fontSize: 12,
       letterSpacing: 0.8,
       fontFamily: 'Satoshi-Bold',
       color: colors.sectionLabel,
@@ -195,7 +195,7 @@ const makeStyles = (colors: any, cardRadius: number, chipRadius: number) =>
     },
     actionText: { flex: 1, gap: 3 },
     actionTitle: {
-      fontSize: 13,
+      fontSize: 14,
       fontFamily: 'Satoshi-Bold',
       color: colors.textPrimary,
     },

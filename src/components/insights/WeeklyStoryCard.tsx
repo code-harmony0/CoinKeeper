@@ -87,14 +87,14 @@ const makeStyles = (
     content: { flex: 1, padding: 16 },
     header: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     eyebrow: {
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: '700',
       letterSpacing: 1,
       color: colors.sectionLabel,
     },
     spacer: { flex: 1 },
     headline: {
-      fontSize: 17,
+      fontSize: 16,
       fontWeight: '700',
       color: colors.textPrimary,
       marginTop: 10,

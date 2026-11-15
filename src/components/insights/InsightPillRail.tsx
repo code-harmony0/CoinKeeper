@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   rail: { paddingHorizontal: 24, gap: 8 },
   pill: { paddingVertical: 10, paddingHorizontal: 14 },
   pillInner: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  pillText: { fontSize: 13, fontFamily: 'Satoshi-Medium' },
+  pillText: { fontSize: 14, fontFamily: 'Satoshi-Medium' },
 });
 
 export default InsightPillRail;

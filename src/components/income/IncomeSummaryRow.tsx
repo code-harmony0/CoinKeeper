@@ -116,19 +116,19 @@ const makeStyles = (colors: any, cardRadius: number) =>
     icon: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius: 16,
       backgroundColor: colors.chipBg,
       alignItems: 'center',
       justifyContent: 'center',
     },
     textCol: { flex: 1 },
     title: {
-      fontSize: 15,
+      fontSize: 16,
       fontFamily: 'Satoshi-Bold',
       color: colors.textPrimary,
     },
     supporting: {
-      fontSize: 13,
+      fontSize: 14,
       fontFamily: 'Satoshi-Regular',
       color: colors.textSecondary,
       marginTop: 2,

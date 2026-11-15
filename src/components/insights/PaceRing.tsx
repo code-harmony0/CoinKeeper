@@ -130,7 +130,7 @@ export const ringTones = (todayUsed: number) => ({
       ? enamel.dangerBright
       : todayUsed < TODAY_WARN
         ? enamel.successBright
-        : '#FFB340',
+        : enamel.warningBright,
 });
 
 /** Share of today's allowance already spent, 0..1+. */
@@ -420,7 +420,7 @@ export const PaceRing: React.FC<PaceRingProps> = ({
             <RadialGradient
               c={vec(C, C)}
               r={ARC_R}
-              colors={['#FFFFFF2E', '#FFFFFF12', '#FFFFFF00']}
+              colors={[`${enamel.textPrimary}2E`, `${enamel.textPrimary}12`, `${enamel.textPrimary}00`]}
               positions={[0, 0.55, 1]}
             />
           </Circle>
@@ -490,11 +490,11 @@ export const PaceRing: React.FC<PaceRingProps> = ({
             <SweepGradient
               c={vec(C, C)}
               colors={[
-                '#FFFFFF00',
-                '#FFFFFF00',
-                '#FFFFFF80',
-                '#FFFFFF00',
-                '#FFFFFF00',
+                `${enamel.textPrimary}00`,
+                `${enamel.textPrimary}00`,
+                `${enamel.textPrimary}80`,
+                `${enamel.textPrimary}00`,
+                `${enamel.textPrimary}00`,
               ]}
               positions={[0, 0.12, 0.2, 0.28, 1]}
             />
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   centreLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Satoshi-Medium',
     color: enamel.textSecondary,
     marginTop: 4,
@@ -564,20 +564,20 @@ const styles = StyleSheet.create({
   },
   footDot: { width: 6, height: 6, borderRadius: 3 },
   footText: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Satoshi-Bold',
     color: enamel.textSecondary,
   },
   emptyWrap: { alignItems: 'center', paddingVertical: 24, gap: 8 },
   centreEmpty: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Satoshi-Bold',
     color: enamel.textPrimary,
     textAlign: 'center',
   },
   emptyHint: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 20,
     fontFamily: 'Satoshi-Regular',
     color: enamel.textSecondary,
     textAlign: 'center',

@@ -135,7 +135,7 @@ const Ring: React.FC<{
         )}
       </Svg>
       {label && (
-        <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Black', color: labelColor }}>
+        <Text style={{ fontSize: 14, fontFamily: 'Satoshi-Black', color: labelColor }}>
           {label}
         </Text>
       )}
@@ -334,15 +334,15 @@ const makeStyles = (colors: any, cardRadius: number, chipRadius: number) =>
       minHeight: 44,
     },
     eyebrow: {
-      fontSize: 11,
+      fontSize: 12,
       fontFamily: 'Satoshi-Bold',
       color: colors.sectionLabel,
       letterSpacing: 0.8,
       textTransform: 'uppercase',
     },
     total: {
-      fontSize: 34,
-      lineHeight: 40,
+      fontSize: 28,
+      lineHeight: 38,
       fontFamily: 'Satoshi-Black',
       color: colors.textPrimary,
       letterSpacing: -0.8,
@@ -351,7 +351,7 @@ const makeStyles = (colors: any, cardRadius: number, chipRadius: number) =>
     // the hero's own subtitle, so the number looked unlabelled. 15/Bold makes
     // it the second thing you read instead of the last.
     totalCaption: {
-      fontSize: 15,
+      fontSize: 16,
       fontFamily: 'Satoshi-Bold',
       color: colors.textSecondary,
       marginTop: 4,
@@ -368,7 +368,7 @@ const makeStyles = (colors: any, cardRadius: number, chipRadius: number) =>
     rewardIcon: {
       width: 22,
       height: 22,
-      borderRadius: 11,
+      borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: `${colors.mintDeep}18`,
@@ -397,7 +397,7 @@ const makeStyles = (colors: any, cardRadius: number, chipRadius: number) =>
       gap: 14,
       marginTop: 18,
       padding: 14,
-      borderRadius: 18,
+      borderRadius: 16,
       backgroundColor: colors.surfaceSunken,
     },
     focusTitles: { flex: 1, gap: 3 },
@@ -420,7 +420,7 @@ const makeStyles = (colors: any, cardRadius: number, chipRadius: number) =>
     },
     focusCtaStart: { paddingHorizontal: 14 },
     focusCtaText: {
-      fontSize: 13,
+      fontSize: 14,
       fontFamily: 'Satoshi-Bold',
       color: colors.segmentActiveText,
     },

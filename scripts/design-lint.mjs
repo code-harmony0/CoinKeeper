@@ -25,6 +25,8 @@ const SKIP = /(__tests__|\/anim\/|\/theme\/|chitfund|\.test\.)/;
 const walk = dir => {
   let out = [];
   let entries = [];
+  // A file path is linted as-is; only directories are walked.
+  if (/\.tsx?$/.test(dir)) return statSync(dir).isFile() ? [dir] : out;
   try {
     entries = readdirSync(dir);
   } catch {
