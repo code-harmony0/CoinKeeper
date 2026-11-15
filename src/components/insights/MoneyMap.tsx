@@ -375,7 +375,7 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Add a category to build your money map"
             >
-              <Plus size={16} color={EN.success} strokeWidth={2.8} />
+              <Plus size={16} color="#111111" strokeWidth={2.4} />
               <Text style={styles.sparseCtaText}>
                 Add a category to build your map
               </Text>
@@ -567,10 +567,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   sparseIncomeLabel: {
-    fontSize: 12,
-    fontFamily: 'Satoshi-Bold',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: 'Satoshi-Medium',
     color: EN.textSecondary,
   },
   sparseIncomeValue: {
@@ -612,14 +611,15 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingLeft: 12,
     paddingRight: 16,
+    minHeight: 48,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: `${EN.success}1F`,
+    backgroundColor: '#FFC400',
   },
   sparseCtaText: {
     fontSize: 14,
     fontFamily: 'Satoshi-Bold',
-    color: EN.success,
+    color: '#111111',
   },
   detail: {
     borderTopWidth: 1,

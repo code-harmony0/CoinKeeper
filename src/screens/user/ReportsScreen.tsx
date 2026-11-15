@@ -28,11 +28,13 @@ import {
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand, onInk, useSpecTheme } from '../../theme/specTheme';
+import { Bezel } from '../../components/shared/Bezel';
+import { ProgressBar } from '../../components/shared/ProgressBar';
+import { RollingNumber } from '../../components/anim/RollingNumber';
 import { useBudgetStore } from '../../store/budgetStore';
 import { PressableScale } from '../../components/anim';
 import { ChartIllustration } from '../../components/illustrations';
-import { StatRing } from '../../components/premium';
 import { FinancialIntelligenceEngine, ReportSnapshot } from '../../services/FinancialIntelligenceEngine';
 import { Money } from '../../utils/money';
 
@@ -63,7 +65,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
 
 export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { colors, cardRadius, cardShadow, spring } = useSpecTheme();
+  const { colors, cardRadius, isDark, spring } = useSpecTheme();
   const { settings } = useBudgetStore();
   const [activeTab, setActiveTab] = useState<FilterTab>('expense');
   const [segmentWidth, setSegmentWidth] = useState(0);
@@ -171,54 +173,48 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
           </PressableScale>
         </Animated.View>
 
-        {/* Hero Stat Ring */}
-        <Animated.View
-          entering={FadeInDown.delay(60).springify()}
-          style={[styles.heroCard, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}
-        >
-          {totalExpense + totalIncome > 0 ? (
-            <StatRing
-              value={totalExpense}
-              total={totalExpense + totalIncome}
-              size={160}
-              strokeWidth={14}
-              tint="peach"
-              label="spent this month"
-              centerValue={
-                <Text style={[styles.heroValue, { color: colors.textPrimary }]}>
-                  {Money.format(totalExpense, { zeroDecimals: true })}
-                </Text>
-              }
-            />
-          ) : (
-            <Text style={[styles.heroEmpty, { color: colors.textSecondary }]}>No activity yet</Text>
-          )}
+        <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.heroWrap}>
+          <Bezel tone="ink" solid>
+            {totalExpense + totalIncome > 0 ? (
+              <>
+                <Text style={styles.heroLabel}>Spent this month</Text>
+                <RollingNumber
+                  valuePaise={totalExpense}
+                  fontSize={44}
+                  lineHeight={52}
+                  letterSpacing={-1.5}
+                  color={brand.signal}
+                />
+                {totalIncome > 0 && (
+                  <View style={styles.heroBar}>
+                    <ProgressBar ratio={totalExpense / totalIncome} tone="signal" />
+                    <Text style={styles.heroBarText}>
+                      {Math.round((totalExpense / totalIncome) * 100)}% of the money that came in
+                    </Text>
+                  </View>
+                )}
+              </>
+            ) : (
+              <Text style={styles.heroLabel}>No activity this month yet</Text>
+            )}
 
-          <View style={styles.inlineStatsRow}>
-            <View style={styles.inlineStat}>
-              <View style={[styles.inlineDot, { backgroundColor: colors.mint }]} />
-              <Text style={[styles.inlineStatLabel, { color: colors.textSecondary }]}>Income</Text>
-              <Text style={[styles.inlineStatValue, { color: colors.mintDeep }]}>
-                {Money.format(totalIncome, { zeroDecimals: true })}
-              </Text>
+            <View style={styles.inlineStatsRow}>
+              <View style={styles.inlineStat}>
+                <Text style={styles.inlineStatLabel}>Money in</Text>
+                <Text style={styles.inlineStatValue}>{Money.format(totalIncome, { zeroDecimals: true })}</Text>
+              </View>
+              <View style={styles.inlineStat}>
+                <Text style={styles.inlineStatLabel}>Money spent</Text>
+                <Text style={styles.inlineStatValue}>{Money.format(totalExpense, { zeroDecimals: true })}</Text>
+              </View>
             </View>
-            <View style={styles.inlineStat}>
-              <View style={[styles.inlineDot, { backgroundColor: colors.peach }]} />
-              <Text style={[styles.inlineStatLabel, { color: colors.textSecondary }]}>Expense</Text>
-              <Text style={[styles.inlineStatValue, { color: colors.peachDeep }]}>
-                {Money.format(totalExpense, { zeroDecimals: true })}
+
+            {activeTab === 'budget' && totalIncome > 0 && (
+              <Text style={styles.heroBarText}>
+                At this rate you'll save {Money.format(Math.max(0, totalIncome - totalExpense * 1.2), { zeroDecimals: true })} by month end.
               </Text>
-            </View>
-          </View>
-          
-          {/* Projection text */}
-          {activeTab === 'budget' && totalIncome > 0 && (
-            <View style={[styles.projectionWrap, { backgroundColor: colors.chipBg }]}>
-              <Text style={[styles.projectionText, { color: colors.textSecondary }]}>
-                At this rate, you'll save <Text style={{ color: colors.mintDeep, fontFamily: 'Satoshi-Bold' }}>{Money.format(Math.max(0, totalIncome - totalExpense * 1.2), { zeroDecimals: true })}</Text> by month end
-              </Text>
-            </View>
-          )}
+            )}
+          </Bezel>
         </Animated.View>
 
         {/* Category Breakdown Header */}
@@ -275,17 +271,17 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
           ) : budgetStats ? (
             <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.budgetContainer}>
               {/* Needs */}
-              <View style={[styles.categoryCard, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}>
+              <View style={[styles.categoryCard, { borderBottomColor: colors.border }]}>
                 <View style={styles.categoryRow}>
-                  <View style={[styles.categoryIcon, { backgroundColor: colors.incomeTint }]}>
-                    <HeartPulse size={20} color={colors.mintDeep} strokeWidth={2} />
+                  <View style={[styles.categoryIcon, { backgroundColor: isDark ? colors.chipBg : '#111111' }]}>
+                    <HeartPulse size={20} color="#FFFFFF" strokeWidth={1.7} />
                   </View>
                   <View style={styles.categoryInfo}>
                     <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
                       Needs ({budgetStats.needs.percent}%)
                     </Text>
                     <View style={[styles.progressBar, { backgroundColor: colors.chipBg }]}>
-                      <View style={[styles.progressFill, { width: `${Math.min((budgetStats.needs.spent / budgetStats.needs.target) * 100, 100)}%`, backgroundColor: budgetStats.needs.spent > budgetStats.needs.target ? colors.danger : colors.mintDeep }]} />
+                      <View style={[styles.progressFill, { width: `${Math.min((budgetStats.needs.spent / budgetStats.needs.target) * 100, 100)}%`, backgroundColor: budgetStats.needs.spent > budgetStats.needs.target ? colors.danger : colors.textPrimary }]} />
                     </View>
                   </View>
                   <View style={styles.categoryAmountContainer}>
@@ -300,17 +296,17 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
               </View>
 
               {/* Wants */}
-              <View style={[styles.categoryCard, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}>
+              <View style={[styles.categoryCard, { borderBottomColor: colors.border }]}>
                 <View style={styles.categoryRow}>
-                  <View style={[styles.categoryIcon, { backgroundColor: colors.expenseTint }]}>
-                    <ShoppingBag size={20} color={colors.peachDeep} strokeWidth={2} />
+                  <View style={[styles.categoryIcon, { backgroundColor: isDark ? colors.chipBg : '#111111' }]}>
+                    <ShoppingBag size={20} color="#FFFFFF" strokeWidth={1.7} />
                   </View>
                   <View style={styles.categoryInfo}>
                     <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
                       Wants ({budgetStats.wants.percent}%)
                     </Text>
                     <View style={[styles.progressBar, { backgroundColor: colors.chipBg }]}>
-                      <View style={[styles.progressFill, { width: `${Math.min((budgetStats.wants.spent / budgetStats.wants.target) * 100, 100)}%`, backgroundColor: budgetStats.wants.spent > budgetStats.wants.target ? colors.danger : colors.peachDeep }]} />
+                      <View style={[styles.progressFill, { width: `${Math.min((budgetStats.wants.spent / budgetStats.wants.target) * 100, 100)}%`, backgroundColor: budgetStats.wants.spent > budgetStats.wants.target ? colors.danger : colors.textPrimary }]} />
                     </View>
                   </View>
                   <View style={styles.categoryAmountContainer}>
@@ -325,10 +321,10 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
               </View>
 
               {/* Savings */}
-              <View style={[styles.categoryCard, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}>
+              <View style={[styles.categoryCard, { borderBottomColor: colors.border }]}>
                 <View style={styles.categoryRow}>
-                  <View style={[styles.categoryIcon, { backgroundColor: colors.chipBg }]}>
-                    <TrendingUp size={20} color={colors.textPrimary} strokeWidth={2} />
+                  <View style={[styles.categoryIcon, { backgroundColor: isDark ? colors.chipBg : '#111111' }]}>
+                    <TrendingUp size={20} color="#FFFFFF" strokeWidth={1.7} />
                   </View>
                   <View style={styles.categoryInfo}>
                     <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -369,7 +365,7 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
               }
 
               let trendText = 'On Track';
-              let trendColor = colors.mintDeep;
+              let trendColor = colors.textSecondary;
               if (transfer.goalDeadline) {
                 const now = new Date();
                 const deadline = new Date(transfer.goalDeadline);
@@ -378,10 +374,10 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
                   const requiredPerMonth = remainingAmount / monthsLeft;
                   if (transfer.amountPaise < requiredPerMonth) {
                     trendText = 'Behind';
-                    trendColor = colors.peachDeep;
+                    trendColor = colors.textPrimary;
                   } else if (transfer.amountPaise > requiredPerMonth * 1.1) {
                     trendText = 'Ahead';
-                    trendColor = colors.skyDeep;
+                    trendColor = colors.textPrimary;
                   }
                 } else if (remainingAmount > 0) {
                   trendText = 'Behind (Past Due)';
@@ -393,11 +389,11 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
                 <Animated.View
                   key={transfer.id}
                   entering={FadeInDown.delay(180 + index * 20).springify()}
-                  style={[styles.categoryCard, { backgroundColor: colors.card, borderRadius: cardRadius, paddingBottom: 20 }, cardShadow]}
+                  style={[styles.categoryCard, { borderBottomColor: colors.border, paddingBottom: 20 }]}
                 >
                   <View style={styles.categoryRow}>
-                    <View style={[styles.categoryIcon, { backgroundColor: colors.chipBg }]}>
-                      <TrendingUp size={20} color={colors.textPrimary} strokeWidth={2} />
+                    <View style={[styles.categoryIcon, { backgroundColor: isDark ? colors.chipBg : '#111111' }]}>
+                      <TrendingUp size={20} color="#FFFFFF" strokeWidth={1.7} />
                     </View>
                     <View style={styles.categoryInfo}>
                       <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -458,7 +454,7 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
           activeCategories.map((cat, index) => {
             const percentage = totalForTab > 0 ? (cat.amountPaise / totalForTab) * 100 : 0;
             const Icon = CATEGORY_ICONS[cat.categoryName.toLowerCase()] || MoreHorizontal;
-            const accentColor = activeTab === 'income' ? colors.success : colors.danger;
+            const accentColor = colors.textPrimary;
 
             return (
               <Animated.View
@@ -470,11 +466,11 @@ export const ReportsScreen: React.FC<Props> = ({ navigation }) => {
                   accessibilityRole="button"
                   accessibilityLabel={`See ${cat.categoryName} transactions`}
                   onPress={() => openCategory(cat.categoryName)}
-                  style={[styles.categoryCard, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}
+                  style={[styles.categoryCard, { borderBottomColor: colors.border }]}
                 >
                 <View style={styles.categoryRow}>
-                  <View style={[styles.categoryIcon, { backgroundColor: colors.chipBg }]}>
-                    <Icon size={20} color={colors.textPrimary} strokeWidth={2} />
+                  <View style={[styles.categoryIcon, { backgroundColor: isDark ? colors.chipBg : '#111111' }]}>
+                    <Icon size={20} color="#FFFFFF" strokeWidth={1.7} />
                   </View>
                   <View style={styles.categoryInfo}>
                     <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -526,14 +522,14 @@ const styles = StyleSheet.create({
 
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-  title: { fontSize: 26, fontFamily: 'Satoshi-Black' },
+  title: { fontSize: 28, lineHeight: 36, fontFamily: 'Satoshi-Black' },
 
   // Month Selector
   monthSelector: {
@@ -544,9 +540,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   monthBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -556,11 +552,10 @@ const styles = StyleSheet.create({
   },
 
   // Hero
-  heroCard: {
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 32,
-  },
+  heroWrap: { marginBottom: 32 },
+  heroLabel: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid },
+  heroBar: { marginTop: 16, gap: 8 },
+  heroBarText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid, marginTop: 8 },
   heroValue: {
     fontSize: 32,
     fontFamily: 'Satoshi-Black',
@@ -578,29 +573,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Satoshi-Medium',
   },
-  inlineStatsRow: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginTop: 24 },
-  inlineStat: {
+  inlineStatsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    gap: 24,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: onInk.hairline,
   },
+  inlineStat: { flex: 1, gap: 2 },
   inlineDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
   },
-  inlineStatLabel: {
-    fontSize: 13,
-    fontFamily: 'Satoshi-Regular',
-  },
-  inlineStatValue: {
-    fontSize: 13,
-    fontFamily: 'Satoshi-Bold',
-  },
+  inlineStatLabel: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid },
+  inlineStatValue: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Bold', color: onInk.high },
 
   // Section Header
   sectionHeader: { marginBottom: 14 },
-  sectionTitle: { fontSize: 17, fontFamily: 'Satoshi-Bold' },
+  sectionTitle: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Bold' },
 
   // Segmented control
   segmentWrapper: { marginBottom: 16 },
@@ -627,30 +619,29 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Bold',
   },
   
-  budgetContainer: {
-    gap: 12,
-  },
+  budgetContainer: {},
 
   // Category Card
   categoryCard: {
-    padding: 16,
-    marginBottom: 12,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   categoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   categoryIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   categoryInfo: { flex: 1 },
   categoryName: {
-    fontSize: 15,
+    fontSize: 16,
+    lineHeight: 24,
     fontFamily: 'Satoshi-Bold',
     marginBottom: 6,
   },
@@ -668,12 +659,14 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   categoryAmount: {
-    fontSize: 15,
+    fontSize: 16,
+    lineHeight: 24,
     fontFamily: 'Satoshi-Bold',
   },
   categoryPercentage: {
     fontSize: 12,
-    fontFamily: 'Satoshi-Regular',
+    lineHeight: 16,
+    fontFamily: 'Satoshi-Medium',
     marginTop: 2,
   },
 

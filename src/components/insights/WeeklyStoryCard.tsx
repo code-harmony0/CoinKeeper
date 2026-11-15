@@ -17,7 +17,7 @@ import { CalendarDays, ChevronRight } from 'lucide-react-native';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
 import type { WeeklyStory } from '../../services/weeklyStory';
-import type { Tone } from '../../services/homeNarrative';
+import { IconTile } from '../shared/IconTile';
 
 interface Props {
   story: WeeklyStory | null;
@@ -25,87 +25,35 @@ interface Props {
 }
 
 export const WeeklyStoryCard: React.FC<Props> = ({ story, onOpenReports }) => {
-  const { colors, cardRadius, cardShadow } = useSpecTheme();
-
+  const { colors } = useSpecTheme();
   if (!story) return null;
 
-  const TONE_COLOR: Record<Tone, string> = {
-    good: colors.success,
-    warn: colors.warning,
-    bad: colors.danger,
-    neutral: colors.textSecondary,
-  };
-  const accent = TONE_COLOR[story.tone];
-  const st = makeStyles(colors, cardRadius);
+  // Two lines at most: what happened, and what stood out. Joined so a short
+  // story leaves no gap where a third line would have been.
+  const body = [story.comparison, story.observation].filter(Boolean).join(' ');
 
-  // The lines the ledger could actually support — see buildWeeklyStory, which
-  // drops rather than pads. Joined into one paragraph so a two-line story
-  // doesn't leave a gap where a third line would have been.
-  const body = [story.comparison, story.observation]
-    .filter(Boolean)
-    .join(' ');
-
-  // No entrance animation of its own — the dashboard's `OnEnter` wrapper owns
-  // the stagger for this band, and two `entering` props on nested views fight
-  // each other.
   return (
     <PressableScale
       onPress={onOpenReports}
-      style={[st.card, cardShadow]}
+      style={styles.row}
       accessibilityRole="button"
       accessibilityLabel={`Your week. ${story.headline} ${body} Opens reports.`}
     >
-      <View style={[st.rule, { backgroundColor: accent }]} />
-      <View style={st.content}>
-        <View style={st.header}>
-          <CalendarDays size={14} color={colors.sectionLabel} strokeWidth={2.5} />
-          <Text style={st.eyebrow}>YOUR WEEK</Text>
-          <View style={st.spacer} />
-          <ChevronRight size={18} color={colors.textSecondary} />
-        </View>
-        <Text style={st.headline}>{story.headline}</Text>
-        {body.length > 0 && <Text style={st.body}>{body}</Text>}
+      <IconTile icon={CalendarDays} />
+      <View style={styles.text}>
+        <Text style={[styles.headline, { color: colors.textPrimary }]}>{story.headline}</Text>
+        {body.length > 0 && <Text style={[styles.body, { color: colors.textSecondary }]}>{body}</Text>}
       </View>
+      <ChevronRight size={20} color={colors.textSecondary} strokeWidth={1.8} />
     </PressableScale>
   );
 };
 
-const makeStyles = (
-  colors: ReturnType<typeof useSpecTheme>['colors'],
-  cardRadius: number,
-) =>
-  StyleSheet.create({
-    card: {
-      flexDirection: 'row',
-      backgroundColor: colors.card,
-      borderRadius: cardRadius,
-      overflow: 'hidden',
-    },
-    // A rule rather than a tinted card: tone is worth encoding, but not worth
-    // a full coloured surface competing with the hero above it.
-    rule: { width: 4 },
-    content: { flex: 1, padding: 16 },
-    header: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    eyebrow: {
-      fontSize: 12,
-      fontWeight: '700',
-      letterSpacing: 1,
-      color: colors.sectionLabel,
-    },
-    spacer: { flex: 1 },
-    headline: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.textPrimary,
-      marginTop: 10,
-      lineHeight: 23,
-    },
-    body: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      lineHeight: 20,
-      marginTop: 4,
-    },
-  });
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 80, paddingVertical: 8 },
+  text: { flex: 1, gap: 2 },
+  headline: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Bold' },
+  body: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
+});
 
 export default WeeklyStoryCard;
