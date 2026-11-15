@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
-import { Plus } from 'lucide-react-native';
+import { Check, Plus } from 'lucide-react-native';
 import { useSpecTheme } from '../../theme/specTheme';
 import {
   DURATION,
@@ -39,7 +39,7 @@ interface Props {
 }
 
 const SIZE = 72;
-const STROKE = 7;
+const STROKE = 8;
 const R = (SIZE - STROKE) / 2;
 const C = 2 * Math.PI * R;
 
@@ -106,7 +106,11 @@ export const GoalRings: React.FC<Props> = ({ goals, onAddMoney, onNewGoal }) => 
               style={styles.item}
             >
               <Ring ratio={ratio} index={i} track={`${colors.textSecondary}33`} ink={colors.textPrimary}>
-                <Text style={[styles.pct, { color: colors.textPrimary }]}>{Math.round(ratio * 100)}%</Text>
+                {left === 0 ? (
+                  <Check size={24} color={colors.textPrimary} strokeWidth={2.6} />
+                ) : (
+                  <Text style={[styles.pct, { color: colors.textPrimary }]}>{Math.round(ratio * 100)}%</Text>
+                )}
               </Ring>
               <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={2} maxFontSizeMultiplier={1.15}>
                 {g.name}

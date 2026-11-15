@@ -13,6 +13,7 @@ import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { brand } from '../../theme/specTheme';
 import {
   DURATION,
+  EXPRESSIVE,
   INFORMATIONAL,
   informationalDuration,
   useReducedMotion,
@@ -21,6 +22,8 @@ import { Money } from '../../utils/money';
 import type { Transaction } from '../../types/transaction';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const DRAW_DELAY = 250;
 
 interface Props {
   /** This month's expenses. */
@@ -54,6 +57,9 @@ export const PaceChart: React.FC<Props> = ({
 }) => {
   const reduced = useReducedMotion();
   const draw = useSharedValue(0);
+  // Arrival beats after the line finishes: the dot pops, a ring ripples out once, the tag fades in.
+  const pop = useSharedValue(0);
+  const ripple = useSharedValue(0);
   const [scrub, setScrub] = useState<number | null>(null);
   const [hinted, setHinted] = useState(false);
   const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -105,16 +111,24 @@ export const PaceChart: React.FC<Props> = ({
   }, [expenses, planPaise, width, height]);
 
   useEffect(() => {
+    const dur = informationalDuration(DURATION.fill * 2, reduced);
+    const ease = Easing.bezier(0.32, 0.72, 0, 1);
     draw.value = 0;
+    pop.value = 0;
+    ripple.value = 0;
     draw.value = withDelay(
-      250,
-      withTiming(1, {
-        duration: informationalDuration(DURATION.fill * 2, reduced),
-        easing: Easing.bezier(0.32, 0.72, 0, 1),
-        reduceMotion: INFORMATIONAL,
-      }),
+      DRAW_DELAY,
+      withTiming(1, { duration: dur, easing: ease, reduceMotion: INFORMATIONAL }),
     );
-  }, [replayToken, reduced, draw, geo.line]);
+    pop.value = withDelay(
+      DRAW_DELAY + dur * 0.85,
+      withTiming(1, { duration: 360, easing: ease, reduceMotion: INFORMATIONAL }),
+    );
+    ripple.value = withDelay(
+      DRAW_DELAY + dur * 0.95,
+      withTiming(1, { duration: 900, easing: ease, reduceMotion: EXPRESSIVE }),
+    );
+  }, [replayToken, reduced, draw, pop, ripple, geo.line]);
 
   // Dragging sideways scrubs the month. Vertical drags still scroll the page:
   // the chart only claims a touch once it is clearly horizontal.
@@ -160,6 +174,9 @@ export const PaceChart: React.FC<Props> = ({
   );
 
   const ahead = geo.diff >= 0;
+  const weekTicks = [8, 15, 22, 29]
+    .filter(d => d <= geo.days)
+    .map(d => PAD_X + ((d - 1) / Math.max(geo.days - 1, 1)) * geo.innerW);
   const tone = brand.signal;
   const faint = 'rgba(255,255,255,0.5)';
 
@@ -167,6 +184,16 @@ export const PaceChart: React.FC<Props> = ({
     strokeDashoffset: geo.length * (1 - draw.value),
   }));
   const fadeStyle = useAnimatedStyle(() => ({ opacity: draw.value }));
+  const tagStyle = useAnimatedStyle(() => ({
+    opacity: pop.value,
+    transform: [{ translateY: (1 - pop.value) * 6 }],
+  }));
+  const dotProps = useAnimatedProps(() => ({ r: 5 * pop.value }));
+  const haloProps = useAnimatedProps(() => ({ r: 9 * pop.value }));
+  const rippleProps = useAnimatedProps(() => ({
+    r: 9 + 16 * ripple.value,
+    strokeOpacity: ripple.value > 0 ? 0.5 * (1 - ripple.value) : 0,
+  }));
 
   const scrubbing = scrub !== null;
   const dot = scrubbing ? geo.pts[scrub! - 1] : geo.end;
@@ -202,6 +229,25 @@ export const PaceChart: React.FC<Props> = ({
         </Svg>
       </Animated.View>
       <Svg width={width} height={height} style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Line
+          x1={PAD_X}
+          x2={width - PAD_X}
+          y1={height - PAD_BOTTOM}
+          y2={height - PAD_BOTTOM}
+          stroke="rgba(255,255,255,0.16)"
+          strokeWidth={1}
+        />
+        {weekTicks.map(t => (
+          <Line
+            key={t}
+            x1={t}
+            x2={t}
+            y1={height - PAD_BOTTOM - 6}
+            y2={height - PAD_BOTTOM}
+            stroke="rgba(255,255,255,0.28)"
+            strokeWidth={1}
+          />
+        ))}
         {geo.ideal && (
           <Path
             d={geo.ideal}
@@ -239,11 +285,14 @@ export const PaceChart: React.FC<Props> = ({
               strokeWidth={1}
             />
           )}
-          <Circle cx={dot[0]} cy={dot[1]} r={9} fill={tone} fillOpacity={0.18} />
-          <Circle cx={dot[0]} cy={dot[1]} r={5} fill={brand.ink} stroke={tone} strokeWidth={3} />
+          {!scrubbing && (
+            <AnimatedCircle cx={dot[0]} cy={dot[1]} fill="none" stroke={tone} strokeWidth={2} animatedProps={rippleProps} />
+          )}
+          <AnimatedCircle cx={dot[0]} cy={dot[1]} fill={tone} fillOpacity={0.18} animatedProps={haloProps} />
+          <AnimatedCircle cx={dot[0]} cy={dot[1]} fill={brand.ink} stroke={tone} strokeWidth={3} animatedProps={dotProps} />
         </Svg>
         {tag && (
-          <View style={[styles.tagBox, { left: tagLeft, top: tagTop, width: BOX }]}>
+          <Animated.View style={[styles.tagBox, { left: tagLeft, top: tagTop, width: BOX }, tagStyle]}>
             <View
               style={[
                 styles.tag,
@@ -260,7 +309,7 @@ export const PaceChart: React.FC<Props> = ({
                 {tag}
               </Text>
             </View>
-          </View>
+          </Animated.View>
         )}
       </Animated.View>
     </View>

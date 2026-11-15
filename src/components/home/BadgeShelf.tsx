@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
   ZoomIn,
 } from 'react-native-reanimated';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand, useSpecTheme } from '../../theme/specTheme';
 import {
   DURATION,
   EXPRESSIVE,
@@ -23,6 +23,7 @@ import { Medal } from './Medal';
 import { Bezel } from '../shared/Bezel';
 
 const SIZE = 60;
+const KNOB = 16;
 const EASE = Easing.bezier(0.32, 0.72, 0, 1);
 
 export interface ShelfBadge {
@@ -54,21 +55,32 @@ const Shine: React.FC<{ delay: number }> = ({ delay }) => {
 const Fill: React.FC<{ ratio: number }> = ({ ratio }) => {
   const { colors } = useSpecTheme();
   const reduced = useReducedMotion();
+  const [trackW, setTrackW] = useState(0);
   const w = useSharedValue(0);
   useEffect(() => {
     w.value = withDelay(
       500,
-      withTiming(Math.min(Math.max(ratio, 0.04), 1) * 100, {
+      withTiming(Math.min(Math.max(ratio, 0.04), 1), {
         duration: informationalDuration(DURATION.fill * 2, reduced),
         easing: EASE,
         reduceMotion: INFORMATIONAL,
       }),
     );
   }, [ratio, reduced, w]);
-  const style = useAnimatedStyle(() => ({ width: `${w.value}%` }));
+  // Transform-driven: the fill slides in from the left instead of animating width.
+  const fillStyle = useAnimatedStyle(() => ({ transform: [{ translateX: (w.value - 1) * trackW }] }));
+  const knobStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: Math.max(w.value * trackW - KNOB - 2, 0) }],
+  }));
   return (
-    <View style={[styles.track, { backgroundColor: colors.border }]}>
-      <Animated.View style={[styles.fill, { backgroundColor: colors.textPrimary }, style]} />
+    <View style={styles.barWrap} onLayout={e => setTrackW(e.nativeEvent.layout.width)}>
+      <View style={[styles.track, { backgroundColor: colors.border }]}>
+        <Animated.View style={[styles.fill, { backgroundColor: colors.textPrimary }, fillStyle]} />
+        {[0.25, 0.5, 0.75].map(t => (
+          <View key={t} style={[styles.tick, { left: `${t * 100}%`, backgroundColor: colors.background }]} />
+        ))}
+      </View>
+      <Animated.View style={[styles.knob, knobStyle]} />
     </View>
   );
 };
@@ -137,7 +149,19 @@ const styles = StyleSheet.create({
   nextHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   nextTitle: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Bold' },
   nextPct: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold' },
+  barWrap: { height: KNOB, justifyContent: 'center' },
   track: { height: 8, borderRadius: 4, overflow: 'hidden' },
-  fill: { height: 8, borderRadius: 4 },
+  fill: { height: 8, width: '100%', borderRadius: 4 },
+  tick: { position: 'absolute', top: 0, width: 2, height: 8, opacity: 0.7 },
+  knob: {
+    position: 'absolute',
+    left: 0,
+    width: KNOB,
+    height: KNOB,
+    borderRadius: KNOB / 2,
+    backgroundColor: brand.signal,
+    borderWidth: 3,
+    borderColor: brand.ink,
+  },
   hint: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
 });
