@@ -11,7 +11,8 @@
  * removing decisions drives action.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Text, Alert, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, Alert, Dimensions, StatusBar } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import Animated, {
   FadeInDown,
   useAnimatedScrollHandler,
@@ -26,7 +27,7 @@ import { useTransactionsContext as useTransactions } from '../../context/Transac
 import { useSecureScreen } from '../../hooks/useSecureScreen';
 import { useMonthLedger } from '../../hooks/useMonthLedger';
 import { useIncomeHealth } from '../../hooks/useIncomeHealth';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand, useSpecTheme } from '../../theme/specTheme';
 import {
   PressableScale,
   BlueRefreshControl,
@@ -66,7 +67,7 @@ import { EXPRESSIVE, STAGGER } from '../../theme/motion';
 import { billsSummary } from '../../services/billSchedule';
 import { HeroPace } from '../../components/home/HeroPace';
 import { HomeSection } from '../../components/home/HomeSection';
-import { UpcomingRail } from '../../components/home/UpcomingRail';
+import { UpcomingList } from '../../components/home/UpcomingList';
 import { GoalRings } from '../../components/home/GoalRings';
 
 // Guarded require, not a static import: CHITFUND_ENABLED is inlined as a
@@ -119,6 +120,7 @@ type MonthSnapshot = {
 export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   useSecureScreen();
   const insets = useSafeAreaInsets();
+  const focused = useIsFocused();
   const { colors, cardRadius, cardShadow, chipRadius, iconShadow } =
     useSpecTheme();
   const { transactions, refreshTransactions } = useTransactions();
@@ -350,6 +352,13 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   return (
     <View style={st.root}>
+      {/* The hero band is black, so the status bar reads light while Home is
+          showing, over a solid black strip that content scrolls beneath. */}
+      {focused && <StatusBar barStyle="light-content" />}
+      <View
+        pointerEvents="none"
+        style={[st.statusStrip, { height: insets.top }]}
+      />
       <Animated.ScrollView
         style={st.scroll}
         contentContainerStyle={[
@@ -363,6 +372,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
       >
+        <View style={[st.stage, { marginTop: -(insets.top + 16), paddingTop: insets.top + 16 }]}>
         <Animated.View entering={FadeInDown.springify()} style={st.topRow}>
           <Text style={st.greeting}>{greeting()}</Text>
           <View style={st.actions}>
@@ -372,7 +382,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
               accessibilityRole="button"
               accessibilityLabel="Add income"
             >
-              <Plus size={20} color={colors.textPrimary} strokeWidth={2.4} />
+              <Plus size={20} color="#FFFFFF" strokeWidth={2.4} />
             </PressableScale>
             <PressableScale
               onPress={() => navigation.navigate('AskAi')}
@@ -380,12 +390,11 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
               accessibilityRole="button"
               accessibilityLabel="Ask AI about your money"
             >
-              <Sparkles size={20} color={colors.textPrimary} strokeWidth={2.4} />
+              <Sparkles size={20} color="#FFFFFF" strokeWidth={2.4} />
             </PressableScale>
           </View>
         </Animated.View>
 
-        <View style={st.stack}>
           <HeroPace
             ledger={ledger}
             safeTodayPaise={monthPlan?.safeToSpendToday ?? 0}
@@ -398,7 +407,9 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             status={status}
             replayToken={refreshToken}
           />
+        </View>
 
+        <View style={st.stack}>
           <OnEnter index={0}>
             <HomeSection title="This month" onPress={navigateToReports}>
               <View style={st.inOut}>
@@ -426,7 +437,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
           <OnEnter index={1}>
             <HomeSection title="Upcoming" onPress={() => navigation.navigate('Bills')}>
-              <UpcomingRail bills={bills} onPress={() => navigation.navigate('Bills')} />
+              <UpcomingList bills={bills} onPress={() => navigation.navigate('Bills')} />
             </HomeSection>
           </OnEnter>
 
@@ -539,7 +550,7 @@ const makeStyles = (
       fontSize: 28,
       lineHeight: 36,
       fontFamily: 'Satoshi-Black',
-      color: colors.textPrimary,
+      color: '#FFFFFF',
       letterSpacing: -0.4,
     },
     actions: { flexDirection: 'row', gap: 8 },
@@ -547,9 +558,7 @@ const makeStyles = (
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
+      backgroundColor: 'rgba(255,255,255,0.14)',
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -569,6 +578,25 @@ const makeStyles = (
       color: colors.textPrimary,
     },
     insightStack: { gap: 16, paddingBottom: 8 },
+    // The black top band runs edge to edge under the status bar: it holds only
+    // the greeting and the answer, then the light page takes over.
+    statusStrip: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 10,
+      backgroundColor: brand.ink,
+    },
+    stage: {
+      backgroundColor: brand.ink,
+      marginHorizontal: -24,
+      paddingHorizontal: 24,
+      paddingBottom: 24,
+      borderBottomLeftRadius: 32,
+      borderBottomRightRadius: 32,
+      marginBottom: 24,
+    },
     stack: { gap: 24, paddingBottom: 24 },
     sheetStack: { gap: 16, paddingBottom: 8 },
 

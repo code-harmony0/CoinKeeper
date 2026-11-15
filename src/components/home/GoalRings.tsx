@@ -89,20 +89,11 @@ const Ring: React.FC<{ ratio: number; index: number; track: string; ink: string;
 /** Goals as a row of progress rings with the amount left under each. */
 export const GoalRings: React.FC<Props> = ({ goals, onAddMoney, onNewGoal }) => {
   const { colors } = useSpecTheme();
-  const tints = [
-    ['mint', 'mintDeep'],
-    ['lavender', 'lavenderDeep'],
-    ['peach', 'peachDeep'],
-    ['pink', 'pinkDeep'],
-    ['sky', 'skyDeep'],
-  ] as const;
-
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row} style={styles.scroll}>
       {goals.slice(0, 6).map((g, i) => {
         const ratio = g.targetAmount > 0 ? g.currentAmount / g.targetAmount : 0;
-        const [fill, ink] = tints[i % tints.length];
-        const left = Math.max(g.targetAmount - g.currentAmount, 0);
+                const left = Math.max(g.targetAmount - g.currentAmount, 0);
         return (
           <Animated.View
             key={g.id}
@@ -114,7 +105,7 @@ export const GoalRings: React.FC<Props> = ({ goals, onAddMoney, onNewGoal }) => 
               accessibilityLabel={`${g.name}, ${Math.round(ratio * 100)} percent saved, ${Money.format(left, { zeroDecimals: true })} left. Add money`}
               style={styles.item}
             >
-              <Ring ratio={ratio} index={i} track={colors[fill]} ink={colors[ink]}>
+              <Ring ratio={ratio} index={i} track={colors.border} ink={colors.textPrimary}>
                 <Text style={[styles.pct, { color: colors.textPrimary }]}>{Math.round(ratio * 100)}%</Text>
               </Ring>
               <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>

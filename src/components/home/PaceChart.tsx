@@ -9,7 +9,7 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand } from '../../theme/specTheme';
 import {
   DURATION,
   INFORMATIONAL,
@@ -49,7 +49,6 @@ export const PaceChart: React.FC<Props> = ({
   height = 152,
   replayToken = 0,
 }) => {
-  const { colors } = useSpecTheme();
   const reduced = useReducedMotion();
   const draw = useSharedValue(0);
 
@@ -104,10 +103,10 @@ export const PaceChart: React.FC<Props> = ({
   }, [replayToken, reduced, draw, geo.line]);
 
   const ahead = geo.diff >= 0;
-  // Deep tones, not the bright status greens: the line must hold 3:1 on the canvas.
-  const tone = geo.hasPlan ? (ahead ? colors.mintDeep : colors.danger) : colors.textPrimary;
-  const tagBg = ahead ? colors.mint : colors.peach;
-  const tagInk = ahead ? colors.mintDeep : colors.peachDeep;
+  // On the black hero: the line is the one signal colour. Behind pace is shown
+  // by form (an outlined tag), not by a second colour.
+  const tone = brand.signal;
+  const faint = 'rgba(255,255,255,0.5)';
 
   const lineProps = useAnimatedProps(() => ({
     strokeDashoffset: geo.length * (1 - draw.value),
@@ -142,8 +141,8 @@ export const PaceChart: React.FC<Props> = ({
         {geo.ideal && (
           <Path
             d={geo.ideal}
-            stroke={colors.textSecondary}
-            strokeOpacity={0.55}
+            stroke={faint}
+            strokeOpacity={1}
             strokeWidth={1.5}
             strokeDasharray="4 5"
             fill="none"
@@ -163,12 +162,19 @@ export const PaceChart: React.FC<Props> = ({
       <Animated.View style={[StyleSheet.absoluteFill, fadeStyle]} pointerEvents="none">
         <Svg width={width} height={height}>
           <Circle cx={geo.end[0]} cy={geo.end[1]} r={9} fill={tone} fillOpacity={0.18} />
-          <Circle cx={geo.end[0]} cy={geo.end[1]} r={5} fill={colors.card} stroke={tone} strokeWidth={3} />
+          <Circle cx={geo.end[0]} cy={geo.end[1]} r={5} fill={brand.ink} stroke={tone} strokeWidth={3} />
         </Svg>
         {tag && (
           <View style={[styles.tagBox, { left: tagLeft, top: tagTop, width: BOX }]} pointerEvents="none">
-            <View style={[styles.tag, { backgroundColor: tagBg }]}>
-              <Text style={[styles.tagText, { color: tagInk }]}>{tag}</Text>
+            <View
+              style={[
+                styles.tag,
+                ahead
+                  ? { backgroundColor: brand.signal }
+                  : { borderColor: brand.signal, borderWidth: 2 },
+              ]}
+            >
+              <Text style={[styles.tagText, { color: ahead ? brand.ink : brand.signal }]}>{tag}</Text>
             </View>
           </View>
         )}

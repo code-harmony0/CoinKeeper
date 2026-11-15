@@ -10,7 +10,7 @@ import {
   Info,
   Trophy,
 } from 'lucide-react-native';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand } from '../../theme/specTheme';
 import { EXPRESSIVE } from '../../theme/motion';
 import { CountUp } from '../anim';
 import { Money } from '../../utils/money';
@@ -20,6 +20,8 @@ import type { HomeStatus, Tone } from '../../services/homeNarrative';
 import type { Badge } from '../../services/badges';
 import type { AgeOfMoney } from '../../services/ageOfMoney';
 
+const WHITE = '#FFFFFF';
+const MUTED = 'rgba(255,255,255,0.72)';
 const SCREEN_W = Dimensions.get('window').width;
 
 interface Props {
@@ -56,15 +58,7 @@ export const HeroPace: React.FC<Props> = ({
   status,
   replayToken,
 }) => {
-  const { colors } = useSpecTheme();
   const StatusIcon = toneIcon(status.tone);
-  const statusInk =
-    status.tone === 'good'
-      ? colors.mintDeep
-      : status.tone === 'neutral'
-      ? colors.textSecondary
-      : colors.peachDeep;
-
   // Straight-line projection of the month's spend plus what bills still owe.
   const now = new Date();
   const day = now.getDate();
@@ -79,27 +73,27 @@ export const HeroPace: React.FC<Props> = ({
 
   return (
     <View>
-      <Text style={[styles.label, { color: colors.textSecondary }]}>Safe to spend today</Text>
+      <Text style={[styles.label, { color: MUTED }]}>Safe to spend today</Text>
       <CountUp
         value={safeTodayPaise}
         isPaise
         prefix="₹"
         duration={900}
-        style={[styles.number, { color: colors.textPrimary }]}
+        style={styles.number}
       />
 
       <View style={styles.delta}>
-        <ArrowDownRight size={16} color={colors.textSecondary} strokeWidth={2.4} style={styles.deltaIcon} />
-        <Text style={[styles.deltaText, { color: colors.textSecondary }]}>
+        <ArrowDownRight size={16} color={MUTED} strokeWidth={2.4} style={styles.deltaIcon} />
+        <Text style={[styles.deltaText, { color: MUTED }]}>
           {Money.format(ledger.todaySpendPaise, { zeroDecimals: true })} spent today
           {'  ·  '}
           {Money.format(Math.max(monthlyRemainingPaise, 0), { zeroDecimals: true })} left this month
         </Text>
       </View>
 
-      <View style={[styles.status, { backgroundColor: status.tone === 'good' ? colors.mint : status.tone === 'neutral' ? colors.chipBg : colors.peach }]}>
-        <StatusIcon size={16} color={statusInk} strokeWidth={2.4} />
-        <Text style={[styles.statusText, { color: statusInk === colors.textSecondary ? colors.textPrimary : statusInk }]} numberOfLines={2}>
+      <View style={[styles.status, status.tone === 'good' || status.tone === 'neutral' ? styles.statusCalm : styles.statusAlert]}>
+        <StatusIcon size={16} color={brand.signal} strokeWidth={2.4} />
+        <Text style={[styles.statusText, { color: WHITE }]} numberOfLines={2}>
           {status.headline}
         </Text>
       </View>
@@ -110,10 +104,10 @@ export const HeroPace: React.FC<Props> = ({
             <Animated.View
               key={c.key}
               entering={FadeInDown.springify().damping(18).delay(500 + i * 80).reduceMotion(EXPRESSIVE)}
-              style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }]}
+              style={styles.chip}
             >
-              <c.Icon size={14} color={colors.textSecondary} strokeWidth={2.4} />
-              <Text style={[styles.chipText, { color: colors.textPrimary }]} numberOfLines={1}>
+              <c.Icon size={14} color={MUTED} strokeWidth={2.4} />
+              <Text style={[styles.chipText, { color: WHITE }]} numberOfLines={1}>
                 {c.text}
               </Text>
             </Animated.View>
@@ -131,7 +125,7 @@ export const HeroPace: React.FC<Props> = ({
       </View>
 
       {planPaise > 0 && gap !== 0 && (
-        <Text style={[styles.forecast, { color: colors.textSecondary }]}>
+        <Text style={[styles.forecast, { color: MUTED }]}>
           {gap > 0
             ? `On pace to finish ${Money.format(Math.round(gap), { zeroDecimals: true })} under plan.`
             : `On pace to run ${Money.format(Math.round(-gap), { zeroDecimals: true })} over plan.`}
@@ -143,7 +137,7 @@ export const HeroPace: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   label: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
-  number: { fontSize: 44, lineHeight: 52, fontFamily: 'Satoshi-Black', letterSpacing: -1 },
+  number: { fontSize: 64, lineHeight: 68, fontFamily: 'Satoshi-Black', letterSpacing: -2, color: brand.signal },
   delta: { flexDirection: 'row', alignItems: 'flex-start', gap: 4, marginTop: 4 },
   deltaIcon: { marginTop: 2 },
   deltaText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', flexShrink: 1 },
@@ -157,6 +151,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginTop: 16,
   },
+  statusCalm: { backgroundColor: 'rgba(255,255,255,0.12)' },
+  statusAlert: { borderWidth: 2, borderColor: brand.signal },
   statusText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', flexShrink: 1 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   chip: {
@@ -164,7 +160,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     borderRadius: 999,
-    borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     paddingHorizontal: 12,
     minHeight: 32,
   },

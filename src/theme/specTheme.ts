@@ -135,8 +135,12 @@ export const enamel = {
 // reports anything off-scale.
 export const radii = { sm: 8, md: 12, lg: 16, xl: 24, full: 999 } as const;
 
+/** The one strong colour: used on black only (hero number, chart line) and as a fill with black text. */
+export const brand = { signal: '#FFC400', ink: '#111111' } as const;
+
 /** The only text sizes the lite app uses: [fontSize, lineHeight]. */
 export const typeScale = {
+  monument: { fontSize: 64, lineHeight: 68 },
   display: { fontSize: 44, lineHeight: 52 },
   headline: { fontSize: 28, lineHeight: 36 },
   title: { fontSize: 20, lineHeight: 28 },

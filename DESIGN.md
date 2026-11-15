@@ -467,12 +467,12 @@ One primary number or action per screen, shown first. Detail is revealed progres
 ### Kaza
 Kaza follows the system. Its only own piece is `PRAYER_TINT` (`theme/kazaTheme.ts`): each prayer wears the palette tint of its hour. Its hero uses `enamel`.
 
-### Home: flat feed with a pace hero (v5, researched)
-Replaces the orbit dial, which a review scored 18/40 (one dark slab of ~14 elements, unlabeled satellites). Researched references (Lazyweb real screens): Copilot's dashboard (one "left of budget" sentence plus a pace line, flat labelled sections with "View all ›", ring row, upcoming chips) and Mercury's home (hero number, trend area, hairline sections, delta arrows).
+### Home: yellow and black (v5, user-approved)
+Replaces the grey/pastel feed and the orbit dial, both rejected. Lesson from real apps (Wise, Robinhood, Credit Karma): commit to one strong colour, one huge number, and keep the rest quiet. Brand tokens: `brand.signal` `#FFC400` (used only on black: the hero number, the chart line, tags, and as a fill with black text) and `brand.ink` `#111111`. Type scale gains `monument` 64.
 
-Structure: greeting with two 48dp icon buttons; **hero** = "Safe to spend today" + the number (counts up) + one delta line + a status pill + chips (streak, age of money, badge) + the **pace chart** (month spend vs straight-line pace, tag at today says "₹X under/over pace" in words, line draws in); then flat `HomeSection`s divided by hairlines, each heading a link: This month (money in / spent), Upcoming (bill chips, overdue first, swipeable), Goals (progress rings, tap adds money), Income health, Insights, Where it went (the money map, dark enamel card), Chits (pro). Components in `components/home/`: `HeroPace`, `PaceChart`, `HomeSection`, `UpcomingRail`, `GoalRings`.
+Top: a full-bleed black band (with a solid black status strip, light status bar) holds only the greeting, "Safe to spend today", the number in yellow, one line, one status pill (yellow outline when something needs attention) and the pace chart with a tag in words ("₹X under pace"; outlined instead of filled when over). Below, on the light canvas, flat `HomeSection`s: This month, Upcoming (bills as a plain list with a black icon square; OVERDUE and TODAY are yellow labels, so urgency is a word), Goals (ink progress rings), Income health, Insights, Where it went, Chits. Components: `HeroPace`, `PaceChart`, `HomeSection`, `UpcomingList`, `GoalRings`.
 
-Rules this set: no panel holds more than one job; the one dark surface on Home is the map card; verdicts use words plus an icon, never colour alone; chart lines use the deep tonal inks to hold 3:1 on the canvas; motion is restrained (spring entrances staggered 50-80ms, rings and the pace line draw in, number counts up) and respects reduce-motion.
+Rules: yellow never sits on white; no pastel rainbow on Home; urgency by label and form, not colour alone.
 
 ### Rollout order and status
 1. ✅ Foundation: tokens, limits, lint script, this section.
