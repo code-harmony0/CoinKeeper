@@ -36,7 +36,7 @@ const isInMonth = (dateStr: string, monthsAgo: number): boolean => {
 export const GoalsScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { colors, cardRadius, cardShadow } = useSpecTheme();
+  const { colors } = useSpecTheme();
   const styles = React.useMemo(() => makeStyles(colors), [colors]);
 
   const { addGoal, getEmergencyFundTarget, updateGoalProgress, deleteGoal } = useGoalStore();
@@ -139,8 +139,6 @@ export const GoalsScreen = () => {
   const contributedLastMonthPaise = allGoalTransfers.filter(t => isInMonth(t.date, 1)).reduce((sum, t) => sum + t.amountPaise, 0);
 
   // Fixed accent rotation order (lavender → pink → mint → peach → sky) — see DESIGN.md §2.
-  const goalTints = [colors.lavender, colors.pink, colors.mint, colors.peach, colors.sky];
-  const goalDeeps = [colors.lavenderDeep, colors.pinkDeep, colors.mintDeep, colors.peachDeep, colors.skyDeep];
 
   return (
     <KeyboardAvoidingView 
@@ -150,7 +148,7 @@ export const GoalsScreen = () => {
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <PressableScale
           onPress={() => navigation.goBack()}
-          style={styles.backBtn}
+          style={[styles.backBtn, { backgroundColor: colors.chipBg }]}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
@@ -159,7 +157,7 @@ export const GoalsScreen = () => {
         <Text variant="h2" style={{ color: colors.textPrimary }}>Goals</Text>
         <PressableScale
           onPress={() => setShowAdd(true)}
-          style={styles.backBtn}
+          style={[styles.backBtn, { backgroundColor: colors.chipBg }]}
           accessibilityRole="button"
           accessibilityLabel="Add a goal"
         >
@@ -209,8 +207,6 @@ export const GoalsScreen = () => {
                     targetAmount={rankedGoals[0].goal.targetAmount}
                     health={rankedGoals[0].health}
                     priorityRank={rankedGoals[0].priorityRank}
-                    tint={goalTints[0]}
-                    deep={goalDeeps[0]}
                     onPress={() => setSelectedGoal({ id: rankedGoals[0].goal.id, name: rankedGoals[0].goal.name })}
                     onAddFunds={() => setSelectedGoal({ id: rankedGoals[0].goal.id, name: rankedGoals[0].goal.name })}
                     // Long-press to delete worked on every card except the top
@@ -223,7 +219,7 @@ export const GoalsScreen = () => {
 
               {rankedGoals.length > 1 && (
                 <>
-                  <Text variant="caption" style={[styles.eyebrow, { marginBottom: 16 }]}>Other Active Goals</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} accessibilityRole="header">Other goals</Text>
                   {rankedGoals.slice(1).map((ranked, index) => (
                     <Animated.View
                       key={ranked.goal.id}
@@ -233,11 +229,11 @@ export const GoalsScreen = () => {
                         .reduceMotion(EXPRESSIVE)}
                     >
                     <SecondaryGoalCard
+                      last={index === rankedGoals.length - 2}
                       name={ranked.goal.name}
                       currentAmount={ranked.goal.currentAmount}
                       targetAmount={ranked.goal.targetAmount}
                       health={ranked.health}
-                      themeColor={goalDeeps[(index + 1) % goalDeeps.length]}
                       onPress={() => setSelectedGoal({ id: ranked.goal.id, name: ranked.goal.name })}
                       onLongPress={() => handleDelete(ranked.goal.id)}
                     />
@@ -252,7 +248,7 @@ export const GoalsScreen = () => {
                   entering={FadeIn.delay(sequenceDelay(1100, reduced)).duration(DURATION.entrance).reduceMotion(EXPRESSIVE)}
                 >
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <Text variant="caption" style={styles.eyebrow}>Recent Activity</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 0 }]} accessibilityRole="header">Recent activity</Text>
                     <PressableScale
                       onPress={() => (navigation as any).navigate('Transactions')}
                       accessibilityRole="button"
@@ -260,16 +256,16 @@ export const GoalsScreen = () => {
                       // Was a ~34pt row; 44pt is the floor for a touch target.
                       style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 }}
                     >
-                      <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.skyDeep }}>View All</Text>
+                      <Text style={{ fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.textPrimary }}>See all</Text>
                     </PressableScale>
                   </View>
-                  <View style={[styles.activityCard, cardShadow, { backgroundColor: colors.card, borderRadius: cardRadius }]}>
+                  <View style={styles.activityCard}>
                     {goalTransfers.map((tx, index) => (
                       <View
                         key={tx.id}
                         style={[
                           styles.activityRow,
-                          index < goalTransfers.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+                          index < goalTransfers.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
                         ]}
                       >
                         <View>
@@ -278,7 +274,7 @@ export const GoalsScreen = () => {
                             {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </Text>
                         </View>
-                        <Text style={{ fontSize: 15, fontFamily: 'Satoshi-Black', color: colors.skyDeep }}>
+                        <Text style={{ fontSize: 15, fontFamily: 'Satoshi-Black', color: colors.textPrimary }}>
                           +{Money.format(tx.amountPaise, { zeroDecimals: true })}
                         </Text>
                       </View>
@@ -330,9 +326,9 @@ const makeStyles = (colors: any) =>
     backBtn: {
       width: 48,
       height: 48,
+      borderRadius: 24,
       alignItems: 'center',
       justifyContent: 'center',
-      marginHorizontal: -4,
     },
     scrollContent: {
       paddingBottom: 40,
@@ -349,6 +345,7 @@ const makeStyles = (colors: any) =>
       justifyContent: 'center',
       marginBottom: 16,
     },
+    sectionTitle: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Bold', marginBottom: 4 },
     eyebrow: {
       // textSecondary lands at ~4.0:1 on the light-blue canvas and fails AA.
       // specTheme ships sectionLabel (~6.6:1) for exactly this — the eyebrows
@@ -359,14 +356,11 @@ const makeStyles = (colors: any) =>
       letterSpacing: 0.8,
       textTransform: 'uppercase',
     },
-    activityCard: {
-      overflow: 'hidden',
-    },
+    activityCard: {},
     activityRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingVertical: 16,
-      paddingHorizontal: 16,
     },
   });
