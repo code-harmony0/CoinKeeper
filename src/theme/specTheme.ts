@@ -147,8 +147,8 @@ export const brand = {
 /** Text and fills on the black hero, so no component hard-codes its own alpha. */
 export const onInk = {
   high: '#FFFFFF',
-  mid: 'rgba(255,255,255,0.72)',
-  low: 'rgba(255,255,255,0.55)',
+  mid: 'rgba(255,255,255,0.80)',
+  low: 'rgba(255,255,255,0.66)',
   fill: 'rgba(255,255,255,0.12)',
   hairline: 'rgba(255,255,255,0.10)',
 } as const;

@@ -36,7 +36,7 @@ interface Props {
 const PAD_X = 24;
 const PAD_TOP = 32;
 const PAD_BOTTOM = 8;
-const BOX = 240;
+const BOX = 280;
 const HOLD_MS = 1800;
 
 /**
@@ -49,7 +49,7 @@ export const PaceChart: React.FC<Props> = ({
   expenses,
   planPaise,
   width,
-  height = 128,
+  height = 116,
   replayToken = 0,
 }) => {
   const reduced = useReducedMotion();
@@ -178,7 +178,7 @@ export const PaceChart: React.FC<Props> = ({
         ahead ? 'less spent than planned' : 'more spent than planned'
       }`
     : null;
-  const tagTop = Math.max(4, dot[1] - 40);
+  const tagTop = Math.max(2, dot[1] - 42);
   const tagLeft = Math.min(Math.max(dot[0] - BOX / 2, 0), width - BOX);
 
   return (
@@ -253,6 +253,8 @@ export const PaceChart: React.FC<Props> = ({
               ]}
             >
               <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={1.1}
                 style={[styles.tagText, { color: ahead || scrubbing ? brand.ink : brand.signal }]}
               >
                 {tag}
@@ -277,10 +279,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontFamily: 'Satoshi-Medium',
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(255,255,255,0.7)',
     flexShrink: 0,
   },
-  hint: { color: 'rgba(255,255,255,0.4)' },
+  hint: { color: 'rgba(255,255,255,0.58)' },
   tagBox: { position: 'absolute', alignItems: 'center' },
   tag: {
     minHeight: 24,

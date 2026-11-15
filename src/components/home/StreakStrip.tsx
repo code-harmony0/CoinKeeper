@@ -73,11 +73,6 @@ export const StreakStrip: React.FC<Props> = ({ streakDays, days, next, compact }
               {next ? `Next: ${next.label}` : 'Stay under your daily limit'}
             </Text>
           </View>
-          <View style={styles.mini}>
-            {days.map((d, i) => (
-              <Chip key={i} state={d.state} small />
-            ))}
-          </View>
         </View>
       </Bezel>
     );
@@ -90,7 +85,7 @@ export const StreakStrip: React.FC<Props> = ({ streakDays, days, next, compact }
         <View style={styles.topText}>
           <Text style={styles.title}>{lit ? 'day streak' : 'Light your streak'}</Text>
           <Text style={styles.sub}>
-            {next ? `${next.hint} unlocks ${next.label}` : 'Every day under your limit keeps it alive'}
+            {'Stay under your daily limit to keep it going'}
           </Text>
         </View>
       </View>

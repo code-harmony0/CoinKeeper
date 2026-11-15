@@ -73,7 +73,7 @@ export const IncomeSummaryRow: React.FC<IncomeSummaryRowProps> = ({
 
   // Only state the halves that are actually known.
   const parts: string[] = [];
-  if (score !== null) parts.push(`${score} out of 100`);
+  if (score !== null) parts.push(`${score} out of 100 · how steady your income is`);
   if (nextDate) parts.push(`next ${nextDate}`);
 
   // A score alone means little: give it a word, and flag weak in yellow.
@@ -100,7 +100,7 @@ export const IncomeSummaryRow: React.FC<IncomeSummaryRowProps> = ({
             <Text style={[st.tagText, status !== 'LOW' && { color: colors.textPrimary }]}>{status}</Text>
           </View>
         )}
-        <Text style={st.supporting} numberOfLines={1}>
+        <Text style={st.supporting} numberOfLines={2}>
           {supporting}
         </Text>
       </View>
@@ -128,13 +128,13 @@ const makeStyles = (colors: any, _cardRadius: number) =>
     textCol: { flex: 1, gap: 2 },
     tag: {
       alignSelf: 'flex-start',
-      backgroundColor: brand.alert,
+      backgroundColor: brand.ink,
       borderRadius: 8,
       paddingHorizontal: 8,
       paddingVertical: 2,
     },
     tagQuiet: { backgroundColor: colors.chipBg },
-    tagText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Black', color: brand.ink, letterSpacing: 0.5 },
+    tagText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Black', color: '#FFFFFF', letterSpacing: 0.5 },
     supporting: {
       fontSize: 14,
       lineHeight: 20,

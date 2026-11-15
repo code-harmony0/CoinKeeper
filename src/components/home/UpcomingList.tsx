@@ -112,11 +112,11 @@ export const UpcomingList: React.FC<Props> = ({ bills, onPress }) => {
                       styles.tag,
                       label === 'OVERDUE'
                         ? { backgroundColor: brand.alert }
-                        : { backgroundColor: isDark ? colors.chipBg : brand.ink },
+                        : { borderWidth: 2, borderColor: brand.alert, paddingVertical: 0 },
                     ]}
                   >
                     {label === 'TODAY' && <LiveDot />}
-                    <Text style={[styles.tagText, label === 'TODAY' && { color: '#FFFFFF' }]}>{label}</Text>
+                    <Text style={[styles.tagText, label === 'TODAY' && { color: colors.textPrimary }]}>{label}</Text>
                   </View>
                 ) : (
                   <Text style={[styles.when, { color: colors.textSecondary }]}>{when(b.daysAway)}</Text>

@@ -113,7 +113,7 @@ export const BadgeShelf: React.FC<Props> = ({ badges, next }) => {
           <View style={styles.next}>
             <View style={styles.nextHead}>
               <Text style={[styles.nextTitle, { color: colors.textPrimary }]}>Next: {next.label}</Text>
-              <Text style={[styles.nextPct, { color: colors.textSecondary }]}>{Math.round(next.ratio * 100)}%</Text>
+              <Text style={[styles.nextPct, { color: colors.textSecondary }]}>{Math.round(next.ratio * 100)}% there</Text>
             </View>
             <Fill ratio={next.ratio} />
             <Text style={[styles.hint, { color: colors.textSecondary }]}>{next.hint}</Text>

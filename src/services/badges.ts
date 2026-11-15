@@ -229,7 +229,7 @@ export const nextBadgeProgress = (
       hint = `${formatPaise(Math.max(STARTER_SAVER_PAISE - ctx.goalSavedPaise, 0))} more saved towards your goals`;
     } else if (badge.id === 'halfway-there') {
       ratio = ctx.bestGoalProgress / HALFWAY_RATIO;
-      hint = 'Get one goal to the halfway mark';
+      hint = 'Reach the halfway mark on any one goal';
     }
     if (!best || ratio > best.ratio) best = { label: badge.label, ratio: Math.min(ratio, 1), hint };
   }

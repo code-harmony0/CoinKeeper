@@ -1,6 +1,6 @@
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import { AlertTriangle, ArrowDownRight, CheckCircle2, Info } from 'lucide-react-native';
+import { AlertTriangle, CheckCircle2, ChevronRight, Info } from 'lucide-react-native';
 import { brand, onInk } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
 import { RollingNumber } from '../anim/RollingNumber';
@@ -108,10 +108,9 @@ export const HeroPace: React.FC<Props> = ({
       />
 
       <View style={styles.math}>
-        <ArrowDownRight size={16} color={onInk.mid} strokeWidth={1.9} style={styles.mathIcon} />
         <Text style={styles.mathText}>
           {monthlyRemainingPaise > 0
-            ? `${Money.format(monthlyRemainingPaise, { zeroDecimals: true })} left this month ÷ ${daysLeft} ${
+            ? `${Money.format(monthlyRemainingPaise, { zeroDecimals: true })} left ÷ ${daysLeft} ${
                 daysLeft === 1 ? 'day' : 'days'
               }`
             : 'No budget left this month'}
@@ -129,6 +128,7 @@ export const HeroPace: React.FC<Props> = ({
         >
           <AlertTriangle size={16} color={brand.alert} strokeWidth={1.9} />
           <Text style={styles.pillText}>{alertText(alert)}</Text>
+          <ChevronRight size={16} color={onInk.mid} strokeWidth={1.9} />
         </PressableScale>
       ) : (
         <View style={[styles.pill, styles.pillCalm]}>
@@ -189,12 +189,12 @@ const styles = StyleSheet.create({
   pillAlert: { borderWidth: 2, borderColor: brand.alert },
   pillCalm: { backgroundColor: onInk.fill },
   pillText: { flexShrink: 1, fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', color: onInk.high },
-  legend: { flexDirection: 'row', gap: 16, marginTop: 16 },
+  legend: { flexDirection: 'row', gap: 16, marginTop: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendLine: { width: 16, height: 3, borderRadius: 2, backgroundColor: brand.signal },
   legendDash: { width: 16, height: 0, borderTopWidth: 1.5, borderColor: onInk.low, borderStyle: 'dashed' },
   legendText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Medium', color: onInk.mid },
-  chart: { marginHorizontal: -24, marginTop: 4, marginBottom: 20 },
+  chart: { marginHorizontal: -24, marginTop: 8, marginBottom: 32 },
   outlook: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid, marginTop: 4 },
   firstRun: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Bold', color: onInk.high, marginTop: 8, maxWidth: 320 },
   firstRunButton: {

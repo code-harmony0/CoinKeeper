@@ -434,7 +434,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         style={st.scroll}
         contentContainerStyle={[
           st.content,
-          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 144 },
+          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 112 },
         ]}
         refreshControl={
           <BlueRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -493,7 +493,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             </HomeSection>
           </OnEnter>
           <OnEnter index={2}>
-            <HomeSection title={`Rewards · ${shelf.count} of ${shelf.badges.length} badges`}>
+            <HomeSection title="Rewards">
               <View style={st.rewards}>
                 <StreakStrip
                   streakDays={streakDays}
@@ -698,6 +698,9 @@ const makeStyles = (
       backgroundColor: brand.ink,
       borderBottomLeftRadius: 20,
       borderBottomRightRadius: 20,
+      borderBottomWidth: 1,
+      borderColor: 'rgba(255,255,255,0.14)',
+      elevation: 6,
     },
     pulseInner: {
       flex: 1,

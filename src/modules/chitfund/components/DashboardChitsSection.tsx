@@ -54,7 +54,8 @@ const DashboardChitsSection: React.FC<Props> = ({ navigation, refreshToken = 0 }
       ))}
       {extra > 0 && (
         <PressableScale onPress={navigateToGroups} style={styles.more} accessibilityRole="button">
-          <Text style={styles.moreText}>+{extra} more</Text>
+          <Text style={styles.moreText}>See all {groups.length} chits</Text>
+          <ChevronRight size={18} color="#6B7280" strokeWidth={1.8} />
         </PressableScale>
       )}
     </HomeSection>
@@ -116,8 +117,8 @@ const styles = StyleSheet.create({
   sub: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
   track: { height: 4, borderRadius: 2, overflow: 'hidden', marginTop: 4 },
   fill: { height: 4, borderRadius: 2 },
-  more: { minHeight: 48, justifyContent: 'center' },
-  moreText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', color: '#6B7280' },
+  more: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  moreText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', color: '#4B5563' },
 });
 
 export default DashboardChitsSection;

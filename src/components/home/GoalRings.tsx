@@ -105,13 +105,13 @@ export const GoalRings: React.FC<Props> = ({ goals, onAddMoney, onNewGoal }) => 
               accessibilityLabel={`${g.name}, ${Math.round(ratio * 100)} percent saved, ${Money.format(left, { zeroDecimals: true })} left. Add money`}
               style={styles.item}
             >
-              <Ring ratio={ratio} index={i} track={colors.border} ink={colors.textPrimary}>
+              <Ring ratio={ratio} index={i} track={`${colors.textSecondary}33`} ink={colors.textPrimary}>
                 <Text style={[styles.pct, { color: colors.textPrimary }]}>{Math.round(ratio * 100)}%</Text>
               </Ring>
-              <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={2}>
+              <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={2} maxFontSizeMultiplier={1.15}>
                 {g.name}
               </Text>
-              <Text style={[styles.left, { color: colors.textSecondary }]} numberOfLines={1}>
+              <Text style={[styles.left, { color: colors.textSecondary }]} numberOfLines={1} maxFontSizeMultiplier={1.15}>
                 {left === 0 ? 'Done' : `${Money.format(left, { zeroDecimals: true })} left`}
               </Text>
             </PressableScale>
@@ -131,10 +131,10 @@ export const GoalRings: React.FC<Props> = ({ goals, onAddMoney, onNewGoal }) => 
 const styles = StyleSheet.create({
   scroll: { marginHorizontal: -24 },
   row: { paddingHorizontal: 24, gap: 16, paddingBottom: 8 },
-  item: { width: 88, alignItems: 'center', minHeight: 48 },
+  item: { width: 100, alignItems: 'center', minHeight: 48 },
   ring: { width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' },
   add: { borderRadius: SIZE / 2, borderWidth: 1.5, borderStyle: 'dashed' },
   pct: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Black' },
-  name: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', marginTop: 8, minHeight: 40, maxWidth: 88, textAlign: 'center' },
-  left: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Medium', maxWidth: 88 },
+  name: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', marginTop: 8, minHeight: 40, maxWidth: 100, textAlign: 'center' },
+  left: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Medium', maxWidth: 100 },
 });

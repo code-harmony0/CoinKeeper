@@ -25,7 +25,7 @@ const ICONS: Record<TabDef['icon'], LucideIcon> = {
 };
 
 const BAR_HEIGHT = 64;
-const FAB = 56;
+const FAB = 52;
 const HIDE_AFTER = 80;
 
 interface Props extends BottomTabBarProps {
@@ -125,7 +125,7 @@ export const AppTabBar: React.FC<Props> = ({ state, navigation, tabs, fabIndex }
       <Animated.View
         style={[
           styles.fabWrap,
-          { bottom: BAR_HEIGHT + insets.bottom + 16 },
+          { bottom: BAR_HEIGHT + insets.bottom + 12 },
           fabSlide,
         ]}
         pointerEvents="box-none"
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   label: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Medium' },
   labelActive: { fontFamily: 'Satoshi-Bold' },
-  fabWrap: { position: 'absolute', right: 20, zIndex: 20 },
+  fabWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 20 },
   fab: {
     width: FAB,
     height: FAB,

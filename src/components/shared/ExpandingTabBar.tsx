@@ -1,18 +1,26 @@
 /**
- * ExpandingTabBar — iOS 26 Liquid Glass Edition
+ * ExpandingTabBar — the one tab bar for both admin and user sides (DESIGN.md §7).
  *
  * A floating pill tab bar that morphs between two states:
  *   EXPANDED  — full width, labels visible, sliding indicator pill
  *   MINIMIZED — compact pill, icons only, slides down slightly
  *
  * The transition is driven by scroll position (scrollY from TabBarScrollContext)
- * and animated with spring physics for that organic "liquid" feel.
+ * and animated with spring physics for an organic feel.
  *
- * Surface: solid themed fill (liquid glass removed).
+ * Surface: solid themed fill via `PlatformGlassMaterial` (the blur material
+ * itself was pulled for cost; the name and the bar's spring-glass motion
+ * language stayed, which is why it still reads as glass).
+ *
+ * Responsive: sized from `useWindowDimensions()`, not a `Dimensions.get()`
+ * snapshot, so it reflows on rotation, a foldable's hinge, and Android
+ * split-screen resize rather than carrying a stale width from whichever
+ * screen last measured it. The expanded width is capped (`BAR_MAX_WIDTH`)
+ * so a wide window gets a centered pill, never the phone bar stretched thin.
  */
 
 import React, { useEffect, memo } from 'react';
-import { View, StyleSheet, Dimensions, Pressable, Text } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, Pressable, Text } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -37,10 +45,12 @@ import {
 } from '../../theme/specTheme';
 import { PlatformGlassMaterial } from './PlatformGlassMaterial';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 // ─── Expanded state dimensions ────────────────────────────────────────
-const BAR_WIDTH_EXPANDED = SCREEN_WIDTH * 0.94;
+// A phone-width bar stretched to 94% of a tablet or unfolded-foldable
+// window turns into a long, sparse strip with dead space between icons —
+// "restructure, don't stretch". Capped so it stays a comfortable floating
+// pill, centered, on any window this app runs in today.
+const BAR_MAX_WIDTH = 480;
 const BAR_HEIGHT = 56;
 const CORNER_RADIUS = BAR_HEIGHT / 2;
 
@@ -80,16 +90,27 @@ const MINIMIZE_SPRING = {
 const getBarColors = (isDark: boolean) => {
   const palette = isDark ? specDark : specLight;
   return {
+    // The fixed 5-color rotation (DESIGN.md §2/§7), cycled by tab index —
+    // each tab's active pill gets its own accent rather than one shared
+    // glass tint, and its icon fill is the accent's saturated *Deep tone so
+    // it pops against its own pastel pill.
     accents: [
       palette.lavender,
       palette.pink,
       palette.mint,
+      palette.peach,
+      palette.sky,
+    ],
+    vibrantFills: [
+      palette.lavenderDeep,
+      palette.pinkDeep,
+      palette.mintDeep,
+      palette.peachDeep,
+      palette.skyDeep,
     ],
     activeIcon: isDark ? '#FFFFFF' : '#000000',
     inactiveIcon: palette.textSecondary,
     labelColor: palette.textPrimary,
-    // Active tab capsule is now a subtle glass highlight, not a solid color
-    activeBg: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
     inactiveBg: 'transparent',
     // Fallback glass tint for non-LiquidGlass platforms
     barBg: isDark ? 'rgba(20,25,35,0.45)' : 'rgba(255,255,255,0.25)',
@@ -128,6 +149,11 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
   fabIndex = 2,
 }) => {
   const insets = useSafeAreaInsets();
+  // A hook, not a module-level Dimensions.get() snapshot: this re-renders on
+  // rotation, a foldable's hinge, and Android multi-window resize, none of
+  // which fire a remount to pick up a stale width otherwise.
+  const { width: screenWidth } = useWindowDimensions();
+  const barWidthExpanded = Math.min(screenWidth * 0.94, BAR_MAX_WIDTH);
   const activeIndex = state.index;
   const { isDark } = useSpecTheme();
   const barColors = getBarColors(isDark);
@@ -192,7 +218,7 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
     const width = interpolate(
       minimizeProgress.value,
       [0, 1],
-      [BAR_WIDTH_EXPANDED, minimizedWidth],
+      [barWidthExpanded, minimizedWidth],
       Extrapolation.CLAMP,
     );
     const translateY = interpolate(
@@ -281,7 +307,8 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
           inactiveIcon={barColors.inactiveIcon}
           labelColor={barColors.labelColor}
           inactiveBg={barColors.inactiveBg}
-          activeBg={barColors.activeBg}
+          activeBg={barColors.accents[index % barColors.accents.length]}
+          vibrantFill={barColors.vibrantFills[index % barColors.vibrantFills.length]}
           minimizeProgress={minimizeProgress}
           onPress={() => {
             ReactNativeHapticFeedback.trigger('impactLight', {
@@ -344,7 +371,7 @@ export const ExpandingTabBar: React.FC<ExpandingTabBarProps> = ({
         <Animated.View
           style={[
             styles.fabContainer,
-            { left: SCREEN_WIDTH / 2 },
+            { left: screenWidth / 2 },
             animatedFabStyle,
           ]}
         >
@@ -394,6 +421,8 @@ interface LiquidGlassTabProps {
   labelColor: string;
   inactiveBg: string;
   activeBg: string;
+  /** The active tab's saturated icon fill — its own accent's *Deep tone. */
+  vibrantFill: string;
   minimizeProgress: Animated.SharedValue<number>;
   onPress: () => void;
 }
@@ -408,6 +437,7 @@ const LiquidGlassTab = memo(
     labelColor,
     inactiveBg,
     activeBg,
+    vibrantFill,
     minimizeProgress,
     onPress,
   }: LiquidGlassTabProps) => {
@@ -504,7 +534,11 @@ const LiquidGlassTab = memo(
         accessibilityRole="tab"
         accessibilityLabel={label}
         accessibilityState={{ selected: isActive }}
-        hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+        // Icon-only is the tab's default, resting state (DESIGN.md §7), and
+        // the collapsed pill alone is 34dp wide — under Android's 48×48dp
+        // minimum touch target. hitSlop makes up the difference without
+        // widening the pill itself.
+        hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
       >
         <Animated.View
           style={[styles.tab, containerStyle, { backgroundColor: bgColor }, activeBorderStyle]}
@@ -514,7 +548,7 @@ const LiquidGlassTab = memo(
               <TabIcon
                 name={icon}
                 color={iconColor}
-                fill="none" // Remove solid fill since capsule itself highlights
+                fill={vibrantFill}
                 isActive={isActive}
               />
             </Animated.View>
@@ -523,6 +557,11 @@ const LiquidGlassTab = memo(
             <Text
               style={[styles.label, { color: labelColor }]}
               numberOfLines={1}
+              // Lets the system's larger accessibility font sizes through the
+              // label without letting it grow past what the fixed-width
+              // expanded pill can hold — an unclamped scale would clip or
+              // wrap "Settings" inside a slot sized for "Home".
+              maxFontSizeMultiplier={1.3}
             >
               {label}
             </Text>
