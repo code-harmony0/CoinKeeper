@@ -13,6 +13,7 @@ import { Home, Receipt, Tv, Wifi, Zap, type LucideIcon } from 'lucide-react-nati
 import { brand, useSpecTheme } from '../../theme/specTheme';
 import { EXPRESSIVE, STAGGER, useReducedMotion } from '../../theme/motion';
 import { PressableScale } from '../anim';
+import { IconTile } from '../shared/IconTile';
 import { Money } from '../../utils/money';
 import { billStatus, upcomingBills } from '../../services/billSchedule';
 import type { Bill } from '../../store/billStore';
@@ -100,17 +101,22 @@ export const UpcomingList: React.FC<Props> = ({ bills, onPress }) => {
               }`}
               style={[styles.row, i < rows.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}
             >
-              <View style={[styles.icon, isDark && { backgroundColor: colors.chipBg }]}>
-                <Icon size={20} color="#FFFFFF" strokeWidth={1.7} />
-              </View>
+              <IconTile icon={Icon} />
               <View style={styles.text}>
                 <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>
                   {b.name}
                 </Text>
                 {label ? (
-                  <View style={styles.tag}>
+                  <View
+                    style={[
+                      styles.tag,
+                      label === 'OVERDUE'
+                        ? { backgroundColor: brand.alert }
+                        : { backgroundColor: isDark ? colors.chipBg : brand.ink },
+                    ]}
+                  >
                     {label === 'TODAY' && <LiveDot />}
-                    <Text style={styles.tagText}>{label}</Text>
+                    <Text style={[styles.tagText, label === 'TODAY' && { color: '#FFFFFF' }]}>{label}</Text>
                   </View>
                 ) : (
                   <Text style={[styles.when, { color: colors.textSecondary }]}>{when(b.daysAway)}</Text>
@@ -141,13 +147,12 @@ const styles = StyleSheet.create({
   text: { flex: 1, gap: 2 },
   name: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Bold' },
   when: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: brand.ink },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: brand.alert },
   tag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     alignSelf: 'flex-start',
-    backgroundColor: brand.signal,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 2,

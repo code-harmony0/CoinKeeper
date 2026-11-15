@@ -74,13 +74,14 @@ import { IncomeEngine } from '../../services/income/IncomeEngine';
 import { financialEventBus } from '../../services/EventBus';
 import { Money } from '../../utils/money';
 import { EXPRESSIVE, STAGGER } from '../../theme/motion';
-import { billsSummary } from '../../services/billSchedule';
+import { billsSummary, billStatus, upcomingBills } from '../../services/billSchedule';
 import { HeroPace } from '../../components/home/HeroPace';
 import { HeroTexture } from '../../components/home/HeroTexture';
 import { HomeSection } from '../../components/home/HomeSection';
 import { UpcomingList } from '../../components/home/UpcomingList';
 import { GoalRings } from '../../components/home/GoalRings';
 import { BadgeShelf } from '../../components/home/BadgeShelf';
+import { StreakStrip, weekDots } from '../../components/home/StreakStrip';
 
 // Guarded require, not a static import: CHITFUND_ENABLED is inlined as a
 // literal at build time, so Metro drops this branch — and the whole
@@ -390,6 +391,15 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   };
   // Bills already have their own section right above, so that pill is dropped.
   const extraPills = pills.filter(p => p.target !== 'bills');
+  const billAlert = useMemo(() => {
+    const now = new Date();
+    const open = bills.filter(b => billStatus(b, now) !== 'paid');
+    const overdue = open.filter(b => billStatus(b, now) === 'overdue').length;
+    const today = upcomingBills(open.filter(b => billStatus(b, now) !== 'overdue'), now, 0).filter(
+      b => b.daysAway === 0,
+    ).length;
+    return { overdue, today };
+  }, [bills]);
   const openPillTarget = (target: PillTarget) =>
     navigation.navigate(PILL_ROUTES[target]);
 
@@ -439,20 +449,13 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
           <Text style={st.greeting}>{greeting()}</Text>
           <View style={st.actions}>
             <PressableScale
-              onPress={() => setIncomeFlowVisible(true)}
-              style={st.iconBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Add income"
-            >
-              <Plus size={20} color="#FFFFFF" strokeWidth={1.75} />
-            </PressableScale>
-            <PressableScale
               onPress={() => navigation.navigate('AskAi')}
-              style={st.iconBtn}
+              style={st.askPill}
               accessibilityRole="button"
               accessibilityLabel="Ask AI about your money"
             >
-              <Sparkles size={20} color="#FFFFFF" strokeWidth={1.75} />
+              <Sparkles size={18} color="#FFFFFF" strokeWidth={1.75} />
+              <Text style={st.askText}>Ask AI</Text>
             </PressableScale>
           </View>
         </Animated.View>
@@ -464,14 +467,44 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             monthlyRemainingPaise={monthPlan?.monthlyRemaining ?? 0}
             unpaidBillsPaise={unpaidBillsPaise}
             streakDays={streakDays}
-            badge={headlineBadge(badgeContext)}
-            ageOfMoney={ageOfMoney}
+            nextGoal={shelf.next ? { label: shelf.next.label, hint: shelf.next.hint } : null}
             status={status}
+            alert={billAlert}
+            onAlertPress={() => navigation.navigate('Bills')}
+            needsIncome={snapshot !== null && !hasIncome}
+            onAddIncome={() => setIncomeFlowVisible(true)}
             replayToken={refreshToken}
           />
         </View>
 
         <View style={st.stack}>
+          <OnEnter index={1}>
+            <HomeSection title="Upcoming" onPress={() => navigation.navigate('Bills')}>
+              <UpcomingList bills={bills} onPress={() => navigation.navigate('Bills')} />
+            </HomeSection>
+          </OnEnter>
+          <OnEnter index={2}>
+            <HomeSection title="Goals" onPress={() => navigation.navigate('Goals')}>
+              <GoalRings
+                goals={goals}
+                onAddMoney={setFundingGoalId}
+                onNewGoal={() => navigation.navigate('Goals')}
+              />
+            </HomeSection>
+          </OnEnter>
+          <OnEnter index={2}>
+            <HomeSection title={`Rewards · ${shelf.count} of ${shelf.badges.length} badges`}>
+              <View style={st.rewards}>
+                <StreakStrip
+                  streakDays={streakDays}
+                  days={weekDots(streakDays)}
+                  next={shelf.next ? { label: shelf.next.label, hint: shelf.next.hint } : null}
+                />
+                <BadgeShelf badges={shelf.badges} next={shelf.next} />
+              </View>
+            </HomeSection>
+          </OnEnter>
+
           <OnEnter index={0}>
             <HomeSection title="This month" onPress={navigateToReports}>
               <View style={st.inOut}>
@@ -496,39 +529,6 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
               </View>
             </HomeSection>
           </OnEnter>
-
-          <OnEnter index={1}>
-            <HomeSection title="Upcoming" onPress={() => navigation.navigate('Bills')}>
-              <UpcomingList bills={bills} onPress={() => navigation.navigate('Bills')} />
-            </HomeSection>
-          </OnEnter>
-
-          <OnEnter index={2}>
-            <HomeSection title="Goals" onPress={() => navigation.navigate('Goals')}>
-              <GoalRings
-                goals={goals}
-                onAddMoney={setFundingGoalId}
-                onNewGoal={() => navigation.navigate('Goals')}
-              />
-            </HomeSection>
-          </OnEnter>
-
-          <OnEnter index={3}>
-            <HomeSection title={`Badges · ${shelf.count} of ${shelf.badges.length}`}>
-              <BadgeShelf badges={shelf.badges} next={shelf.next} />
-            </HomeSection>
-          </OnEnter>
-
-          <OnEnter index={3}>
-            <HomeSection title="Income health" onPress={() => navigation.navigate('IncomeDetail')}>
-              <IncomeSummaryRow
-                hasIncome={hasIncome}
-                onOpenDetail={() => navigation.navigate('IncomeDetail')}
-                onAddIncome={() => setIncomeFlowVisible(true)}
-              />
-            </HomeSection>
-          </OnEnter>
-
           {(extraPills.length > 0 || insights.length > 0) && (
             <OnEnter index={4}>
               <HomeSection title="Insights">
@@ -543,6 +543,15 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             </OnEnter>
           )}
 
+          <OnEnter index={3}>
+            <HomeSection title="Income steadiness" onPress={() => navigation.navigate('IncomeDetail')}>
+              <IncomeSummaryRow
+                hasIncome={hasIncome}
+                onOpenDetail={() => navigation.navigate('IncomeDetail')}
+                onAddIncome={() => setIncomeFlowVisible(true)}
+              />
+            </HomeSection>
+          </OnEnter>
           <OnEnter index={5}>
             <HomeSection title="Where it went" onPress={navigateToReports}>
               {ledger.byCategory.length === 0 ? (
@@ -628,6 +637,16 @@ const makeStyles = (
       letterSpacing: -0.4,
     },
     actions: { flexDirection: 'row', gap: 8 },
+    askPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      height: 48,
+      paddingHorizontal: 16,
+      borderRadius: 24,
+      backgroundColor: 'rgba(255,255,255,0.14)',
+    },
+    askText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', color: '#FFFFFF' },
     iconBtn: {
       width: 48,
       height: 48,
@@ -658,6 +677,7 @@ const makeStyles = (
       color: colors.textSecondary,
       paddingBottom: 8,
     },
+    rewards: { gap: 16, paddingBottom: 8 },
     insightStack: { gap: 16, paddingBottom: 8 },
     // The black top band runs edge to edge under the status bar: it holds only
     // the greeting and the answer, then the light page takes over.

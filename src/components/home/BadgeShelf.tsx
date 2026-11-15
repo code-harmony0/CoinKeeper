@@ -20,6 +20,7 @@ import {
 } from '../../theme/motion';
 import type { Badge } from '../../services/badges';
 import { Medal } from './Medal';
+import { Bezel } from '../shared/Bezel';
 
 const SIZE = 60;
 const EASE = Easing.bezier(0.32, 0.72, 0, 1);
@@ -35,7 +36,7 @@ interface Props {
   next: { label: string; ratio: number; hint: string } | null;
 }
 
-/** A soft light sweeps across an earned medal every few seconds. */
+/** A soft light sweeps across an earned medal once as the shelf arrives. */
 const Shine: React.FC<{ delay: number }> = ({ delay }) => {
   const reduced = useReducedMotion();
   const x = useSharedValue(-SIZE);
@@ -43,14 +44,7 @@ const Shine: React.FC<{ delay: number }> = ({ delay }) => {
     if (reduced) return;
     x.value = withDelay(
       delay,
-      withRepeat(
-        withSequence(
-          withTiming(SIZE * 1.4, { duration: 1000, easing: EASE }),
-          withTiming(-SIZE, { duration: 0 }),
-          withDelay(3200, withTiming(-SIZE, { duration: 0 })),
-        ),
-        -1,
-      ),
+      withTiming(SIZE * 1.4, { duration: 1000, easing: EASE }),
     );
   }, [reduced, delay, x]);
   const style = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }, { rotate: '20deg' }] }));
@@ -87,14 +81,7 @@ const Fill: React.FC<{ ratio: number }> = ({ ratio }) => {
 export const BadgeShelf: React.FC<Props> = ({ badges, next }) => {
   const { colors, isDark } = useSpecTheme();
   return (
-    <View
-      style={[
-        styles.shell,
-        { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : colors.chipBg, borderColor: colors.border },
-      ]}
-    >
-      <View style={[styles.core, { backgroundColor: colors.card }]}>
-        <View style={[styles.sheen, { backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.9)' }]} />
+    <Bezel tone="paper">
         <View style={styles.row}>
           {badges.map(({ badge, earned }, i) => (
             <Animated.View
@@ -132,8 +119,7 @@ export const BadgeShelf: React.FC<Props> = ({ badges, next }) => {
             <Text style={[styles.hint, { color: colors.textSecondary }]}>{next.hint}</Text>
           </View>
         )}
-      </View>
-    </View>
+    </Bezel>
   );
 };
 

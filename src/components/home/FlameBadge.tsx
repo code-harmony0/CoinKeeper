@@ -45,7 +45,7 @@ const Spark: React.FC<{ x: number; delay: number; lit: boolean }> = ({ x, delay,
  * it, a halo that breathes, and sparks drifting up. Unlit (no streak yet) it
  * is a cold ember, so starting one reads as lighting something.
  */
-export const FlameBadge: React.FC<{ days: number }> = ({ days }) => {
+export const FlameBadge: React.FC<{ days: number; scale?: number }> = ({ days, scale = 1 }) => {
   const reduced = useReducedMotion();
   const lit = days > 0;
   const t = useSharedValue(0);
@@ -61,7 +61,7 @@ export const FlameBadge: React.FC<{ days: number }> = ({ days }) => {
   }));
   const halo = useAnimatedStyle(() => ({ opacity: 0.55 + t.value * 0.35, transform: [{ scale: 1 + t.value * 0.08 }] }));
 
-  return (
+  const body = (
     <View style={styles.wrap} accessible accessibilityLabel={lit ? `${days} day streak` : 'No streak yet'}>
       <Animated.View style={[styles.halo, halo]} pointerEvents="none">
         <Svg width={150} height={150}>
@@ -100,6 +100,12 @@ export const FlameBadge: React.FC<{ days: number }> = ({ days }) => {
         </Svg>
         <Text style={[styles.num, { color: lit ? brand.ink : 'rgba(255,255,255,0.55)' }]}>{days}</Text>
       </Animated.View>
+    </View>
+  );
+  if (scale === 1) return body;
+  return (
+    <View style={{ width: 100 * scale, height: 112 * scale }}>
+      <View style={{ width: 100, height: 112, transform: [{ scale }], transformOrigin: 'top left' }}>{body}</View>
     </View>
   );
 };

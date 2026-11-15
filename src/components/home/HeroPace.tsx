@@ -1,22 +1,16 @@
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { AlertTriangle, ArrowDownRight, CheckCircle2, Clock, Info } from 'lucide-react-native';
-import { brand } from '../../theme/specTheme';
-import { EXPRESSIVE } from '../../theme/motion';
+import { AlertTriangle, ArrowDownRight, CheckCircle2, Info } from 'lucide-react-native';
+import { brand, onInk } from '../../theme/specTheme';
+import { PressableScale } from '../anim';
 import { RollingNumber } from '../anim/RollingNumber';
 import { Money } from '../../utils/money';
 import { PaceChart } from './PaceChart';
-import { StreakStrip, type StreakDay } from './StreakStrip';
+import { StreakStrip, weekDots } from './StreakStrip';
 import { HeroGlow } from './HeroGlow';
-import { BADGE_LADDER } from '../../services/badges';
 import type { MonthLedger } from '../../hooks/useMonthLedger';
 import type { HomeStatus, Tone } from '../../services/homeNarrative';
-import type { Badge } from '../../services/badges';
-import type { AgeOfMoney } from '../../services/ageOfMoney';
 
-const WHITE = '#FFFFFF';
-const MUTED = 'rgba(255,255,255,0.72)';
 const SCREEN_W = Dimensions.get('window').width;
 
 interface Props {
@@ -27,19 +21,29 @@ interface Props {
   monthlyRemainingPaise: number;
   unpaidBillsPaise: number;
   streakDays: number;
-  badge: Badge | null;
-  ageOfMoney: AgeOfMoney | null;
+  /** The one next goal, shared with the badge shelf. */
+  nextGoal: { label: string; hint: string } | null;
   status: HomeStatus;
+  /** Bills needing action, so the hero can say it before anything else. */
+  alert: { overdue: number; today: number };
+  onAlertPress: () => void;
+  /** No income yet: show the first step instead of a meaningless ₹0. */
+  needsIncome: boolean;
+  onAddIncome: () => void;
   replayToken?: number;
 }
 
 const toneIcon = (tone: Tone) =>
   tone === 'good' ? CheckCircle2 : tone === 'neutral' ? Info : AlertTriangle;
 
+const alertText = ({ overdue, today }: { overdue: number; today: number }) =>
+  [overdue > 0 && `${overdue} overdue`, today > 0 && `${today} due today`].filter(Boolean).join(' · ');
+
 /**
- * Home's answer, in one glance: what is safe to spend today, why that is the
- * verdict, and the month's pace drawn against the plan. The chip row keeps the
- * streak, badge and age-of-money one line high instead of a panel of tiles.
+ * Home's answer, in one glance and in this order: what is safe to spend today,
+ * the arithmetic behind it in plain words, what needs action, how your streak
+ * stands, and the month's spending against the plan. Warnings use the alert
+ * colour; yellow is reserved for the number, the chart line and rewards.
  */
 export const HeroPace: React.FC<Props> = ({
   ledger,
@@ -48,40 +52,52 @@ export const HeroPace: React.FC<Props> = ({
   monthlyRemainingPaise,
   unpaidBillsPaise,
   streakDays,
-  badge,
-  ageOfMoney,
+  nextGoal,
   status,
+  alert,
+  onAlertPress,
+  needsIncome,
+  onAddIncome,
   replayToken,
 }) => {
   const StatusIcon = toneIcon(status.tone);
-  // Straight-line projection of the month's spend plus what bills still owe.
   const now = new Date();
   const day = now.getDate();
   const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  // Same days-left the engine divides by, so the line below can never disagree
+  // with the number above it.
+  const daysLeft = Math.max(1, days - day);
+  const hasAlert = alert.overdue + alert.today > 0;
+
   const projected = day >= 3 ? (ledger.spendPaise / day) * days + unpaidBillsPaise : 0;
   const gap = planPaise > 0 && projected > 0 ? planPaise - projected : 0;
 
-  // Last seven days as game dots: the streak is the run of days under the
-  // daily limit that ends yesterday; today is still open.
-  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const weekDots: StreakDay[] = Array.from({ length: 7 }, (_, k) => {
-    const ago = 6 - k;
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ago);
-    const label = dayLabels[d.getDay()];
-    if (ago === 0) return { label, state: 'today' as const };
-    return { label, state: ago <= streakDays ? ('hit' as const) : ('miss' as const) };
-  });
-  const streakBadges = BADGE_LADDER.filter(b => ['steady-start', 'budget-master', 'month-master'].includes(b.id));
-  const streakTargets = [3, 5, 30];
-  const nextIdx = streakTargets.findIndex(t => t > streakDays);
-  const nextStreak = nextIdx >= 0 ? { days: streakTargets[nextIdx], label: streakBadges[nextIdx].label } : null;
-  const chips: { key: string; Icon: typeof Clock; text: string }[] = [];
-  if (ageOfMoney) chips.push({ key: 'age', Icon: Clock, text: ageOfMoney.label });
+  const dots = weekDots(streakDays, now);
+
+  if (needsIncome) {
+    return (
+      <View>
+        <HeroGlow />
+        <Text style={styles.label}>Safe to spend today</Text>
+        <Text style={styles.firstRun}>
+          Add your income and we will show what is safe to spend each day.
+        </Text>
+        <PressableScale
+          onPress={onAddIncome}
+          accessibilityRole="button"
+          accessibilityLabel="Add your income"
+          style={styles.firstRunButton}
+        >
+          <Text style={styles.firstRunButtonText}>Add income</Text>
+        </PressableScale>
+      </View>
+    );
+  }
 
   return (
     <View>
       <HeroGlow />
-      <Text style={[styles.label, { color: MUTED }]}>Safe to spend today</Text>
+      <Text style={styles.label}>Safe to spend today</Text>
       <RollingNumber
         valuePaise={safeTodayPaise}
         fontSize={64}
@@ -91,41 +107,50 @@ export const HeroPace: React.FC<Props> = ({
         replayToken={replayToken}
       />
 
-      <View style={styles.delta}>
-        <ArrowDownRight size={16} color={MUTED} strokeWidth={1.9} style={styles.deltaIcon} />
-        <Text style={[styles.deltaText, { color: MUTED }]}>
-          {Money.format(ledger.todaySpendPaise, { zeroDecimals: true })} spent today
+      <View style={styles.math}>
+        <ArrowDownRight size={16} color={onInk.mid} strokeWidth={1.9} style={styles.mathIcon} />
+        <Text style={styles.mathText}>
+          {monthlyRemainingPaise > 0
+            ? `${Money.format(monthlyRemainingPaise, { zeroDecimals: true })} left this month ÷ ${daysLeft} ${
+                daysLeft === 1 ? 'day' : 'days'
+              }`
+            : 'No budget left this month'}
           {'  ·  '}
-          {Money.format(Math.max(monthlyRemainingPaise, 0), { zeroDecimals: true })} left this month
+          {Money.format(ledger.todaySpendPaise, { zeroDecimals: true })} spent today
         </Text>
       </View>
 
-      <View style={[styles.status, status.tone === 'good' || status.tone === 'neutral' ? styles.statusCalm : styles.statusAlert]}>
-        <StatusIcon size={16} color={brand.signal} strokeWidth={1.9} />
-        <Text style={[styles.statusText, { color: WHITE }]} numberOfLines={2}>
-          {status.headline}
-        </Text>
-      </View>
-
-      <StreakStrip streakDays={streakDays} days={weekDots} next={nextStreak} />
-
-      {chips.length > 0 && (
-        <View style={styles.chips}>
-          {chips.map((c, i) => (
-            <Animated.View
-              key={c.key}
-              entering={FadeInDown.springify().damping(18).delay(500 + i * 80).reduceMotion(EXPRESSIVE)}
-              style={styles.chip}
-            >
-              <c.Icon size={14} color={MUTED} strokeWidth={1.9} />
-              <Text style={[styles.chipText, { color: WHITE }]} numberOfLines={1}>
-                {c.text}
-              </Text>
-            </Animated.View>
-          ))}
+      {hasAlert ? (
+        <PressableScale
+          onPress={onAlertPress}
+          accessibilityRole="button"
+          accessibilityLabel={`${alertText(alert)}. Open bills`}
+          style={[styles.pill, styles.pillAlert]}
+        >
+          <AlertTriangle size={16} color={brand.alert} strokeWidth={1.9} />
+          <Text style={styles.pillText}>{alertText(alert)}</Text>
+        </PressableScale>
+      ) : (
+        <View style={[styles.pill, styles.pillCalm]}>
+          <StatusIcon size={16} color={onInk.high} strokeWidth={1.9} />
+          <Text style={styles.pillText} numberOfLines={2}>
+            {status.headline}
+          </Text>
         </View>
       )}
 
+      <StreakStrip streakDays={streakDays} days={dots} next={nextGoal} compact />
+
+      <View style={styles.legend}>
+        <View style={styles.legendItem}>
+          <View style={styles.legendLine} />
+          <Text style={styles.legendText}>Your spending</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={styles.legendDash} />
+          <Text style={styles.legendText}>Plan for the month</Text>
+        </View>
+      </View>
       <View style={styles.chart}>
         <PaceChart
           expenses={ledger.expenses}
@@ -136,10 +161,10 @@ export const HeroPace: React.FC<Props> = ({
       </View>
 
       {planPaise > 0 && gap !== 0 && (
-        <Text style={[styles.forecast, { color: MUTED }]}>
+        <Text style={styles.outlook}>
           {gap > 0
-            ? `On pace to finish ${Money.format(Math.round(gap), { zeroDecimals: true })} under plan.`
-            : `On pace to run ${Money.format(Math.round(-gap), { zeroDecimals: true })} over plan.`}
+            ? `At this rate you finish the month ${Money.format(Math.round(gap), { zeroDecimals: true })} under plan, after bills.`
+            : `At this rate you finish the month ${Money.format(Math.round(-gap), { zeroDecimals: true })} over plan, after bills.`}
         </Text>
       )}
     </View>
@@ -147,35 +172,41 @@ export const HeroPace: React.FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
-  label: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
-  number: { fontSize: 64, lineHeight: 68, fontFamily: 'Satoshi-Black', letterSpacing: -2, color: brand.signal },
-  delta: { flexDirection: 'row', alignItems: 'flex-start', gap: 4, marginTop: 4 },
-  deltaIcon: { marginTop: 2 },
-  deltaText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', flexShrink: 1 },
-  status: {
+  label: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid },
+  math: { flexDirection: 'row', alignItems: 'flex-start', gap: 4, marginTop: 4 },
+  mathIcon: { marginTop: 2 },
+  mathText: { flexShrink: 1, fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid },
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     alignSelf: 'flex-start',
     borderRadius: 16,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    minHeight: 40,
     marginTop: 16,
   },
-  statusCalm: { backgroundColor: 'rgba(255,255,255,0.12)' },
-  statusAlert: { borderWidth: 2, borderColor: brand.signal },
-  statusText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', flexShrink: 1 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    paddingHorizontal: 12,
-    minHeight: 32,
-  },
-  chipText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Bold' },
+  pillAlert: { borderWidth: 2, borderColor: brand.alert },
+  pillCalm: { backgroundColor: onInk.fill },
+  pillText: { flexShrink: 1, fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', color: onInk.high },
+  legend: { flexDirection: 'row', gap: 16, marginTop: 16 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendLine: { width: 16, height: 3, borderRadius: 2, backgroundColor: brand.signal },
+  legendDash: { width: 16, height: 0, borderTopWidth: 1.5, borderColor: onInk.low, borderStyle: 'dashed' },
+  legendText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Medium', color: onInk.mid },
   chart: { marginHorizontal: -24, marginTop: 4, marginBottom: 20 },
-  forecast: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', marginTop: 4 },
+  outlook: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid, marginTop: 4 },
+  firstRun: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Bold', color: onInk.high, marginTop: 8, maxWidth: 320 },
+  firstRunButton: {
+    alignSelf: 'flex-start',
+    minHeight: 56,
+    borderRadius: 999,
+    paddingHorizontal: 28,
+    marginTop: 24,
+    marginBottom: 16,
+    backgroundColor: brand.signal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  firstRunButtonText: { fontSize: 16, fontFamily: 'Satoshi-Bold', color: brand.ink },
 });

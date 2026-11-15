@@ -136,7 +136,22 @@ export const enamel = {
 export const radii = { sm: 8, md: 12, lg: 16, xl: 24, full: 999 } as const;
 
 /** The one strong colour: used on black only (hero number, chart line) and as a fill with black text. */
-export const brand = { signal: '#FFC400', ink: '#111111' } as const;
+export const brand = {
+  /** Hero number, chart line, rewards. Never used for warnings. */
+  signal: '#FFC400',
+  ink: '#111111',
+  /** Needs action: overdue, low, behind. The one warning colour. */
+  alert: '#FF6B57',
+} as const;
+
+/** Text and fills on the black hero, so no component hard-codes its own alpha. */
+export const onInk = {
+  high: '#FFFFFF',
+  mid: 'rgba(255,255,255,0.72)',
+  low: 'rgba(255,255,255,0.55)',
+  fill: 'rgba(255,255,255,0.12)',
+  hairline: 'rgba(255,255,255,0.10)',
+} as const;
 
 /** The only text sizes the lite app uses: [fontSize, lineHeight]. */
 export const typeScale = {

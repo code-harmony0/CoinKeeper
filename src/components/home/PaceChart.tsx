@@ -175,8 +175,8 @@ export const PaceChart: React.FC<Props> = ({
     ? `${scrub} ${geo.month} · ${Money.format(spentAt, { zeroDecimals: true })} spent`
     : geo.hasPlan
     ? `${Money.format(Math.abs(Math.round(geo.diff)), { zeroDecimals: true })} ${
-        ahead ? 'under' : 'over'
-      } pace`
+        ahead ? 'less spent than planned' : 'more spent than planned'
+      }`
     : null;
   const tagTop = Math.max(4, dot[1] - 40);
   const tagLeft = Math.min(Math.max(dot[0] - BOX / 2, 0), width - BOX);

@@ -478,6 +478,16 @@ Game layer (restored after a flat pass lost it): the hero has a slow-drifting ye
 
 Craft layer (from a side-by-side with Duolingo, Falou, Audible, Chime): the streak is an *object*, `FlameBadge` (layered gradient flame with the day count inside, breathing halo, rising sparks; a cold ember when unlit). Medals are objects too (`Medal`: metallic rim, inset disc, gloss, ground glow; locked = same silhouette in grey with a lock). Cards that hold a game (streak, badge shelf) use a nested "bezel": hairline outer shell, inner plate with a smaller concentric radius and a 1px top highlight. The black hero has `HeroTexture` (fine grain + top sheen) and `HeroGlow`. Home icons use thin strokes (1.6-1.9), not thick defaults. One signature easing, `Easing.bezier(0.32, 0.72, 0, 1)`, for rolls, draws and fills.
 
+Comprehension rules (v5.1, from the Home UX report in docs/HOME_UX_REPORT.md):
+- **Status colour:** coral (`brand.alert`) means "needs action" (overdue, low, behind). Yellow (`brand.signal`) is only the hero number, the chart line and rewards. Never use yellow as a warning.
+- **One next goal:** the streak strip and the badge shelf read the same `nextBadgeProgress`, so they can never name different goals.
+- **One source for money figures:** the hero line, the chart and the month section all derive from the same ledger and plan; the math line uses the engine's own days-left, so it cannot contradict the number above it.
+- **Plain words:** no finance jargon on Home ("less spent than planned", not "under pace"; "income steadiness", not "income health"). Every number shows its unit or its working.
+- **First-screen budget:** one answer (the number plus its math), one alert, one chart, one streak line. Anything else goes below.
+- **Motion budget:** at most two ambient loops visible at once (hero glow, the lit flame). Everything else plays once on entry or on an event.
+- **Zero is a start, not an error:** empty or zero data shows a first step (a button or one calm line), never a dead chart or a red state.
+- Shared components: `Bezel` (nested container, `solid` on light surfaces), `IconTile` (black icon square), `HomeSection` (heading that is also the way in).
+
 Rules: yellow never sits on white; no pastel rainbow on Home; urgency by label and form, not colour alone.
 
 ### Rollout order and status

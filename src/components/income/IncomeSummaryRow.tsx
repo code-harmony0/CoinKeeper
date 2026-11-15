@@ -73,11 +73,11 @@ export const IncomeSummaryRow: React.FC<IncomeSummaryRowProps> = ({
 
   // Only state the halves that are actually known.
   const parts: string[] = [];
-  if (score !== null) parts.push(`Health ${score}/100`);
+  if (score !== null) parts.push(`${score} out of 100`);
   if (nextDate) parts.push(`next ${nextDate}`);
 
   // A score alone means little: give it a word, and flag weak in yellow.
-  const status = score === null ? null : score < 40 ? 'WEAK' : score < 70 ? 'FAIR' : 'STRONG';
+  const status = score === null ? null : score < 40 ? 'LOW' : score < 70 ? 'FAIR' : 'STRONG';
   const supporting = hasIncome
     ? parts.length > 0
       ? parts.join(' · ')
@@ -96,8 +96,8 @@ export const IncomeSummaryRow: React.FC<IncomeSummaryRowProps> = ({
       </View>
       <View style={st.textCol}>
         {status && (
-          <View style={[st.tag, status !== 'WEAK' && st.tagQuiet]}>
-            <Text style={[st.tagText, status !== 'WEAK' && { color: colors.textPrimary }]}>{status}</Text>
+          <View style={[st.tag, status !== 'LOW' && st.tagQuiet]}>
+            <Text style={[st.tagText, status !== 'LOW' && { color: colors.textPrimary }]}>{status}</Text>
           </View>
         )}
         <Text style={st.supporting} numberOfLines={1}>
@@ -128,7 +128,7 @@ const makeStyles = (colors: any, _cardRadius: number) =>
     textCol: { flex: 1, gap: 2 },
     tag: {
       alignSelf: 'flex-start',
-      backgroundColor: brand.signal,
+      backgroundColor: brand.alert,
       borderRadius: 8,
       paddingHorizontal: 8,
       paddingVertical: 2,

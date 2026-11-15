@@ -1,17 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-  ZoomIn,
-} from 'react-native-reanimated';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import { Check } from 'lucide-react-native';
-import { brand } from '../../theme/specTheme';
-import { EXPRESSIVE, useReducedMotion } from '../../theme/motion';
+import { brand, onInk } from '../../theme/specTheme';
+import { EXPRESSIVE } from '../../theme/motion';
+import { Bezel } from '../shared/Bezel';
 import { FlameBadge } from './FlameBadge';
 
 export type DayState = 'hit' | 'miss' | 'today' | 'future' | 'unknown';
@@ -21,129 +14,121 @@ export interface StreakDay {
   state: DayState;
 }
 
+/** The last seven days as game dots: the streak is the run of days under the
+ *  daily limit that ends yesterday; today is still open. */
+export const weekDots = (streakDays: number, now: Date = new Date()): StreakDay[] => {
+  const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return Array.from({ length: 7 }, (_, k) => {
+    const ago = 6 - k;
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ago);
+    const label = labels[d.getDay()];
+    if (ago === 0) return { label, state: 'today' as const };
+    return { label, state: ago <= streakDays ? ('hit' as const) : ('miss' as const) };
+  });
+};
+
 interface Props {
   streakDays: number;
   days: StreakDay[];
-  /** The next streak badge, e.g. { days: 5, label: 'Budget Master' }. */
-  next: { days: number; label: string } | null;
+  /** The ONE next goal (same source as the badge shelf), or null. */
+  next: { label: string; hint: string } | null;
+  /** One-line strip for the first screen; the full card lives in Rewards. */
+  compact?: boolean;
 }
 
-const WHITE = '#FFFFFF';
-const MUTED = 'rgba(255,255,255,0.72)';
-const EASE = Easing.bezier(0.32, 0.72, 0, 1);
-
-/** Today's chip breathes so the one open day is the one you see. */
-const TodayChip: React.FC = () => {
-  const reduced = useReducedMotion();
-  const p = useSharedValue(0);
-  useEffect(() => {
-    if (reduced) return;
-    p.value = withRepeat(
-      withSequence(withTiming(1, { duration: 1000, easing: EASE }), withTiming(0, { duration: 1000, easing: EASE })),
-      -1,
-    );
-  }, [reduced, p]);
-  const glow = useAnimatedStyle(() => ({ opacity: 0.15 + p.value * 0.3 }));
-  return (
-    <View style={[styles.chip, styles.chipToday]}>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.todayGlow, glow]} />
-    </View>
-  );
-};
-
-const Chip: React.FC<{ state: DayState }> = ({ state }) => {
-  if (state === 'today') return <TodayChip />;
+/** Today's chip is a still ring: the only ambient loops belong to the flame and hero glow. */
+const Chip: React.FC<{ state: DayState; small?: boolean }> = ({ state, small }) => {
+  const box = small ? styles.chipSm : styles.chip;
+  if (state === 'today') return <View style={[box, styles.chipToday]} />;
   if (state === 'hit') {
     return (
-      <View style={[styles.chip, styles.chipHit]}>
-        <Check size={18} strokeWidth={2.6} color={brand.ink} />
+      <View style={[box, styles.chipHit]}>
+        <Check size={small ? 14 : 18} strokeWidth={2.4} color={brand.ink} />
       </View>
     );
   }
-  if (state === 'miss') return <View style={[styles.chip, styles.chipMiss]} />;
-  return <View style={[styles.chip, styles.chipFuture]} />;
+  if (state === 'miss') return <View style={[box, styles.chipMiss]} />;
+  return <View style={[box, styles.chipFuture]} />;
 };
 
 /**
- * The week as a game board, in a nested "bezel": a hairline shell around an
- * inner plate with its own top highlight. The flame is the object; the day
- * chips under it say which days you held the line.
+ * The week as a game board. Compact (first screen): a small flame, "Day N" and
+ * the one next goal on a single line, with the seven days as mini chips below.
+ * Full (Rewards): the large flame and spaced day chips.
  */
-export const StreakStrip: React.FC<Props> = ({ streakDays, days, next }) => {
+export const StreakStrip: React.FC<Props> = ({ streakDays, days, next, compact }) => {
   const lit = streakDays > 0;
-  const toGo = next ? Math.max(next.days - streakDays, 0) : 0;
-  return (
-    <View style={styles.shell}>
-      <View style={styles.core}>
-        <View style={styles.sheen} pointerEvents="none" />
-        <View style={styles.top}>
-          <FlameBadge days={streakDays} />
-          <View style={styles.topText}>
-            <Text style={styles.title}>{lit ? 'day streak' : 'Light your streak'}</Text>
-            <Text style={styles.sub}>
-              {next
-                ? `${toGo} more ${toGo === 1 ? 'day' : 'days'} under your daily limit unlocks ${next.label}`
-                : 'Every day under your limit keeps it alive'}
+  const hit = days.filter(d => d.state === 'hit').length;
+
+  if (compact) {
+    return (
+      <Bezel tone="ink" style={styles.compactShell} coreStyle={styles.compactCore} padding={12}>
+        <View style={styles.compactRow} accessible accessibilityLabel={`Streak: ${streakDays} days. ${hit} of the last 7 days under your limit.${next ? ` Next: ${next.label}.` : ''}`}>
+          <FlameBadge days={streakDays} scale={0.5} />
+          <View style={styles.compactText}>
+            <Text style={styles.compactTitle}>
+              {lit ? `${streakDays}-day streak` : 'Start your streak today'}
+            </Text>
+            <Text style={styles.compactSub} numberOfLines={1}>
+              {next ? `Next: ${next.label}` : 'Stay under your daily limit'}
             </Text>
           </View>
+          <View style={styles.mini}>
+            {days.map((d, i) => (
+              <Chip key={i} state={d.state} small />
+            ))}
+          </View>
         </View>
-        <View
-          style={styles.week}
-          accessible
-          accessibilityLabel={`Last seven days: ${days.filter(d => d.state === 'hit').length} under your limit`}
-        >
-          {days.map((d, i) => (
-            <Animated.View
-              key={i}
-              entering={ZoomIn.springify().damping(13).stiffness(190).delay(450 + i * 70).reduceMotion(EXPRESSIVE)}
-              style={styles.col}
-            >
-              <Chip state={d.state} />
-              <Text style={[styles.dayLabel, d.state === 'today' && { color: WHITE }]}>{d.label}</Text>
-            </Animated.View>
-          ))}
+      </Bezel>
+    );
+  }
+
+  return (
+    <Bezel tone="ink" solid coreStyle={{ gap: 16 }}>
+      <View style={styles.top}>
+        <FlameBadge days={streakDays} />
+        <View style={styles.topText}>
+          <Text style={styles.title}>{lit ? 'day streak' : 'Light your streak'}</Text>
+          <Text style={styles.sub}>
+            {next ? `${next.hint} unlocks ${next.label}` : 'Every day under your limit keeps it alive'}
+          </Text>
         </View>
       </View>
-    </View>
+      <View style={styles.week} accessible accessibilityLabel={`Last seven days: ${hit} under your limit`}>
+        {days.map((d, i) => (
+          <Animated.View
+            key={i}
+            entering={ZoomIn.springify().damping(13).stiffness(190).delay(300 + i * 70).reduceMotion(EXPRESSIVE)}
+            style={styles.col}
+          >
+            <Chip state={d.state} />
+            <Text style={[styles.dayLabel, d.state === 'today' && { color: onInk.high }]}>{d.label}</Text>
+          </Animated.View>
+        ))}
+      </View>
+    </Bezel>
   );
 };
 
 const styles = StyleSheet.create({
-  // Outer shell: hairline + padding; inner plate has a smaller, concentric radius.
-  shell: {
-    marginTop: 16,
-    padding: 6,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-  },
-  core: {
-    borderRadius: 26,
-    padding: 16,
-    gap: 16,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    overflow: 'hidden',
-  },
-  sheen: {
-    position: 'absolute',
-    top: 0,
-    left: 24,
-    right: 24,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-  },
+  compactShell: { marginTop: 16, borderRadius: 28 },
+  compactCore: { borderRadius: 22 },
+  compactRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  compactText: { flex: 1, minWidth: 130 },
+  compactTitle: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Black', color: onInk.high },
+  compactSub: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Medium', color: onInk.mid },
+  mini: { flexDirection: 'row', gap: 4, width: '100%', justifyContent: 'space-between', marginTop: 4 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   topText: { flex: 1, gap: 4 },
   title: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Black', color: brand.signal },
-  sub: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: MUTED },
+  sub: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid },
   week: { flexDirection: 'row', justifyContent: 'space-between' },
   col: { alignItems: 'center', gap: 6, flex: 1 },
-  dayLabel: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Bold', color: 'rgba(255,255,255,0.55)' },
+  dayLabel: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Bold', color: onInk.low },
   chip: { width: 36, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  chipSm: { flex: 1, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   chipHit: { backgroundColor: brand.signal },
-  chipToday: { borderWidth: 2, borderColor: brand.signal, overflow: 'hidden' },
-  todayGlow: { backgroundColor: brand.signal },
-  chipMiss: { backgroundColor: 'rgba(255,255,255,0.09)' },
+  chipToday: { borderWidth: 2, borderColor: brand.signal, backgroundColor: 'rgba(255,196,0,0.18)' },
+  chipMiss: { backgroundColor: onInk.fill },
   chipFuture: { borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)', borderStyle: 'dashed' },
 });
