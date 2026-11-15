@@ -10,9 +10,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PlusCircle } from 'lucide-react-native';
 import { Text } from '../ui/Text';
-import { CountUp } from '../anim/CountUp';
+import { RollingNumber } from '../anim/RollingNumber';
+import { Bezel } from '../shared/Bezel';
 import { PressableScale } from '../anim/PressableScale';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand, onInk } from '../../theme/specTheme';
 import { INFORMATIONAL, SPRING } from '../../theme/motion';
 
 import { PresetOutcome } from '../../services/moneyPlanIntelligence';
@@ -51,8 +52,7 @@ export const MoneyPlanHero: React.FC<Props> = ({
   onAddIncome,
   colors,
 }) => {
-  const { cardRadius, cardShadow } = useSpecTheme();
-  const { label: scoreLabel, color: scoreColor, confidence } = getScoreState(previewOutcome.budgetHealthScore, colors);
+  const { label: scoreLabel, confidence } = getScoreState(previewOutcome.budgetHealthScore, colors);
 
   // ── Arc animation ─────────────────────────────────────────────────────────
   const arcProgress = useSharedValue(0);
@@ -78,133 +78,79 @@ export const MoneyPlanHero: React.FC<Props> = ({
   // Removed unneeded onLayout to prevent initial mount jank
 
   return (
-    <Animated.View
-      entering={FadeInDown.duration(500)}
-      style={[
-        styles.outer,
-        { backgroundColor: colors.card, borderRadius: cardRadius },
-        cardShadow,
-      ]}
-    >
-      {hasIncome ? (
-        <View style={styles.contentRow}>
-          {/* ── Left: number block ── */}
-          <View
-            style={styles.leftBlock}
-            accessible={true}
-            accessibilityRole="text"
-            accessibilityLabel={`Today's plan limit is ${previewOutcome.safeToSpendToday} rupees`}
-          >
-            <Text
-              variant="caption"
-              style={[styles.overline, { color: colors.textSecondary }]}
+    <Animated.View entering={FadeInDown.duration(500)} style={styles.outer}>
+      <Bezel tone="ink" solid>
+        {hasIncome ? (
+          <View style={styles.contentRow}>
+            <View
+              style={styles.leftBlock}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLabel={`Today's plan limit is ${previewOutcome.safeToSpendToday} rupees`}
             >
-              TODAY'S PLAN LIMIT
-            </Text>
-            <CountUp value={previewOutcome.safeToSpendToday} prefix="₹" isPaise style={[styles.bigNumber, { color: colors.textPrimary }]} />
-            
-            <View style={styles.metricsGrid} accessible={true}>
-              {/* "Monthly Remaining" lived here and again as the Money Flow
-                  card's "Safe to spend this month" pill — the same ₹ figure
-                  twice on one screen. The pill won: it sits directly beneath
-                  the bar that produces it. This card now carries only facts
-                  nothing else states. */}
-              <Text style={[styles.metricValue, { color: colors.textSecondary }]}>
+              <Text style={styles.label}>Plan limit for today</Text>
+              <RollingNumber
+                valuePaise={previewOutcome.safeToSpendToday}
+                fontSize={44}
+                lineHeight={52}
+                letterSpacing={-1.5}
+                color={brand.signal}
+              />
+              <Text style={styles.body}>
                 {previewOutcome.emergencyFundMonths
-                  ? `You'll have an emergency fund in ${
-                      previewOutcome.emergencyFundMonths
-                    } month${previewOutcome.emergencyFundMonths === 1 ? '' : 's'}.`
-                  : 'No emergency fund yet — savings will build one.'}
+                  ? `You'll have an emergency fund in ${previewOutcome.emergencyFundMonths} month${
+                      previewOutcome.emergencyFundMonths === 1 ? '' : 's'
+                    }.`
+                  : 'No emergency fund yet. Savings will build one.'}
               </Text>
             </View>
 
-            {/* Recommendation / confidence line */}
-            <View style={[styles.insightChip, { backgroundColor: `${scoreColor}12`, borderColor: `${scoreColor}30`, marginTop: 12 }]}>
-              <Text
-                variant="caption"
-                style={{ color: scoreColor, fontFamily: 'Satoshi-Bold', fontSize: 11, lineHeight: 16 }}
-                numberOfLines={2}
-              >
-                {isBalanced
-                  ? confidence
-                  : 'Allocation must total 100%'}
-              </Text>
-            </View>
-          </View>
-
-          {/* ── Right: Skia arc ── */}
-          <View style={styles.rightBlock}>
-            {ARC_SIZE > 0 && (
-              <Canvas style={{ width: ARC_SIZE, height: ARC_SIZE, alignSelf: 'center' }}>
-                {/* Track (background ring) */}
+            <View style={styles.rightBlock}>
+              <Canvas style={{ width: ARC_SIZE, height: ARC_SIZE }}>
                 <ArcPath
                   cx={ARC_CX}
                   cy={ARC_CY}
                   r={ARC_RADIUS}
                   startAngle={START_ANGLE}
                   sweepAngle={SWEEP_TOTAL}
-                  color={`${colors.textPrimary}10`}
+                  color={onInk.fill}
                   stroke={ARC_STROKE}
                 />
-
-                {/* Progress arc — driven by sweepAngle shared value */}
                 <AnimatedArcPath
                   cx={ARC_CX}
                   cy={ARC_CY}
                   r={ARC_RADIUS}
                   startAngle={START_ANGLE}
                   sweepAngle={sweepAngle}
-                  color={scoreColor}
+                  color={brand.signal}
                   stroke={ARC_STROKE}
                 />
-
-                {/* Center dot */}
-                <Circle
-                  cx={ARC_CX}
-                  cy={ARC_CY}
-                  r={4}
-                  color={scoreColor}
-                  opacity={0.6}
-                />
               </Canvas>
-            )}
-
-            {/* Score label below arc */}
-            <View style={styles.scoreLabelWrap}>
-              <Text style={[styles.scorePercent, { color: scoreColor }]}>
-                {previewOutcome.grade}
-              </Text>
-              <Text variant="caption" style={[styles.scoreLabel, { color: colors.textSecondary }]}>
-                {scoreLabel}
-              </Text>
+              <View style={styles.gradeWrap} pointerEvents="none">
+                <Text style={styles.grade}>{previewOutcome.grade}</Text>
+              </View>
             </View>
           </View>
-        </View>
-      ) : (
-        /* ── Empty state ── */
-        <View style={styles.emptyState}>
-          <View style={[styles.emptyIconRing, { backgroundColor: `${colors.mintDeep}12`, borderColor: `${colors.mintDeep}25` }]}>
-            <PlusCircle color={colors.mintDeep} size={28} strokeWidth={1.8} />
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>Set your income</Text>
+            <Text style={styles.body}>Add your monthly income to unlock your personal money plan.</Text>
+            <PressableScale onPress={onAddIncome} accessibilityRole="button" style={styles.addBtn}>
+              <PlusCircle color={brand.ink} size={20} strokeWidth={2} />
+              <Text style={styles.addBtnText}>Add Income</Text>
+            </PressableScale>
           </View>
-          <Text
-            style={[styles.emptyTitle, { color: colors.textPrimary }]}
-          >
-            Set Your Income
-          </Text>
-          <Text
-            variant="body"
-            style={[styles.emptyBody, { color: colors.textSecondary }]}
-          >
-            Add your monthly income to unlock your personalised money plan.
-          </Text>
-          <PressableScale
-            onPress={onAddIncome}
-            style={[styles.addBtn, { backgroundColor: colors.textPrimary }]}
-          >
-            <Text style={styles.addBtnText}>Add Income</Text>
-          </PressableScale>
-        </View>
-      )}
+        )}
+
+        {hasIncome && (
+          <View style={styles.verdict}>
+            <Text style={styles.verdictLabel}>{isBalanced ? scoreLabel : 'Allocation must total 100%'}</Text>
+            <Text style={styles.body} numberOfLines={2}>
+              {isBalanced ? confidence : 'Adjust the split below until it adds up.'}
+            </Text>
+          </View>
+        )}
+      </Bezel>
     </Animated.View>
   );
 };
@@ -273,122 +219,28 @@ const AnimatedArcPath: React.FC<{
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  outer: {
-    marginHorizontal: 24,
-    marginBottom: 16,
-    padding: 24,
-  },
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  leftBlock: {
-    flex: 1,
-    paddingRight: 16,
-  },
-  rightBlock: {
-    alignItems: 'center',
-  },
-  overline: {
-    fontFamily: 'Satoshi-Bold',
-    fontSize: 10,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  bigNumber: {
-    fontFamily: 'Satoshi-Black',
-    fontSize: 34,
-    letterSpacing: -0.5,
-    lineHeight: 38,
-    marginBottom: 6,
-  },
-  metricsGrid: {
-    marginTop: 8,
-    gap: 8,
-  },
-  metricItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingRight: 12,
-    // Without a gap and a shrinkable label these collided: "Budget
-    // Health100/100 (Grade A)" rendered as one run-on string. The label
-    // yields space, the value never truncates.
-    gap: 12,
-  },
-  metricLabelFlex: { flexShrink: 1 },
-  metricLabel: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 12,
-  },
-  metricValue: {
-    fontFamily: 'Satoshi-Bold',
-    fontSize: 13,
-  },
-  incomeLabel: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 12,
-    marginBottom: 12,
-  },
-  insightChip: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
-  },
-  scoreLabelWrap: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  scorePercent: {
-    fontFamily: 'Satoshi-Black',
-    fontSize: 18,
-    lineHeight: 22,
-  },
-  scoreLabel: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 10,
-    letterSpacing: 0.5,
-  },
-  // ── Empty state
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  emptyIconRing: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontFamily: 'Satoshi-Black',
-    fontSize: 20,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyBody: {
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 22,
-    maxWidth: 260,
-  },
+  outer: { marginHorizontal: 24, marginBottom: 24 },
+  contentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  leftBlock: { flex: 1 },
+  rightBlock: { width: ARC_SIZE, height: ARC_SIZE, alignItems: 'center', justifyContent: 'center' },
+  label: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid },
+  body: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid, marginTop: 4 },
+  gradeWrap: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  grade: { fontSize: 44, lineHeight: 52, fontFamily: 'Satoshi-Black', color: onInk.high },
+  verdict: { marginTop: 16, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: onInk.hairline },
+  verdictLabel: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Black', color: onInk.high },
+  emptyState: { gap: 4 },
+  emptyTitle: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Bold', color: onInk.high },
   addBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+    minHeight: 48,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+    marginTop: 16,
+    backgroundColor: brand.signal,
   },
-  addBtnText: {
-    color: '#FFF',
-    fontFamily: 'Satoshi-Bold',
-    fontSize: 15,
-  },
+  addBtnText: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Bold', color: brand.ink },
 });

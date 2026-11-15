@@ -61,7 +61,7 @@ export const SettingsSectionTitle: React.FC<{ children: string }> = ({
 }) => {
   const { colors } = useSpecTheme();
   return (
-    <Text style={[styles.sectionTitle, { color: colors.sectionLabel }]}>
+    <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} accessibilityRole="header">
       {children}
     </Text>
   );
@@ -235,11 +235,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 20,
+    lineHeight: 28,
     fontFamily: 'Satoshi-Bold',
     marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   row: {
     flexDirection: 'row',

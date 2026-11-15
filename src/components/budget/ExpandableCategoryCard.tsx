@@ -49,7 +49,7 @@ const triggerHaptic = () =>
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 // Track width: screen - (24 outer pad × 2) - (20 card pad × 2) - (stepper × 2 + gap)
-const TRACK_CONTAINER_WIDTH = SCREEN_WIDTH - 48 - 40 - 112;
+const TRACK_CONTAINER_WIDTH = SCREEN_WIDTH - 48 - 112;
 
 const TRACK_H_COLLAPSED = 10;
 const TRACK_H_ACTIVE = 14;
@@ -72,7 +72,7 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
   trend,
   pacePrediction,
 }) => {
-  const { colors, cardRadius, cardShadow, iconShadow, spring } = useSpecTheme();
+  const { colors, isDark } = useSpecTheme();
   const [expanded, setExpanded] = useState(false);
 
   // ── Expand / collapse with measured height ────────────────────────────────
@@ -197,11 +197,7 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
     <Animated.View
       style={[
         styles.card,
-        {
-          backgroundColor: colors.card,
-          borderRadius: cardRadius,
-          ...cardShadow,
-        },
+        { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
         expandStyle,
       ]}
     >
@@ -214,20 +210,14 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
         accessibilityLabel={`${name} category. ${percentage} percent allocated. ${Money.format(amountPaise, { zeroDecimals: true })} per month. Double tap to ${expanded ? 'collapse' : 'expand'}.`}
         accessibilityState={{ expanded }}
       >
-        <View style={[styles.iconBox, { backgroundColor: tint ?? `${color}15` }, iconShadow]}>
+        <View style={[styles.iconBox, { backgroundColor: isDark ? colors.chipBg : '#111111' }]}>
           {icon}
         </View>
         <View style={styles.headerInfo}>
-          <Text
-            variant="h3"
-            style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Black', letterSpacing: 0.3 }}
-          >
+          <Text style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Bold', fontSize: 16, lineHeight: 24 }}>
             {name}
           </Text>
-          <Text
-            variant="caption"
-            style={{ color, fontFamily: 'Satoshi-Bold', marginTop: 3 }}
-          >
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium', fontSize: 14, lineHeight: 20 }}>
             {percentage}% · {Money.format(amountPaise, { zeroDecimals: true })}/mo
           </Text>
         </View>
@@ -464,19 +454,17 @@ export const ExpandableCategoryCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 16,
     position: 'relative',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 88,
-    paddingHorizontal: 20,
   },
   iconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -496,7 +484,6 @@ const styles = StyleSheet.create({
     top: 88,
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
     paddingBottom: 20,
   },
   // Slider

@@ -28,7 +28,7 @@ import { BlurView } from '@react-native-community/blur';
 
 import { Text } from '../ui/Text';
 import { AppHeader } from '../ui/AppHeader';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand, useSpecTheme } from '../../theme/specTheme';
 import { useBudgetStore } from '../../store/budgetStore';
 
 import { ExpandableCategoryCard } from './ExpandableCategoryCard';
@@ -307,12 +307,11 @@ export const MoneyPlanShell = ({ navigation }: any) => {
           {/* INTERACTIVE ALLOCATION CARDS */}
           <View style={{ paddingHorizontal: 24 }}>
             <ExpandableCategoryCard
-              icon={<Heart color={colors.mintDeep} size={22} />}
+              icon={<Heart color="#FFFFFF" size={22} strokeWidth={1.7} />}
               name="Needs"
               percentage={needs}
               amountPaise={income * (needs / 100)}
-              color={colors.mintDeep}
-              tint={colors.mint}
+              color={colors.textPrimary}
               recommendedRange="50–60%"
               includedExpenses="Rent, groceries, utilities, insurance"
               insights={
@@ -325,12 +324,11 @@ export const MoneyPlanShell = ({ navigation }: any) => {
             />
 
             <ExpandableCategoryCard
-              icon={<Flame color={colors.peachDeep} size={22} />}
+              icon={<Flame color="#FFFFFF" size={22} strokeWidth={1.7} />}
               name="Wants"
               percentage={wants}
               amountPaise={income * (wants / 100)}
-              color={colors.peachDeep}
-              tint={colors.peach}
+              color={colors.textSecondary}
               recommendedRange="20–30%"
               includedExpenses="Dining out, entertainment, hobbies"
               insights={
@@ -354,12 +352,11 @@ export const MoneyPlanShell = ({ navigation }: any) => {
               // Savings alone rendered as plain grey text on a grey chip while
               // its own legend showed teal — a legend that disagrees with the
               // thing it labels.
-              icon={<Briefcase color={colors.skyDeep} size={22} />}
+              icon={<Briefcase color="#FFFFFF" size={22} strokeWidth={1.7} />}
               name="Savings"
               percentage={savings}
               amountPaise={income * (savings / 100)}
-              color={colors.skyDeep}
-              tint={colors.sky}
+              color={brand.signal}
               recommendedRange="20%+"
               includedExpenses="Emergency fund, investments, goals"
               insights={
@@ -374,22 +371,13 @@ export const MoneyPlanShell = ({ navigation }: any) => {
 
           {/* EXPLORE OTHER PLANS */}
           <PressableScale
-            style={[
-              styles.advancedHeader,
-              { backgroundColor: colors.card, borderRadius: cardRadius },
-              cardShadow,
-            ]}
+            style={[styles.advancedHeader, { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}
+            accessibilityRole="button"
             onPress={() => setShowAdvanced(!showAdvanced)}
           >
             <View style={{ flex: 1 }}>
-              <Text
-                variant="h3"
-                style={{
-                  color: colors.textPrimary,
-                  fontFamily: 'Satoshi-Bold',
-                }}
-              >
-                Explore Other Plans
+              <Text style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Bold', fontSize: 20, lineHeight: 28 }}>
+                Explore other plans
               </Text>
               <Text
                 variant="caption"
@@ -655,8 +643,8 @@ const makeStyles = (_colors: any) =>
       flexDirection: 'row',
       alignItems: 'center',
       marginHorizontal: 24,
-      marginTop: 16,
-      padding: 20,
+      marginTop: 8,
+      paddingVertical: 16,
     },
     chevronCircle: {
       width: 32,

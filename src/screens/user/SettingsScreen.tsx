@@ -297,7 +297,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
             .delay(100)
             .reduceMotion(ReduceMotion.System)}
         >
-          <SettingsSectionTitle>PREFERENCES</SettingsSectionTitle>
+          <SettingsSectionTitle>Preferences</SettingsSectionTitle>
           <SettingsCard style={styles.groupCard}>
             <SettingsRow
               icon={Moon}

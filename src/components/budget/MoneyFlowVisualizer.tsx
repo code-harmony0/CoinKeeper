@@ -15,7 +15,7 @@ import Animated, {
   FadeInDown,
 } from 'react-native-reanimated';
 import { Text } from '../ui/Text';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand } from '../../theme/specTheme';
 import { Money } from '../../utils/money';
 
 
@@ -48,7 +48,10 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
   safeToSpend,
   colors,
 }) => {
-  const { cardRadius, cardShadow, space } = useSpecTheme();
+  // Neutral split: ink for needs, grey for wants, the one signal colour for savings.
+  const NEEDS = colors.textPrimary;
+  const WANTS = colors.textSecondary;
+  const SAVE = brand.signal;
 
   // ── Shared values (numeric — these actually animate) ─────────────────────
   const animNeeds = useSharedValue(needs);
@@ -95,19 +98,19 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
       label: 'Needs',
       percent: needs,
       amount: Math.round(income * (needs / 100)),
-      color: colors.mintDeep,
+      color: NEEDS,
     },
     {
       label: 'Wants',
       percent: wants,
       amount: Math.round(income * (wants / 100)),
-      color: colors.peachDeep,
+      color: WANTS,
     },
     {
       label: 'Savings',
       percent: savings,
       amount: Math.round(income * (savings / 100)),
-      color: colors.skyDeep,
+      color: SAVE,
     },
   ];
 
@@ -116,15 +119,12 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
   return (
     <Animated.View
       entering={FadeInDown.duration(500).delay(100)}
-      style={[styles.container, { backgroundColor: colors.card, borderRadius: cardRadius }, cardShadow]}
+      style={styles.container}
     >
       {/* ── Header ── */}
       <View style={styles.header}>
-        <Text
-          variant="caption"
-          style={[styles.sectionLabel, { color: colors.textSecondary }]}
-        >
-          MONEY FLOW
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]} accessibilityRole="header">
+          Where your income goes
         </Text>
         {hasIncome ? (
           <Text
@@ -134,8 +134,8 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
             {Money.format(income, { zeroDecimals: true })} / mo
           </Text>
         ) : (
-          <Text variant="caption" style={{ color: colors.danger, fontFamily: 'Satoshi-Medium' }}>
-            No income set
+          <Text variant="caption" style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium' }}>
+            No income set yet
           </Text>
         )}
       </View>
@@ -162,9 +162,9 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
                 individually turned any narrow one (e.g. Wants at 10%, ~32dp
                 wide against a 28dp-tall bar with r=14) into a circle. */}
             <Group clip={rrect(rect(0, 0, barWidth, BAR_HEIGHT), BAR_RADIUS, BAR_RADIUS)}>
-              <Rect x={0} y={0} width={needsW} height={BAR_HEIGHT} color={colors.mintDeep} />
-              <Rect x={wantsX} y={0} width={wantsW} height={BAR_HEIGHT} color={colors.peachDeep} />
-              <Rect x={savingsX} y={0} width={savingsW} height={BAR_HEIGHT} color={colors.skyDeep} />
+              <Rect x={0} y={0} width={needsW} height={BAR_HEIGHT} color={NEEDS} />
+              <Rect x={wantsX} y={0} width={wantsW} height={BAR_HEIGHT} color={WANTS} />
+              <Rect x={savingsX} y={0} width={savingsW} height={BAR_HEIGHT} color={SAVE} />
             </Group>
           </Canvas>
         )}
@@ -178,13 +178,13 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
             <View style={styles.legendText}>
               <Text
                 variant="caption"
-                style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium', fontSize: 11 }}
+                style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium', fontSize: 12, lineHeight: 16 }}
               >
                 {seg.label}
               </Text>
               <Text
                 variant="caption"
-                style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Bold', fontSize: 13 }}
+                style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Bold', fontSize: 14, lineHeight: 20 }}
               >
                 {hasIncome
                   ? `${Money.format(seg.amount, { zeroDecimals: true })}`
@@ -195,30 +195,12 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
         ))}
       </View>
 
-      {/* ── Safe To Spend Pill ── */}
-      <View
-        style={[
-          styles.safePill,
-          {
-            backgroundColor: `${colors.mintDeep}12`,
-            borderColor: `${colors.mintDeep}30`,
-          },
-        ]}
-      >
-        <View style={[styles.safeIndicator, { backgroundColor: colors.mintDeep }]} />
-        <Text
-          variant="caption"
-          style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium', flex: 1 }}
-        >
+      <View style={[styles.safeRow, { borderTopColor: colors.border }]}>
+        <Text style={{ color: colors.textSecondary, fontFamily: 'Satoshi-Medium', fontSize: 14, lineHeight: 20, flex: 1 }}>
           Safe to spend this month
         </Text>
-        <Text
-          variant="body"
-          style={{ color: colors.mintDeep, fontFamily: 'Satoshi-Black', fontSize: 15 }}
-        >
-          {hasIncome
-            ? `${Money.format(safeToSpend, { zeroDecimals: true })}`
-            : '—'}
+        <Text style={{ color: colors.textPrimary, fontFamily: 'Satoshi-Black', fontSize: 16, lineHeight: 24 }}>
+          {hasIncome ? Money.format(safeToSpend, { zeroDecimals: true }) : '—'}
         </Text>
       </View>
     </Animated.View>
@@ -226,59 +208,19 @@ export const MoneyFlowVisualizer: React.FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginHorizontal: 24,
-    marginBottom: 16,
-    padding: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionLabel: {
-    fontFamily: 'Satoshi-Bold',
-    fontSize: 10,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-  },
-  barContainer: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  legend: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    flex: 1,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginTop: 4,
-  },
-  legendText: {
-    gap: 2,
-  },
-  safePill: {
+  container: { marginHorizontal: 24, marginBottom: 24 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionLabel: { fontFamily: 'Satoshi-Bold', fontSize: 20, lineHeight: 28 },
+  barContainer: { width: '100%', marginBottom: 16 },
+  legend: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  legendItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, flex: 1 },
+  legendDot: { width: 8, height: 8, borderRadius: 4, marginTop: 6 },
+  legendText: { gap: 2 },
+  safeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
     gap: 10,
-  },
-  safeIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    minHeight: 48,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
 });
