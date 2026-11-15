@@ -1,5 +1,6 @@
 package com.coinkeeper
 
+import android.os.Bundle
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -12,6 +13,15 @@ class MainActivity : ReactActivity() {
    * rendering of the component.
    */
   override fun getMainComponentName(): String = "CoinKeeper"
+
+  /**
+   * react-native-screens cannot restore its fragments, so a relaunch carrying saved state (system
+   * font-size or language change, or Android reviving a process it killed in the background)
+   * crashes with "Screen fragments should never be restored". Passing null starts clean instead.
+   */
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(null)
+  }
 
   /**
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]

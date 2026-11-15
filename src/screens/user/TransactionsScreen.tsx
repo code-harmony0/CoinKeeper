@@ -34,13 +34,15 @@ import {
   MessageSquare,
   X,
   SlidersHorizontal,
+  Plus,
+  CircleAlert,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
 import { useTransactionStore } from '../../store/transactionStore';
 import { Money } from '../../utils/money';
 import { useSecureScreen } from '../../hooks/useSecureScreen';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand, onInk, useSpecTheme } from '../../theme/specTheme';
 import { Transaction } from '../../types/transaction';
 import { CountUp, PressableScale } from '../../components/anim';
 import { PiggyBankIllustration } from '../../components/illustrations';
@@ -51,6 +53,9 @@ import { resolveCategoryIcon } from '../../utils/categoryIcon';
 import { isWithinPeriod, PeriodFilter } from '../../utils/transactionPeriod';
 import { TransactionFiltersSheet } from '../../components/transaction/TransactionFiltersSheet';
 import { TransactionDetailSheet } from '../../components/transaction/TransactionDetailSheet';
+import { CategoryPickerSheet, PickableCategory } from '../../components/transaction/CategoryPickerSheet';
+import { matchesSearch } from '../../utils/transactionSearch';
+import { needsReview } from '../../utils/transactionReview';
 import { AmountDateFilter, matchesAmountDateFilter, isFilterActive, matchesCategory } from '../../utils/transactionFilters';
 
 type Props = NativeStackScreenProps<any, 'Transactions'>;
@@ -61,7 +66,7 @@ const TABS: FilterTab[] = ['all', 'income', 'expense', 'transfer_to_goal'];
 export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
   useSecureScreen();
   const insets = useSafeAreaInsets();
-  const { colors, cardRadius, spring, iconShadow } = useSpecTheme();
+  const { colors, cardRadius, spring, iconShadow, isDark } = useSpecTheme();
 
   // Feeds the shared scroll offset the tab bar reads to auto-hide. FlashList
   // is not a Reanimated component, so this writes the shared value from JS
@@ -74,6 +79,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
     [scrollY],
   );
   const { transactions, deleteTransaction, updateTransaction } = useTransactions();
+  const formatNet = (paise: number) => `${paise < 0 ? '−' : paise > 0 ? '+' : ''}${Money.format(Math.abs(paise), { zeroDecimals: true })}`;
   const markAwaitingReturn = useTransactionStore(state => state.markAwaitingReturn);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   // "All Time" by default: an SMS import brings in months of history, and
@@ -90,6 +96,10 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
   const [amountDateFilter, setAmountDateFilter] = useState<AmountDateFilter>({});
   const [showFilters, setShowFilters] = useState(false);
   const [detailTx, setDetailTx] = useState<Transaction | null>(null);
+  // Review mode lists every uncategorised transaction, whatever the period
+  // or tab, and a tap on a row goes straight to picking its category.
+  const [reviewOnly, setReviewOnly] = useState(false);
+  const [categoryTarget, setCategoryTarget] = useState<Transaction | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
   // Rows removed from view optimistically — via swipe (pendingDelete tracks
   // which one for the undo banner) or multi-select (no undo, committed
@@ -137,10 +147,17 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
     [settled, activeTab],
   );
 
+  const reviewTx = useMemo(() => settled.filter(needsReview), [settled]);
+
   const inPeriod = useMemo(
-    () => filteredTx.filter(t => isWithinPeriod(t.date, period)),
-    [filteredTx, period],
+    () => (reviewOnly ? reviewTx : filteredTx.filter(t => isWithinPeriod(t.date, period))),
+    [reviewOnly, reviewTx, filteredTx, period],
   );
+
+  // Categorising the last one ends the review — nothing left to show.
+  useEffect(() => {
+    if (reviewOnly && reviewTx.length === 0) setReviewOnly(false);
+  }, [reviewOnly, reviewTx.length]);
 
   // Summary cards and tab badge counts answer "what happened this period" and should
   // stay stable across the type tabs — only `inPeriod` (used for the visible list) is
@@ -159,11 +176,8 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [routeCategory]);
 
   const searched = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return inPeriod;
-    return inPeriod.filter(
-      t => (t.description ?? '').toLowerCase().includes(q) || t.category.toLowerCase().includes(q),
-    );
+    if (!searchQuery.trim()) return inPeriod;
+    return inPeriod.filter(t => matchesSearch(t, searchQuery));
   }, [inPeriod, searchQuery]);
 
   const filtered = useMemo(
@@ -179,6 +193,10 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
   const grouped = useMemo(
     () => groupTransactionsByDate(filtered.filter(t => !hiddenIds.has(t.id))),
     [filtered, hiddenIds],
+  );
+  const headerIndices = useMemo(
+    () => grouped.reduce<number[]>((acc, row, i) => (row.type === 'header' ? [...acc, i] : acc), []),
+    [grouped],
   );
 
   const totalIncome = useMemo(
@@ -287,6 +305,19 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
     await Promise.all(ids.map(id => deleteTransaction(id)));
   };
 
+  const handleRecategorize = async (category: PickableCategory) => {
+    const target = categoryTarget;
+    setCategoryTarget(null);
+    if (!target) return;
+    ReactNativeHapticFeedback.trigger('notificationSuccess');
+    await updateTransaction(target.id, {
+      category: category.name,
+      categoryId: category.id,
+      categoryIcon: category.icon,
+      categoryColor: category.color,
+    });
+  };
+
   const handleSaveDetail = async (id: string, updates: Partial<Transaction>) => {
     // "I'll get this back" is its own column with its own action — updateTransaction
     // writes the money fields and would drop it silently.
@@ -334,6 +365,18 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
     return (
       <Animated.View entering={FadeInDown.delay(index * 30).springify()}>
         <Swipeable
+          renderLeftActions={(_progress: unknown, _drag: unknown, swipeable: any) => (
+            <Pressable
+              testID={`swipe-category-${item.id}`}
+              onPress={() => {
+                swipeable?.close?.();
+                setCategoryTarget(item);
+              }}
+              style={[styles.swipeCategory, { backgroundColor: colors.primaryAccent }]}
+            >
+              <Tag size={20} color={colors.onAccent} strokeWidth={2} />
+            </Pressable>
+          )}
           renderRightActions={() => (
             <Pressable
               testID={`swipe-delete-${item.id}`}
@@ -347,7 +390,13 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
           <PressableScale
             testID={`row-${item.id}`}
             onLongPress={() => enterSelection(item.id)}
-            onPress={() => (selectedIds.size > 0 ? toggleSelected(item.id) : setDetailTx(item))}
+            onPress={() =>
+              selectedIds.size > 0
+                ? toggleSelected(item.id)
+                : reviewOnly
+                  ? setCategoryTarget(item)
+                  : setDetailTx(item)
+            }
             style={[styles.row, isSelected && { backgroundColor: colors.chipBg }]}
             accessible={true}
             accessibilityRole="button"
@@ -366,12 +415,12 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text style={[styles.rowMeta, { color: colors.textSecondary }]}>
                 {categoryLabel(item.category)}
                 {item.paymentMethod && item.paymentMethod.toLowerCase() !== 'manual'
-                  ? ` • ${item.paymentMethod}`
+                  ? ` • ${item.paymentMethod.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())}`
                   : ''}
               </Text>
             </View>
             <View style={styles.rowRight}>
-              <Text style={[styles.rowAmount, { color: isIncome ? colors.success : item.type === 'transfer_to_goal' ? colors.skyDeep : colors.danger }]}>
+              <Text style={[styles.rowAmount, { color: isIncome ? colors.mintDeep : colors.textPrimary }]}>
                 {isIncome ? '+' : ''}{formatAmount(item.amountPaise)}
               </Text>
             </View>
@@ -384,11 +433,16 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
   const renderItem = ({ item, index }: ListRenderItemInfo<GroupedRow>) => {
     if (item.type === 'header') {
       return (
-        <View style={styles.dateHeaderContainer}>
+        <View style={[styles.dateHeaderContainer, { backgroundColor: colors.background }]}>
           <Text style={[styles.dateHeader, { color: colors.textSecondary, backgroundColor: colors.background }]}>
             {item.label}
           </Text>
           <View style={[styles.dateHeaderLine, { backgroundColor: colors.border || colors.chipBg }]} />
+          {item.netPaise !== 0 && (
+            <Text style={[styles.dateNet, { color: item.netPaise > 0 ? colors.mintDeep : colors.textSecondary }]}>
+              {formatNet(item.netPaise)}
+            </Text>
+          )}
         </View>
       );
     }
@@ -423,12 +477,16 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
                 <>
                   <PressableScale
                     onPress={() => navigation.navigate('SmsReview')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Review SMS transactions"
                     style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
                   >
                     <MessageSquare size={18} color={colors.textPrimary} strokeWidth={2.2} />
                   </PressableScale>
                   <PressableScale
                     onPress={() => navigation.navigate('Categories')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Manage categories"
                     style={[styles.categoriesButton, { backgroundColor: colors.chipBg }]}
                   >
                     <Tag size={18} color={colors.textPrimary} strokeWidth={2.2} />
@@ -440,23 +498,23 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
         )}
 
         <Animated.View entering={FadeInDown.delay(50).springify()} style={styles.summaryRow}>
-          <View style={[styles.summaryCard, { backgroundColor: colors.incomeTint, borderRadius: cardRadius }]}>
+          <View style={[styles.summaryCard, { backgroundColor: isDark ? colors.chipBg : brand.ink, borderRadius: 16 }]}>
             <View style={styles.summaryIconRow}>
-              <ArrowUpRight size={18} color={colors.success} strokeWidth={2.2} />
-              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Income</Text>
+              <ArrowUpRight size={18} color={brand.signal} strokeWidth={2.4} />
+              <Text style={[styles.summaryLabel, { color: onInk.mid }]}>Money in</Text>
             </View>
-            <CountUp testID="summary-income" value={totalIncome} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
+            <CountUp testID="summary-income" value={totalIncome} prefix="₹" isPaise style={[styles.summaryValue, { color: onInk.high }]} />
           </View>
-          <View style={[styles.summaryCard, { backgroundColor: colors.expenseTint, borderRadius: cardRadius }]}>
+          <View style={[styles.summaryCard, { backgroundColor: isDark ? colors.chipBg : brand.ink, borderRadius: 16 }]}>
             <View style={styles.summaryIconRow}>
-              <ArrowDownRight size={18} color={colors.danger} strokeWidth={2.2} />
-              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Expenses</Text>
+              <ArrowDownRight size={18} color={onInk.mid} strokeWidth={2.4} />
+              <Text style={[styles.summaryLabel, { color: onInk.mid }]}>Money spent</Text>
             </View>
-            <CountUp testID="summary-expense" value={totalExpense} prefix="₹" isPaise style={[styles.summaryValue, { color: colors.textPrimary }]} />
+            <CountUp testID="summary-expense" value={totalExpense} prefix="₹" isPaise style={[styles.summaryValue, { color: onInk.high }]} />
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.periodRow}>
+        <Animated.View entering={FadeInDown.delay(80).springify()} style={[styles.periodRow, reviewOnly && styles.hidden]}>
           {(['week', 'month', 'all'] as PeriodFilter[]).map(p => (
             <Pressable
               key={p}
@@ -471,7 +529,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
           ))}
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.segmentWrapper}>
+        <Animated.View entering={FadeInDown.delay(100).springify()} style={[styles.segmentWrapper, reviewOnly && styles.hidden]}>
           <View
             style={[styles.segmentContainer, { backgroundColor: colors.segmentInactiveBg }]}
             onLayout={onSegmentLayout}
@@ -534,7 +592,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
           <Search size={18} color={colors.textSecondary} strokeWidth={2} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="Search transactions"
+            placeholder="Search merchant, category or amount"
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -552,6 +610,28 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
             />
           </Pressable>
         </Animated.View>
+
+        {reviewTx.length > 0 && (
+          <Animated.View entering={FadeInDown.springify()} style={styles.reviewWrap}>
+            <Pressable
+              testID="review-banner"
+              accessibilityRole="button"
+              accessibilityLabel={reviewOnly ? 'Stop reviewing' : `${reviewTx.length} transactions need a category. Review them`}
+              onPress={() => setReviewOnly(v => !v)}
+              style={[styles.reviewBanner, { backgroundColor: reviewOnly ? colors.primaryAccent : colors.expenseTint, borderRadius: cardRadius }]}
+            >
+              <CircleAlert size={18} color={reviewOnly ? colors.onAccent : colors.danger} strokeWidth={2.2} />
+              <Text style={[styles.reviewText, { color: reviewOnly ? colors.onAccent : colors.textPrimary }]} numberOfLines={1}>
+                {reviewOnly
+                  ? `Tap a transaction to categorise it · ${reviewTx.length} left`
+                  : `${reviewTx.length} ${reviewTx.length === 1 ? 'transaction needs' : 'transactions need'} a category`}
+              </Text>
+              <Text style={[styles.reviewAction, { color: reviewOnly ? colors.onAccent : colors.primaryAccent }]}>
+                {reviewOnly ? 'Done' : 'Review'}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        )}
       </View>
 
       <View style={styles.content}>
@@ -559,6 +639,7 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
           data={grouped}
           keyExtractor={item => item.key}
           renderItem={renderItem}
+          stickyHeaderIndices={headerIndices}
           getItemType={item => item.type}
           // FlashList ignores width/alignment on its content container, and
           // setting them there left the list measuring wrong — rows drew behind
@@ -593,6 +674,13 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation, route }) => {
         initialFilter={amountDateFilter}
         onApply={setAmountDateFilter}
         onClose={() => setShowFilters(false)}
+      />
+
+      <CategoryPickerSheet
+        visible={!!categoryTarget}
+        selectedCategoryId={categoryTarget?.categoryId}
+        onSelect={handleRecategorize}
+        onClose={() => setCategoryTarget(null)}
       />
 
       <TransactionDetailSheet
@@ -632,7 +720,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 16,
   },
   backButton: {
     width: 40,
@@ -648,9 +736,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoriesButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
@@ -658,19 +746,26 @@ const styles = StyleSheet.create({
 
   summaryRow: {
     flexDirection: 'row',
-    gap: 16,
-    marginBottom: 32,
+    gap: 12,
+    marginBottom: 12,
   },
   summaryCard: {
     flex: 1,
-    padding: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   summaryIconRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 8,
+    marginBottom: 4,
   },
+  swipeCategory: { width: 72, alignItems: 'center', justifyContent: 'center', borderRadius: 16, marginRight: 8 },
+  dateNet: { fontSize: 12, fontFamily: 'Satoshi-Bold', marginLeft: 8 },
+  reviewWrap: { marginTop: 12 },
+  reviewBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 16 },
+  reviewText: { flex: 1, fontSize: 13, fontFamily: 'Satoshi-Medium' },
+  reviewAction: { fontSize: 13, fontFamily: 'Satoshi-Bold' },
   summaryLabel: {
     fontSize: 12,
     fontFamily: 'Satoshi-Medium',
@@ -680,7 +775,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Black',
   },
 
-  periodRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  periodRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   periodPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
   periodText: { fontSize: 12, fontFamily: 'Satoshi-Bold' },
 
@@ -768,9 +863,10 @@ const styles = StyleSheet.create({
   dateHeaderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 12,
+    paddingTop: 20,
+    paddingBottom: 12,
   },
+  hidden: { display: 'none' },
   dateHeader: {
     fontSize: 13,
     fontFamily: 'Satoshi-Bold',

@@ -29,6 +29,8 @@
     "lint": "eslint .",
     "postinstall": "patch-package",
     "start": "react-native start",
+    "start:lite": "react-native start --reset-cache",
+    "start:pro": "CK_CHITFUND=1 react-native start --reset-cache",
     "test": "jest",
     "verify:split": "./scripts/verify-bundle-split.sh"
   },

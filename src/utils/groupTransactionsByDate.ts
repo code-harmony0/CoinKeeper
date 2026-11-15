@@ -1,7 +1,8 @@
 import { Transaction } from '../types/transaction';
 
 export type GroupedRow =
-  | { type: 'header'; label: string; key: string }
+  /** netPaise: that day's income minus expenses; goal transfers are not spending. */
+  | { type: 'header'; label: string; key: string; netPaise: number }
   | { type: 'row'; tx: Transaction; key: string };
 
 /**
@@ -50,16 +51,22 @@ export const groupTransactionsByDate = (
   const rows: GroupedRow[] = [];
   let currentKey: string | null = null;
 
+  let header: Extract<GroupedRow, { type: 'header' }> | null = null;
+
   for (const tx of transactions) {
     const key = dayKey(tx.date);
     if (key !== currentKey) {
       currentKey = key;
-      rows.push({
+      header = {
         type: 'header',
         label: dayLabel(tx.date, now),
         key: `header-${key}`,
-      });
+        netPaise: 0,
+      };
+      rows.push(header);
     }
+    if (header && tx.type === 'income') header.netPaise += tx.amountPaise;
+    if (header && tx.type === 'expense') header.netPaise -= tx.amountPaise;
     rows.push({ type: 'row', tx, key: tx.id });
   }
 

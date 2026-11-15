@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   Keyboard,
   ScrollView,
   Alert,
@@ -33,6 +34,7 @@ import { TransactionPreviewCard } from '../transaction/TransactionPreviewCard';
 import { ReceiptPreviewCard } from '../transaction/ReceiptPreviewCard';
 import { SmsInboxRow } from '../transaction/SmsInboxRow';
 import { StickySaveBar } from '../transaction/StickySaveBar';
+import { evaluateAmount, hasOperator } from '../../utils/amountExpression';
 
 /**
  * How many messages back to look. A real inbox is mostly network and delivery
@@ -108,6 +110,11 @@ export const AddTransactionSheet: React.FC<Props> = ({
   const [isSuccess, setIsSuccess] = useState(false);
 
   const amountRef = useRef<TextInput>(null);
+  // The amount field doubles as a calculator ("450+120"); everything below
+  // reads the evaluated value, never the raw text.
+  const amountValue = evaluateAmount(amountInput) ?? 0;
+  const appendOperator = (op: string) =>
+    setAmountInput(prev => (prev === '' ? prev : prev.replace(/[+\-×÷]$/, '') + op));
 
   // Load SmartSuggestionsSection data (Manual mode)
   useEffect(() => {
@@ -147,10 +154,10 @@ export const AddTransactionSheet: React.FC<Props> = ({
     if (activeMode !== 'manual') return;
 
     const runPredictions = async () => {
-      const numAmount = parseFloat(amountInput) || 0;
+      const numAmount = amountValue;
       const updatedDraft = {
         ...draft,
-        amount_paise: numAmount * 100,
+        amount_paise: Math.round(numAmount * 100),
         merchant_name: merchantInput.trim() || undefined,
         source: activeMode,
       };
@@ -346,7 +353,7 @@ export const AddTransactionSheet: React.FC<Props> = ({
     const finalCategory = effectiveCategoryId || 'others';
     const finalDraft: TransactionDraft = {
       ...draft,
-      amount_paise: (parseFloat(amountInput) || 0) * 100,
+      amount_paise: Math.round(amountValue * 100),
       merchant_name: merchantInput.trim() || undefined,
       category_id: finalCategory,
       is_duplicate: prediction?.isDuplicate || false,
@@ -381,7 +388,7 @@ export const AddTransactionSheet: React.FC<Props> = ({
     setReceiptImageUri(undefined);
   };
 
-  const amountIsEmpty = parseFloat(amountInput) === 0 || amountInput === '';
+  const amountIsEmpty = amountValue === 0;
   const merchantIsEmpty = merchantInput.trim().length === 0;
   const isValid = !amountIsEmpty && !merchantIsEmpty;
 
@@ -401,7 +408,7 @@ export const AddTransactionSheet: React.FC<Props> = ({
       budgetImpact={budgetImpact}
       isRecurring={prediction?.isRecurring}
       category={effectiveCategoryName}
-      amount={parseFloat(amountInput) || 0}
+      amount={amountValue}
     />
   );
 
@@ -440,9 +447,30 @@ export const AddTransactionSheet: React.FC<Props> = ({
                 value={amountInput}
                 onChangeText={setAmountInput}
                 keyboardType="decimal-pad"
-                maxLength={9}
+                maxLength={24}
               />
             </Animated.View>
+
+            {amountInput !== '' && (
+              <View style={styles.calcRow}>
+                {['+', '−', '×', '÷'].map(op => (
+                  <Pressable
+                    key={op}
+                    testID={`calc-${op}`}
+                    accessibilityLabel={`Add ${op}`}
+                    onPress={() => appendOperator(op)}
+                    style={[styles.calcKey, { backgroundColor: colors.chipBg }]}
+                  >
+                    <Text style={[styles.calcKeyText, { color: colors.textPrimary }]}>{op}</Text>
+                  </Pressable>
+                ))}
+                {hasOperator(amountInput) && amountValue > 0 && (
+                  <Text testID="calc-result" style={[styles.calcResult, { color: colors.textSecondary }]}>
+                    = ₹{amountValue.toLocaleString('en-IN')}
+                  </Text>
+                )}
+              </View>
+            )}
 
             {amountIsEmpty && (
               <SmartSuggestionsSection
@@ -616,6 +644,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Bold',
     fontSize: 14,
   },
+  calcRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 },
+  calcKey: { width: 40, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  calcKeyText: { fontSize: 18, fontFamily: 'Satoshi-Bold' },
+  calcResult: { fontSize: 15, fontFamily: 'Satoshi-Bold', marginLeft: 6 },
   heroAmountContainer: {
     flexDirection: 'row',
     justifyContent: 'center',

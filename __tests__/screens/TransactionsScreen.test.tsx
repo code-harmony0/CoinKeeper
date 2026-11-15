@@ -80,7 +80,7 @@ describe('TransactionsScreen', () => {
       <TransactionsScreen navigation={navigation} route={{} as any} />,
     );
 
-    fireEvent.changeText(getByPlaceholderText('Search transactions'), 'salary');
+    fireEvent.changeText(getByPlaceholderText('Search merchant, category or amount'), 'salary');
 
     expect(getByText('Paycheck')).toBeTruthy();
     expect(queryByText('Lunch')).toBeNull();
