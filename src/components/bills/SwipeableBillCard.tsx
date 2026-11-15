@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import {
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
@@ -14,18 +14,19 @@ import Animated, {
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {
   CheckCircle2,
-  Repeat,
   Zap,
   Play,
   Droplet,
   Smartphone,
   Receipt,
   MoreVertical,
+  type LucideIcon,
 } from 'lucide-react-native';
-import { Text } from '../ui/Text';
 import { fromPaise } from '../../utils/money';
 import { Bill } from '../../store/billStore';
 import { PressableScale } from '../anim';
+import { IconTile } from '../shared/IconTile';
+import { brand } from '../../theme/specTheme';
 import { daysUntilDue, type BillStatus } from '../../services/billSchedule';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -41,48 +42,33 @@ interface Props {
    */
   status: BillStatus;
   colors: any;
-  cardRadius: number;
-  cardShadow: any;
-  iconContainerRadius: number;
+  /** Kept so callers need no change; the row is flat now. */
+  cardRadius?: number;
+  cardShadow?: any;
+  iconContainerRadius?: number;
+  /** Hides the hairline under the last row of a section. */
+  last?: boolean;
   onMarkPaid: () => void;
   onMenu: () => void;
 }
 
-const getBillIcon = (name: string, color: string) => {
+const getBillIcon = (name: string): LucideIcon => {
   const lower = name.toLowerCase();
-  if (
-    lower.includes('electric') ||
-    lower.includes('power') ||
-    lower.includes('energy')
-  )
-    return <Zap color={color} size={24} />;
-  if (
-    lower.includes('netflix') ||
-    lower.includes('prime') ||
-    lower.includes('hulu') ||
-    lower.includes('tv') ||
-    lower.includes('movie')
-  )
-    return <Play color={color} size={24} />;
-  if (lower.includes('water')) return <Droplet color={color} size={24} />;
-  if (
-    lower.includes('phone') ||
-    lower.includes('mobile') ||
-    lower.includes('internet') ||
-    lower.includes('wifi') ||
-    lower.includes('broadband')
-  )
-    return <Smartphone color={color} size={24} />;
-  return <Receipt color={color} size={24} />;
+  if (/electric|power|energy/.test(lower)) return Zap;
+  if (/netflix|prime|hulu|tv|movie/.test(lower)) return Play;
+  if (lower.includes('water')) return Droplet;
+  if (/phone|mobile|internet|wifi|broadband/.test(lower)) return Smartphone;
+  return Receipt;
 };
+
+const ordinal = (d: number) =>
+  [11, 12, 13].includes(d % 100) ? 'th' : ['st', 'nd', 'rd'][(d % 10) - 1] || 'th';
 
 export const SwipeableBillCard: React.FC<Props> = ({
   bill,
   status,
   colors,
-  cardRadius,
-  cardShadow,
-  iconContainerRadius,
+  last,
   onMarkPaid,
   onMenu,
 }) => {
@@ -92,16 +78,6 @@ export const SwipeableBillCard: React.FC<Props> = ({
   const isPaid = status === 'paid';
   const isOverdue = status === 'overdue';
   const daysAway = daysUntilDue(bill.dueDay);
-
-  // The shadow wrapper must be OPAQUE. Android draws the elevation shadow
-  // behind the view, so a translucent background lets it show straight
-  // through — the overdue card (5%-alpha danger) rendered as a solid grey
-  // block sitting under the content. The danger tint moved to the inner
-  // surface, which carries no elevation.
-  const shadowBg = isPaid ? 'transparent' : colors.card;
-  const tintBg = isOverdue ? `${colors.danger}0D` : 'transparent';
-  const iconBg = isOverdue ? `${colors.danger}1A` : colors.chipBg;
-  const iconColor = isOverdue ? colors.danger : colors.textPrimary;
 
   const handleComplete = () => {
     ReactNativeHapticFeedback.trigger('notificationSuccess');
@@ -144,187 +120,85 @@ export const SwipeableBillCard: React.FC<Props> = ({
     };
   });
 
+  const Icon = getBillIcon(bill.name);
+  const dueText =
+    daysAway === 0 ? 'Due today' : daysAway === 1 ? 'Due tomorrow' : `Due in ${daysAway} days`;
+  const tag = isPaid
+    ? null
+    : isOverdue
+      ? { label: 'OVERDUE', solid: true }
+      : status === 'due-soon'
+        ? { label: daysAway === 0 ? 'TODAY' : daysAway === 1 ? 'TOMORROW' : `IN ${daysAway} DAYS`, solid: false }
+        : null;
+  const meta = [
+    bill.isRecurring ? (bill.repeatInterval ? bill.repeatInterval : 'Monthly') : 'One-time',
+    `due on the ${bill.dueDay}${ordinal(bill.dueDay)}`,
+    bill.autoPayEnabled ? 'auto-pay' : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
-    // cardShadow lives on this static wrapper, not on the Animated.View below — Android's
-    // elevation shadow ghosts into a detached gray halo when applied to a view that Reanimated
-    // is also transforming (translateX/scale from the swipe gesture).
-    <View
-      style={[
-        styles.container,
-        !isPaid && cardShadow,
-        { borderRadius: cardRadius, backgroundColor: shadowBg },
-      ]}
-    >
-      <Animated.View
-        style={[
-          styles.backgroundAction,
-          { backgroundColor: colors.success, borderRadius: cardRadius },
-          rBackgroundStyle,
-        ]}
-      >
-        <CheckCircle2 color="#FFF" size={28} />
-        <Text style={[styles.actionText, { color: '#FFF' }]}>Paid</Text>
+    <View style={[styles.container, !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+      <Animated.View style={[styles.backgroundAction, { backgroundColor: colors.success }, rBackgroundStyle]}>
+        <CheckCircle2 color="#FFF" size={24} strokeWidth={1.9} />
+        <Text style={styles.actionText}>Paid</Text>
       </Animated.View>
 
       <PanGestureHandler onGestureEvent={panGesture} enabled={!isPaid}>
-        <Animated.View
-          style={[
-            styles.card,
-            { borderRadius: cardRadius, backgroundColor: tintBg },
-            isPaid && { opacity: 0.6 },
-            rStyle,
-          ]}
-        >
-          <View
-            style={[
-              styles.iconBox,
-              { backgroundColor: iconBg, borderRadius: iconContainerRadius },
-            ]}
-          >
-            {getBillIcon(bill.name, iconColor)}
-          </View>
+        <Animated.View style={[styles.card, { backgroundColor: colors.background }, isPaid && { opacity: 0.55 }, rStyle]}>
+          {isOverdue ? (
+            <View style={[styles.alertTile]}>
+              <Icon size={20} strokeWidth={1.7} color={brand.ink} />
+            </View>
+          ) : (
+            <IconTile icon={isPaid ? CheckCircle2 : Icon} />
+          )}
 
           <View style={styles.billInfo}>
             <Text
-              variant="h3"
+              numberOfLines={1}
               style={[
                 styles.billName,
-                isPaid
-                  ? {
-                      textDecorationLine: 'line-through',
-                      color: colors.textSecondary,
-                    }
-                  : { color: colors.textPrimary },
+                { color: isPaid ? colors.textSecondary : colors.textPrimary },
+                isPaid && { textDecorationLine: 'line-through' },
               ]}
             >
               {bill.name}
             </Text>
-            <View style={styles.chipsRow}>
+            {tag ? (
               <View
                 style={[
-                  styles.statusChip,
-                  {
-                    backgroundColor: status === 'due-soon'
-                      ? `${colors.warning ?? colors.peachDeep}1A`
-                      : isPaid
-                      ? `${colors.textSecondary}1A`
-                      : isOverdue
-                      ? `${colors.danger}1A`
-                      : `${colors.primaryAccent}1A`,
-                  },
+                  styles.tag,
+                  tag.solid
+                    ? { backgroundColor: brand.alert }
+                    : { borderWidth: 2, borderColor: brand.alert, paddingVertical: 0 },
                 ]}
               >
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontFamily: 'Satoshi-Bold',
-                    color: status === 'due-soon'
-                      ? colors.warning ?? colors.peachDeep
-                      : isPaid
-                      ? colors.textSecondary
-                      : isOverdue
-                      ? colors.danger
-                      : colors.primaryAccent,
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  {isPaid
-                    ? 'PAID'
-                    : isOverdue
-                      ? 'OVERDUE'
-                      : status === 'due-soon'
-                        ? daysAway === 0
-                          ? 'DUE TODAY'
-                          : daysAway === 1
-                            ? 'DUE TOMORROW'
-                            : `DUE IN ${daysAway} DAYS`
-                        : 'UPCOMING'}
-                </Text>
+                <Text style={[styles.tagText, !tag.solid && { color: colors.textPrimary }]}>{tag.label}</Text>
               </View>
-              {bill.isRecurring && (
-                <View
-                  style={[
-                    styles.statusChip,
-                    {
-                      backgroundColor: colors.inputBg,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                    },
-                  ]}
-                >
-                  <Repeat
-                    color={colors.textSecondary}
-                    size={10}
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      fontFamily: 'Satoshi-Bold',
-                      color: colors.textSecondary,
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {bill.repeatInterval?.toUpperCase() || 'MONTHLY'}
-                  </Text>
-                </View>
-              )}
-              {bill.autoPayEnabled && (
-                <View
-                  style={[
-                    styles.statusChip,
-                    {
-                      backgroundColor: 'rgba(0, 122, 255, 0.1)',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                    },
-                  ]}
-                >
-                  <Zap color="#007AFF" size={10} style={{ marginRight: 4 }} />
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      fontFamily: 'Satoshi-Bold',
-                      color: '#007AFF',
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    AUTO-PAY
-                  </Text>
-                </View>
-              )}
-              <Text
-                variant="caption"
-                style={{
-                  color: colors.textSecondary,
-                  width: '100%',
-                  marginTop: 2,
-                }}
-              >
-                Due on the {bill.dueDay}
-                {[11, 12, 13].includes(bill.dueDay % 100)
-                  ? 'th'
-                  : ['st', 'nd', 'rd'][(bill.dueDay % 10) - 1] || 'th'}
+            ) : (
+              <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
+                {isPaid ? 'Paid this cycle' : dueText}
               </Text>
-            </View>
+            )}
+            <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
+              {meta}
+            </Text>
           </View>
 
           <View style={styles.billRight}>
-            <Text
-              variant="h3"
-              style={{ color: colors.textPrimary, marginBottom: 4 }}
-            >
-              ₹{fromPaise(bill.amountPaise).toLocaleString()}
+            <Text style={[styles.amount, { color: colors.textPrimary }]}>
+              ₹{fromPaise(bill.amountPaise).toLocaleString('en-IN')}
             </Text>
             <PressableScale
               onPress={onMenu}
               haptic="none"
-              style={{ padding: 4 }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.menu}
               accessibilityRole="button"
               accessibilityLabel={`Options for ${bill.name}`}
             >
-              <MoreVertical color={colors.textSecondary} size={20} />
+              <MoreVertical color={colors.textSecondary} size={20} strokeWidth={1.8} />
             </PressableScale>
           </View>
         </Animated.View>
@@ -334,53 +208,30 @@ export const SwipeableBillCard: React.FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 12,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 18,
-  },
+  container: { overflow: 'hidden' },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 80, paddingVertical: 8 },
   backgroundAction: {
     ...StyleSheet.absoluteFillObject,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 12, // match container
+    paddingHorizontal: 16,
+    gap: 8,
   },
-  actionText: {
-    fontFamily: 'Satoshi-Bold',
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  iconBox: {
+  actionText: { fontFamily: 'Satoshi-Bold', fontSize: 16, lineHeight: 24, color: '#FFFFFF' },
+  alertTile: {
     width: 48,
     height: 48,
+    borderRadius: 12,
+    backgroundColor: brand.alert,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
   },
-  billInfo: {
-    flex: 1,
-  },
-  billName: {
-    fontSize: 16,
-  },
-  chipsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  statusChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  billRight: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
+  billInfo: { flex: 1, gap: 2 },
+  billName: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Bold' },
+  tag: { alignSelf: 'flex-start', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
+  tagText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Black', color: brand.ink, letterSpacing: 0.5 },
+  meta: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Medium' },
+  billRight: { alignItems: 'flex-end', justifyContent: 'center' },
+  amount: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Black' },
+  menu: { width: 48, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
 });

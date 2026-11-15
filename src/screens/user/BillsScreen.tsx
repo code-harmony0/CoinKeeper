@@ -10,30 +10,25 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { Text } from '../../components/ui/Text';
-import { useSpecTheme } from '../../theme/specTheme';
-import { EXPRESSIVE } from '../../theme/motion';
+import { brand, onInk, useSpecTheme } from '../../theme/specTheme';
+import { Bezel } from '../../components/shared/Bezel';
+import { RollingNumber } from '../../components/anim/RollingNumber';
+import { EXPRESSIVE, INFORMATIONAL } from '../../theme/motion';
 import { useBillStore, Bill } from '../../store/billStore';
 import { useTransactionStore } from '../../store/transactionStore';
 import {
-  FinancialIntelligenceEngine,
-  IntelligenceSnapshot,
-} from '../../services/FinancialIntelligenceEngine';
-import {
   ChevronLeft,
   Plus,
-  ShieldCheck,
-  AlertCircle,
-  Calendar as CalendarIcon,
   CheckCircle2,
 } from 'lucide-react-native';
-import { PressableScale, CountUp } from '../../components/anim';
+import { PressableScale } from '../../components/anim';
 import {
   scheduleBillReminder,
   cancelBillReminder,
 } from '../../services/notificationService';
-import { toPaise } from '../../utils/money';
+import { Money, toPaise } from '../../utils/money';
 import { AddBillSheet } from '../../components/modals/AddBillSheet';
 import { SwipeableBillCard } from '../../components/bills/SwipeableBillCard';
 import {
@@ -49,14 +44,42 @@ import {
 // bill vanish in short months and blinded "due soon" at month end — see
 // services/billSchedule.ts for the full list of what that got wrong.
 
+/** One line of progress: how much of this month's bills is already paid. */
+const PaidBar: React.FC<{ paid: number; total: number }> = ({ paid, total }) => {
+  const [w, setW] = useState(0);
+  const p = useSharedValue(0);
+  const ratio = total > 0 ? paid / total : 0;
+  useEffect(() => {
+    p.value = withDelay(400, withTiming(Math.min(Math.max(ratio, 0.02), 1), { duration: 700, easing: Easing.bezier(0.32, 0.72, 0, 1), reduceMotion: INFORMATIONAL }));
+  }, [ratio, p]);
+  const fill = useAnimatedStyle(() => ({ transform: [{ translateX: (p.value - 1) * w }] }));
+  const styles = barStyles;
+  if (total <= 0) return null;
+  return (
+    <View style={{ marginTop: 16 }}>
+      <View style={styles.barTrack} onLayout={e => setW(e.nativeEvent.layout.width)}>
+        <Animated.View style={[styles.barFill, fill]} />
+      </View>
+      <Text style={styles.barText}>
+        {Money.format(paid, { zeroDecimals: true })} paid of {Money.format(total, { zeroDecimals: true })} in bills
+      </Text>
+    </View>
+  );
+};
+
+const barStyles = StyleSheet.create({
+  barTrack: { height: 8, borderRadius: 4, overflow: 'hidden', backgroundColor: onInk.fill },
+  barFill: { height: 8, width: '100%', borderRadius: 4, backgroundColor: brand.signal },
+  barText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Medium', color: onInk.mid, marginTop: 8 },
+});
+
 export const BillsScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { colors, cardRadius, cardShadow, chipRadius, iconContainerRadius } =
-    useSpecTheme();
+  const { colors, isDark } = useSpecTheme();
   const styles = React.useMemo(
-    () => makeStyles(cardRadius, colors.chipBg),
-    [cardRadius, colors.chipBg],
+    () => makeStyles(colors.chipBg),
+    [colors.chipBg],
   );
 
   const {
@@ -69,9 +92,9 @@ export const BillsScreen = () => {
   } = useBillStore();
   const { loadTransactions } = useTransactionStore();
 
+  const calRef = React.useRef<ScrollView>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [snapshot, setSnapshot] = useState<IntelligenceSnapshot | null>(null);
 
   const now = new Date();
   const today = now.getDate();
@@ -81,7 +104,6 @@ export const BillsScreen = () => {
   const refresh = useCallback(async () => {
     try {
       await Promise.all([loadBills(), loadTransactions()]);
-      setSnapshot(await FinancialIntelligenceEngine.getCurrentSnapshot());
     } finally {
       setRefreshing(false);
     }
@@ -218,20 +240,12 @@ export const BillsScreen = () => {
 
   // 2. Safe to Spend — single source of truth is the snapshot. Both figures
   // come from it, so they can never briefly disagree while data loads.
-  const safeToSpendPaise = snapshot?.safeToSpend ?? 0;
   const hasBills = bills.length > 0;
 
   // The three-second answer on a bills screen is what is still owed — not the
   // month's budget, which belongs to the Money Plan and is already a tile on
   // Home. One fact, one place.
   const summary = billsSummary(bills, now);
-  const heroTone =
-    summary.tone === 'bad'
-      ? colors.danger
-      : summary.tone === 'warn'
-        ? colors.warning
-        : colors.success;
-
   return (
     <KeyboardAvoidingView
       style={[styles.root, { backgroundColor: colors.background }]}
@@ -280,138 +294,39 @@ export const BillsScreen = () => {
       >
         {hasBills ? (
           <>
-            {/* ZONE 1: Safe to Spend Dashboard — the hero, counts up from 0. */}
-            <Animated.View
-              entering={FadeInDown.springify().reduceMotion(EXPRESSIVE)}
-              style={[
-                styles.safeToSpendCard,
-                { backgroundColor: colors.card },
-                cardShadow,
-              ]}
-            >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginBottom: 16,
-                }}
-              >
-                <ShieldCheck color={heroTone} size={20} style={{ marginRight: 8 }} />
-                <Text
-                  variant="caption"
-                  style={{
-                    color: colors.textSecondary,
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.8,
-                    fontFamily: 'Satoshi-Bold',
-                    fontSize: 11,
-                  }}
-                >
-                  Due this month
-                </Text>
-              </View>
-
-              {/* No `alignItems: 'baseline'` — with a CountUp inside, that
-                  makes Yoga measure a Text baseline against a sealed shadow
-                  node and aborts the process under the New Architecture. Same
-                  crash the Goals hero hit; single child, so it did nothing. */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  marginBottom: 8,
-                }}
-              >
-                <CountUp
-                  value={summary.unpaidPaise}
-                  delay={200}
-                  prefix="₹"
-                  isPaise
-                  style={[styles.heroValue, { color: heroTone }]}
+            <Animated.View entering={FadeInDown.springify().reduceMotion(EXPRESSIVE)} style={styles.heroWrap}>
+              <Bezel tone="ink" solid>
+                <Text style={styles.heroLabel}>Still to pay this month</Text>
+                <RollingNumber
+                  valuePaise={summary.unpaidPaise}
+                  fontSize={44}
+                  lineHeight={52}
+                  letterSpacing={-1.5}
+                  color={summary.unpaidPaise === 0 ? onInk.high : brand.signal}
                 />
-              </View>
-              <Text variant="caption" style={{ color: colors.textSecondary }}>
-                {summary.headline}
-              </Text>
-
-              <View
-                style={[styles.incomeRow, { backgroundColor: colors.chipBg }]}
-              >
-                <View style={styles.incomeItem}>
-                  <Text
-                    style={[
-                      styles.incomeLabel,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Monthly plan
-                  </Text>
-                  <CountUp
-                    value={safeToSpendPaise}
-                    delay={400}
-                    prefix="₹"
-                    isPaise
-                    style={[styles.incomeValue, { color: colors.textPrimary }]}
-                  />
-                </View>
-                <View
-                  style={[
-                    styles.incomeDivider,
-                    { backgroundColor: colors.border },
-                  ]}
-                />
-                <View style={styles.incomeItem}>
-                  <Text
-                    style={[
-                      styles.incomeLabel,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Paid so far
-                  </Text>
-                  <CountUp
-                    value={summary.paidPaise}
-                    delay={450}
-                    prefix="₹"
-                    isPaise
-                    style={[styles.incomeValue, { color: colors.textPrimary }]}
-                  />
-                </View>
-              </View>
+                <Text style={styles.heroSub}>{summary.headline}</Text>
+                <PaidBar paid={summary.paidPaise} total={summary.paidPaise + summary.unpaidPaise} />
+              </Bezel>
             </Animated.View>
 
-            {/* ZONE 2: Immediate Attention */}
             {urgentBills.length > 0 && (
               <Animated.View
-                entering={FadeInDown.delay(400)
-                  .springify()
-                  .reduceMotion(EXPRESSIVE)}
-                style={styles.sectionContainer}
+                entering={FadeInDown.delay(200).springify().reduceMotion(EXPRESSIVE)}
+                style={styles.section}
               >
-                <View style={styles.sectionHeader}>
-                  <AlertCircle
-                    color={colors.danger}
-                    size={20}
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text
-                    variant="h3"
-                    style={{
-                      color: colors.danger,
-                      fontFamily: 'Satoshi-Black',
-                    }}
-                  >
-                    Needs Attention
-                  </Text>
-                </View>
-                {urgentBills.map(b => (
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} accessibilityRole="header">
+                  Needs attention
+                </Text>
+                <Text style={[styles.sectionHint, { color: colors.textSecondary }]}>
+                  Swipe a bill right to mark it paid.
+                </Text>
+                {urgentBills.map((b, i) => (
                   <SwipeableBillCard
                     key={b.id}
                     bill={b}
                     status={billStatus(b, now)}
                     colors={colors}
-                    cardRadius={cardRadius}
-                    cardShadow={cardShadow}
-                    iconContainerRadius={iconContainerRadius}
+                    last={i === urgentBills.length - 1}
                     onMarkPaid={() => handleMarkPaid(b.id)}
                     onMenu={() => handleMenu(b)}
                   />
@@ -419,108 +334,58 @@ export const BillsScreen = () => {
               </Animated.View>
             )}
 
-            {/* ZONE 3: Mini Calendar (Timeline) */}
-            <Animated.View
-              entering={FadeInDown.delay(450)
-                .springify()
-                .reduceMotion(EXPRESSIVE)}
-              style={styles.sectionContainer}
-            >
-              <View style={styles.sectionHeader}>
-                <CalendarIcon
-                  color={colors.textPrimary}
-                  size={20}
-                  style={{ marginRight: 8 }}
-                />
-                <Text variant="h3" style={{ color: colors.textPrimary }}>
-                  This Month
-                </Text>
-              </View>
+            <Animated.View entering={FadeInDown.delay(260).springify().reduceMotion(EXPRESSIVE)} style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} accessibilityRole="header">
+                This month
+              </Text>
               <ScrollView
                 horizontal
+                ref={calRef}
+                onLayout={() => calRef.current?.scrollTo({ x: Math.max(today - 3, 0) * 44, animated: false })}
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.calendarScroll}
               >
                 {Array.from({ length: daysInMonth(now) }, (_, i) => i + 1).map(day => {
                   const dayBills = bills.filter(b => b.dueDay === day);
                   const hasBillsOnDay = dayBills.length > 0;
-                  const allPaid =
-                    hasBillsOnDay &&
-                    dayBills.every(b => isPaidForCycle(b, now));
-                  // Mirrors the Needs Attention list above: any unpaid bill due on
-                  // or before today+2 gets the danger dot. One predicate powers
-                  // both the list and the calendar, so they can't drift.
-                  // Same predicate as the Needs Attention list above, so the
-                  // dots and the list can never disagree.
+                  const allPaid = hasBillsOnDay && dayBills.every(b => isPaidForCycle(b, now));
+                  // Same predicate as the Needs attention list, so dots and list never disagree.
                   const needsAction = dayBills.some(b => {
                     const s2 = billStatus(b, now);
                     return s2 === 'overdue' || s2 === 'due-soon';
                   });
-
                   let dotColor = 'transparent';
-                  if (needsAction) dotColor = colors.danger;
+                  if (needsAction) dotColor = brand.alert;
                   else if (allPaid) dotColor = colors.success;
-                  else if (hasBillsOnDay) dotColor = colors.primaryAccent;
-
+                  else if (hasBillsOnDay) dotColor = colors.textPrimary;
+                  const isToday = day === today;
                   return (
                     <View
                       key={day}
-                      style={[
-                        styles.calendarDay,
-                        day === today && {
-                          backgroundColor: colors.chipBg,
-                          borderRadius: chipRadius,
-                        },
-                      ]}
+                      style={[styles.calendarDay, { backgroundColor: isToday ? (isDark ? colors.chipBg : brand.ink) : 'transparent' }]}
+                      accessible
+                      accessibilityLabel={`${day}${hasBillsOnDay ? `, ${dayBills.length} bill${dayBills.length > 1 ? 's' : ''}` : ''}${isToday ? ', today' : ''}`}
                     >
-                      <Text
-                        style={[
-                          styles.calendarDayText,
-                          {
-                            color:
-                              day === today
-                                ? colors.textPrimary
-                                : colors.textSecondary,
-                          },
-                        ]}
-                      >
-                        {day}
-                      </Text>
-                      <View
-                        style={[
-                          styles.calendarDot,
-                          { backgroundColor: dotColor },
-                        ]}
-                      />
+                      <Text style={[styles.calendarDayText, { color: isToday ? '#FFFFFF' : colors.textSecondary }]}>{day}</Text>
+                      <View style={[styles.calendarDot, { backgroundColor: dotColor }]} />
                     </View>
                   );
                 })}
               </ScrollView>
             </Animated.View>
 
-            {/* ZONE 4: Subscriptions */}
             {subscriptions.length > 0 && (
-              <Animated.View
-                entering={FadeInDown.delay(500)
-                  .springify()
-                  .reduceMotion(EXPRESSIVE)}
-                style={styles.sectionContainer}
-              >
-                <Text
-                  variant="h3"
-                  style={[styles.sectionTitle, { color: colors.textPrimary }]}
-                >
+              <Animated.View entering={FadeInDown.delay(320).springify().reduceMotion(EXPRESSIVE)} style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} accessibilityRole="header">
                   Subscriptions
                 </Text>
-                {subscriptions.map(b => (
+                {subscriptions.map((b, i) => (
                   <SwipeableBillCard
                     key={b.id}
                     bill={b}
                     status={billStatus(b, now)}
                     colors={colors}
-                    cardRadius={cardRadius}
-                    cardShadow={cardShadow}
-                    iconContainerRadius={iconContainerRadius}
+                    last={i === subscriptions.length - 1}
                     onMarkPaid={() => handleMarkPaid(b.id)}
                     onMenu={() => handleMenu(b)}
                   />
@@ -528,29 +393,18 @@ export const BillsScreen = () => {
               </Animated.View>
             )}
 
-            {/* ZONE 5: Utilities */}
             {utilities.length > 0 && (
-              <Animated.View
-                entering={FadeInDown.delay(550)
-                  .springify()
-                  .reduceMotion(EXPRESSIVE)}
-                style={styles.sectionContainer}
-              >
-                <Text
-                  variant="h3"
-                  style={[styles.sectionTitle, { color: colors.textPrimary }]}
-                >
-                  Essential Utilities
+              <Animated.View entering={FadeInDown.delay(380).springify().reduceMotion(EXPRESSIVE)} style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} accessibilityRole="header">
+                  Regular bills
                 </Text>
-                {utilities.map(b => (
+                {utilities.map((b, i) => (
                   <SwipeableBillCard
                     key={b.id}
                     bill={b}
                     status={billStatus(b, now)}
                     colors={colors}
-                    cardRadius={cardRadius}
-                    cardShadow={cardShadow}
-                    iconContainerRadius={iconContainerRadius}
+                    last={i === utilities.length - 1}
                     onMarkPaid={() => handleMarkPaid(b.id)}
                     onMenu={() => handleMenu(b)}
                   />
@@ -622,7 +476,7 @@ export const BillsScreen = () => {
   );
 };
 
-const makeStyles = (cardRadius: number, chipBg: string) =>
+const makeStyles = (chipBg: string) =>
   StyleSheet.create({
     root: { flex: 1 },
     scroll: { flex: 1 },
@@ -648,76 +502,16 @@ const makeStyles = (cardRadius: number, chipBg: string) =>
       // rest of the app uses (see DESIGN.md §7).
       paddingBottom: 144,
     },
-    safeToSpendCard: {
-      marginHorizontal: 24,
-      marginBottom: 32,
-      padding: 24,
-      borderRadius: cardRadius,
-    },
-    heroValue: {
-      fontSize: 48,
-      fontFamily: 'Satoshi-Black',
-      letterSpacing: -0.5,
-    },
-    incomeRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginTop: 24,
-      borderRadius: 16,
-      padding: 16,
-    },
-    incomeItem: {
-      flex: 1,
-    },
-    incomeDivider: {
-      width: 1,
-      height: 32,
-      marginHorizontal: 16,
-    },
-    incomeLabel: {
-      fontSize: 12,
-      fontFamily: 'Satoshi-Bold',
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-      marginBottom: 4,
-    },
-    incomeValue: {
-      fontSize: 18,
-      fontFamily: 'Satoshi-Black',
-    },
-    sectionContainer: {
-      paddingHorizontal: 24,
-      marginBottom: 32,
-    },
-    sectionHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    sectionTitle: {
-      marginBottom: 16,
-      fontFamily: 'Satoshi-Black',
-    },
-    calendarScroll: {
-      gap: 12,
-      paddingRight: 24,
-    },
-    calendarDay: {
-      width: 40,
-      height: 48,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    calendarDayText: {
-      fontFamily: 'Satoshi-Bold',
-      fontSize: 14,
-      marginBottom: 4,
-    },
-    calendarDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-    },
+    heroWrap: { marginHorizontal: 24, marginBottom: 32 },
+    heroLabel: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid },
+    heroSub: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: onInk.mid, marginTop: 4 },
+    section: { paddingHorizontal: 24, marginBottom: 24 },
+    sectionTitle: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Bold', marginBottom: 4 },
+    sectionHint: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', marginBottom: 8 },
+    calendarScroll: { gap: 4, paddingRight: 24, paddingTop: 8 },
+    calendarDay: { width: 40, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    calendarDayText: { fontFamily: 'Satoshi-Bold', fontSize: 14, lineHeight: 20, marginBottom: 4 },
+    calendarDot: { width: 6, height: 6, borderRadius: 3 },
     emptyState: {
       alignItems: 'center',
       paddingHorizontal: 32,
