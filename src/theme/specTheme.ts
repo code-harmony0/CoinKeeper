@@ -12,8 +12,8 @@ import { useTheme } from '../hooks/useTheme';
 // LIGHT PALETTE — mirrors useTheme()'s lightColors exactly
 // ============================================
 export const specLight = {
-  background: '#E6F0FA',
-  surfaceSunken: '#F4F6F8',
+  background: '#F5F6F8',
+  surfaceSunken: '#ECEEF2',
   card: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
   // Admin's real CTA color: hardcoded '#121723' across Button.tsx and
@@ -29,69 +29,69 @@ export const specLight = {
   // gained a pacing ring that needs to say "approaching" without borrowing
   // danger's red — peachDeep is an accent-rotation ink, not a status color.
   warning: '#FF9500',
-  textPrimary: '#1A1A1A',
-  textSecondary: '#6B7280',
+  textPrimary: '#16181D',
+  textSecondary: '#5B616E',
   // Section eyebrows/labels on the light-blue canvas — textSecondary fails
   // 4.5:1 there (≈4.0:1), this clears it (≈6.6:1). See DESIGN.md §2.
-  sectionLabel: '#4B5563',
+  sectionLabel: '#4A505C',
   segmentActiveBg: '#121723',
   segmentActiveText: '#FFFFFF',
-  segmentInactiveBg: '#F4F6F8',
-  segmentInactiveText: '#6B7280',
-  incomeTint: '#98E4C1',
-  expenseTint: '#FFD4B8',
-  chipBg: '#F4F6F8',
+  segmentInactiveBg: '#ECEEF2',
+  segmentInactiveText: '#5B616E',
+  incomeTint: '#DDF1E6',
+  expenseTint: '#FBE6D6',
+  chipBg: '#EEF0F4',
   inputBg: '#FFFFFF',
-  border: '#E5E7EB',
+  border: '#E2E5EA',
   // Pastel accent rotation, straight from useTheme()'s accent1-5.
-  lavender: '#D8E2FA',
-  lavenderDeep: '#1565C0',
-  mint: '#98E4C1',
-  mintDeep: '#2E7D32',
-  peach: '#FFD4B8',
-  peachDeep: '#E65100',
-  pink: '#E2B6CF',
-  pinkDeep: '#AD1457',
-  sky: '#B8E6F5',
-  skyDeep: '#00838F',
+  lavender: '#E4E8FB',
+  lavenderDeep: '#3A4BB5',
+  mint: '#DDF1E6',
+  mintDeep: '#1F7A4D',
+  peach: '#FBE6D6',
+  peachDeep: '#B4541A',
+  pink: '#F6E1EA',
+  pinkDeep: '#A33A68',
+  sky: '#DCEFF8',
+  skyDeep: '#0B6C86',
 };
 
 // ============================================
 // DARK PALETTE — mirrors useTheme()'s darkColors exactly
 // ============================================
 export const specDark = {
-  background: '#0F1419',
-  surfaceSunken: '#252D38',
-  card: '#1E2530',
-  surfaceElevated: '#1E2530',
+  background: '#101114',
+  surfaceSunken: '#0B0C0E',
+  card: '#1A1C21',
+  surfaceElevated: '#22252B',
   primaryAccent: '#F5F7FA',
   /** The dark accent is near-white, so what sits on it must be near-black. */
   onAccent: '#0F1419',
   success: '#4CAF50',
   danger: '#FF6B6B',
   warning: '#FFA726',
-  textPrimary: '#F5F7FA',
-  textSecondary: '#A0AEC0',
-  sectionLabel: '#A0AEC0',
+  textPrimary: '#F2F3F5',
+  textSecondary: '#A3A8B3',
+  sectionLabel: '#A3A8B3',
   segmentActiveBg: '#F5F7FA',
   segmentActiveText: '#0F1419',
-  segmentInactiveBg: '#252D38',
-  segmentInactiveText: '#A0AEC0',
+  segmentInactiveBg: '#22252B',
+  segmentInactiveText: '#A3A8B3',
   incomeTint: 'rgba(76,175,80,0.16)',
   expenseTint: 'rgba(255,167,38,0.16)',
-  chipBg: '#252D38',
-  inputBg: '#252D38',
-  border: '#2D3748',
-  lavender: '#2C3E50',
-  lavenderDeep: '#4DA2FF',
-  mint: '#1E4D3D',
-  mintDeep: '#4CAF50',
-  peach: '#4A3428',
-  peachDeep: '#FFA726',
-  pink: '#4A1942',
-  pinkDeep: '#E2B6CF',
-  sky: '#1E3A4A',
-  skyDeep: '#B8E6F5',
+  chipBg: '#262930',
+  inputBg: '#22252B',
+  border: '#2E3139',
+  lavender: '#262B4A',
+  lavenderDeep: '#A9B6FF',
+  mint: '#1C3A2D',
+  mintDeep: '#6FD3A0',
+  peach: '#43301F',
+  peachDeep: '#F0B27A',
+  pink: '#432533',
+  pinkDeep: '#F0A3C2',
+  sky: '#1B3640',
+  skyDeep: '#7FD0E8',
 };
 
 // ============================================
@@ -128,6 +128,20 @@ export const enamel = {
 // ============================================
 // SHARED CONSTANTS
 // ============================================
+// Hard limits (DESIGN.md §11): screens may only use these. `yarn lint:design`
+// reports anything off-scale.
+export const radii = { sm: 8, md: 12, lg: 16, xl: 24, full: 999 } as const;
+
+/** The only text sizes the lite app uses: [fontSize, lineHeight]. */
+export const typeScale = {
+  display: { fontSize: 44, lineHeight: 52 },
+  headline: { fontSize: 28, lineHeight: 36 },
+  title: { fontSize: 20, lineHeight: 28 },
+  subtitle: { fontSize: 16, lineHeight: 24 },
+  body: { fontSize: 14, lineHeight: 20 },
+  label: { fontSize: 12, lineHeight: 16 },
+} as const;
+
 export const cardRadius = 24;
 export const chipRadius = 999;
 export const inputRadius = 16;

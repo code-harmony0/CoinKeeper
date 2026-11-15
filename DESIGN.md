@@ -1,4 +1,6 @@
-# CoinKeeper — Design System (v4)
+# CoinKeeper — Design System (v5)
+
+> **v5 (current) — read §11 first.** §11 overrides every conflicting rule below: neutral Material-3-style surfaces replace the light-blue canvas and the pastel-everywhere rotation for the lite app. Sections 1–10 are being migrated; where they disagree with §11, §11 wins.
 
 **This supersedes v2 and v3 in full.** The pastel-lavender/mint/peach off-white-canvas system (v2), and its "primary accent is navy, not purple" rule, are **retired** — including every anti-slop rule that assumed lavender was a passive surface tint. The canonical system is now: **exactly mirror the admin panel's pre-existing design system on the user side too.**
 
@@ -432,3 +434,42 @@ Before any component ships, confirm:
 - 🔲 Confirm no screen still imports `userFintechTheme` or `UserCapsuleTabBar` directly.
 - 🔲 Confirm tab bar configuration (`tabs`, `hasFab`, `fabIndex`) is consistent between the admin and user navigators now that both consume the same `ExpandingTabBar`.
 - 🔲 8pt-grid retrofit of any pre-existing hardcoded spacing values that predate `space.*` tokens — not yet swept in this pass.
+
+
+---
+
+## 11. v5 — Neutral modern system (lite app)
+
+**Decision (user-confirmed):** direction = neutral modern, Material-3 style; rollout = foundation first, then screen by screen. Scope is the **lite consumer app** (`src/screens/user`, `src/components`). The pro/chit-fund module (`src/modules/chitfund`) keeps its own look until separately decided.
+
+### Surfaces and colour
+- Canvas `background` `#F5F6F8` (dark `#101114`). Cards `card` white (dark `#1A1C21`). Recessed groups `surfaceSunken`. Hierarchy comes from **tone**, not shadow; `cardShadow` is optional and light.
+- Primary action stays ink `primaryAccent` (`#121723`, dark near-white). One CTA per screen.
+- The accent rotation (`lavender/pink/mint/peach/sky`) is now **quiet tonal containers** with a `…Deep` ink, used only to tell categories or buckets apart. Never a screen background.
+- The one dark surface is `enamel` (home hero, Kaza hero). No other dark panels.
+- Meaning is never colour alone: pair success/danger with an icon or sign.
+- Raw hex in screens is banned. Add a token instead.
+
+### Hard limits (`specTheme.ts` exports them; `npm run lint:design` reports breaches)
+| Thing | Allowed |
+|---|---|
+| Font | Satoshi only (Regular, Medium, Bold, Black) |
+| Type sizes | 44 display · 28 headline · 20 title · 16 subtitle · 14 body · 12 label (see `typeScale`) |
+| Radii | 8 · 12 · 16 · 24 · 999, plus ≤6 for bars and dots (see `radii`) |
+| Spacing | 8pt grid via `space.*`; 4 only for icon micro-adjustment |
+| Touch targets | ≥ 48dp, ≥ 8dp apart |
+| Screen length | A screen file stays under ~400 lines; sheets and sections are their own components |
+| Theme hook | `useSpecTheme()` only. `designTokens`, legacy `useTheme` colours and `blobTheme` are retired file by file |
+
+### Screen pattern
+One primary number or action per screen, shown first. Detail is revealed progressively (collapsed rows, sheets). Settings live behind one header control, not as a row at the bottom of the scroll.
+
+### Kaza
+Kaza follows the system. Its only own piece is `PRAYER_TINT` (`theme/kazaTheme.ts`): each prayer wears the palette tint of its hour. Its hero uses `enamel`.
+
+### Rollout order and status
+1. ✅ Foundation: tokens, limits, lint script, this section.
+2. ✅ Kaza migrated.
+3. 🔲 Home, Transactions, Add, Bills, Reports, Settings, Goals, Budget, then the rest. Verify each on the emulator in light, dark and 1.3× font scale.
+4. 🔲 Retire `designTokens` (21 files) and legacy `useTheme` colour use (11 files).
+5. 🔲 Turn `lint:design --strict` on in CI when the baseline reaches zero. Baseline at v5 start: 106 files, 553 violations.

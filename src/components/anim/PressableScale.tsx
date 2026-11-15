@@ -66,7 +66,9 @@ export const PressableScale: React.FC<PressableScaleProps> = ({
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    opacity: opacity.value,
+    // The animated opacity wins over any `opacity` in `style`, so a disabled
+    // control has to dim here or it never looks disabled.
+    opacity: disabled ? 0.4 : opacity.value,
   }));
 
   const handlePressIn = () => {

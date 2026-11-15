@@ -6,6 +6,7 @@
     "sqlcipher": true
   },
   "scripts": {
+    "lint:design": "node scripts/design-lint.mjs",
     "_clean:autolink": "rm -rf android/build/generated/autolinking",
     "andl": "npm run apk:lite",
     "andp": "npm run apk:pro",
