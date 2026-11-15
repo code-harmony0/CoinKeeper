@@ -54,7 +54,7 @@ export const SecondaryGoalCard: React.FC<Props> = ({
             {Money.format(currentAmount, { zeroDecimals: true })} of {Money.format(targetAmount, { zeroDecimals: true })}
           </Text>
         </View>
-        <Text style={[styles.pct, { color: colors.textPrimary }]}>{done ? 'Done' : `${percentage}%`}</Text>
+        <Text style={[styles.pct, { color: colors.textPrimary }]}>{done ? 'Complete' : `${percentage}%`}</Text>
       </View>
       <ProgressBar ratio={percentage / 100} />
       {!done && (

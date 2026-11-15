@@ -61,7 +61,7 @@ export const FocusGoalHeroCard: React.FC<Props> = ({
           <View style={styles.head}>
             <IconTile icon={Target} />
             <View style={styles.headText}>
-              {priorityRank === 1 && <Text style={[styles.priority, { color: colors.textSecondary }]}>Top priority</Text>}
+              {priorityRank === 1 && <Text style={[styles.priority, { color: colors.textSecondary }]}>#1 Priority</Text>}
               <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={2}>
                 {name}
               </Text>
