@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { UserDashboardScreen, TransactionsScreen, SettingsScreen } from '../screens/user';
-import { ExpandingTabBar } from '../components/shared/ExpandingTabBar';
+import { AppTabBar } from '../components/shared/AppTabBar';
 import { AddScreen } from '../screens/user/AddScreen';
 import { KazaScreen } from '../screens/user/KazaScreen';
 import { CHITFUND_ENABLED, ISLAMIC_ENABLED } from '../config/buildFlags';
@@ -26,7 +26,7 @@ export const UserTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => (
-        <ExpandingTabBar {...props} tabs={tabs} hasFab fabIndex={2} />
+        <AppTabBar {...props} tabs={tabs} fabIndex={2} />
       )}
       screenOptions={{ headerShown: false }}
     >

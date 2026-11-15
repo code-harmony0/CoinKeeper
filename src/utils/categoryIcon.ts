@@ -15,7 +15,17 @@ const DEFAULT_ID_TO_ICON: Record<string, keyof typeof Icons> = {
   health: 'HeartPulse',
   education: 'BookOpen',
   others: 'MoreHorizontal',
+  salary: 'Wallet',
+  income: 'Wallet',
+  freelance: 'Laptop',
+  investment: 'TrendingUp',
+  gift: 'Gift',
+  rent: 'Home',
+  other: 'CircleDot',
 };
+
+/** Income-ish words in a label, for categories whose id is not a known default. */
+const INCOME_WORDS = /\b(salary|pay ?check|wages?|income|bonus|stipend|refund)\b/i;
 
 /**
  * A fill-up is not a car. Transport covers cabs, trains and fuel alike, so the
@@ -37,5 +47,7 @@ export const resolveCategoryIcon = (
   if (fallbackName) {
     return Icons[fallbackName];
   }
+  // A named income category with no known icon is still not "more".
+  if (label && INCOME_WORDS.test(label)) return Icons.Wallet;
   return Icons.MoreHorizontal;
 };

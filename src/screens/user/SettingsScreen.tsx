@@ -308,7 +308,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
                   value={isDark}
                   onValueChange={handleDarkModeToggle}
                   accessibilityLabel="Dark Mode"
-                  trackColor={{ false: colors.inputBg, true: colors.success }}
+                  trackColor={{ false: `${colors.textSecondary}55`, true: colors.success }}
                   thumbColor="#FFFFFF"
                 />
               }
@@ -323,7 +323,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
                   value={notifications}
                   onValueChange={handleToggleNotifications}
                   accessibilityLabel="Notifications"
-                  trackColor={{ false: colors.inputBg, true: colors.success }}
+                  trackColor={{ false: `${colors.textSecondary}55`, true: colors.success }}
                   thumbColor="#FFFFFF"
                 />
               }
@@ -343,7 +343,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
                   value={roundUps}
                   onValueChange={handleToggleRoundUps}
                   accessibilityLabel="Round-ups"
-                  trackColor={{ false: colors.inputBg, true: colors.success }}
+                  trackColor={{ false: `${colors.textSecondary}55`, true: colors.success }}
                   thumbColor="#FFFFFF"
                 />
               }

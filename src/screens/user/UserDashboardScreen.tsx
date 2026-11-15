@@ -51,6 +51,9 @@ import {
   headlineBadge,
   takeUncelebrated,
   type Badge,
+  BADGE_LADDER,
+  earnedBadges,
+  nextBadgeProgress,
 } from '../../services/badges';
 import { computeAgeOfMoney } from '../../services/ageOfMoney';
 import { buildWeeklyStory } from '../../services/weeklyStory';
@@ -76,6 +79,7 @@ import { HeroPace } from '../../components/home/HeroPace';
 import { HomeSection } from '../../components/home/HomeSection';
 import { UpcomingList } from '../../components/home/UpcomingList';
 import { GoalRings } from '../../components/home/GoalRings';
+import { BadgeShelf } from '../../components/home/BadgeShelf';
 
 // Guarded require, not a static import: CHITFUND_ENABLED is inlined as a
 // literal at build time, so Metro drops this branch — and the whole
@@ -334,6 +338,15 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
     [streakDays, goalSavedPaise, bestGoalProgress],
   );
 
+  const shelf = useMemo(() => {
+    const got = new Set(earnedBadges(badgeContext).map(b => b.id));
+    return {
+      badges: BADGE_LADDER.map(badge => ({ badge, earned: got.has(badge.id) })),
+      next: nextBadgeProgress(badgeContext),
+      count: got.size,
+    };
+  }, [badgeContext]);
+
   // Fires once per badge, ever — takeUncelebrated marks what it hands back.
   useEffect(() => {
     let cancelled = false;
@@ -495,6 +508,12 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
                 onAddMoney={setFundingGoalId}
                 onNewGoal={() => navigation.navigate('Goals')}
               />
+            </HomeSection>
+          </OnEnter>
+
+          <OnEnter index={3}>
+            <HomeSection title={`Badges · ${shelf.count} of ${shelf.badges.length}`}>
+              <BadgeShelf badges={shelf.badges} next={shelf.next} />
             </HomeSection>
           </OnEnter>
 

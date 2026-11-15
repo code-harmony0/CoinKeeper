@@ -1,20 +1,15 @@
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import {
-  AlertTriangle,
-  ArrowDownRight,
-  CheckCircle2,
-  Clock,
-  Flame,
-  Info,
-  Trophy,
-} from 'lucide-react-native';
+import { AlertTriangle, ArrowDownRight, CheckCircle2, Clock, Info } from 'lucide-react-native';
 import { brand } from '../../theme/specTheme';
 import { EXPRESSIVE } from '../../theme/motion';
 import { RollingNumber } from '../anim/RollingNumber';
 import { Money } from '../../utils/money';
 import { PaceChart } from './PaceChart';
+import { StreakStrip, type StreakDay } from './StreakStrip';
+import { HeroGlow } from './HeroGlow';
+import { BADGE_LADDER } from '../../services/badges';
 import type { MonthLedger } from '../../hooks/useMonthLedger';
 import type { HomeStatus, Tone } from '../../services/homeNarrative';
 import type { Badge } from '../../services/badges';
@@ -66,13 +61,26 @@ export const HeroPace: React.FC<Props> = ({
   const projected = day >= 3 ? (ledger.spendPaise / day) * days + unpaidBillsPaise : 0;
   const gap = planPaise > 0 && projected > 0 ? planPaise - projected : 0;
 
-  const chips: { key: string; Icon: typeof Flame; text: string }[] = [];
-  if (streakDays > 0) chips.push({ key: 'streak', Icon: Flame, text: `${streakDays}-day streak` });
+  // Last seven days as game dots: the streak is the run of days under the
+  // daily limit that ends yesterday; today is still open.
+  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const weekDots: StreakDay[] = Array.from({ length: 7 }, (_, k) => {
+    const ago = 6 - k;
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ago);
+    const label = dayLabels[d.getDay()];
+    if (ago === 0) return { label, state: 'today' as const };
+    return { label, state: ago <= streakDays ? ('hit' as const) : ('miss' as const) };
+  });
+  const streakBadges = BADGE_LADDER.filter(b => ['steady-start', 'budget-master', 'month-master'].includes(b.id));
+  const streakTargets = [3, 5, 30];
+  const nextIdx = streakTargets.findIndex(t => t > streakDays);
+  const nextStreak = nextIdx >= 0 ? { days: streakTargets[nextIdx], label: streakBadges[nextIdx].label } : null;
+  const chips: { key: string; Icon: typeof Clock; text: string }[] = [];
   if (ageOfMoney) chips.push({ key: 'age', Icon: Clock, text: ageOfMoney.label });
-  if (badge) chips.push({ key: 'badge', Icon: Trophy, text: badge.label });
 
   return (
     <View>
+      <HeroGlow />
       <Text style={[styles.label, { color: MUTED }]}>Safe to spend today</Text>
       <RollingNumber
         valuePaise={safeTodayPaise}
@@ -98,6 +106,8 @@ export const HeroPace: React.FC<Props> = ({
           {status.headline}
         </Text>
       </View>
+
+      <StreakStrip streakDays={streakDays} days={weekDots} next={nextStreak} />
 
       {chips.length > 0 && (
         <View style={styles.chips}>

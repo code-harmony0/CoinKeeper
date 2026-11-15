@@ -90,6 +90,9 @@ const RULES: Array<{ badge: Badge; earned: (c: BadgeContext) => boolean }> = [
 ];
 
 /** Every badge currently earned, strongest last. */
+/** Every badge in ladder order, earned or not, for the badge shelf. */
+export const BADGE_LADDER: Badge[] = RULES.map(r => r.badge);
+
 export const earnedBadges = (ctx: BadgeContext): Badge[] =>
   RULES.filter(r => r.earned(ctx)).map(r => r.badge);
 
@@ -197,4 +200,38 @@ export const takeUncelebrated = async (
   }
 
   return fresh;
+};
+
+
+const STREAK_TARGETS: Record<string, number> = {
+  'steady-start': 3,
+  'budget-master': 5,
+  'month-master': 30,
+};
+
+/** The unearned badge you are closest to, with a plain hint on what is left. */
+export const nextBadgeProgress = (
+  ctx: BadgeContext,
+): { label: string; ratio: number; hint: string } | null => {
+  const earned = new Set(earnedBadges(ctx).map(b => b.id));
+  let best: { label: string; ratio: number; hint: string } | null = null;
+  for (const badge of BADGE_LADDER) {
+    if (earned.has(badge.id)) continue;
+    let ratio = 0;
+    let hint = '';
+    const streak = STREAK_TARGETS[badge.id];
+    if (streak) {
+      ratio = ctx.streakDays / streak;
+      const left = Math.max(streak - ctx.streakDays, 0);
+      hint = `${left} more ${left === 1 ? 'day' : 'days'} under your daily limit`;
+    } else if (badge.id === 'starter-saver') {
+      ratio = ctx.goalSavedPaise / STARTER_SAVER_PAISE;
+      hint = `${formatPaise(Math.max(STARTER_SAVER_PAISE - ctx.goalSavedPaise, 0))} more saved towards your goals`;
+    } else if (badge.id === 'halfway-there') {
+      ratio = ctx.bestGoalProgress / HALFWAY_RATIO;
+      hint = 'Get one goal to the halfway mark';
+    }
+    if (!best || ratio > best.ratio) best = { label: badge.label, ratio: Math.min(ratio, 1), hint };
+  }
+  return best;
 };

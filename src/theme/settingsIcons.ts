@@ -10,14 +10,22 @@ export interface TintPair {
   dark: { bg: string; icon: string };
 }
 
+// One neutral ink tile for every settings row (v5): the icon says what the row
+// is, so the rainbow of pastel tints is gone. The names stay so call sites keep
+// working.
+const INK_TILE: TintPair = {
+  light: { bg: '#111111', icon: '#FFFFFF' },
+  dark: { bg: '#2A2D35', icon: '#FFFFFF' },
+};
+
 export const SETTINGS_TINTS = {
-  green: { light: { bg: '#E8F5E9', icon: '#2E7D32' }, dark: { bg: '#1B3B22', icon: '#4CAF50' } },
-  orange: { light: { bg: '#FFF3E0', icon: '#E65100' }, dark: { bg: '#4A3428', icon: '#FFA726' } },
-  indigo: { light: { bg: '#E8EAF6', icon: '#3F51B5' }, dark: { bg: '#23204C', icon: '#7B7AEA' } },
-  blue: { light: { bg: '#E3F2FD', icon: '#1565C0' }, dark: { bg: '#1A2F4C', icon: '#4DA2FF' } },
-  purple: { light: { bg: '#F3E5F5', icon: '#7B1FA2' }, dark: { bg: '#321F3A', icon: '#BA68C8' } },
-  teal: { light: { bg: '#E0F2F1', icon: '#00796B' }, dark: { bg: '#173C38', icon: '#26A69A' } },
-  amber: { light: { bg: '#FFF8E1', icon: '#F9A825' }, dark: { bg: '#403B26', icon: '#FBC02D' } },
+  green: INK_TILE,
+  orange: INK_TILE,
+  indigo: INK_TILE,
+  blue: INK_TILE,
+  purple: INK_TILE,
+  teal: INK_TILE,
+  amber: INK_TILE,
 } satisfies Record<string, TintPair>;
 
 export type SettingsTintName = keyof typeof SETTINGS_TINTS;
@@ -29,7 +37,7 @@ export const LOGOUT_COLORS = {
 };
 
 // Icon container shape — rounded SQUARE, not a circle. 40x40, radius 12.
-export const ICON_CONTAINER_SIZE = 40;
+export const ICON_CONTAINER_SIZE = 48;
 export const ICON_CONTAINER_RADIUS = 12;
 
 // Settings card shadow — softer than the app's default cardShadow.

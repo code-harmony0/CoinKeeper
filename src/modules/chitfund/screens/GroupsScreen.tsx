@@ -1,82 +1,121 @@
 /**
- * GroupsScreen - Premium Blob Design
- * Chit fund groups with organic cards
+ * GroupsScreen — chit fund groups, in the app's v5 system: plain canvas,
+ * a flat stats line, and rows that match Home's lists (black icon tile, name,
+ * one quiet line, amount). Tapping a row opens the group.
  */
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Text } from 'react-native';
-import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import LinearGradient from 'react-native-linear-gradient';
+import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useGroups } from '../hooks/useGroups';
+import { ChevronRight, Plus, Users } from 'lucide-react-native';
+import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import Svg, { Path, Circle } from 'react-native-svg';
-import { THEME_COLORS, THEME_SHADOWS, THEME_RADIUS, THEME_SPACING, THEME_TYPOGRAPHY, THEME_ANIMATION } from '../../../theme/blobTheme';
+import { useGroups } from '../hooks/useGroups';
 import { CreateGroupSheet } from '../../../components/modals/CreateGroupSheet';
 import { useSecureScreen } from '../../../hooks/useSecureScreen';
-import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import { brand, useSpecTheme } from '../../../theme/specTheme';
+import { PressableScale } from '../../../components/anim';
 
 type Props = NativeStackScreenProps<any, 'Groups'>;
+
+const rupees = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
 export const GroupsScreen: React.FC<Props> = ({ navigation }) => {
   useSecureScreen();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useSpecTheme();
   const { groups, createGroup } = useGroups();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
 
-  return (
-    <View style={styles.container}>
-      <LinearGradient colors={['#C2DFF7', '#D4E8F8', '#E8F2FC']} style={StyleSheet.absoluteFill} />
+  const tile = isDark ? colors.chipBg : brand.ink;
+  const monthly = groups.reduce((s, g) => s + (g.contributionAmount || 0), 0);
+  const openCreate = () => {
+    ReactNativeHapticFeedback.trigger('impactMedium');
+    setShowCreateSheet(true);
+  };
 
-      {/* Header */}
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.headerTitle}>Chit Groups</Text>
-        <Pressable
-          onPress={() => { ReactNativeHapticFeedback.trigger('impactMedium'); setShowCreateSheet(true); }}
-          style={styles.addButton}
+        <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">
+          Chit groups
+        </Text>
+        <PressableScale
+          onPress={openCreate}
+          accessibilityRole="button"
+          accessibilityLabel="Create a chit group"
+          style={[styles.addButton, { backgroundColor: isDark ? brand.signal : brand.ink }]}
         >
-          <PlusIcon />
-        </Pressable>
+          <Plus size={22} strokeWidth={2.6} color={isDark ? brand.ink : brand.signal} />
+        </PressableScale>
       </View>
 
-      {/* Stats row */}
-      <Animated.View entering={FadeInDown.delay(50)} style={styles.statsRow}>
-        <View style={styles.statBlob}>
-          <Text style={styles.statValue}>{groups.length}</Text>
-          <Text style={styles.statLabel}>Active Groups</Text>
-        </View>
-        <View style={styles.statBlob}>
-          <Text style={styles.statValue}>₹{groups.reduce((s, g) => s + (g.contributionAmount || 0), 0).toLocaleString('en-IN')}</Text>
-          <Text style={styles.statLabel}>Monthly Total</Text>
-        </View>
-      </Animated.View>
-
-      {/* Groups list */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 120 }}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 120 }}
       >
+        <Animated.View entering={FadeInDown.delay(40).springify().damping(18)} style={styles.stats}>
+          <View style={styles.stat}>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Active groups</Text>
+            <Text style={[styles.statValue, { color: colors.textPrimary }]}>{groups.length}</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>You pay each month</Text>
+            <Text style={[styles.statValue, { color: colors.textPrimary }]}>{rupees(monthly)}</Text>
+          </View>
+        </Animated.View>
+
         {groups.length > 0 ? (
-          groups.map((group, index) => (
-            <Animated.View key={group.id} entering={FadeInDown.delay(100 + index * 50)}>
-              <GroupCard
-                name={group.name}
-                members={group.maxMembers}
-                amount={group.contributionAmount}
-                duration={group.maxMembers} // using maxMembers as proxy for duration in cycles
-                color={getGroupColor(index)}
-              />
-            </Animated.View>
-          ))
+          <View style={[styles.list, { borderTopColor: colors.border }]}>
+            {groups.map((group, i) => (
+              <Animated.View key={group.id} entering={FadeInDown.delay(80 + i * 50).springify().damping(18)}>
+                <PressableScale
+                  onPress={() => navigation.navigate('ChitDetail', { groupId: group.id })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${group.name}, ${group.maxMembers} members, ${rupees(group.contributionAmount)} a month`}
+                  style={[
+                    styles.row,
+                    i < groups.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
+                  ]}
+                >
+                  <View style={[styles.tile, { backgroundColor: tile }]}>
+                    <Users size={20} color="#FFFFFF" strokeWidth={2.2} />
+                  </View>
+                  <View style={styles.rowText}>
+                    <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {group.name}
+                    </Text>
+                    <Text style={[styles.meta, { color: colors.textSecondary }]}>
+                      {group.maxMembers} members · {group.maxMembers} months
+                    </Text>
+                  </View>
+                  <View style={styles.amount}>
+                    <Text style={[styles.amountValue, { color: colors.textPrimary }]}>
+                      {rupees(group.contributionAmount)}
+                    </Text>
+                    <Text style={[styles.meta, { color: colors.textSecondary }]}>per month</Text>
+                  </View>
+                  <ChevronRight size={20} color={colors.textSecondary} strokeWidth={2.2} />
+                </PressableScale>
+              </Animated.View>
+            ))}
+          </View>
         ) : (
-          <Animated.View entering={FadeInDown.delay(100)}>
-            <View style={styles.emptyCard}>
-              <View style={styles.emptyIcon}><UsersIcon /></View>
-              <Text style={styles.emptyTitle}>No groups yet</Text>
-              <Text style={styles.emptyText}>Create your first chit fund group</Text>
-              <Pressable onPress={() => setShowCreateSheet(true)} style={styles.emptyButton}>
-                <Text style={styles.emptyButtonText}>Create Group</Text>
-              </Pressable>
+          <Animated.View entering={FadeInDown.delay(80).springify().damping(18)} style={styles.empty}>
+            <View style={[styles.tile, { backgroundColor: tile }]}>
+              <Users size={20} color="#FFFFFF" strokeWidth={2.2} />
             </View>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No groups yet</Text>
+            <Text style={[styles.meta, { color: colors.textSecondary }]}>
+              Create your first chit group to track contributions and draws.
+            </Text>
+            <PressableScale
+              onPress={openCreate}
+              accessibilityRole="button"
+              style={[styles.cta, { backgroundColor: brand.signal }]}
+            >
+              <Text style={styles.ctaText}>Create group</Text>
+            </PressableScale>
           </Animated.View>
         )}
       </ScrollView>
@@ -84,85 +123,55 @@ export const GroupsScreen: React.FC<Props> = ({ navigation }) => {
       <CreateGroupSheet
         visible={showCreateSheet}
         onClose={() => setShowCreateSheet(false)}
-        onSubmit={async (name, amount, members, duration) => { 
+        onSubmit={async (name, amount, members) => {
           await createGroup({
             name,
             contributionAmount: amount,
             maxMembers: members,
             cycleTime: 'monthly',
             autoDebit: false,
-            startDate: new Date()
-          }); 
-          setShowCreateSheet(false); 
+            startDate: new Date(),
+          });
+          setShowCreateSheet(false);
         }}
       />
     </View>
   );
 };
 
-// Group card component
-const GroupCard: React.FC<{ name: string; members: number; amount: number; duration: number; color: string }> = ({ name, members, amount, duration, color }) => {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: withSpring(scale.value, THEME_ANIMATION.spring) }] }));
-
-  return (
-    <Pressable onPressIn={() => { scale.value = 0.97; }} onPressOut={() => { scale.value = 1; }}>
-      <Animated.View style={[styles.groupCard, animStyle]}>
-        <View style={[styles.groupIcon, { backgroundColor: color }]}><UsersIcon /></View>
-        <View style={styles.groupInfo}>
-          <Text style={styles.groupName}>{name}</Text>
-          <Text style={styles.groupMeta}>{members} members • {duration} months</Text>
-        </View>
-        <View style={styles.groupAmount}>
-          <Text style={styles.amountValue}>₹{amount.toLocaleString('en-IN')}</Text>
-          <Text style={styles.amountLabel}>/month</Text>
-        </View>
-      </Animated.View>
-    </Pressable>
-  );
-};
-
-// Icons
-const PlusIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 5v14M5 12h14" stroke="#FFF" strokeWidth={2} strokeLinecap="round" />
-  </Svg>
-);
-
-const UsersIcon = () => (
-  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Circle cx={9} cy={7} r={3} stroke={THEME_COLORS.textPrimary} strokeWidth={1.5} fill="none" />
-    <Path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" stroke={THEME_COLORS.textPrimary} strokeWidth={1.5} strokeLinecap="round" fill="none" />
-    <Circle cx={17} cy={7} r={3} stroke={THEME_COLORS.textPrimary} strokeWidth={1.5} fill="none" />
-    <Path d="M21 21v-2a4 4 0 00-3-3.87" stroke={THEME_COLORS.textPrimary} strokeWidth={1.5} strokeLinecap="round" fill="none" />
-  </Svg>
-);
-
-const getGroupColor = (i: number) => [THEME_COLORS.mint, THEME_COLORS.lavender, THEME_COLORS.peach, THEME_COLORS.backgroundGradientEnd][i % 4];
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 20 },
-  headerTitle: { ...THEME_TYPOGRAPHY.h2, color: THEME_COLORS.textPrimary },
-  addButton: { width: 48, height: 48, borderRadius: 18, backgroundColor: THEME_COLORS.accent, justifyContent: 'center', alignItems: 'center', ...THEME_SHADOWS.elevated },
-  statsRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginBottom: 24 },
-  statBlob: { flex: 1, backgroundColor: THEME_COLORS.surfaceTint, borderRadius: THEME_RADIUS.xl, padding: 16, alignItems: 'center', ...THEME_SHADOWS.card },
-  statValue: { ...THEME_TYPOGRAPHY.h3, color: THEME_COLORS.textPrimary, marginBottom: 4 },
-  statLabel: { ...THEME_TYPOGRAPHY.bodySmall, color: THEME_COLORS.textSecondary },
-  groupCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: THEME_COLORS.surfaceTint, borderRadius: THEME_RADIUS.xl, padding: 16, marginBottom: 12, ...THEME_SHADOWS.elevated },
-  groupIcon: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  groupInfo: { flex: 1 },
-  groupName: { ...THEME_TYPOGRAPHY.body, color: THEME_COLORS.textPrimary },
-  groupMeta: { ...THEME_TYPOGRAPHY.bodySmall, color: THEME_COLORS.textSecondary, marginTop: 4 },
-  groupAmount: { alignItems: 'flex-end' },
-  amountValue: { ...THEME_TYPOGRAPHY.body, color: THEME_COLORS.accent },
-  amountLabel: { ...THEME_TYPOGRAPHY.bodySmall, color: THEME_COLORS.textSecondary },
-  emptyCard: { backgroundColor: THEME_COLORS.surfaceTint, borderRadius: THEME_RADIUS.xxl, padding: 32, alignItems: 'center', ...THEME_SHADOWS.elevated },
-  emptyIcon: { width: 64, height: 64, borderRadius: 24, backgroundColor: THEME_COLORS.surfaceTint, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  emptyTitle: { ...THEME_TYPOGRAPHY.h3, color: THEME_COLORS.textPrimary, marginBottom: 8 },
-  emptyText: { ...THEME_TYPOGRAPHY.bodySmall, color: THEME_COLORS.textSecondary, marginBottom: 20 },
-  emptyButton: { backgroundColor: THEME_COLORS.accent, paddingHorizontal: 24, paddingVertical: 14, borderRadius: THEME_RADIUS.xl },
-  emptyButtonText: { ...THEME_TYPOGRAPHY.label, color: THEME_COLORS.surface },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+  },
+  title: { fontSize: 28, lineHeight: 36, fontFamily: 'Satoshi-Black', letterSpacing: -0.4 },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stats: { flexDirection: 'row', gap: 24, paddingBottom: 24 },
+  stat: { flex: 1 },
+  statLabel: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
+  statValue: { fontSize: 28, lineHeight: 36, fontFamily: 'Satoshi-Black', marginTop: 2 },
+  list: { borderTopWidth: StyleSheet.hairlineWidth },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 80, paddingVertical: 8 },
+  tile: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  rowText: { flex: 1, gap: 2 },
+  name: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Bold' },
+  meta: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
+  amount: { alignItems: 'flex-end' },
+  amountValue: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Black' },
+  empty: { gap: 8, alignItems: 'flex-start', paddingTop: 8 },
+  emptyTitle: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Bold', marginTop: 8 },
+  cta: { minHeight: 56, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, marginTop: 8 },
+  ctaText: { fontSize: 16, fontFamily: 'Satoshi-Bold', color: brand.ink },
 });
 
 export default GroupsScreen;

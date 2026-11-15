@@ -55,7 +55,11 @@ const Digit: React.FC<{
   }));
 
   return (
-    <View style={{ height: lineHeight, overflow: 'hidden' }}>
+    <View
+      style={{ height: lineHeight, overflow: 'hidden' }}
+      importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden
+    >
       <Animated.View style={strip}>
         {DIGITS.map(d => (
           <Text key={d} style={[text, { height: lineHeight }]}>

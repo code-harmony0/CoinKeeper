@@ -474,6 +474,8 @@ Top: a full-bleed black band (with a solid black status strip, light status bar)
 
 Motion (researched: Coinbase RollingNumber, balance-first collapsing headers, light-haptic chart scrubbing): (1) the safe-to-spend number rolls in digit by digit, leftmost first, ones digit last (`anim/RollingNumber.tsx`, transform only, announced once to screen readers); (2) after the hero scrolls away it collapses into a slim black bar with the number, tap to return to top; (3) the pace chart can be dragged sideways to read any day, with a light haptic tick per day and a tag ("14 Nov · ₹X spent"); (4) a "TODAY" bill label has a slow live dot. All of it is transform/opacity, stops or jumps to the final value under reduce-motion.
 
+Game layer (restored after a flat pass lost it): the hero has a slow-drifting yellow glow (`HeroGlow`), and a streak card (`StreakStrip`: breathing flame, "N-day streak", seven day-dots that pop in, today pulses, plain hint to the next streak badge). Lower down, `BadgeShelf` shows the whole badge ladder as medals (earned = yellow with a periodic shine, locked = lock) plus a bar toward the closest unearned badge (`nextBadgeProgress` in services/badges). Bottom navigation is `AppTabBar`: every tab keeps its label, active = black rounded indicator with a yellow icon, and the add action is a floating button shown only on Home and Transactions.
+
 Rules: yellow never sits on white; no pastel rainbow on Home; urgency by label and form, not colour alone.
 
 ### Rollout order and status
