@@ -476,6 +476,8 @@ Motion (researched: Coinbase RollingNumber, balance-first collapsing headers, li
 
 Game layer (restored after a flat pass lost it): the hero has a slow-drifting yellow glow (`HeroGlow`), and a streak card (`StreakStrip`: breathing flame, "N-day streak", seven day-dots that pop in, today pulses, plain hint to the next streak badge). Lower down, `BadgeShelf` shows the whole badge ladder as medals (earned = yellow with a periodic shine, locked = lock) plus a bar toward the closest unearned badge (`nextBadgeProgress` in services/badges). Bottom navigation is `AppTabBar`: every tab keeps its label, active = black rounded indicator with a yellow icon, and the add action is a floating button shown only on Home and Transactions.
 
+Craft layer (from a side-by-side with Duolingo, Falou, Audible, Chime): the streak is an *object*, `FlameBadge` (layered gradient flame with the day count inside, breathing halo, rising sparks; a cold ember when unlit). Medals are objects too (`Medal`: metallic rim, inset disc, gloss, ground glow; locked = same silhouette in grey with a lock). Cards that hold a game (streak, badge shelf) use a nested "bezel": hairline outer shell, inner plate with a smaller concentric radius and a 1px top highlight. The black hero has `HeroTexture` (fine grain + top sheen) and `HeroGlow`. Home icons use thin strokes (1.6-1.9), not thick defaults. One signature easing, `Easing.bezier(0.32, 0.72, 0, 1)`, for rolls, draws and fills.
+
 Rules: yellow never sits on white; no pastel rainbow on Home; urgency by label and form, not colour alone.
 
 ### Rollout order and status

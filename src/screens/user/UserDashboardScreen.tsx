@@ -76,6 +76,7 @@ import { Money } from '../../utils/money';
 import { EXPRESSIVE, STAGGER } from '../../theme/motion';
 import { billsSummary } from '../../services/billSchedule';
 import { HeroPace } from '../../components/home/HeroPace';
+import { HeroTexture } from '../../components/home/HeroTexture';
 import { HomeSection } from '../../components/home/HomeSection';
 import { UpcomingList } from '../../components/home/UpcomingList';
 import { GoalRings } from '../../components/home/GoalRings';
@@ -415,7 +416,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             {Money.format(monthPlan?.safeToSpendToday ?? 0, { zeroDecimals: true })}
           </Text>
           <Text style={st.pulseLabel}>safe to spend today</Text>
-          <ChevronUp size={18} color="rgba(255,255,255,0.7)" strokeWidth={2.4} />
+          <ChevronUp size={18} color="rgba(255,255,255,0.7)" strokeWidth={1.75} />
         </PressableScale>
       </Animated.View>
       <Animated.ScrollView
@@ -433,6 +434,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         scrollEventThrottle={16}
       >
         <View style={[st.stage, { marginTop: -(insets.top + 16), paddingTop: insets.top + 16 }]}>
+          <HeroTexture />
         <Animated.View entering={FadeInDown.springify()} style={st.topRow}>
           <Text style={st.greeting}>{greeting()}</Text>
           <View style={st.actions}>
@@ -442,7 +444,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
               accessibilityRole="button"
               accessibilityLabel="Add income"
             >
-              <Plus size={20} color="#FFFFFF" strokeWidth={2.4} />
+              <Plus size={20} color="#FFFFFF" strokeWidth={1.75} />
             </PressableScale>
             <PressableScale
               onPress={() => navigation.navigate('AskAi')}
@@ -450,7 +452,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
               accessibilityRole="button"
               accessibilityLabel="Ask AI about your money"
             >
-              <Sparkles size={20} color="#FFFFFF" strokeWidth={2.4} />
+              <Sparkles size={20} color="#FFFFFF" strokeWidth={1.75} />
             </PressableScale>
           </View>
         </Animated.View>
@@ -476,7 +478,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
                 <View style={st.inOutCol}>
                   <Text style={st.inOutLabel}>Money in</Text>
                   <View style={st.inOutValue}>
-                    <ArrowUpRight size={18} color={colors.mintDeep} strokeWidth={2.4} />
+                    <ArrowUpRight size={18} color={colors.mintDeep} strokeWidth={1.75} />
                     <Text style={st.inOutText}>
                       {Money.format(snapshot?.income ?? 0, { zeroDecimals: true })}
                     </Text>
@@ -485,7 +487,7 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
                 <View style={st.inOutCol}>
                   <Text style={st.inOutLabel}>Money spent</Text>
                   <View style={st.inOutValue}>
-                    <ArrowDownRight size={18} color={colors.peachDeep} strokeWidth={2.4} />
+                    <ArrowDownRight size={18} color={colors.peachDeep} strokeWidth={1.75} />
                     <Text style={st.inOutText}>
                       {Money.format(ledger.spendPaise, { zeroDecimals: true })}
                     </Text>
@@ -700,6 +702,7 @@ const makeStyles = (
       borderBottomLeftRadius: 32,
       borderBottomRightRadius: 32,
       marginBottom: 24,
+      overflow: 'hidden',
     },
     stack: { gap: 24, paddingBottom: 24 },
     sheetStack: { gap: 16, paddingBottom: 8 },

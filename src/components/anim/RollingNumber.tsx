@@ -46,7 +46,7 @@ const Digit: React.FC<{
     }
     pos.value = withDelay(
       order * STEP_MS,
-      withTiming(digit, { duration: ROLL_MS, easing: Easing.out(Easing.cubic) }),
+      withTiming(digit, { duration: ROLL_MS, easing: Easing.bezier(0.32, 0.72, 0, 1) }),
     );
   }, [digit, order, reduced, pos, replayToken]);
 

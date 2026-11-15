@@ -10,8 +10,7 @@ import Animated, {
   withTiming,
   ZoomIn,
 } from 'react-native-reanimated';
-import { Flame, Lock, Medal, PiggyBank, Target, Trophy, type LucideIcon } from 'lucide-react-native';
-import { brand, useSpecTheme } from '../../theme/specTheme';
+import { useSpecTheme } from '../../theme/specTheme';
 import {
   DURATION,
   EXPRESSIVE,
@@ -20,9 +19,10 @@ import {
   useReducedMotion,
 } from '../../theme/motion';
 import type { Badge } from '../../services/badges';
+import { Medal } from './Medal';
 
-const ICONS: Record<Badge['icon'], LucideIcon> = { Flame, Trophy, Medal, PiggyBank, Target };
-const SIZE = 56;
+const SIZE = 60;
+const EASE = Easing.bezier(0.32, 0.72, 0, 1);
 
 export interface ShelfBadge {
   badge: Badge;
@@ -45,7 +45,7 @@ const Shine: React.FC<{ delay: number }> = ({ delay }) => {
       delay,
       withRepeat(
         withSequence(
-          withTiming(SIZE * 1.4, { duration: 900, easing: Easing.inOut(Easing.cubic) }),
+          withTiming(SIZE * 1.4, { duration: 1000, easing: EASE }),
           withTiming(-SIZE, { duration: 0 }),
           withDelay(3200, withTiming(-SIZE, { duration: 0 })),
         ),
@@ -66,7 +66,7 @@ const Fill: React.FC<{ ratio: number }> = ({ ratio }) => {
       500,
       withTiming(Math.min(Math.max(ratio, 0.04), 1) * 100, {
         duration: informationalDuration(DURATION.fill * 2, reduced),
-        easing: Easing.out(Easing.cubic),
+        easing: EASE,
         reduceMotion: INFORMATIONAL,
       }),
     );
@@ -80,42 +80,37 @@ const Fill: React.FC<{ ratio: number }> = ({ ratio }) => {
 };
 
 /**
- * The badge ladder as a shelf of medals: earned ones are yellow and catch the
- * light, locked ones show a lock, and one bar says how close the next is.
+ * The badge ladder as a shelf of medals inside a nested bezel (hairline shell,
+ * inner plate with a top highlight). Earned medals catch the light; locked ones
+ * keep their silhouette, and one bar says how close the next is.
  */
 export const BadgeShelf: React.FC<Props> = ({ badges, next }) => {
   const { colors, isDark } = useSpecTheme();
   return (
-    <View>
-      <View style={styles.row}>
-        {badges.map(({ badge, earned }, i) => {
-          const Icon = earned ? ICONS[badge.icon] : Lock;
-          return (
+    <View
+      style={[
+        styles.shell,
+        { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : colors.chipBg, borderColor: colors.border },
+      ]}
+    >
+      <View style={[styles.core, { backgroundColor: colors.card }]}>
+        <View style={[styles.sheen, { backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.9)' }]} />
+        <View style={styles.row}>
+          {badges.map(({ badge, earned }, i) => (
             <Animated.View
               key={badge.id}
-              entering={ZoomIn.springify()
-                .damping(11)
-                .stiffness(170)
-                .delay(300 + i * 90)
-                .reduceMotion(EXPRESSIVE)}
+              entering={ZoomIn.springify().damping(12).stiffness(170).delay(300 + i * 90).reduceMotion(EXPRESSIVE)}
               style={styles.item}
               accessible
               accessibilityLabel={`${badge.label}, ${earned ? 'earned' : 'locked'}`}
             >
-              <View
-                style={[
-                  styles.medal,
-                  earned
-                    ? { backgroundColor: brand.signal }
-                    : { backgroundColor: isDark ? colors.chipBg : colors.border },
-                ]}
-              >
-                <Icon
-                  size={earned ? 26 : 22}
-                  strokeWidth={earned ? 2.4 : 2.2}
-                  color={earned ? brand.ink : colors.textSecondary}
-                />
-                {earned && <Shine delay={900 + i * 500} />}
+              <View style={styles.medalWrap}>
+                <Medal id={badge.id} icon={badge.icon} earned={earned} size={SIZE} dark={isDark} />
+                {earned && (
+                  <View style={styles.clip} pointerEvents="none">
+                    <Shine delay={900 + i * 500} />
+                  </View>
+                )}
               </View>
               <Text
                 style={[styles.label, { color: earned ? colors.textPrimary : colors.textSecondary }]}
@@ -124,42 +119,33 @@ export const BadgeShelf: React.FC<Props> = ({ badges, next }) => {
                 {badge.label}
               </Text>
             </Animated.View>
-          );
-        })}
-      </View>
-
-      {next && (
-        <View style={styles.next}>
-          <View style={styles.nextHead}>
-            <Text style={[styles.nextTitle, { color: colors.textPrimary }]}>Next: {next.label}</Text>
-            <Text style={[styles.nextPct, { color: colors.textSecondary }]}>{Math.round(next.ratio * 100)}%</Text>
-          </View>
-          <Fill ratio={next.ratio} />
-          <Text style={[styles.hint, { color: colors.textSecondary }]}>{next.hint}</Text>
+          ))}
         </View>
-      )}
+
+        {next && (
+          <View style={styles.next}>
+            <View style={styles.nextHead}>
+              <Text style={[styles.nextTitle, { color: colors.textPrimary }]}>Next: {next.label}</Text>
+              <Text style={[styles.nextPct, { color: colors.textSecondary }]}>{Math.round(next.ratio * 100)}%</Text>
+            </View>
+            <Fill ratio={next.ratio} />
+            <Text style={[styles.hint, { color: colors.textSecondary }]}>{next.hint}</Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  shell: { padding: 6, borderRadius: 32, borderWidth: 1 },
+  core: { borderRadius: 26, padding: 16, overflow: 'hidden' },
+  sheen: { position: 'absolute', top: 0, left: 24, right: 24, height: 1 },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
-  item: { width: 62, alignItems: 'center', gap: 6 },
-  medal: {
-    width: SIZE,
-    height: SIZE,
-    borderRadius: SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  shine: {
-    position: 'absolute',
-    top: -10,
-    width: 14,
-    height: SIZE + 20,
-    backgroundColor: 'rgba(255,255,255,0.65)',
-  },
+  item: { width: 58, alignItems: 'center', gap: 6 },
+  medalWrap: { width: SIZE, height: SIZE + 6 },
+  clip: { position: 'absolute', top: 0, left: 0, width: SIZE, height: SIZE, borderRadius: SIZE / 2, overflow: 'hidden' },
+  shine: { position: 'absolute', top: -10, width: 12, height: SIZE + 20, backgroundColor: 'rgba(255,255,255,0.6)' },
   label: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Bold', textAlign: 'center' },
   next: { marginTop: 16, gap: 8 },
   nextHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },

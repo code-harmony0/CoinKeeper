@@ -82,7 +82,7 @@ const ChitRow: React.FC<{
         ]}
       >
         <View style={[styles.icon, isDark && { backgroundColor: colors.chipBg }]}>
-          <Users size={20} color="#FFFFFF" strokeWidth={2.2} />
+          <Users size={20} color="#FFFFFF" strokeWidth={1.7} />
         </View>
         <View style={styles.text}>
           <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -95,7 +95,7 @@ const ChitRow: React.FC<{
             <View style={[styles.fill, { width: `${progress * 100}%`, backgroundColor: colors.textPrimary }]} />
           </View>
         </View>
-        <ChevronRight size={20} color={colors.textSecondary} strokeWidth={2.2} />
+        <ChevronRight size={20} color={colors.textSecondary} strokeWidth={1.7} />
       </PressableScale>
     </Animated.View>
   );

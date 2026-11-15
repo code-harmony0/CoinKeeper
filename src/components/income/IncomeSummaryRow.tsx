@@ -92,7 +92,7 @@ export const IncomeSummaryRow: React.FC<IncomeSummaryRowProps> = ({
       accessibilityLabel={hasIncome ? 'Income details' : 'Add income'}
     >
       <View style={[st.icon, isDark && { backgroundColor: colors.chipBg }]}>
-        <Wallet size={20} color="#FFFFFF" strokeWidth={2.2} />
+        <Wallet size={20} color="#FFFFFF" strokeWidth={1.7} />
       </View>
       <View style={st.textCol}>
         {status && (
@@ -104,7 +104,7 @@ export const IncomeSummaryRow: React.FC<IncomeSummaryRowProps> = ({
           {supporting}
         </Text>
       </View>
-      <ChevronRight size={18} color={colors.textSecondary} strokeWidth={2.2} />
+      <ChevronRight size={18} color={colors.textSecondary} strokeWidth={1.7} />
     </PressableScale>
   );
 };

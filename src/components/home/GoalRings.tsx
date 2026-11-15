@@ -57,7 +57,7 @@ const Ring: React.FC<{ ratio: number; index: number; track: string; ink: string;
       200 + index * STAGGER.normal,
       withTiming(Math.min(Math.max(ratio, 0), 1), {
         duration: informationalDuration(DURATION.fill * 2, reduced),
-        easing: Easing.out(Easing.cubic),
+        easing: Easing.bezier(0.32, 0.72, 0, 1),
         reduceMotion: INFORMATIONAL,
       }),
     );
@@ -120,7 +120,7 @@ export const GoalRings: React.FC<Props> = ({ goals, onAddMoney, onNewGoal }) => 
       })}
       <PressableScale onPress={onNewGoal} accessibilityRole="button" accessibilityLabel="New goal" style={styles.item}>
         <View style={[styles.ring, styles.add, { borderColor: colors.border }]}>
-          <Plus size={24} color={colors.textSecondary} strokeWidth={2.2} />
+          <Plus size={24} color={colors.textSecondary} strokeWidth={1.8} />
         </View>
         <Text style={[styles.name, { color: colors.textPrimary }]}>New</Text>
       </PressableScale>

@@ -95,7 +95,7 @@ export const AppTabBar: React.FC<Props> = ({ state, navigation, tabs, fabIndex }
         >
           <Icon
             size={22}
-            strokeWidth={active ? 2.4 : 2}
+            strokeWidth={active ? 2 : 1.6}
             color={active ? indicatorIcon : colors.textSecondary}
           />
         </View>

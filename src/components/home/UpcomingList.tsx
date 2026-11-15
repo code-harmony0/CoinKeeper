@@ -101,7 +101,7 @@ export const UpcomingList: React.FC<Props> = ({ bills, onPress }) => {
               style={[styles.row, i < rows.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}
             >
               <View style={[styles.icon, isDark && { backgroundColor: colors.chipBg }]}>
-                <Icon size={20} color="#FFFFFF" strokeWidth={2.2} />
+                <Icon size={20} color="#FFFFFF" strokeWidth={1.7} />
               </View>
               <View style={styles.text}>
                 <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>

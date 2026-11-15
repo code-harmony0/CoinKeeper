@@ -63,7 +63,7 @@ export const HeroPace: React.FC<Props> = ({
 
   // Last seven days as game dots: the streak is the run of days under the
   // daily limit that ends yesterday; today is still open.
-  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const weekDots: StreakDay[] = Array.from({ length: 7 }, (_, k) => {
     const ago = 6 - k;
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ago);
@@ -92,7 +92,7 @@ export const HeroPace: React.FC<Props> = ({
       />
 
       <View style={styles.delta}>
-        <ArrowDownRight size={16} color={MUTED} strokeWidth={2.4} style={styles.deltaIcon} />
+        <ArrowDownRight size={16} color={MUTED} strokeWidth={1.9} style={styles.deltaIcon} />
         <Text style={[styles.deltaText, { color: MUTED }]}>
           {Money.format(ledger.todaySpendPaise, { zeroDecimals: true })} spent today
           {'  ·  '}
@@ -101,7 +101,7 @@ export const HeroPace: React.FC<Props> = ({
       </View>
 
       <View style={[styles.status, status.tone === 'good' || status.tone === 'neutral' ? styles.statusCalm : styles.statusAlert]}>
-        <StatusIcon size={16} color={brand.signal} strokeWidth={2.4} />
+        <StatusIcon size={16} color={brand.signal} strokeWidth={1.9} />
         <Text style={[styles.statusText, { color: WHITE }]} numberOfLines={2}>
           {status.headline}
         </Text>
@@ -117,7 +117,7 @@ export const HeroPace: React.FC<Props> = ({
               entering={FadeInDown.springify().damping(18).delay(500 + i * 80).reduceMotion(EXPRESSIVE)}
               style={styles.chip}
             >
-              <c.Icon size={14} color={MUTED} strokeWidth={2.4} />
+              <c.Icon size={14} color={MUTED} strokeWidth={1.9} />
               <Text style={[styles.chipText, { color: WHITE }]} numberOfLines={1}>
                 {c.text}
               </Text>

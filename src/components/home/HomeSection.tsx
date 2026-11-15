@@ -23,7 +23,7 @@ export const HomeSection: React.FC<Props> = ({ title, onPress, children }) => {
       <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">
         {title}
       </Text>
-      {onPress && <ChevronRight size={20} color={colors.textSecondary} strokeWidth={2.2} />}
+      {onPress && <ChevronRight size={20} color={colors.textSecondary} strokeWidth={1.8} />}
     </View>
   );
   return (

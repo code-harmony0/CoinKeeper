@@ -9,9 +9,10 @@ import Animated, {
   withTiming,
   ZoomIn,
 } from 'react-native-reanimated';
-import { Check, Flame } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
 import { brand } from '../../theme/specTheme';
 import { EXPRESSIVE, useReducedMotion } from '../../theme/motion';
+import { FlameBadge } from './FlameBadge';
 
 export type DayState = 'hit' | 'miss' | 'today' | 'future' | 'unknown';
 
@@ -29,141 +30,120 @@ interface Props {
 
 const WHITE = '#FFFFFF';
 const MUTED = 'rgba(255,255,255,0.72)';
+const EASE = Easing.bezier(0.32, 0.72, 0, 1);
 
-/** The flame breathes: a slow scale and sway, still under reduce-motion. */
-const LiveFlame: React.FC<{ lit: boolean }> = ({ lit }) => {
-  const reduced = useReducedMotion();
-  const t = useSharedValue(0);
-  useEffect(() => {
-    if (reduced || !lit) return;
-    t.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 700, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0, { duration: 800, easing: Easing.inOut(Easing.sin) }),
-      ),
-      -1,
-    );
-  }, [reduced, lit, t]);
-  const style = useAnimatedStyle(() => ({
-    transform: [
-      { scale: 1 + t.value * 0.12 },
-      { rotate: `${(t.value - 0.5) * 8}deg` },
-    ],
-  }));
-  return (
-    <Animated.View style={style}>
-      <Flame
-        size={30}
-        strokeWidth={2.2}
-        color={lit ? brand.signal : 'rgba(255,255,255,0.4)'}
-        fill={lit ? brand.signal : 'transparent'}
-      />
-    </Animated.View>
-  );
-};
-
-/** Today's dot pulses so the one thing still open is the thing you see. */
-const TodayDot: React.FC = () => {
+/** Today's chip breathes so the one open day is the one you see. */
+const TodayChip: React.FC = () => {
   const reduced = useReducedMotion();
   const p = useSharedValue(0);
   useEffect(() => {
     if (reduced) return;
     p.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 900, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0, { duration: 900, easing: Easing.inOut(Easing.sin) }),
-      ),
+      withSequence(withTiming(1, { duration: 1000, easing: EASE }), withTiming(0, { duration: 1000, easing: EASE })),
       -1,
     );
   }, [reduced, p]);
-  const ring = useAnimatedStyle(() => ({
-    opacity: 0.55 - p.value * 0.45,
-    transform: [{ scale: 1 + p.value * 0.35 }],
-  }));
+  const glow = useAnimatedStyle(() => ({ opacity: 0.15 + p.value * 0.3 }));
   return (
-    <View style={styles.dotWrap}>
-      <Animated.View style={[styles.pulse, ring]} />
-      <View style={[styles.dot, styles.dotToday]} />
+    <View style={[styles.chip, styles.chipToday]}>
+      <Animated.View style={[StyleSheet.absoluteFill, styles.todayGlow, glow]} />
     </View>
   );
 };
 
-const Dot: React.FC<{ state: DayState }> = ({ state }) => {
-  if (state === 'today') return <TodayDot />;
+const Chip: React.FC<{ state: DayState }> = ({ state }) => {
+  if (state === 'today') return <TodayChip />;
   if (state === 'hit') {
     return (
-      <View style={[styles.dot, styles.dotHit]}>
-        <Check size={16} strokeWidth={3.2} color={brand.ink} />
+      <View style={[styles.chip, styles.chipHit]}>
+        <Check size={18} strokeWidth={2.6} color={brand.ink} />
       </View>
     );
   }
-  if (state === 'miss') return <View style={[styles.dot, styles.dotMiss]} />;
-  return <View style={[styles.dot, styles.dotFuture]} />;
+  if (state === 'miss') return <View style={[styles.chip, styles.chipMiss]} />;
+  return <View style={[styles.chip, styles.chipFuture]} />;
 };
 
 /**
- * The week as a game board: how many days in a row you stayed under your daily
- * limit, the last seven days as dots, and how far the next badge is.
+ * The week as a game board, in a nested "bezel": a hairline shell around an
+ * inner plate with its own top highlight. The flame is the object; the day
+ * chips under it say which days you held the line.
  */
 export const StreakStrip: React.FC<Props> = ({ streakDays, days, next }) => {
   const lit = streakDays > 0;
   const toGo = next ? Math.max(next.days - streakDays, 0) : 0;
   return (
-    <View style={styles.card}>
-      <View style={styles.top}>
-        <LiveFlame lit={lit} />
-        <View style={styles.topText}>
-          <Text style={styles.title}>
-            {lit ? `${streakDays}-day streak` : 'Start a streak today'}
-          </Text>
-          <Text style={styles.sub} numberOfLines={2}>
-            {next
-              ? `${toGo} more ${toGo === 1 ? 'day' : 'days'} under your daily limit unlocks ${next.label}`
-              : 'Every day under your limit keeps it alive'}
-          </Text>
+    <View style={styles.shell}>
+      <View style={styles.core}>
+        <View style={styles.sheen} pointerEvents="none" />
+        <View style={styles.top}>
+          <FlameBadge days={streakDays} />
+          <View style={styles.topText}>
+            <Text style={styles.title}>{lit ? 'day streak' : 'Light your streak'}</Text>
+            <Text style={styles.sub}>
+              {next
+                ? `${toGo} more ${toGo === 1 ? 'day' : 'days'} under your daily limit unlocks ${next.label}`
+                : 'Every day under your limit keeps it alive'}
+            </Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.week} accessible accessibilityLabel={`Last seven days: ${days.filter(d => d.state === 'hit').length} under your limit`}>
-        {days.map((d, i) => (
-          <Animated.View
-            key={i}
-            entering={ZoomIn.springify()
-              .damping(12)
-              .stiffness(180)
-              .delay(450 + i * 70)
-              .reduceMotion(EXPRESSIVE)}
-            style={styles.col}
-          >
-            <Dot state={d.state} />
-            <Text style={[styles.dayLabel, d.state === 'today' && { color: WHITE }]}>{d.label}</Text>
-          </Animated.View>
-        ))}
+        <View
+          style={styles.week}
+          accessible
+          accessibilityLabel={`Last seven days: ${days.filter(d => d.state === 'hit').length} under your limit`}
+        >
+          {days.map((d, i) => (
+            <Animated.View
+              key={i}
+              entering={ZoomIn.springify().damping(13).stiffness(190).delay(450 + i * 70).reduceMotion(EXPRESSIVE)}
+              style={styles.col}
+            >
+              <Chip state={d.state} />
+              <Text style={[styles.dayLabel, d.state === 'today' && { color: WHITE }]}>{d.label}</Text>
+            </Animated.View>
+          ))}
+        </View>
       </View>
     </View>
   );
 };
 
-const DOT = 32;
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 24,
-    padding: 16,
+  // Outer shell: hairline + padding; inner plate has a smaller, concentric radius.
+  shell: {
     marginTop: 16,
-    gap: 16,
+    padding: 6,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
-  top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  topText: { flex: 1 },
-  title: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Black', color: WHITE },
+  core: {
+    borderRadius: 26,
+    padding: 16,
+    gap: 16,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    overflow: 'hidden',
+  },
+  sheen: {
+    position: 'absolute',
+    top: 0,
+    left: 24,
+    right: 24,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+  },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  topText: { flex: 1, gap: 4 },
+  title: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Black', color: brand.signal },
   sub: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', color: MUTED },
   week: { flexDirection: 'row', justifyContent: 'space-between' },
-  col: { alignItems: 'center', gap: 6 },
+  col: { alignItems: 'center', gap: 6, flex: 1 },
   dayLabel: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Bold', color: 'rgba(255,255,255,0.55)' },
-  dotWrap: { width: DOT, height: DOT, alignItems: 'center', justifyContent: 'center' },
-  pulse: { position: 'absolute', width: DOT, height: DOT, borderRadius: DOT / 2, backgroundColor: brand.signal },
-  dot: { width: DOT, height: DOT, borderRadius: DOT / 2, alignItems: 'center', justifyContent: 'center' },
-  dotHit: { backgroundColor: brand.signal },
-  dotToday: { borderWidth: 3, borderColor: brand.signal, backgroundColor: 'transparent' },
-  dotMiss: { backgroundColor: 'rgba(255,255,255,0.14)' },
-  dotFuture: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.22)', borderStyle: 'dashed' },
+  chip: { width: 36, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  chipHit: { backgroundColor: brand.signal },
+  chipToday: { borderWidth: 2, borderColor: brand.signal, overflow: 'hidden' },
+  todayGlow: { backgroundColor: brand.signal },
+  chipMiss: { backgroundColor: 'rgba(255,255,255,0.09)' },
+  chipFuture: { borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)', borderStyle: 'dashed' },
 });

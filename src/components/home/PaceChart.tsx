@@ -110,7 +110,7 @@ export const PaceChart: React.FC<Props> = ({
       250,
       withTiming(1, {
         duration: informationalDuration(DURATION.fill * 2, reduced),
-        easing: Easing.out(Easing.cubic),
+        easing: Easing.bezier(0.32, 0.72, 0, 1),
         reduceMotion: INFORMATIONAL,
       }),
     );
