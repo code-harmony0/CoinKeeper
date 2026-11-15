@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Wallet, ChevronRight } from 'lucide-react-native';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand, useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
 import { getDb } from '../../store/database';
 import { NOT_ENOUGH_DATA } from '../../services/income/IncomeAnalyticsService';
@@ -24,7 +24,7 @@ export const IncomeSummaryRow: React.FC<IncomeSummaryRowProps> = ({
   onOpenDetail,
   onAddIncome,
 }) => {
-  const { colors, cardRadius, cardShadow, iconShadow } = useSpecTheme();
+  const { colors, cardRadius, isDark } = useSpecTheme();
   const st = makeStyles(colors, cardRadius);
   const [score, setScore] = useState<number | null>(null);
   const [nextDate, setNextDate] = useState<string | null>(null);
@@ -76,6 +76,8 @@ export const IncomeSummaryRow: React.FC<IncomeSummaryRowProps> = ({
   if (score !== null) parts.push(`Health ${score}/100`);
   if (nextDate) parts.push(`next ${nextDate}`);
 
+  // A score alone means little: give it a word, and flag weak in yellow.
+  const status = score === null ? null : score < 40 ? 'WEAK' : score < 70 ? 'FAIR' : 'STRONG';
   const supporting = hasIncome
     ? parts.length > 0
       ? parts.join(' · ')
@@ -85,15 +87,19 @@ export const IncomeSummaryRow: React.FC<IncomeSummaryRowProps> = ({
   return (
     <PressableScale
       onPress={hasIncome ? onOpenDetail : onAddIncome}
-      style={[st.row, cardShadow]}
+      style={st.row}
       accessibilityRole="button"
       accessibilityLabel={hasIncome ? 'Income details' : 'Add income'}
     >
-      <View style={[st.icon, iconShadow]}>
-        <Wallet size={20} color={colors.textSecondary} strokeWidth={2} />
+      <View style={[st.icon, isDark && { backgroundColor: colors.chipBg }]}>
+        <Wallet size={20} color="#FFFFFF" strokeWidth={2.2} />
       </View>
       <View style={st.textCol}>
-        <Text style={st.title}>Income</Text>
+        {status && (
+          <View style={[st.tag, status !== 'WEAK' && st.tagQuiet]}>
+            <Text style={[st.tagText, status !== 'WEAK' && { color: colors.textPrimary }]}>{status}</Text>
+          </View>
+        )}
         <Text style={st.supporting} numberOfLines={1}>
           {supporting}
         </Text>
@@ -103,35 +109,37 @@ export const IncomeSummaryRow: React.FC<IncomeSummaryRowProps> = ({
   );
 };
 
-const makeStyles = (colors: any, cardRadius: number) =>
+const makeStyles = (colors: any, _cardRadius: number) =>
   StyleSheet.create({
     row: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      backgroundColor: colors.card,
-      borderRadius: cardRadius,
-      padding: 16,
+      minHeight: 72,
     },
     icon: {
-      width: 40,
-      height: 40,
-      borderRadius: 16,
-      backgroundColor: colors.chipBg,
+      width: 48,
+      height: 48,
+      borderRadius: 12,
+      backgroundColor: brand.ink,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    textCol: { flex: 1 },
-    title: {
-      fontSize: 16,
-      fontFamily: 'Satoshi-Bold',
-      color: colors.textPrimary,
+    textCol: { flex: 1, gap: 2 },
+    tag: {
+      alignSelf: 'flex-start',
+      backgroundColor: brand.signal,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
     },
+    tagQuiet: { backgroundColor: colors.chipBg },
+    tagText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Black', color: brand.ink, letterSpacing: 0.5 },
     supporting: {
       fontSize: 14,
-      fontFamily: 'Satoshi-Regular',
+      lineHeight: 20,
+      fontFamily: 'Satoshi-Medium',
       color: colors.textSecondary,
-      marginTop: 2,
     },
   });
 

@@ -347,6 +347,8 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
     reports: 'Reports',
     transactions: 'Transactions',
   };
+  // Bills already have their own section right above, so that pill is dropped.
+  const extraPills = pills.filter(p => p.target !== 'bills');
   const openPillTarget = (target: PillTarget) =>
     navigation.navigate(PILL_ROUTES[target]);
 
@@ -461,11 +463,11 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
             </HomeSection>
           </OnEnter>
 
-          {(pills.length > 0 || insights.length > 0) && (
+          {(extraPills.length > 0 || insights.length > 0) && (
             <OnEnter index={4}>
               <HomeSection title="Insights">
                 <View style={st.insightStack}>
-                  <InsightPillRail pills={pills} onPress={openPillTarget} />
+                  {extraPills.length > 0 && <InsightPillRail pills={extraPills} onPress={openPillTarget} />}
                   <WeeklyStoryCard story={weeklyStory} onOpenReports={navigateToReports} />
                   {insights.map((insight, index) => (
                     <SmartInsightCard key={insight.id} insight={insight} delay={index * 20} />
@@ -477,20 +479,26 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
           <OnEnter index={5}>
             <HomeSection title="Where it went" onPress={navigateToReports}>
-              <MoneyMap
-                mapOnly
-                ledger={ledger}
-                incomePaise={snapshot?.income ?? 0}
-                monthPlan={monthPlan}
-                onOpenReports={navigateToReports}
-                onAddCategory={() => navigation.navigate('Categories')}
-                streakDays={streakDays}
-                badge={null}
-                ageOfMoney={null}
-                status={status}
-                replayToken={refreshToken}
-                unpaidBillsPaise={unpaidBillsPaise}
-              />
+              {ledger.byCategory.length === 0 ? (
+                <Text style={st.emptyLine}>
+                  Nothing spent this month yet. Your spending map appears as you add expenses.
+                </Text>
+              ) : (
+                <MoneyMap
+                  mapOnly
+                  ledger={ledger}
+                  incomePaise={snapshot?.income ?? 0}
+                  monthPlan={monthPlan}
+                  onOpenReports={navigateToReports}
+                  onAddCategory={() => navigation.navigate('Categories')}
+                  streakDays={streakDays}
+                  badge={null}
+                  ageOfMoney={null}
+                  status={status}
+                  replayToken={refreshToken}
+                  unpaidBillsPaise={unpaidBillsPaise}
+                />
+              )}
             </HomeSection>
           </OnEnter>
 
@@ -576,6 +584,13 @@ const makeStyles = (
       lineHeight: 28,
       fontFamily: 'Satoshi-Black',
       color: colors.textPrimary,
+    },
+    emptyLine: {
+      fontSize: 14,
+      lineHeight: 20,
+      fontFamily: 'Satoshi-Medium',
+      color: colors.textSecondary,
+      paddingBottom: 8,
     },
     insightStack: { gap: 16, paddingBottom: 8 },
     // The black top band runs edge to edge under the status bar: it holds only

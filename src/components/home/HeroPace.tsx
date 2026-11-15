@@ -165,6 +165,6 @@ const styles = StyleSheet.create({
     minHeight: 32,
   },
   chipText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Bold' },
-  chart: { marginHorizontal: -24, marginTop: 8 },
+  chart: { marginHorizontal: -24, marginTop: 4, marginBottom: 20 },
   forecast: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', marginTop: 4 },
 });

@@ -4,17 +4,19 @@
  * Lives inside src/modules/chitfund so Metro's blockList can drop it from the
  * lite bundle. It owns its own useChitFunds() call; the dashboard reaches it
  * only through a CHITFUND_ENABLED-guarded require().
+ *
+ * Styled like Home's Upcoming list (black icon tile, name, one quiet line, a
+ * thin progress line) so chits read as part of the same app.
  */
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { ChevronRight, Users } from 'lucide-react-native';
 import { useChitFunds } from '../hooks/useChitFunds';
-import { useSpecTheme } from '../../../theme/specTheme';
+import { brand, useSpecTheme } from '../../../theme/specTheme';
 import type { ChitGroup } from '../types/chitFund';
 import { PressableScale } from '../../../components/anim';
-import { PastelCard } from '../../../components/premium';
-
-const CHIT_TINTS = ['lavender', 'mint', 'peach'] as const;
+import { HomeSection } from '../../../components/home/HomeSection';
 
 type Props = {
   navigation: any;
@@ -22,8 +24,9 @@ type Props = {
   refreshToken?: number;
 };
 
+const MAX_ROWS = 2;
+
 const DashboardChitsSection: React.FC<Props> = ({ navigation, refreshToken = 0 }) => {
-  const { colors } = useSpecTheme();
   const { groups, refreshGroups } = useChitFunds();
 
   useEffect(() => {
@@ -36,96 +39,85 @@ const DashboardChitsSection: React.FC<Props> = ({ navigation, refreshToken = 0 }
     navigation.navigate('Groups');
   }, [navigation]);
 
-  const visibleGroups = groups.slice(0, 2);
-  const extraGroupCount = Math.max(groups.length - 2, 0);
-
-  const st = useMemo(() => makeStyles(colors), [colors]);
+  const extra = Math.max(groups.length - MAX_ROWS, 0);
 
   return (
-    <View style={st.section}>
-      <View style={st.sectionRow}>
-        <Text style={st.sectionTitle}>Chits ({groups.length} active)</Text>
-        <PressableScale onPress={navigateToGroups}>
-          <Text style={st.linkText}>View All</Text>
-        </PressableScale>
-      </View>
-
-      {visibleGroups.map((group, i) => (
-        <ChitCard
+    <HomeSection title={`Chits (${groups.length})`} onPress={navigateToGroups}>
+      {groups.slice(0, MAX_ROWS).map((group, i) => (
+        <ChitRow
           key={group.id}
           group={group}
-          delay={80 + i * 40}
-          tint={CHIT_TINTS[i % 3]}
-          colors={colors}
+          index={i}
+          last={i === Math.min(groups.length, MAX_ROWS) - 1 && extra === 0}
           onPress={() => navigation.navigate('ChitDetail', { groupId: group.id })}
         />
       ))}
-
-      {extraGroupCount > 0 && (
-        <PressableScale onPress={navigateToGroups} style={st.moreLink}>
-          <Text style={st.moreLinkText}>+{extraGroupCount} more groups</Text>
+      {extra > 0 && (
+        <PressableScale onPress={navigateToGroups} style={styles.more} accessibilityRole="button">
+          <Text style={styles.moreText}>+{extra} more</Text>
         </PressableScale>
       )}
-    </View>
+    </HomeSection>
   );
 };
 
-/* ── Chit Card ── */
-const ChitCard: React.FC<{
+const ChitRow: React.FC<{
   group: ChitGroup;
-  delay: number;
-  tint: (typeof CHIT_TINTS)[number];
-  colors: any;
+  index: number;
+  last: boolean;
   onPress: () => void;
-}> = ({ group, delay, tint, colors, onPress }) => {
+}> = ({ group, index, last, onPress }) => {
+  const { colors, isDark } = useSpecTheme();
   const progress = group.totalCycles > 0 ? Math.min(group.currentCycle / group.totalCycles, 1) : 0;
 
   return (
-    <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.chitCardWrap}>
-      {/* Plain View boundary so PressableScale's internal transform-animated
-          node is not the direct child of this entering-animated wrapper —
-          avoids the "transform may be overwritten by a layout animation" warning. */}
-      <View>
-        <PastelCard
-          tint={tint}
-          eyebrow={group.name}
-          value={`₹${group.amount.toLocaleString('en-IN')}/mo`}
-          caption={`${group.currentCycle}/${group.totalCycles} cycles`}
-          progress={progress}
-          onPress={onPress}
-        >
-          <View style={styles.chitStatusRow}>
-            <View style={[styles.chitBadge, { backgroundColor: 'rgba(255,255,255,0.6)' }]}>
-              <Text style={[styles.chitBadgeText, { color: colors[`${tint}Deep`] }]}>On track</Text>
-            </View>
+    <Animated.View entering={FadeInDown.delay(80 + index * 60).springify().damping(18)}>
+      <PressableScale
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${group.name}, ₹${group.amount.toLocaleString('en-IN')} a month, cycle ${group.currentCycle} of ${group.totalCycles}`}
+        style={[
+          styles.row,
+          !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
+        ]}
+      >
+        <View style={[styles.icon, isDark && { backgroundColor: colors.chipBg }]}>
+          <Users size={20} color="#FFFFFF" strokeWidth={2.2} />
+        </View>
+        <View style={styles.text}>
+          <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>
+            {group.name}
+          </Text>
+          <Text style={[styles.sub, { color: colors.textSecondary }]}>
+            ₹{group.amount.toLocaleString('en-IN')}/mo · cycle {group.currentCycle} of {group.totalCycles}
+          </Text>
+          <View style={[styles.track, { backgroundColor: colors.border }]}>
+            <View style={[styles.fill, { width: `${progress * 100}%`, backgroundColor: colors.textPrimary }]} />
           </View>
-        </PastelCard>
-      </View>
+        </View>
+        <ChevronRight size={20} color={colors.textSecondary} strokeWidth={2.2} />
+      </PressableScale>
     </Animated.View>
   );
 };
 
-/* ── Styles ── */
 const styles = StyleSheet.create({
-  chitCardWrap: { marginTop: 12 },
-  chitStatusRow: { flexDirection: 'row', justifyContent: 'flex-end' },
-  chitBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  chitBadgeText: { fontSize: 11, fontFamily: 'Satoshi-Bold' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 80, paddingVertical: 8 },
+  icon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: brand.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: { flex: 1, gap: 2 },
+  name: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Bold' },
+  sub: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
+  track: { height: 4, borderRadius: 2, overflow: 'hidden', marginTop: 4 },
+  fill: { height: 4, borderRadius: 2 },
+  more: { minHeight: 48, justifyContent: 'center' },
+  moreText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', color: '#6B7280' },
 });
-
-const makeStyles = (colors: any) =>
-  StyleSheet.create({
-    section: {},
-    sectionRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 4,
-    },
-    sectionTitle: { fontSize: 20, fontFamily: 'Satoshi-Bold', color: colors.textPrimary },
-    linkText: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: colors.lavenderDeep },
-    moreLink: { alignSelf: 'center', paddingVertical: 8 },
-    moreLinkText: { fontSize: 13, fontFamily: 'Satoshi-Medium', color: colors.textSecondary },
-  });
 
 export default DashboardChitsSection;

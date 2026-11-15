@@ -33,7 +33,7 @@ interface Props {
 }
 
 const PAD_X = 24;
-const PAD_TOP = 36;
+const PAD_TOP = 32;
 const PAD_BOTTOM = 8;
 
 /**
@@ -46,7 +46,7 @@ export const PaceChart: React.FC<Props> = ({
   expenses,
   planPaise,
   width,
-  height = 152,
+  height = 128,
   replayToken = 0,
 }) => {
   const reduced = useReducedMotion();
@@ -87,6 +87,8 @@ export const PaceChart: React.FC<Props> = ({
       end: pts[pts.length - 1],
       diff: planPaise > 0 ? ideal - spent : 0,
       hasPlan: planPaise > 0,
+      firstLabel: `1 ${now.toLocaleString('en-IN', { month: 'short' })}`,
+      lastLabel: `${days} ${now.toLocaleString('en-IN', { month: 'short' })}`,
     };
   }, [expenses, planPaise, width, height]);
 
@@ -159,6 +161,10 @@ export const PaceChart: React.FC<Props> = ({
           animatedProps={lineProps}
         />
       </Svg>
+      <View style={[styles.ends, { width }]} pointerEvents="none">
+        <Text style={styles.endText} numberOfLines={1}>{geo.firstLabel}</Text>
+        <Text style={styles.endText} numberOfLines={1}>{geo.lastLabel}</Text>
+      </View>
       <Animated.View style={[StyleSheet.absoluteFill, fadeStyle]} pointerEvents="none">
         <Svg width={width} height={height}>
           <Circle cx={geo.end[0]} cy={geo.end[1]} r={9} fill={tone} fillOpacity={0.18} />
@@ -184,6 +190,14 @@ export const PaceChart: React.FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
+  ends: {
+    position: 'absolute',
+    bottom: -20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: PAD_X - 4,
+  },
+  endText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Medium', color: 'rgba(255,255,255,0.6)', flexShrink: 0 },
   tagBox: { position: 'absolute', alignItems: 'center' },
   tag: {
     minHeight: 24,
