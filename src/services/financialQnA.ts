@@ -1,5 +1,6 @@
 import { Money } from '../utils/money';
 import type { FinancialContext } from './FinancialContextService';
+import { TOPIC_IDS, findTopic, hasLearnCue, topicById } from './knowledge/financeKnowledge';
 
 export interface StructuredReply {
   title: string;
@@ -196,3 +197,36 @@ export const answerIntent = (intent: Intent | null, ctx: FinancialContext): Stru
 /** Keyword answer only; AIProvider adds the on-device model for questions this cannot place. */
 export const answerFinancialQuestion = (question: string, ctx: FinancialContext): StructuredReply =>
   answerIntent(classifyQuestion(question), ctx);
+
+/** Everything a question can be routed to: the app's own numbers, or a guide topic. */
+export type Label = Intent | string;
+export const ALL_LABELS: string[] = [...INTENT_NAMES, ...TOPIC_IDS];
+
+/**
+ * Keyword routing. A guide topic wins when the person is asking to learn
+ * ("what is a SIP") or nothing else matched; "how much EMI did I pay" still
+ * goes to their own numbers.
+ */
+export const routeQuestion = (question: string): Label | null => {
+  const intent = classifyQuestion(question);
+  const topic = findTopic(question);
+  if (topic && (hasLearnCue(question) || !intent)) return topic.id;
+  return intent;
+};
+
+const topicReply = (id: string, ctx: FinancialContext): StructuredReply | null => {
+  const topic = topicById(id);
+  if (!topic) return null;
+  let personal = '';
+  // One line tied to their own figures where it genuinely helps.
+  if (id === 'emergency_fund' && ctx.monthlyExpensesPaise > 0) {
+    personal = ` Using what you have spent so far this month (${inr(ctx.monthlyExpensesPaise)}), that would be ${inr(ctx.monthlyExpensesPaise * 3)} to ${inr(ctx.monthlyExpensesPaise * 6)}. It becomes more accurate as the month fills in.`;
+  }
+  if (id === 'budget_50_30_20' && ctx.monthlyIncomePaise > 0) {
+    personal = ` On ${inr(ctx.monthlyIncomePaise)} coming in, that is about ${inr(Math.round(ctx.monthlyIncomePaise * 0.5))} for needs, ${inr(Math.round(ctx.monthlyIncomePaise * 0.3))} for wants and ${inr(Math.round(ctx.monthlyIncomePaise * 0.2))} for savings.`;
+  }
+  return { title: topic.title, body: topic.body + personal, action: id === 'chit_funds' ? 'Groups' : undefined };
+};
+
+export const answerLabel = (label: Label | null, ctx: FinancialContext): StructuredReply =>
+  (label && topicReply(label, ctx)) || answerIntent(label as Intent | null, ctx);

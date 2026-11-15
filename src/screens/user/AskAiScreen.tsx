@@ -32,6 +32,8 @@ const STARTERS = [
   'What bills are due soon?',
   'How much came in this month?',
   'How can I improve?',
+  'What is a SIP?',
+  'How big should my emergency fund be?',
 ];
 
 interface ChatMessage {

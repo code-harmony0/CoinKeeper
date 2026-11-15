@@ -1,4 +1,4 @@
-import { answerFinancialQuestion, classifyQuestion } from '../../src/services/financialQnA';
+import { answerFinancialQuestion, answerLabel, classifyQuestion, routeQuestion } from '../../src/services/financialQnA';
 import type { FinancialContext } from '../../src/services/FinancialContextService';
 
 const context: FinancialContext = {
@@ -94,5 +94,21 @@ describe('answerFinancialQuestion', () => {
 
   it('treats a misspelt "habbit" as a request for advice', () => {
     expect(classifyQuestion('What is my spending habbit')).toBe('advice');
+  });
+
+  it('explains a money concept from the reviewed guide when asked to learn', () => {
+    expect(routeQuestion('what is a SIP?')).toBe('sip_basics');
+    const reply = answerLabel(routeQuestion('how big should my emergency fund be, explain'), context);
+    expect(reply.title).toBe('Emergency fund');
+    // Personalised with the real monthly spend (25,375 x 3 = 76,125).
+    expect(reply.body).toContain('76,125');
+  });
+
+  it('keeps "how much EMI did I pay" on the person\'s own numbers', () => {
+    expect(routeQuestion('how much have I spent on emi')).toBe('expenses');
+  });
+
+  it('does not mistake "afford" for the FD topic', () => {
+    expect(routeQuestion('can I afford a new phone?')).toBe('affordability');
   });
 });
