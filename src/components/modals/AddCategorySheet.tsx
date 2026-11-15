@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Sparkles } from 'lucide-react-native';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
 import { getDb } from '../../store/database';
 import { v4 as uuidv4 } from 'uuid';
 import { CategoryData } from '../../types/category';
@@ -55,9 +56,12 @@ interface Props {
 
 const SHEET_SPRING = { damping: 15, stiffness: 300 };
 
+const INK = '#111111';
+
 export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess, editing }) => {
   const { colors, cardRadius, iconShadow } = useSpecTheme();
   const insets = useSafeAreaInsets();
+  const kbHeight = useKeyboardHeight();
 
   const translateY = useSharedValue(800);
   const backdropOpacity = useSharedValue(0);
@@ -148,11 +152,11 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess,
           <PressableScale style={styles.flex1} onPress={onClose} />
         </Animated.View>
 
-        <Animated.View style={[styles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + 16 }, animatedSheet]}>
+        <Animated.View style={[styles.sheet, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom + 16, kbHeight + 12) }, animatedSheet]}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>
-              {editing ? 'Edit Category' : 'New Category'}
+              {editing ? 'Edit category' : 'New category'}
             </Text>
             <PressableScale onPress={onClose} style={[styles.closeBtn, { backgroundColor: colors.chipBg }]}>
               <X size={20} color={colors.textPrimary} />
@@ -162,8 +166,8 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess,
           <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 24, paddingBottom: 24 }}>
             
             {/* Live Preview */}
-            <View style={[styles.previewCard, { backgroundColor: selectedColor + '15', borderRadius: cardRadius }]}>
-              <View style={[styles.iconPreview, { backgroundColor: selectedColor }, iconShadow]}>
+            <View style={[styles.previewCard, { backgroundColor: colors.chipBg }]}>
+              <View style={[styles.iconPreview, { backgroundColor: selectedColor }]}>
                 <SelectedIconComponent size={28} color="#FFF" />
                 {isAiSuggesting && (
                   <View style={[styles.aiBadge, { backgroundColor: colors.surfaceSunken }]}>
@@ -171,15 +175,15 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess,
                   </View>
                 )}
               </View>
-              <Text style={[styles.previewName, { color: selectedColor }]}>{name || 'Category Name'}</Text>
+              <Text style={[styles.previewName, { color: name ? colors.textPrimary : colors.textSecondary }]} numberOfLines={1}>{name || 'Category name'}</Text>
             </View>
 
             {/* Input */}
             <View>
               <Text style={[styles.label, { color: colors.textSecondary }]}>Name</Text>
               <TextInput
-                style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.chipBg, borderRadius: cardRadius }]}
-                placeholder="e.g., Groceries"
+                style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.chipBg, borderRadius: 16 }]}
+                placeholder="e.g. Groceries"
                 placeholderTextColor={colors.textSecondary}
                 value={name}
                 onChangeText={setName}
@@ -220,10 +224,10 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess,
                       onPress={() => setSelectedBucket(opt.id)}
                       style={[
                         styles.bucketOption,
-                        { backgroundColor: isSelected ? selectedColor : colors.chipBg, borderRadius: cardRadius },
+                        { backgroundColor: isSelected ? INK : colors.chipBg },
                       ]}
                     >
-                      <Text style={{ color: isSelected ? '#fff' : colors.textPrimary, fontFamily: 'Satoshi-Bold', fontSize: 13 }}>
+                      <Text style={{ color: isSelected ? '#fff' : colors.textPrimary, fontFamily: 'Satoshi-Bold', fontSize: 14, lineHeight: 20 }}>
                         {opt.label}
                       </Text>
                     </TouchableOpacity>
@@ -246,9 +250,9 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess,
                         <TouchableOpacity
                           key={iIdx}
                           onPress={() => setSelectedIcon(icon)}
-                          style={[styles.iconCell, { backgroundColor: isSelected ? selectedColor : colors.chipBg, borderRadius: cardRadius }]}
+                          style={[styles.iconCell, { backgroundColor: isSelected ? INK : colors.chipBg }]}
                         >
-                          <IconComp size={24} color={isSelected ? '#fff' : colors.textPrimary} />
+                          <IconComp size={24} color={isSelected ? '#FFC400' : colors.textPrimary} strokeWidth={1.8} />
                         </TouchableOpacity>
                       );
                     })}
@@ -259,11 +263,11 @@ export const AddCategorySheet: React.FC<Props> = ({ visible, onClose, onSuccess,
 
             <PressableScale 
               onPress={handleSave}
-              style={[styles.saveBtn, { backgroundColor: name.trim() ? selectedColor : colors.chipBg, borderRadius: cardRadius }]}
+              style={[styles.saveBtn, { backgroundColor: name.trim() ? INK : colors.chipBg }]}
               disabled={!name.trim()}
             >
-              <Text style={[styles.saveText, { color: name.trim() ? '#FFF' : colors.textSecondary }]}>
-                {editing ? 'Save Changes' : 'Save Category'}
+              <Text style={[styles.saveText, { color: name.trim() ? '#FFC400' : colors.textSecondary }]}>
+                {editing ? 'Save changes' : 'Save category'}
               </Text>
             </PressableScale>
 
@@ -279,14 +283,14 @@ const styles = StyleSheet.create({
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  title: { fontFamily: 'Satoshi-Bold', fontSize: 20 },
-  closeBtn: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  title: { fontFamily: 'Satoshi-Bold', fontSize: 20, lineHeight: 28 },
+  closeBtn: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
   scroll: { flexGrow: 1 },
   
-  previewCard: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 16 },
-  iconPreview: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  previewCard: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 16, borderRadius: 20 },
+  iconPreview: { width: 56, height: 56, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   aiBadge: { position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  previewName: { fontFamily: 'Satoshi-Bold', fontSize: 18 },
+  previewName: { flex: 1, fontFamily: 'Satoshi-Bold', fontSize: 20, lineHeight: 28 },
   
   label: { fontFamily: 'Satoshi-Medium', fontSize: 14, marginBottom: 8 },
   input: { fontFamily: 'Satoshi-Medium', fontSize: 16, paddingHorizontal: 16, paddingVertical: 14 },
@@ -295,13 +299,13 @@ const styles = StyleSheet.create({
   colorDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#FFF' },
 
   bucketRow: { flexDirection: 'row', gap: 8 },
-  bucketOption: { flex: 1, height: 44, justifyContent: 'center', alignItems: 'center' },
+  bucketOption: { flex: 1, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   
   iconGroup: { marginBottom: 16 },
-  groupTitle: { fontSize: 12, fontFamily: 'Satoshi-Bold', textTransform: 'uppercase', marginBottom: 8, opacity: 0.7 },
+  groupTitle: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', marginBottom: 8 },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  iconCell: { width: 56, height: 56, justifyContent: 'center', alignItems: 'center' },
+  iconCell: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   
-  saveBtn: { height: 56, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
+  saveBtn: { height: 56, borderRadius: 999, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
   saveText: { fontFamily: 'Satoshi-Bold', fontSize: 16 }
 });

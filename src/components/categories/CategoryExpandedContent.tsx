@@ -42,7 +42,7 @@ export const CategoryExpandedContent: React.FC<Props> = ({
             <View
               style={[
                 styles.budgetFill,
-                { width: `${Math.min(impact, 100)}%`, backgroundColor: isOver ? colors.danger : colors.primaryAccent },
+                { width: `${Math.min(impact, 100)}%`, backgroundColor: isOver ? colors.danger : colors.textPrimary },
               ]}
             />
           </View>

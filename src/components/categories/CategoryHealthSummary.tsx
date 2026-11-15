@@ -7,36 +7,32 @@ interface Props {
   categories: CategoryData[];
 }
 
+/** Three plain counts. No traffic-light colours: the list below says which need a look. */
 export const CategoryHealthSummary: React.FC<Props> = ({ categories }) => {
-  const { colors, cardRadius } = useSpecTheme();
-
+  const { colors } = useSpecTheme();
   const total = categories.length;
   const healthy = categories.filter(c => c.health === 'healthy').length;
-  const needsAttention = categories.filter(c => c.health !== 'healthy').length;
-
+  const needsAttention = total - healthy;
+  const stats = [
+    { value: total, label: 'Categories' },
+    { value: healthy, label: 'In good shape' },
+    { value: needsAttention, label: 'Need a look' },
+  ];
   return (
-    <View style={[styles.row, { backgroundColor: colors.chipBg, borderRadius: cardRadius }]}>
-      <View style={styles.stat}>
-        <Text style={[styles.value, { color: colors.textPrimary }]}>{total}</Text>
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Total</Text>
-      </View>
-      <View style={styles.stat}>
-        <Text style={[styles.value, { color: colors.success }]}>{healthy}</Text>
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Healthy</Text>
-      </View>
-      <View style={styles.stat}>
-        <Text style={[styles.value, { color: needsAttention > 0 ? ((colors as any).warning || '#F59E0B') : colors.textPrimary }]}>
-          {needsAttention}
-        </Text>
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Needs attention</Text>
-      </View>
+    <View style={[styles.row, { borderBottomColor: colors.border }]}>
+      {stats.map(s => (
+        <View key={s.label} style={styles.stat}>
+          <Text style={[styles.value, { color: colors.textPrimary }]}>{s.value}</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>{s.label}</Text>
+        </View>
+      ))}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, marginHorizontal: 24, marginBottom: 16 },
-  stat: { alignItems: 'center' },
-  value: { fontSize: 22, fontFamily: 'Satoshi-Black' },
-  label: { fontSize: 11, fontFamily: 'Satoshi-Medium', marginTop: 2 },
+  row: { flexDirection: 'row', marginHorizontal: 24, paddingBottom: 16, marginBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  stat: { flex: 1 },
+  value: { fontSize: 28, lineHeight: 36, fontFamily: 'Satoshi-Black' },
+  label: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
 });

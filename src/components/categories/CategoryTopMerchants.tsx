@@ -28,7 +28,7 @@ export const CategoryTopMerchants: React.FC<Props> = ({ merchants }) => {
 };
 
 const styles = StyleSheet.create({
-  sectionTitle: { fontSize: 12, fontFamily: 'Satoshi-Bold', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 },
+  sectionTitle: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', marginBottom: 8 },
   merchants: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   merchantChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
   merchantText: { fontSize: 13, fontFamily: 'Satoshi-Medium' },

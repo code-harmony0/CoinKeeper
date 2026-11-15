@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { AlertTriangle, X } from 'lucide-react-native';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand, useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
 import { CategoryData, MergeSuggestion } from '../../types/category';
 
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const CategoryAttentionBanner: React.FC<Props> = ({ categories, mergeSuggestions, onReviewMerge }) => {
-  const { colors, cardRadius } = useSpecTheme();
+  const { colors } = useSpecTheme();
   const [dismissed, setDismissed] = useState(false);
 
   const unusedCount = categories.filter(c => c.health === 'unused').length;
@@ -33,18 +33,26 @@ export const CategoryAttentionBanner: React.FC<Props> = ({ categories, mergeSugg
   if (!message || dismissed) return null;
 
   return (
-    <PressableScale onPress={onPress} disabled={!onPress} style={[styles.banner, { backgroundColor: '#F59E0B15', borderRadius: cardRadius }]}>
-      <AlertTriangle size={20} color="#F59E0B" />
-      <Text style={[styles.text, { color: colors.textSecondary }]}>{message}</Text>
-      <PressableScale onPress={() => setDismissed(true)} style={styles.dismiss}>
-        <X size={16} color={colors.textSecondary} />
+    <PressableScale onPress={onPress} disabled={!onPress} style={[styles.banner, { backgroundColor: colors.chipBg }]}>
+      <View style={styles.dot}>
+        <AlertTriangle size={18} color={brand.ink} strokeWidth={2} />
+      </View>
+      <Text style={[styles.text, { color: colors.textPrimary }]}>{message}</Text>
+      <PressableScale
+        onPress={() => setDismissed(true)}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss"
+        style={styles.dismiss}
+      >
+        <X size={18} color={colors.textSecondary} />
       </PressableScale>
     </PressableScale>
   );
 };
 
 const styles = StyleSheet.create({
-  banner: { flexDirection: 'row', alignItems: 'center', padding: 16, marginHorizontal: 24, marginBottom: 12, gap: 12 },
-  text: { flex: 1, fontSize: 13, fontFamily: 'Satoshi-Medium', lineHeight: 18 },
-  dismiss: { padding: 4 },
+  banner: { flexDirection: 'row', alignItems: 'center', padding: 12, marginHorizontal: 24, marginBottom: 12, gap: 12, borderRadius: 16 },
+  dot: { width: 36, height: 36, borderRadius: 10, backgroundColor: brand.signal, alignItems: 'center', justifyContent: 'center' },
+  text: { flex: 1, fontSize: 14, fontFamily: 'Satoshi-Medium', lineHeight: 20 },
+  dismiss: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

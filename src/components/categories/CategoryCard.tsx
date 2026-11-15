@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, interpolate } from 'react-native-reanimated';
 import { ChevronDown, ArrowUpRight, ArrowDownRight } from 'lucide-react-native';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand, useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
 import { CategoryData, MergeSuggestion } from '../../types/category';
 import { resolveCategoryIcon } from '../../utils/categoryIcon';
@@ -18,15 +18,16 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-const HEALTH_ACCENT: Record<CategoryData['health'], string> = {
-  healthy: 'transparent',
-  unused: '#94A3B8',
-  over_budget: '#EF4444',
-  attention: '#F59E0B',
+/** Words instead of a coloured edge: only a category running over its usual spend is flagged. */
+const HEALTH_NOTE: Record<CategoryData['health'], string | null> = {
+  healthy: null,
+  unused: 'Unused',
+  over_budget: 'Above usual',
+  attention: 'Worth a look',
 };
 
 export const CategoryCard: React.FC<Props> = ({ category, mergeSuggestion, onEdit, onMerge, onMergeConfirm, onDelete }) => {
-  const { colors, cardRadius, iconShadow, iconContainerRadius } = useSpecTheme();
+  const { colors, isDark } = useSpecTheme();
   const [expanded, setExpanded] = useState(false);
   const progress = useSharedValue(0);
 
@@ -46,31 +47,40 @@ export const CategoryCard: React.FC<Props> = ({ category, mergeSuggestion, onEdi
   }));
 
   const IconComp = resolveCategoryIcon(category.id, category.icon);
-  const accent = HEALTH_ACCENT[category.health];
+  const note = HEALTH_NOTE[category.health];
+  const over = category.health === 'over_budget';
   
   // Calculate trend
   const spendDiff = category.monthlySpend - category.trailingAverageSpend;
   const trendPercent = category.trailingAverageSpend > 0 ? (spendDiff / category.trailingAverageSpend) * 100 : 0;
   const isUp = trendPercent > 0;
-  const trendColor = isUp ? colors.danger : colors.success;
+  const trendColor = colors.textSecondary;
 
-  // Use a stable rotation tint if no explicit color
-  const accents = [colors.lavender, colors.pink, colors.mint, colors.peach, colors.sky];
-  const accentDeep = [colors.lavenderDeep, colors.pinkDeep, colors.mintDeep, colors.peachDeep, colors.skyDeep];
-  const charCode = category.name.charCodeAt(0) || 0;
-  const rotationIndex = charCode % 5;
-  const containerBg = category.color || accents[rotationIndex];
-  const iconColor = category.color ? colors.textPrimary : accentDeep[rotationIndex];
+  // A colour the person chose is theirs and stays; otherwise the standard black tile.
+  const containerBg = category.color || (isDark ? colors.chipBg : brand.ink);
+  const iconColor = category.color ? colors.textPrimary : '#FFFFFF';
 
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.chipBg, borderRadius: cardRadius, borderLeftWidth: accent === 'transparent' ? 0 : 3, borderLeftColor: accent }]}>
-      <PressableScale onPress={toggle} style={styles.header}>
-        <View style={[styles.iconWrap, { backgroundColor: containerBg, borderRadius: iconContainerRadius }, iconShadow]}>
-          <IconComp size={20} color={iconColor} />
+    <View style={[styles.container, { borderBottomColor: colors.border }]}>
+      <PressableScale
+        onPress={toggle}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        style={styles.header}
+      >
+        <View style={[styles.iconWrap, { backgroundColor: containerBg }]}>
+          <IconComp size={20} color={iconColor} strokeWidth={1.7} />
         </View>
         <View style={styles.info}>
-          <Text style={[styles.name, { color: colors.textPrimary }]}>{category.name}</Text>
+          <View style={styles.nameRow}>
+            <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>{category.name}</Text>
+            {note && (
+              <View style={[styles.note, over ? { backgroundColor: brand.alert } : { borderColor: colors.border, borderWidth: 1 }]}>
+                <Text style={[styles.noteText, { color: over ? brand.ink : colors.textSecondary }]}>{note}</Text>
+              </View>
+            )}
+          </View>
           <View style={styles.metaRow}>
             {category.topMerchants.length > 0 && (
               <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -89,7 +99,7 @@ export const CategoryCard: React.FC<Props> = ({ category, mergeSuggestion, onEdi
           </View>
         </View>
         {category.trend.length >= 2 && (
-          <CategorySparkline values={category.trend} color={accent === 'transparent' ? colors.primaryAccent : accent} />
+          <CategorySparkline values={category.trend} color={colors.textPrimary} />
         )}
         <Animated.View style={chevronStyle}>
           <ChevronDown size={20} color={colors.textSecondary} />
@@ -111,13 +121,16 @@ export const CategoryCard: React.FC<Props> = ({ category, mergeSuggestion, onEdi
 };
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 12 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  iconWrap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  container: { borderBottomWidth: StyleSheet.hairlineWidth },
+  header: { flexDirection: 'row', alignItems: 'center', minHeight: 80, paddingVertical: 8, gap: 12 },
+  iconWrap: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   info: { flex: 1 },
-  name: { fontSize: 16, fontFamily: 'Satoshi-Bold', marginBottom: 2 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  name: { flexShrink: 1, fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Bold' },
+  note: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 1 },
+  noteText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Bold' },
   metaRow: { flexDirection: 'row', alignItems: 'center' },
-  meta: { fontSize: 13, fontFamily: 'Satoshi-Medium' },
-  trendWrap: { flexDirection: 'row', alignItems: 'center', marginLeft: 4, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4, backgroundColor: 'rgba(0,0,0,0.04)' },
-  trendText: { fontSize: 11, fontFamily: 'Satoshi-Bold', marginLeft: 2 },
+  meta: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
+  trendWrap: { flexDirection: 'row', alignItems: 'center', marginLeft: 6 },
+  trendText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Bold', marginLeft: 2 },
 });

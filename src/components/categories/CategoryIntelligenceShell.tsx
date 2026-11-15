@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'reac
 import { FlashList } from '@shopify/flash-list';
 import { ArrowLeft, Plus, Search, SlidersHorizontal } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSpecTheme } from '../../theme/specTheme';
+import { brand, useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
 import { CategoryData } from '../../types/category';
 import { useCategoryIntelligence } from '../../hooks/useCategoryIntelligence';
@@ -19,10 +19,11 @@ interface Props {
 }
 
 type SortBy = 'name' | 'spend' | 'usage';
+const SORT_LABEL: Record<SortBy, string> = { name: 'A to Z', spend: 'Most spent', usage: 'Most used' };
 
 export const CategoryIntelligenceShell: React.FC<Props> = ({ onGoBack }) => {
   const insets = useSafeAreaInsets();
-  const { colors, inputRadius, chipRadius } = useSpecTheme();
+  const { colors, isDark } = useSpecTheme();
   const { categories, mergeSuggestions, reload } = useCategoryIntelligence();
 
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -109,14 +110,24 @@ export const CategoryIntelligenceShell: React.FC<Props> = ({ onGoBack }) => {
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 16 }]}>
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <PressableScale onPress={onGoBack} style={[styles.backButton, { backgroundColor: colors.chipBg }]}>
+          <PressableScale
+            onPress={onGoBack}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            style={[styles.backButton, { backgroundColor: colors.chipBg }]}
+          >
             <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
           </PressableScale>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Intelligence</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Categories</Text>
         </View>
 
-        <PressableScale onPress={() => setSheetVisible(true)} style={[styles.addBtn, { backgroundColor: colors.primaryAccent }]}>
-          <Plus size={20} color="#fff" strokeWidth={2.5} />
+        <PressableScale
+          onPress={() => setSheetVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Add a category"
+          style={[styles.addBtn, { backgroundColor: isDark ? brand.signal : brand.ink }]}
+        >
+          <Plus size={22} color={isDark ? brand.ink : brand.signal} strokeWidth={2.6} />
         </PressableScale>
       </View>
 
@@ -133,19 +144,19 @@ export const CategoryIntelligenceShell: React.FC<Props> = ({ onGoBack }) => {
       />
 
       <View style={styles.toolsRow}>
-        <View style={[styles.searchBox, { backgroundColor: colors.chipBg, borderRadius: inputRadius }]}>
+        <View style={[styles.searchBox, { backgroundColor: colors.chipBg }]}>
           <Search size={18} color={colors.textSecondary} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="Search categories..."
+            placeholder="Search categories"
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
         </View>
-        <TouchableOpacity onPress={toggleSort} style={[styles.sortBtn, { backgroundColor: colors.chipBg, borderRadius: chipRadius }]}>
+        <TouchableOpacity onPress={toggleSort} style={[styles.sortBtn, { backgroundColor: colors.chipBg }]}>
           <SlidersHorizontal size={18} color={colors.textPrimary} />
-          <Text style={[styles.sortText, { color: colors.textPrimary }]}>{sortBy}</Text>
+          <Text style={[styles.sortText, { color: colors.textPrimary }]}>{SORT_LABEL[sortBy]}</Text>
         </TouchableOpacity>
       </View>
 
@@ -175,12 +186,12 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16 },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  backButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  addBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 28, fontFamily: 'Satoshi-Black', letterSpacing: -0.5 },
+  backButton: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  addBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 28, lineHeight: 36, fontFamily: 'Satoshi-Black' },
   toolsRow: { flexDirection: 'row', paddingHorizontal: 24, gap: 12, marginBottom: 8 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, height: 48 },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 15, fontFamily: 'Satoshi-Medium' },
-  sortBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, height: 48, gap: 8 },
-  sortText: { fontSize: 13, fontFamily: 'Satoshi-Bold', textTransform: 'capitalize' },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, height: 48, borderRadius: 16 },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 16, fontFamily: 'Satoshi-Medium' },
+  sortBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, height: 48, gap: 8, borderRadius: 16 },
+  sortText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold' },
 });

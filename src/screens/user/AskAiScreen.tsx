@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TextInput, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSpecTheme } from '../../theme/specTheme';
-import { BrainCircuit, Send, Sparkles } from 'lucide-react-native';
+import { brand, useSpecTheme } from '../../theme/specTheme';
+import { ArrowUp, ChevronLeft, Sparkles } from 'lucide-react-native';
 import { PressableScale } from '../../components/anim';
 import { InsightEngine, FinancialInsight } from '../../services/InsightEngine';
 import { InsightCard } from '../../components/insights/InsightCard';
@@ -24,6 +24,14 @@ const cadenceLabel = (intervalMonths: number): string => {
   }
 };
 
+/** Questions the answer engine understands, so a first tap always gets a real answer. */
+const STARTERS = [
+  'How much did I spend?',
+  'Where did my money go?',
+  'What bills are due soon?',
+  'How much came in this month?',
+];
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'ai';
@@ -33,7 +41,7 @@ interface ChatMessage {
 
 export const AskAiScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { colors, cardRadius, iconShadow } = useSpecTheme();
+  const { colors, isDark } = useSpecTheme();
 
   const [insights, setInsights] = useState<FinancialInsight[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -112,10 +120,10 @@ export const AskAiScreen: React.FC<any> = ({ navigation }) => {
     });
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-    
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: input.trim() };
+  const handleSend = async (text: string = input) => {
+    if (!text.trim() || isLoading) return;
+
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: text.trim() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
@@ -138,10 +146,15 @@ export const AskAiScreen: React.FC<any> = ({ navigation }) => {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <View style={styles.headerLeft}>
-          <BrainCircuit color={colors.primaryAccent} size={28} />
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Intelligence</Text>
-        </View>
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={[styles.backBtn, { backgroundColor: colors.chipBg }]}
+        >
+          <ChevronLeft size={24} color={colors.textPrimary} />
+        </PressableScale>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>Ask AI</Text>
       </View>
 
       <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={100}>
@@ -150,7 +163,7 @@ export const AskAiScreen: React.FC<any> = ({ navigation }) => {
           {/* Proactive Insights Dashboard */}
           {messages.length === 0 && (
             <View style={styles.dashboard}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Today's Overview</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} accessibilityRole="header">Today</Text>
               {insights.map((insight, idx) => (
                 insight.actionRoute === 'SuggestBills' ? (
                   // The button appears only when there is a monthly bill to offer;
@@ -164,9 +177,9 @@ export const AskAiScreen: React.FC<any> = ({ navigation }) => {
                     {billSuggestions.length > 0 && (
                       <PressableScale
                         onPress={handleRemindBills}
-                        style={[styles.actionBtn, { backgroundColor: colors.primaryAccent }]}
+                        style={[styles.actionBtn, { backgroundColor: brand.signal }]}
                       >
-                        <Text style={[styles.actionText, { color: colors.onAccent }]}>Remind me before each charge</Text>
+                        <Text style={[styles.actionText, { color: brand.ink }]}>Remind me before each charge</Text>
                       </PressableScale>
                     )}
                   </InsightCard>
@@ -174,6 +187,24 @@ export const AskAiScreen: React.FC<any> = ({ navigation }) => {
                   <InsightCard key={insight.id} insight={insight} index={idx} />
                 )
               ))}
+            </View>
+          )}
+
+          {messages.length === 0 && (
+            <View style={styles.dashboard}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} accessibilityRole="header">Try asking</Text>
+              <View style={styles.chips}>
+                {STARTERS.map(q => (
+                  <PressableScale
+                    key={q}
+                    onPress={() => handleSend(q)}
+                    accessibilityRole="button"
+                    style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  >
+                    <Text style={[styles.chipText, { color: colors.textPrimary }]}>{q}</Text>
+                  </PressableScale>
+                ))}
+              </View>
             </View>
           )}
 
@@ -185,14 +216,14 @@ export const AskAiScreen: React.FC<any> = ({ navigation }) => {
                 msg.role === 'user' ? styles.bubbleUserWrap : styles.bubbleAiWrap
               ]}>
                 {msg.role === 'user' ? (
-                  <View style={[styles.bubbleUser, { backgroundColor: colors.textPrimary, borderRadius: cardRadius }]}>
-                    <Text style={[styles.bubbleUserText, { color: colors.background }]}>{msg.content}</Text>
+                  <View style={[styles.bubbleUser, { backgroundColor: isDark ? colors.chipBg : brand.ink }]}>
+                    <Text style={[styles.bubbleUserText, { color: '#FFFFFF' }]}>{msg.content}</Text>
                   </View>
                 ) : (
-                  <View style={[styles.bubbleAi, { backgroundColor: colors.chipBg, borderRadius: cardRadius }]}>
+                  <View style={[styles.bubbleAi, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <View style={styles.aiHeader}>
-                      <Sparkles size={16} color={colors.primaryAccent} />
-                      <Text style={[styles.aiTitle, { color: colors.primaryAccent }]}>
+                      <Sparkles size={16} color={colors.textPrimary} strokeWidth={1.8} />
+                      <Text style={[styles.aiTitle, { color: colors.textPrimary }]}>
                         {msg.structuredData?.title || 'Response'}
                       </Text>
                     </View>
@@ -213,17 +244,22 @@ export const AskAiScreen: React.FC<any> = ({ navigation }) => {
 
         {/* Deep Dive Input */}
         <View style={[styles.inputContainer, { paddingBottom: insets.bottom || 24 }]}>
-          <View style={[styles.inputBox, { backgroundColor: colors.chipBg, borderRadius: 100 }]}>
+          <View style={[styles.inputBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <TextInput
               style={[styles.input, { color: colors.textPrimary }]}
               placeholder="Ask anything about your money..."
               placeholderTextColor={colors.textSecondary}
               value={input}
               onChangeText={setInput}
-              onSubmitEditing={handleSend}
+              onSubmitEditing={() => handleSend()}
             />
-            <PressableScale onPress={handleSend} style={[styles.sendBtn, { backgroundColor: input.trim() ? colors.primaryAccent : colors.textSecondary }]}>
-              <Send size={16} color="#fff" />
+            <PressableScale
+              onPress={() => handleSend()}
+              accessibilityRole="button"
+              accessibilityLabel="Send"
+              style={[styles.sendBtn, { backgroundColor: input.trim() ? brand.ink : colors.border }]}
+            >
+              <ArrowUp size={20} strokeWidth={2.4} color={input.trim() ? brand.signal : colors.textSecondary} />
             </PressableScale>
           </View>
         </View>
@@ -243,26 +279,29 @@ export const AskAiScreen: React.FC<any> = ({ navigation }) => {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex1: { flex: 1 },
-  header: { paddingHorizontal: 24, paddingBottom: 20 },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  title: { fontSize: 28, fontFamily: 'Satoshi-Black', letterSpacing: -0.5 },
+  header: { paddingHorizontal: 24, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 28, lineHeight: 36, fontFamily: 'Satoshi-Black' },
   scroll: { paddingHorizontal: 24, paddingVertical: 16 },
   dashboard: { marginBottom: 32 },
-  sectionTitle: { fontSize: 18, fontFamily: 'Satoshi-Bold', marginBottom: 16 },
+  sectionTitle: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Bold', marginBottom: 4 },
   chatArea: { gap: 16 },
-  actionBtn: { marginTop: 12, paddingVertical: 12, borderRadius: 100, alignItems: 'center' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  chip: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth },
+  chipText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold' },
+  actionBtn: { minHeight: 48, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   actionText: { fontSize: 14, fontFamily: 'Satoshi-Bold' },
   bubbleWrap: { maxWidth: '85%' },
   bubbleUserWrap: { alignSelf: 'flex-end' },
   bubbleAiWrap: { alignSelf: 'flex-start' },
-  bubbleUser: { paddingHorizontal: 16, paddingVertical: 12 },
-  bubbleUserText: { fontSize: 15, fontFamily: 'Satoshi-Medium' },
-  bubbleAi: { padding: 16 },
+  bubbleUser: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20, borderBottomRightRadius: 6 },
+  bubbleUserText: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Medium' },
+  bubbleAi: { padding: 16, borderRadius: 20, borderBottomLeftRadius: 6, borderWidth: StyleSheet.hairlineWidth },
   aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   aiTitle: { fontSize: 14, fontFamily: 'Satoshi-Bold' },
-  aiBody: { fontSize: 15, fontFamily: 'Satoshi-Medium', lineHeight: 22 },
+  aiBody: { fontSize: 16, fontFamily: 'Satoshi-Medium', lineHeight: 24 },
   inputContainer: { paddingHorizontal: 24, paddingTop: 16 },
-  inputBox: { flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 8, height: 56 },
-  input: { flex: 1, fontSize: 15, fontFamily: 'Satoshi-Medium' },
-  sendBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }
+  inputBox: { flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 8, height: 56, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth },
+  input: { flex: 1, fontSize: 16, fontFamily: 'Satoshi-Medium' },
+  sendBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' }
 });
