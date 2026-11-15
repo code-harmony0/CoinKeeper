@@ -7,6 +7,7 @@ import { PressableScale } from '../../components/anim';
 import { InsightEngine, FinancialInsight } from '../../services/InsightEngine';
 import { InsightCard } from '../../components/insights/InsightCard';
 import { AIProvider } from '../../services/AIProvider';
+import { LlmModelManager } from '../../services/llm/LlmModelManager';
 import { AppDialog, type DialogAction } from '../../components/ui/AppDialog';
 import { useBillStore } from '../../store/billStore';
 import { useTransactionStore } from '../../store/transactionStore';
@@ -30,6 +31,7 @@ const STARTERS = [
   'Where did my money go?',
   'What bills are due soon?',
   'How much came in this month?',
+  'How can I improve?',
 ];
 
 interface ChatMessage {
@@ -52,10 +54,12 @@ export const AskAiScreen: React.FC<any> = ({ navigation }) => {
     message?: string;
     actions: DialogAction[];
   } | null>(null);
+  const [modelReady, setModelReady] = useState(true);
   const [billSuggestions, setBillSuggestions] = useState<BillSuggestion[]>([]);
 
   useEffect(() => {
     loadDashboard();
+    LlmModelManager.getState().then(st => setModelReady(st === 'ready')).catch(() => setModelReady(false));
   }, []);
 
   const loadDashboard = async () => {
@@ -205,6 +209,18 @@ export const AskAiScreen: React.FC<any> = ({ navigation }) => {
                   </PressableScale>
                 ))}
               </View>
+              {!modelReady && (
+                <PressableScale
+                  onPress={() => navigation.navigate('SmartParsing')}
+                  accessibilityRole="button"
+                  style={styles.modelNote}
+                >
+                  <Text style={[styles.modelNoteText, { color: colors.textSecondary }]}>
+                    I match your words to a few topics. Turn on the on-device model to understand more ways of asking.
+                  </Text>
+                  <Text style={[styles.modelNoteLink, { color: colors.textPrimary }]}>Turn on</Text>
+                </PressableScale>
+              )}
             </View>
           )}
 
@@ -286,6 +302,9 @@ const styles = StyleSheet.create({
   dashboard: { marginBottom: 32 },
   sectionTitle: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Bold', marginBottom: 4 },
   chatArea: { gap: 16 },
+  modelNote: { minHeight: 48, marginTop: 16, gap: 4, justifyContent: 'center' },
+  modelNoteText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
+  modelNoteLink: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   chip: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth },
   chipText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold' },

@@ -114,6 +114,7 @@ describe('FinancialContextService.buildContext', () => {
 
     expect(ctx.recentTransactions).toEqual([
       {
+        type: 'expense',
         amountPaise: 12550,
         merchant: 'Chai',
         category: 'food',

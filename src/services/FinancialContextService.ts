@@ -10,6 +10,8 @@ export interface FinancialContext {
   upcomingBillsPaise: number;
   safeToSpendPaise: number;
   recentTransactions: {
+    /** 'income' | 'expense' | transfer types; absent is treated as an expense. */
+    type?: string;
     amountPaise: number;
     merchant: string;
     category: string;
@@ -74,6 +76,7 @@ export const FinancialContextService = {
       upcomingBillsPaise: billsSummary(billRows, now).unpaidPaise,
       safeToSpendPaise: snapshot.safeToSpend,
       recentTransactions: ((recent?.rows ?? []) as any[]).map(row => ({
+        type: row.type,
         amountPaise: row.amount_paise,
         merchant: row.description,
         category: row.category_id,

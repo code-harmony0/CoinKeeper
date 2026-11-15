@@ -1,4 +1,4 @@
-import { answerFinancialQuestion } from '../../src/services/financialQnA';
+import { answerFinancialQuestion, classifyQuestion } from '../../src/services/financialQnA';
 import type { FinancialContext } from '../../src/services/FinancialContextService';
 
 const context: FinancialContext = {
@@ -76,5 +76,23 @@ describe('answerFinancialQuestion', () => {
     });
 
     expect(reply.body).toMatch(/no transactions|nothing recorded/i);
+  });
+
+  it('greets back instead of refusing', () => {
+    expect(classifyQuestion('hey')).toBe('greeting');
+    expect(classifyQuestion('they said no')).not.toBe('greeting');
+    expect(answerFinancialQuestion('hey', context).title).toBe('Hi');
+  });
+
+  it('gives tips built only from the ledger when asked how to improve', () => {
+    const reply = answerFinancialQuestion('Tell me how can I improve it', context);
+
+    expect(reply.title).toBe('Where you can improve');
+    expect(reply.body).toContain('Food');
+    expect(reply.body).toContain('32%');
+  });
+
+  it('treats a misspelt "habbit" as a request for advice', () => {
+    expect(classifyQuestion('What is my spending habbit')).toBe('advice');
   });
 });
