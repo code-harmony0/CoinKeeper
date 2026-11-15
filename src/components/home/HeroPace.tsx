@@ -1,0 +1,174 @@
+import React from 'react';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import {
+  AlertTriangle,
+  ArrowDownRight,
+  CheckCircle2,
+  Clock,
+  Flame,
+  Info,
+  Trophy,
+} from 'lucide-react-native';
+import { useSpecTheme } from '../../theme/specTheme';
+import { EXPRESSIVE } from '../../theme/motion';
+import { CountUp } from '../anim';
+import { Money } from '../../utils/money';
+import { PaceChart } from './PaceChart';
+import type { MonthLedger } from '../../hooks/useMonthLedger';
+import type { HomeStatus, Tone } from '../../services/homeNarrative';
+import type { Badge } from '../../services/badges';
+import type { AgeOfMoney } from '../../services/ageOfMoney';
+
+const SCREEN_W = Dimensions.get('window').width;
+
+interface Props {
+  ledger: MonthLedger;
+  safeTodayPaise: number;
+  /** The month's plan, 0 when there is no income yet. */
+  planPaise: number;
+  monthlyRemainingPaise: number;
+  unpaidBillsPaise: number;
+  streakDays: number;
+  badge: Badge | null;
+  ageOfMoney: AgeOfMoney | null;
+  status: HomeStatus;
+  replayToken?: number;
+}
+
+const toneIcon = (tone: Tone) =>
+  tone === 'good' ? CheckCircle2 : tone === 'neutral' ? Info : AlertTriangle;
+
+/**
+ * Home's answer, in one glance: what is safe to spend today, why that is the
+ * verdict, and the month's pace drawn against the plan. The chip row keeps the
+ * streak, badge and age-of-money one line high instead of a panel of tiles.
+ */
+export const HeroPace: React.FC<Props> = ({
+  ledger,
+  safeTodayPaise,
+  planPaise,
+  monthlyRemainingPaise,
+  unpaidBillsPaise,
+  streakDays,
+  badge,
+  ageOfMoney,
+  status,
+  replayToken,
+}) => {
+  const { colors } = useSpecTheme();
+  const StatusIcon = toneIcon(status.tone);
+  const statusInk =
+    status.tone === 'good'
+      ? colors.mintDeep
+      : status.tone === 'neutral'
+      ? colors.textSecondary
+      : colors.peachDeep;
+
+  // Straight-line projection of the month's spend plus what bills still owe.
+  const now = new Date();
+  const day = now.getDate();
+  const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const projected = day >= 3 ? (ledger.spendPaise / day) * days + unpaidBillsPaise : 0;
+  const gap = planPaise > 0 && projected > 0 ? planPaise - projected : 0;
+
+  const chips: { key: string; Icon: typeof Flame; text: string }[] = [];
+  if (streakDays > 0) chips.push({ key: 'streak', Icon: Flame, text: `${streakDays}-day streak` });
+  if (ageOfMoney) chips.push({ key: 'age', Icon: Clock, text: ageOfMoney.label });
+  if (badge) chips.push({ key: 'badge', Icon: Trophy, text: badge.label });
+
+  return (
+    <View>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Safe to spend today</Text>
+      <CountUp
+        value={safeTodayPaise}
+        isPaise
+        prefix="₹"
+        duration={900}
+        style={[styles.number, { color: colors.textPrimary }]}
+      />
+
+      <View style={styles.delta}>
+        <ArrowDownRight size={16} color={colors.textSecondary} strokeWidth={2.4} style={styles.deltaIcon} />
+        <Text style={[styles.deltaText, { color: colors.textSecondary }]}>
+          {Money.format(ledger.todaySpendPaise, { zeroDecimals: true })} spent today
+          {'  ·  '}
+          {Money.format(Math.max(monthlyRemainingPaise, 0), { zeroDecimals: true })} left this month
+        </Text>
+      </View>
+
+      <View style={[styles.status, { backgroundColor: status.tone === 'good' ? colors.mint : status.tone === 'neutral' ? colors.chipBg : colors.peach }]}>
+        <StatusIcon size={16} color={statusInk} strokeWidth={2.4} />
+        <Text style={[styles.statusText, { color: statusInk === colors.textSecondary ? colors.textPrimary : statusInk }]} numberOfLines={2}>
+          {status.headline}
+        </Text>
+      </View>
+
+      {chips.length > 0 && (
+        <View style={styles.chips}>
+          {chips.map((c, i) => (
+            <Animated.View
+              key={c.key}
+              entering={FadeInDown.springify().damping(18).delay(500 + i * 80).reduceMotion(EXPRESSIVE)}
+              style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <c.Icon size={14} color={colors.textSecondary} strokeWidth={2.4} />
+              <Text style={[styles.chipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                {c.text}
+              </Text>
+            </Animated.View>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.chart}>
+        <PaceChart
+          expenses={ledger.expenses}
+          planPaise={planPaise}
+          width={SCREEN_W}
+          replayToken={replayToken}
+        />
+      </View>
+
+      {planPaise > 0 && gap !== 0 && (
+        <Text style={[styles.forecast, { color: colors.textSecondary }]}>
+          {gap > 0
+            ? `On pace to finish ${Money.format(Math.round(gap), { zeroDecimals: true })} under plan.`
+            : `On pace to run ${Money.format(Math.round(-gap), { zeroDecimals: true })} over plan.`}
+        </Text>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  label: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
+  number: { fontSize: 44, lineHeight: 52, fontFamily: 'Satoshi-Black', letterSpacing: -1 },
+  delta: { flexDirection: 'row', alignItems: 'flex-start', gap: 4, marginTop: 4 },
+  deltaIcon: { marginTop: 2 },
+  deltaText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', flexShrink: 1 },
+  status: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 16,
+  },
+  statusText: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Bold', flexShrink: 1 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    minHeight: 32,
+  },
+  chipText: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Bold' },
+  chart: { marginHorizontal: -24, marginTop: 8 },
+  forecast: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium', marginTop: 4 },
+});

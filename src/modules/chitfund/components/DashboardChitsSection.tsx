@@ -107,7 +107,7 @@ const ChitCard: React.FC<{
 
 /* ── Styles ── */
 const styles = StyleSheet.create({
-  chitCardWrap: {},
+  chitCardWrap: { marginTop: 12 },
   chitStatusRow: { flexDirection: 'row', justifyContent: 'flex-end' },
   chitBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   chitBadgeText: { fontSize: 11, fontFamily: 'Satoshi-Bold' },
@@ -122,8 +122,8 @@ const makeStyles = (colors: any) =>
       alignItems: 'center',
       marginBottom: 4,
     },
-    sectionTitle: { fontSize: 17, fontFamily: 'Satoshi-Bold', color: colors.textPrimary },
-    linkText: { fontSize: 13, fontFamily: 'Satoshi-Bold', color: colors.lavenderDeep },
+    sectionTitle: { fontSize: 20, fontFamily: 'Satoshi-Bold', color: colors.textPrimary },
+    linkText: { fontSize: 14, fontFamily: 'Satoshi-Bold', color: colors.lavenderDeep },
     moreLink: { alignSelf: 'center', paddingVertical: 8 },
     moreLinkText: { fontSize: 13, fontFamily: 'Satoshi-Medium', color: colors.textSecondary },
   });

@@ -11,18 +11,16 @@
  * removing decisions drives action.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Text, Alert, Dimensions, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, Alert, Dimensions } from 'react-native';
 import Animated, {
   FadeInDown,
   useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Sparkles, Plus, Target, Receipt, Activity, Lightbulb } from 'lucide-react-native';
+import { Sparkles, Plus, ArrowUpRight, ArrowDownRight } from 'lucide-react-native';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { MoneyMap } from '../../components/insights/MoneyMap';
-import { GoalsStrip } from '../../components/insights/GoalsStrip';
 import { InsightPillRail } from '../../components/insights/InsightPillRail';
-import { IncomeHealthCard } from '../../components/income/IncomeHealthCard';
 import { AddFundsSheet } from '../../components/modals/AddFundsSheet';
 import { useTransactionsContext as useTransactions } from '../../context/TransactionsContext';
 import { useSecureScreen } from '../../hooks/useSecureScreen';
@@ -65,11 +63,11 @@ import { IncomeEngine } from '../../services/income/IncomeEngine';
 import { financialEventBus } from '../../services/EventBus';
 import { Money } from '../../utils/money';
 import { EXPRESSIVE, STAGGER } from '../../theme/motion';
-import { billsSummary, billStatus } from '../../services/billSchedule';
-import { SheetModal } from '../../components/shared/SheetModal';
-import { BillsPeek } from '../../components/home/BillsPeek';
-import type { OrbitItem } from '../../components/home/OrbitDial';
-import { NOT_ENOUGH_DATA } from '../../services/income/IncomeAnalyticsService';
+import { billsSummary } from '../../services/billSchedule';
+import { HeroPace } from '../../components/home/HeroPace';
+import { HomeSection } from '../../components/home/HomeSection';
+import { UpcomingRail } from '../../components/home/UpcomingRail';
+import { GoalRings } from '../../components/home/GoalRings';
 
 // Guarded require, not a static import: CHITFUND_ENABLED is inlined as a
 // literal at build time, so Metro drops this branch — and the whole
@@ -133,10 +131,6 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [snapshot, setSnapshot] = useState<MonthSnapshot | null>(null);
   const [celebrating, setCelebrating] = useState<Badge | null>(null);
   const [fundingGoalId, setFundingGoalId] = useState<string | null>(null);
-  // Which orbit satellite's detail sheet is open.
-  const [orbitSheet, setOrbitSheet] = useState<
-    'bills' | 'goals' | 'income' | 'insights' | null
-  >(null);
 
   // Same ranking (rankGoalPriority) and the same goalStore-backed goal list
   // that GoalsScreen's Focus card uses — one source of truth for "which goal
@@ -324,56 +318,6 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const fundingGoal = rankedGoals.find(r => r.goal.id === fundingGoalId);
 
-  // The four satellites around the dial: one live figure each.
-  const orbit = useMemo<OrbitItem[]>(() => {
-    const now = new Date();
-    const open = bills.filter(b => billStatus(b, now) !== 'paid');
-    const late = open.filter(b => billStatus(b, now) === 'overdue').length;
-    const soon = open.filter(b => billStatus(b, now) === 'due-soon').length;
-    const topGoal = goals[0];
-    const goalPct =
-      topGoal && topGoal.targetAmount > 0
-        ? Math.round((topGoal.currentAmount / topGoal.targetAmount) * 100)
-        : null;
-    const score = incomeHealth.score;
-    const insightCount = insights.length + pills.length;
-    return [
-      {
-        id: 'bills',
-        label: 'Bills',
-        value: bills.length === 0 ? 'Add' : open.length === 0 ? 'Paid' : `${open.length} due`,
-        icon: Receipt,
-        tint: 'peach',
-        urgent: late + soon > 0,
-        onPress: () => setOrbitSheet('bills'),
-      },
-      {
-        id: 'goals',
-        label: 'Goals',
-        value: goalPct === null ? 'Set' : `${goalPct}%`,
-        icon: Target,
-        tint: 'mint',
-        onPress: () => setOrbitSheet('goals'),
-      },
-      {
-        id: 'income',
-        label: 'Income health',
-        value: score === NOT_ENOUGH_DATA || incomeHealth.empty ? 'New' : String(score),
-        icon: Activity,
-        tint: 'lavender',
-        onPress: () => setOrbitSheet('income'),
-      },
-      {
-        id: 'insights',
-        label: 'Insights',
-        value: insightCount > 0 ? String(insightCount) : '0',
-        icon: Lightbulb,
-        tint: 'sky',
-        urgent: false,
-        onPress: () => setOrbitSheet('insights'),
-      },
-    ];
-  }, [bills, goals, incomeHealth.score, incomeHealth.empty, insights.length, pills.length]);
 
   const handleAddFunds = async (amountStr: string) => {
     if (!fundingGoalId) return;
@@ -419,58 +363,125 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
       >
-        {/* Greeting + streak + quick actions */}
         <Animated.View entering={FadeInDown.springify()} style={st.topRow}>
-          <View style={st.greetCol}>
-            <Text style={st.greeting}>{greeting()}</Text>
-            <Text style={st.subGreeting}>Here’s where the month stands</Text>
-          </View>
+          <Text style={st.greeting}>{greeting()}</Text>
           <View style={st.actions}>
             <PressableScale
               onPress={() => setIncomeFlowVisible(true)}
-              style={st.actionPill}
+              style={st.iconBtn}
               accessibilityRole="button"
               accessibilityLabel="Add income"
             >
-              <Plus size={14} color={colors.textPrimary} strokeWidth={2.5} />
-              <Text style={st.actionText}>Income</Text>
+              <Plus size={20} color={colors.textPrimary} strokeWidth={2.4} />
             </PressableScale>
             <PressableScale
               onPress={() => navigation.navigate('AskAi')}
-              style={st.actionPill}
+              style={st.iconBtn}
               accessibilityRole="button"
               accessibilityLabel="Ask AI about your money"
             >
-              <Sparkles size={14} color={colors.textPrimary} strokeWidth={2.5} />
-              <Text style={st.actionText}>Ask AI</Text>
+              <Sparkles size={20} color={colors.textPrimary} strokeWidth={2.4} />
             </PressableScale>
           </View>
         </Animated.View>
 
         <View style={st.stack}>
-          {/* Hero — the gauge, the story, and the month's spending map */}
-          <MoneyMap
+          <HeroPace
             ledger={ledger}
-            incomePaise={snapshot?.income ?? 0}
-            monthPlan={monthPlan}
-            onOpenReports={navigateToReports}
-            onAddCategory={() => navigation.navigate('Categories')}
+            safeTodayPaise={monthPlan?.safeToSpendToday ?? 0}
+            planPaise={planPaise}
+            monthlyRemainingPaise={monthPlan?.monthlyRemaining ?? 0}
+            unpaidBillsPaise={unpaidBillsPaise}
             streakDays={streakDays}
             badge={headlineBadge(badgeContext)}
             ageOfMoney={ageOfMoney}
             status={status}
             replayToken={refreshToken}
-            unpaidBillsPaise={unpaidBillsPaise}
-            orbit={orbit}
           />
 
-          {!hasIncome && (
-            <IncomeSummaryRow
-              hasIncome={false}
-              onOpenDetail={() => navigation.navigate('IncomeDetail')}
-              onAddIncome={() => setIncomeFlowVisible(true)}
-            />
+          <OnEnter index={0}>
+            <HomeSection title="This month" onPress={navigateToReports}>
+              <View style={st.inOut}>
+                <View style={st.inOutCol}>
+                  <Text style={st.inOutLabel}>Money in</Text>
+                  <View style={st.inOutValue}>
+                    <ArrowUpRight size={18} color={colors.mintDeep} strokeWidth={2.4} />
+                    <Text style={st.inOutText}>
+                      {Money.format(snapshot?.income ?? 0, { zeroDecimals: true })}
+                    </Text>
+                  </View>
+                </View>
+                <View style={st.inOutCol}>
+                  <Text style={st.inOutLabel}>Money spent</Text>
+                  <View style={st.inOutValue}>
+                    <ArrowDownRight size={18} color={colors.peachDeep} strokeWidth={2.4} />
+                    <Text style={st.inOutText}>
+                      {Money.format(ledger.spendPaise, { zeroDecimals: true })}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </HomeSection>
+          </OnEnter>
+
+          <OnEnter index={1}>
+            <HomeSection title="Upcoming" onPress={() => navigation.navigate('Bills')}>
+              <UpcomingRail bills={bills} onPress={() => navigation.navigate('Bills')} />
+            </HomeSection>
+          </OnEnter>
+
+          <OnEnter index={2}>
+            <HomeSection title="Goals" onPress={() => navigation.navigate('Goals')}>
+              <GoalRings
+                goals={goals}
+                onAddMoney={setFundingGoalId}
+                onNewGoal={() => navigation.navigate('Goals')}
+              />
+            </HomeSection>
+          </OnEnter>
+
+          <OnEnter index={3}>
+            <HomeSection title="Income health" onPress={() => navigation.navigate('IncomeDetail')}>
+              <IncomeSummaryRow
+                hasIncome={hasIncome}
+                onOpenDetail={() => navigation.navigate('IncomeDetail')}
+                onAddIncome={() => setIncomeFlowVisible(true)}
+              />
+            </HomeSection>
+          </OnEnter>
+
+          {(pills.length > 0 || insights.length > 0) && (
+            <OnEnter index={4}>
+              <HomeSection title="Insights">
+                <View style={st.insightStack}>
+                  <InsightPillRail pills={pills} onPress={openPillTarget} />
+                  <WeeklyStoryCard story={weeklyStory} onOpenReports={navigateToReports} />
+                  {insights.map((insight, index) => (
+                    <SmartInsightCard key={insight.id} insight={insight} delay={index * 20} />
+                  ))}
+                </View>
+              </HomeSection>
+            </OnEnter>
           )}
+
+          <OnEnter index={5}>
+            <HomeSection title="Where it went" onPress={navigateToReports}>
+              <MoneyMap
+                mapOnly
+                ledger={ledger}
+                incomePaise={snapshot?.income ?? 0}
+                monthPlan={monthPlan}
+                onOpenReports={navigateToReports}
+                onAddCategory={() => navigation.navigate('Categories')}
+                streakDays={streakDays}
+                badge={null}
+                ageOfMoney={null}
+                status={status}
+                replayToken={refreshToken}
+                unpaidBillsPaise={unpaidBillsPaise}
+              />
+            </HomeSection>
+          </OnEnter>
 
           {DashboardChitsSection ? (
             <DashboardChitsSection
@@ -480,92 +491,6 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
           ) : null}
         </View>
       </Animated.ScrollView>
-
-      <SheetModal
-        visible={orbitSheet === 'bills'}
-        title="Bills"
-        onClose={() => setOrbitSheet(null)}
-      >
-        <BillsPeek
-          bills={bills}
-          onOpenBills={() => {
-            setOrbitSheet(null);
-            navigation.navigate('Bills');
-          }}
-        />
-      </SheetModal>
-
-      <SheetModal
-        visible={orbitSheet === 'goals'}
-        title="Goals"
-        onClose={() => setOrbitSheet(null)}
-      >
-        {goals.length > 0 ? (
-          <GoalsStrip
-            goals={goals}
-            onPress={() => {
-              setOrbitSheet(null);
-              navigation.navigate('Goals');
-            }}
-            onAddMoney={id => {
-              setOrbitSheet(null);
-              setFundingGoalId(id);
-            }}
-          />
-        ) : (
-          <PressableScale
-            onPress={() => {
-              setOrbitSheet(null);
-              navigation.navigate('Goals');
-            }}
-            style={st.emptyCta}
-            accessibilityRole="button"
-            accessibilityLabel="Set a goal"
-          >
-            <Text style={st.emptyCtaText}>Set a goal</Text>
-          </PressableScale>
-        )}
-      </SheetModal>
-
-      <SheetModal
-        visible={orbitSheet === 'income'}
-        title="Income health"
-        onClose={() => setOrbitSheet(null)}
-      >
-        <IncomeHealthCard
-          health={incomeHealth}
-          contentWidth={CONTENT_W}
-          onOpenDetail={() => {
-            setOrbitSheet(null);
-            navigation.navigate('IncomeDetail');
-          }}
-        />
-      </SheetModal>
-
-      <SheetModal
-        visible={orbitSheet === 'insights'}
-        title="Insights"
-        onClose={() => setOrbitSheet(null)}
-      >
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={st.sheetStack}>
-            <InsightPillRail pills={pills} onPress={target => {
-              setOrbitSheet(null);
-              openPillTarget(target);
-            }} />
-            <WeeklyStoryCard
-              story={weeklyStory}
-              onOpenReports={() => {
-                setOrbitSheet(null);
-                navigateToReports();
-              }}
-            />
-            {insights.map((insight, index) => (
-              <SmartInsightCard key={insight.id} insight={insight} delay={index * 20} />
-            ))}
-          </View>
-        </ScrollView>
-      </SheetModal>
 
       <IncomeTransactionFlow
         visible={isIncomeFlowVisible}
@@ -606,41 +531,45 @@ const makeStyles = (
     content: { paddingHorizontal: 24 },
     topRow: {
       flexDirection: 'row',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: 24,
     },
-    greetCol: { flex: 1, gap: 6 },
     greeting: {
-      fontSize: 20,
+      fontSize: 28,
+      lineHeight: 36,
       fontFamily: 'Satoshi-Black',
       color: colors.textPrimary,
-      letterSpacing: -0.3,
-    },
-    subGreeting: {
-      fontSize: 14,
-      fontFamily: 'Satoshi-Regular',
-      color: colors.textSecondary,
+      letterSpacing: -0.4,
     },
     actions: { flexDirection: 'row', gap: 8 },
-    // Raised pills, not flat chips: these are the only two actions in the
-    // header and they were previously indistinguishable from the canvas.
-    actionPill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 5,
+    iconBtn: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
       backgroundColor: colors.card,
-      paddingHorizontal: 14,
-      paddingVertical: 9,
-      borderRadius: chipRadius,
-      ...iconShadow,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    actionText: {
+    inOut: { flexDirection: 'row', gap: 24, paddingBottom: 8 },
+    inOutCol: { flex: 1 },
+    inOutLabel: {
       fontSize: 14,
-      fontFamily: 'Satoshi-Bold',
+      lineHeight: 20,
+      fontFamily: 'Satoshi-Medium',
+      color: colors.textSecondary,
+    },
+    inOutValue: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+    inOutText: {
+      fontSize: 20,
+      lineHeight: 28,
+      fontFamily: 'Satoshi-Black',
       color: colors.textPrimary,
     },
-    stack: { gap: 16, paddingBottom: 24 },
+    insightStack: { gap: 16, paddingBottom: 8 },
+    stack: { gap: 24, paddingBottom: 24 },
     sheetStack: { gap: 16, paddingBottom: 8 },
 
     empty: {

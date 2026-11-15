@@ -21,7 +21,6 @@
  * finish review, the verdict, and DESIGN.md.
  */
 
-import { OrbitDial, OrbitItem } from '../home/OrbitDial';
 import React, { memo, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Path, Circle, G, Text as SvgText } from 'react-native-svg';
@@ -110,8 +109,8 @@ interface MoneyMapProps {
   replayToken?: number;
   /** Bills still unpaid this cycle — cadence-aware, from `billsSummary`. */
   unpaidBillsPaise: number;
-  /** Satellites orbiting the dial; omit for the plain dial. */
-  orbit?: OrbitItem[];
+  /** Render only the spending map (Home shows the hero separately). */
+  mapOnly?: boolean;
 }
 
 const compactINR = (paise: number): string => {
@@ -165,7 +164,7 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
   status,
   replayToken = 0,
   unpaidBillsPaise,
-  orbit,
+  mapOnly = false,
 }) => {
   const { cardRadius, cardShadow } = useSpecTheme();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -254,9 +253,11 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
 
   return (
     <View style={[styles.panel, { borderRadius: cardRadius, ...cardShadow }]}>
+      {!mapOnly && (
+        <>
       {/* Panel header */}
       <View style={styles.panelHeader}>
-        <Text style={styles.panelTitle}>This month</Text>
+        <Text style={styles.panelTitle}>{mapOnly ? 'Where it went' : 'This month'}</Text>
         <PressableScale
           onPress={onOpenReports}
           accessibilityRole="button"
@@ -269,27 +270,23 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
         </PressableScale>
       </View>
 
+        </>
+      )}
+
+      {!mapOnly && (
+        <>
       {/* Hero: one dial — how much of today's allowance is still standing.
           The month's pace lives on the PlanBar below, where a marker on a
           straight track compares two positions instead of two arcs. */}
       <View style={styles.heroRing}>
-        {(() => {
-          const dial = (
-            <PaceRing
-              safeTodayPaise={monthPlan?.safeToSpendToday ?? 0}
-              todaySpendPaise={todaySpend}
-              spendPaise={spend}
-              planPaise={safeToSpend}
-              incomePaise={income}
-              replayToken={replayToken}
-            />
-          );
-          return orbit && orbit.length > 0 ? (
-            <OrbitDial items={orbit}>{dial}</OrbitDial>
-          ) : (
-            dial
-          );
-        })()}
+        <PaceRing
+          safeTodayPaise={monthPlan?.safeToSpendToday ?? 0}
+          todaySpendPaise={todaySpend}
+          spendPaise={spend}
+          planPaise={safeToSpend}
+          incomePaise={income}
+          replayToken={replayToken}
+        />
       </View>
 
       <StoryRow streakDays={streakDays} badge={badge} ageOfMoney={ageOfMoney} />
@@ -310,10 +307,13 @@ export const MoneyMap: React.FC<MoneyMapProps> = ({
         />
       )}
 
+        </>
+      )}
+
       {/* The map is the second act: the hero says how the month is going, the
           map says where the money went. A rule keeps them from reading as one
           undifferentiated column of panel. */}
-      <View style={styles.actBreak} />
+      {!mapOnly && <View style={styles.actBreak} />}
 
       {stations.length === 0 ? (
         <View style={styles.emptyState}>

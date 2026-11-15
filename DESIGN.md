@@ -467,13 +467,17 @@ One primary number or action per screen, shown first. Detail is revealed progres
 ### Kaza
 Kaza follows the system. Its only own piece is `PRAYER_TINT` (`theme/kazaTheme.ts`): each prayer wears the palette tint of its hour. Its hero uses `enamel`.
 
-### Home: the orbit dial (v5, user-chosen structure)
-The safe-to-spend dial owns the first screen; the rest of the money picture orbits it as four tonal squircle satellites (Bills, Goals, Income health, Insights), each showing one live value with a caption and, for Bills, an attention dot when something is overdue or due soon. Tapping one springs open a `SheetModal` holding the full detail (`BillsPeek`, `GoalsStrip`, `IncomeHealthCard`, insights/weekly story). Nothing was removed from Home, only moved one tap from the dial. Motion: satellites spring in with a stagger, then drift on separate phases (off under reduce-motion). Components: `components/home/OrbitDial.tsx`, `BillsPeek.tsx`; `components/shared/SheetModal.tsx` is the one bottom sheet (Kaza uses it too). The same pattern (one decisive number, detail one tap away) is the template for the other screens.
+### Home: flat feed with a pace hero (v5, researched)
+Replaces the orbit dial, which a review scored 18/40 (one dark slab of ~14 elements, unlabeled satellites). Researched references (Lazyweb real screens): Copilot's dashboard (one "left of budget" sentence plus a pace line, flat labelled sections with "View all ›", ring row, upcoming chips) and Mercury's home (hero number, trend area, hairline sections, delta arrows).
+
+Structure: greeting with two 48dp icon buttons; **hero** = "Safe to spend today" + the number (counts up) + one delta line + a status pill + chips (streak, age of money, badge) + the **pace chart** (month spend vs straight-line pace, tag at today says "₹X under/over pace" in words, line draws in); then flat `HomeSection`s divided by hairlines, each heading a link: This month (money in / spent), Upcoming (bill chips, overdue first, swipeable), Goals (progress rings, tap adds money), Income health, Insights, Where it went (the money map, dark enamel card), Chits (pro). Components in `components/home/`: `HeroPace`, `PaceChart`, `HomeSection`, `UpcomingRail`, `GoalRings`.
+
+Rules this set: no panel holds more than one job; the one dark surface on Home is the map card; verdicts use words plus an icon, never colour alone; chart lines use the deep tonal inks to hold 3:1 on the canvas; motion is restrained (spring entrances staggered 50-80ms, rings and the pace line draw in, number counts up) and respects reduce-motion.
 
 ### Rollout order and status
 1. ✅ Foundation: tokens, limits, lint script, this section.
 2. ✅ Kaza migrated.
-2b. ✅ Home redesigned as the orbit dial (structure chosen by the user from three dealt options).
+2b. ✅ Home redesigned as a flat feed with a pace hero (orbit dial tried and rejected after critique + user review).
 3. 🔲 Home, Transactions, Add, Bills, Reports, Settings, Goals, Budget, then the rest. Verify each on the emulator in light, dark and 1.3× font scale.
 4. 🔲 Retire `designTokens` (21 files) and legacy `useTheme` colour use (11 files).
 5. 🔲 Turn `lint:design --strict` on in CI when the baseline reaches zero. Baseline at v5 start: 106 files, 553 violations.
