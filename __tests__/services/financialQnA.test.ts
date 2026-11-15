@@ -111,4 +111,11 @@ describe('answerFinancialQuestion', () => {
   it('does not mistake "afford" for the FD topic', () => {
     expect(routeQuestion('can I afford a new phone?')).toBe('affordability');
   });
+
+  it('answers the newer guide topics and ignores near-miss words', () => {
+    expect(routeQuestion('is gold a good investment')).toBe('gold_basics');
+    expect(routeQuestion('should I rent or buy a house')).toBe('rent_vs_buy');
+    expect(routeQuestion('what is ppf')).toBe('epf_ppf');
+    expect(routeQuestion('someone sent me a bottle')).not.toBe('subscriptions');
+  });
 });

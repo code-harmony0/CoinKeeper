@@ -140,6 +140,79 @@ export const TOPICS: Topic[] = [
       'Try a 24-hour wait before any non-essential purchase, and unsubscribe from shopping alerts. ' +
       'Set a small weekly "fun" amount you can spend without guilt, so the budget feels realistic.',
   },
+  {
+    id: 'gold_basics',
+    title: 'Gold',
+    keywords: ['gold', 'sone', 'sovereign gold', 'gold etf'],
+    body:
+      'Gold can hold its value over very long periods and often moves differently from stocks, but it pays no income and its price swings. ' +
+      'Many people keep only a modest share of their savings in it. Physical gold adds making charges and storage worries; gold funds or bonds avoid those.',
+  },
+  {
+    id: 'rent_vs_buy',
+    title: 'Rent or buy a home',
+    keywords: ['rent or buy', 'rent vs buy', 'buy a house', 'buy a home', 'buying a home', 'ghar kharidna'],
+    body:
+      'Buying builds an asset but ties up a large down payment, adds EMI, maintenance and fees, and is hard to undo. Renting keeps you flexible and your savings free to invest. ' +
+      'Compare the full monthly cost of owning with rent, and only buy if you plan to stay for many years.',
+  },
+  {
+    id: 'epf_ppf',
+    title: 'EPF and PPF',
+    keywords: ['epf', 'ppf', 'provident fund', 'pf balance'],
+    body:
+      'EPF is retirement saving taken from your salary, usually matched by your employer. PPF is a government-backed long-term savings scheme you open yourself. ' +
+      'Both lock money for years, so they suit long-term goals, not emergencies. Rates and rules change, so check the current ones.',
+  },
+  {
+    id: 'retirement_basics',
+    title: 'Saving for retirement',
+    keywords: ['retirement', 'retire', 'pension', 'nps'],
+    body:
+      'Retirement is the goal where starting early helps most, because the money has decades to grow. Aim to set aside a fixed share of every salary, increase it when you get a raise, ' +
+      'and avoid dipping into it for other goals.',
+  },
+  {
+    id: 'credit_card_use',
+    title: 'Using a credit card well',
+    keywords: ['credit card', 'card bill', 'minimum due', 'card limit'],
+    body:
+      'A credit card is a short loan. Pay the full statement every month and the interest is avoided; paying only the minimum lets interest build fast. ' +
+      'Keep your spending well below your limit and never withdraw cash on it.',
+  },
+  {
+    id: 'stock_basics',
+    title: 'Stocks',
+    keywords: ['stock market', 'share market', 'what is a stock', 'what are stocks', 'stocks', 'sensex', 'nifty'],
+    body:
+      'A stock is a small share of ownership in a company. Prices rise and fall, sometimes sharply, so the money should be what you will not need for years. ' +
+      'Spreading across many companies, through an index fund for example, lowers the risk of one going wrong.',
+  },
+  {
+    id: 'goal_saving',
+    title: 'Saving for a goal',
+    keywords: ['save for a goal', 'saving for a goal', 'goal saving', 'save for a trip', 'save for a phone', 'save for wedding', 'sinking fund'],
+    body:
+      'Divide the goal amount by the months you have to get a monthly number, and set that aside as soon as you are paid. ' +
+      'Keep it in a separate place so it does not get spent, and track it in Goals so you can see the progress.',
+    },
+  {
+    id: 'subscriptions',
+    title: 'Subscriptions',
+    keywords: ['subscription', 'subscriptions', ' ott ', 'netflix cost', 'cancel subscription'],
+    body:
+      'Small recurring charges add up quietly. Once a quarter, list every subscription, cancel what you did not use in the last month, ' +
+      'and pick one service from each type instead of several.',
+  },
+  {
+    id: 'why_track',
+    title: 'Why track spending',
+    keywords: ['why track', 'why should i track', 'why track expenses', 'benefit of tracking'],
+    body:
+      'You cannot change what you cannot see. Tracking shows where money really goes, which is rarely where you guess, and makes a budget realistic. ' +
+      'Even a few weeks of honest records is enough to spot the easy savings.',
+  },
+
 ];
 
 export const TOPIC_IDS: string[] = TOPICS.map(t => t.id);

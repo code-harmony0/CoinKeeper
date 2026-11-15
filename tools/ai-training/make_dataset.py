@@ -77,6 +77,21 @@ SEEDS = {
     "net_worth": ["what is net worth", "how to calculate net worth", "explain networth", "what am I worth", "net worth kya hota hai"],
     "impulse_spending": ["how to stop impulse buying", "i overspend what to do", "how to control spending", "spend less tips", "kharcha kam kaise kare",
                          "stop wasting money", "i keep overspending"],
+    "gold_basics": ["is gold a good investment", "should I buy gold", "gold vs stocks", "sone mein invest karu kya", "what is gold etf", "sovereign gold bond kya hai",
+                    "how much gold should I hold"],
+    "rent_vs_buy": ["should I rent or buy a house", "rent vs buy", "is buying a home worth it", "ghar kharidna chahiye ya rent", "buy a house or keep renting",
+                    "when to buy a home"],
+    "epf_ppf": ["what is epf", "what is ppf", "explain provident fund", "epf vs ppf", "pf kya hota hai", "how does ppf work", "can I withdraw my pf"],
+    "retirement_basics": ["how to plan for retirement", "when should I start saving for retirement", "what is nps", "retirement planning basics", "pension kaise banaye",
+                          "how much to save for retirement"],
+    "credit_card_use": ["how to use a credit card", "what happens if I pay only the minimum due", "credit card tips", "should I get a credit card", "card ka bill kaise bhare",
+                        "how does credit card interest work"],
+    "stock_basics": ["what is the stock market", "how do stocks work", "should I invest in stocks", "share market kya hai", "what is nifty", "what are shares"],
+    "goal_saving": ["how to save for a goal", "saving for a trip", "how to save for a new phone", "plan savings for wedding", "goal ke liye paise kaise bachaye",
+                    "how much monthly to save for a goal"],
+    "subscriptions": ["how to cut subscriptions", "too many subscriptions", "should I cancel netflix", "reduce ott costs", "subscription kaise band kare",
+                      "audit my subscriptions"],
+    "why_track": ["why should I track expenses", "why track spending", "benefit of tracking money", "is tracking expenses worth it", "kharcha track kyun kare"],
 }
 
 FILLERS = ["", "", "", "please ", "tell me ", "hey, ", "quick question: ", "bro ", "ok so ", "can you tell me "]

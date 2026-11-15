@@ -56,7 +56,7 @@ for r in labels:
     text = tokenizer.decode(out[0][ids["input_ids"].shape[1]:], skip_special_tokens=True)
     m = re.search(r'"intent"\s*:\s*"(\w+)"', text)
     ok += bool(m and m.group(1) == r["label"])
-print(f"held-out accuracy: {ok}/{len(labels)} = {ok/len(labels):.0%}  (keyword-only baseline in the app: 53%)")
+print(f"held-out accuracy: {ok}/{len(labels)} = {ok/len(labels):.0%}  (keyword-only baseline in the app: 56%)")
 
 # %% [markdown]
 # Export a phone-ready GGUF. Q8_0 matches what the app already downloads (about the same ~280 MB).

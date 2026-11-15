@@ -1,7 +1,7 @@
 # On-device AI: what it is and how to train it
 
 **Model:** Gemma 3 270M (instruction-tuned), Q8_0 GGUF, **278 MB**, opt-in download, runs fully on the phone via llama.rn.
-**Its one job:** read a question and pick a label (24 of them: your numbers + 16 money-guide topics). It never writes the answer.
+**Its one job:** read a question and pick a label (33 of them: your numbers + 25 money-guide topics). It never writes the answer.
 **Answers:** numbers come from the local database; explanations come from `src/services/knowledge/financeKnowledge.ts` (reviewed text).
 
 ## Why not train it on scraped internet finance text
@@ -11,7 +11,7 @@ Knowledge improves by adding reviewed topics, not by hoping the model remembers.
 
 ## Steps (no Mac required)
 1. `python3 tools/ai-training/make_dataset.py` -> `data/train.jsonl`, `data/eval.jsonl` (labels and prompt are read from the app code).
-2. Open Google Colab (free T4), run `train_colab.py` cell by cell. It prints held-out accuracy (baseline: 53% keyword-only) and exports a GGUF.
+2. Open Google Colab (free T4), run `train_colab.py` cell by cell. It prints held-out accuracy (baseline: 56% keyword-only) and exports a GGUF.
 3. Upload the GGUF to your Hugging Face repo, then set `url` and exact `bytes` in `src/services/llm/modelConfig.ts`.
 4. Ship only if held-out accuracy beats the baseline and the tuned model never returns a label outside the list.
 
