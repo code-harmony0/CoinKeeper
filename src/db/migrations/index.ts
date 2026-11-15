@@ -19,6 +19,8 @@ import { migrate017SmsParseMisses } from './017_sms_parse_misses';
 import { migrate018TransactionBank } from './018_transaction_bank';
 import { migrate019MoneyThatReturns } from './019_money_that_returns';
 import { migrate020BillIntervalMonths } from './020_bill_interval_months';
+import { migrate021KazaWitr } from './021_kaza_witr';
+import { migrate022KazaRestDays } from './022_kaza_rest_days';
 
 /**
  * Versioned via PRAGMA user_version — the plan called for migration tests
@@ -128,5 +130,15 @@ export const runMigrations = async (db: DB): Promise<void> => {
   if (currentVersion < 20) {
     await migrate020BillIntervalMonths(db);
     await db.execute('PRAGMA user_version = 20;');
+  }
+
+  if (currentVersion < 21) {
+    await migrate021KazaWitr(db);
+    await db.execute('PRAGMA user_version = 21;');
+  }
+
+  if (currentVersion < 22) {
+    await migrate022KazaRestDays(db);
+    await db.execute('PRAGMA user_version = 22;');
   }
 };
