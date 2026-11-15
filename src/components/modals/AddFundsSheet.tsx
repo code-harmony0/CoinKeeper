@@ -24,6 +24,7 @@ import { X } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
 import { Goal } from '../../store/goalStore';
 import { GoalHealth, checkAffordability, simulateWhatIf } from '../../services/goalIntelligence';
 import { Money } from '../../utils/money';
@@ -51,6 +52,7 @@ export const AddFundsSheet: React.FC<Props> = ({
   onSubmit,
 }) => {
   const insets = useSafeAreaInsets();
+  const kbHeight = useKeyboardHeight();
   const { colors } = useSpecTheme();
 
   const translateY = useSharedValue(SCREEN_HEIGHT);
@@ -121,7 +123,7 @@ export const AddFundsSheet: React.FC<Props> = ({
         <Animated.View
           style={[
             styles.sheet,
-            { backgroundColor: colors.card, paddingBottom: insets.bottom + 20 },
+            { backgroundColor: colors.card, paddingBottom: Math.max(insets.bottom + 20, kbHeight + 12) },
             sheetStyle,
           ]}
         >

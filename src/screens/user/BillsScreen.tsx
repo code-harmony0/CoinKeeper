@@ -155,9 +155,16 @@ export const BillsScreen = () => {
       dueDay: day,
       isRecurring: billData.isRecurring,
     };
-    const notificationId = await scheduleBillReminder(bill);
-    if (notificationId) {
-      await updateNotificationId(id, notificationId);
+    // The bill is already saved. A reminder that cannot be scheduled (no
+    // notification permission, exact-alarm limits) must not leave the sheet
+    // open on an error, which made a saved bill look like it had failed.
+    try {
+      const notificationId = await scheduleBillReminder(bill);
+      if (notificationId) {
+        await updateNotificationId(id, notificationId);
+      }
+    } catch {
+      // Reminder is optional; the bill stays.
     }
 
     setShowAdd(false);

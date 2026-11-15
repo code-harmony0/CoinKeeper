@@ -6,12 +6,16 @@ import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
+  ZoomIn,
+  ZoomOut,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, Moon, Plus, Receipt, Settings, Users, type LucideIcon } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { brand, useSpecTheme } from '../../theme/specTheme';
+import { EXPRESSIVE } from '../../theme/motion';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import type { TabDef } from '../../navigation/userTabs';
 
@@ -39,6 +43,64 @@ interface Props extends BottomTabBarProps {
  * recall), the active one is marked by a black indicator behind a yellow icon,
  * and the centre action is a raised black button. Hides while scrolling down.
  */
+/** The active tab's pill: grows out of the centre with a spring instead of snapping on. */
+const TabPill: React.FC<{ active: boolean; color: string; icon: LucideIcon; idle: string; lit: string }> = ({ active, color, icon: Icon, idle, lit }) => {
+  const p = useSharedValue(active ? 1 : 0);
+  React.useEffect(() => {
+    p.value = withSpring(active ? 1 : 0, { damping: 16, stiffness: 220, mass: 0.9 });
+  }, [active, p]);
+  const pill = useAnimatedStyle(() => ({
+    opacity: p.value,
+    transform: [{ scaleX: 0.35 + 0.65 * p.value }, { scaleY: 0.7 + 0.3 * p.value }],
+  }));
+  // Two stacked icons crossfade with the pill, so the lit icon never shows on a white background.
+  const idleIcon = useAnimatedStyle(() => ({ opacity: 1 - p.value }));
+  const litIcon = useAnimatedStyle(() => ({ opacity: p.value }));
+  return (
+    <View style={styles.indicator}>
+      <Animated.View style={[StyleSheet.absoluteFill, styles.pillFill, { backgroundColor: color }, pill]} />
+      <Animated.View style={[styles.iconLayer, idleIcon]}>
+        <Icon size={22} strokeWidth={1.6} color={idle} />
+      </Animated.View>
+      <Animated.View style={[styles.iconLayer, litIcon]}>
+        <Icon size={22} strokeWidth={2} color={lit} />
+      </Animated.View>
+    </View>
+  );
+};
+
+/** The add button: springs in when it appears, presses down, and the plus turns a quarter. */
+const Fab: React.FC<{ onPress: () => void; isDark: boolean }> = ({ onPress, isDark }) => {
+  const press = useSharedValue(0);
+  const body = useAnimatedStyle(() => ({ transform: [{ scale: 1 - press.value * 0.1 }] }));
+  const plus = useAnimatedStyle(() => ({ transform: [{ rotate: `${press.value * 90}deg` }] }));
+  const bg = isDark ? brand.signal : brand.ink;
+  return (
+    <Animated.View
+      entering={ZoomIn.springify().damping(12).stiffness(200).reduceMotion(EXPRESSIVE)}
+      exiting={ZoomOut.duration(160).reduceMotion(EXPRESSIVE)}
+      style={body}
+    >
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => {
+          press.value = withSpring(1, { damping: 14, stiffness: 320 });
+        }}
+        onPressOut={() => {
+          press.value = withSpring(0, { damping: 12, stiffness: 220 });
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Add transaction"
+        style={[styles.fab, { backgroundColor: bg }]}
+      >
+        <Animated.View style={plus}>
+          <Plus size={28} strokeWidth={2.6} color={isDark ? brand.ink : brand.signal} />
+        </Animated.View>
+      </Pressable>
+    </Animated.View>
+  );
+};
+
 export const AppTabBar: React.FC<Props> = ({ state, navigation, tabs, fabIndex }) => {
   const { colors, isDark } = useSpecTheme();
   const insets = useSafeAreaInsets();
@@ -89,16 +151,7 @@ export const AppTabBar: React.FC<Props> = ({ state, navigation, tabs, fabIndex }
         style={styles.slot}
       >
         {/* Always set a background: Android drops borderRadius when one is added later. */}
-        <View
-          key={active ? 'on' : 'off'}
-          style={[styles.indicator, { backgroundColor: active ? indicator : 'transparent', overflow: 'hidden' }]}
-        >
-          <Icon
-            size={22}
-            strokeWidth={active ? 2 : 1.6}
-            color={active ? indicatorIcon : colors.textSecondary}
-          />
-        </View>
+        <TabPill active={active} color={indicator} icon={Icon} idle={colors.textSecondary} lit={indicatorIcon} />
         <Text
           numberOfLines={1}
           style={[
@@ -130,15 +183,7 @@ export const AppTabBar: React.FC<Props> = ({ state, navigation, tabs, fabIndex }
         ]}
         pointerEvents="box-none"
       >
-        <Pressable
-          onPress={() => go(fab.name)}
-          accessibilityRole="button"
-          accessibilityLabel="Add transaction"
-          android_ripple={{ color: '#FFFFFF33', borderless: true }}
-          style={[styles.fab, { backgroundColor: isDark ? brand.signal : brand.ink }]}
-        >
-          <Plus size={28} strokeWidth={2.8} color={isDark ? brand.ink : brand.signal} />
-        </Pressable>
+        <Fab onPress={() => go(fab.name)} isDark={isDark} />
       </Animated.View>
       )}
       <Animated.View
@@ -182,6 +227,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  pillFill: { borderRadius: 16 },
+  iconLayer: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   label: { fontSize: 12, lineHeight: 16, fontFamily: 'Satoshi-Medium' },
   labelActive: { fontFamily: 'Satoshi-Bold' },
   fabWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 20 },

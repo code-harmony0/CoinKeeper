@@ -35,6 +35,7 @@ import {
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSpecTheme } from '../../theme/specTheme';
 import { PressableScale } from '../anim';
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_SPRING = { damping: 15, stiffness: 300 };
@@ -60,11 +61,15 @@ export const AddBillSheet: React.FC<Props> = ({
   onSubmit,
 }) => {
   const insets = useSafeAreaInsets();
+  const kbHeight = useKeyboardHeight();
   const { colors, iconContainerRadius } = useSpecTheme();
 
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
 
+  const nameRef = React.useRef<TextInput>(null);
+  const dayRef = React.useRef<TextInput>(null);
+  const amountRef = React.useRef<TextInput>(null);
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDay, setDueDay] = useState('');
@@ -170,7 +175,7 @@ export const AddBillSheet: React.FC<Props> = ({
         <Animated.View
           style={[
             styles.sheet,
-            { backgroundColor: colors.card, paddingBottom: insets.bottom + 20 },
+            { backgroundColor: colors.card, paddingBottom: Math.max(insets.bottom + 20, kbHeight + 12) },
             sheetStyle,
           ]}
         >
@@ -213,6 +218,7 @@ export const AddBillSheet: React.FC<Props> = ({
                     ₹
                   </Text>
                   <TextInput
+                    ref={amountRef}
                     style={[styles.amountInput, { color: colors.textPrimary }]}
                     value={amount}
                     onChangeText={text =>
@@ -235,7 +241,8 @@ export const AddBillSheet: React.FC<Props> = ({
                   >
                     Bill Name
                   </Text>
-                  <View
+                  <Pressable
+                    onPress={() => nameRef.current?.focus()}
                     style={[
                       styles.inputRow,
                       { backgroundColor: colors.inputBg },
@@ -243,13 +250,14 @@ export const AddBillSheet: React.FC<Props> = ({
                   >
                     <Edit3 size={18} color={colors.textSecondary} />
                     <TextInput
+                      ref={nameRef}
                       style={[styles.input, { color: colors.textPrimary }]}
                       value={name}
                       onChangeText={setName}
                       placeholder="e.g. Electricity"
                       placeholderTextColor={colors.textSecondary}
                     />
-                  </View>
+                  </Pressable>
                   {detectedCategory && (
                     <Text
                       style={{
@@ -274,7 +282,8 @@ export const AddBillSheet: React.FC<Props> = ({
                   >
                     Due Day
                   </Text>
-                  <View
+                  <Pressable
+                    onPress={() => dayRef.current?.focus()}
                     style={[
                       styles.inputRow,
                       { backgroundColor: colors.inputBg },
@@ -282,6 +291,7 @@ export const AddBillSheet: React.FC<Props> = ({
                   >
                     <Calendar size={18} color={colors.textSecondary} />
                     <TextInput
+                      ref={dayRef}
                       style={[styles.input, { color: colors.textPrimary }]}
                       value={dueDay}
                       onChangeText={text =>
@@ -292,7 +302,7 @@ export const AddBillSheet: React.FC<Props> = ({
                       keyboardType="number-pad"
                       maxLength={2}
                     />
-                  </View>
+                  </Pressable>
                 </View>
               </View>
 
