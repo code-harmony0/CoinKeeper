@@ -1,9 +1,17 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { Home, Receipt, Tv, Wifi, Zap, type LucideIcon } from 'lucide-react-native';
 import { brand, useSpecTheme } from '../../theme/specTheme';
-import { EXPRESSIVE, STAGGER } from '../../theme/motion';
+import { EXPRESSIVE, STAGGER, useReducedMotion } from '../../theme/motion';
 import { PressableScale } from '../anim';
 import { Money } from '../../utils/money';
 import { billStatus, upcomingBills } from '../../services/billSchedule';
@@ -23,6 +31,24 @@ const iconFor = (name: string): LucideIcon => {
   if (/wifi|fibre|fiber|internet|broadband|jio|airtel/.test(n)) return Wifi;
   if (/netflix|spotify|prime|hotstar|youtube|subscription/.test(n)) return Tv;
   return Receipt;
+};
+
+/** A slow live dot: today is happening now. Still under reduce-motion. */
+const LiveDot: React.FC = () => {
+  const reduced = useReducedMotion();
+  const o = useSharedValue(1);
+  React.useEffect(() => {
+    if (reduced) return;
+    o.value = withRepeat(
+      withSequence(
+        withTiming(0.25, { duration: 900, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1, { duration: 900, easing: Easing.inOut(Easing.sin) }),
+      ),
+      -1,
+    );
+  }, [reduced, o]);
+  const st = useAnimatedStyle(() => ({ opacity: o.value }));
+  return <Animated.View style={[styles.liveDot, st]} />;
 };
 
 const when = (daysAway: number) =>
@@ -83,6 +109,7 @@ export const UpcomingList: React.FC<Props> = ({ bills, onPress }) => {
                 </Text>
                 {label ? (
                   <View style={styles.tag}>
+                    {label === 'TODAY' && <LiveDot />}
                     <Text style={styles.tagText}>{label}</Text>
                   </View>
                 ) : (
@@ -114,7 +141,11 @@ const styles = StyleSheet.create({
   text: { flex: 1, gap: 2 },
   name: { fontSize: 16, lineHeight: 24, fontFamily: 'Satoshi-Bold' },
   when: { fontSize: 14, lineHeight: 20, fontFamily: 'Satoshi-Medium' },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: brand.ink },
   tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     alignSelf: 'flex-start',
     backgroundColor: brand.signal,
     borderRadius: 8,

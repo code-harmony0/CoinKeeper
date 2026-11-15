@@ -13,9 +13,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, Text, Alert, Dimensions, StatusBar } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
+import { ChevronUp } from 'lucide-react-native';
 import Animated, {
+  Extrapolation,
+  interpolate,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedRef,
   FadeInDown,
   useAnimatedScrollHandler,
+  useAnimatedStyle,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Sparkles, Plus, ArrowUpRight, ArrowDownRight } from 'lucide-react-native';
@@ -235,11 +242,31 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   // Feeds the shared scroll offset the tab bar reads to auto-hide.
   const { scrollY } = useTabBarScroll();
+  const listRef = useAnimatedRef<Animated.ScrollView>();
+  const [barOn, setBarOn] = useState(false);
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: event => {
       scrollY.value = event.contentOffset.y;
     },
   });
+
+  // The hero number collapses into a slim bar once it has scrolled away, so
+  // the answer stays on screen; tapping the bar returns to the top.
+  const BAR_AT = 230;
+  useAnimatedReaction(
+    () => scrollY.value > BAR_AT,
+    (on, prev) => {
+      if (on !== prev) runOnJS(setBarOn)(on);
+    },
+  );
+  const barStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [BAR_AT - 40, BAR_AT + 20], [0, 1], Extrapolation.CLAMP),
+    transform: [
+      {
+        translateY: interpolate(scrollY.value, [BAR_AT - 40, BAR_AT + 20], [-16, 0], Extrapolation.CLAMP),
+      },
+    ],
+  }));
 
   // No hero parallax. It shipped briefly as `translateY: scrollY * 0.5` and
   // broke the screen: a transform does not affect layout, so sliding the hero
@@ -361,7 +388,25 @@ export const UserDashboardScreen: React.FC<any> = ({ navigation }) => {
         pointerEvents="none"
         style={[st.statusStrip, { height: insets.top }]}
       />
+      <Animated.View
+        pointerEvents={barOn ? 'auto' : 'none'}
+        style={[st.pulseBar, { top: insets.top }, barStyle]}
+      >
+        <PressableScale
+          onPress={() => listRef.current?.scrollTo({ y: 0, animated: true })}
+          accessibilityRole="button"
+          accessibilityLabel={`Safe to spend today ${Money.format(monthPlan?.safeToSpendToday ?? 0, { zeroDecimals: true })}. Scroll to top`}
+          style={st.pulseInner}
+        >
+          <Text style={st.pulseNumber}>
+            {Money.format(monthPlan?.safeToSpendToday ?? 0, { zeroDecimals: true })}
+          </Text>
+          <Text style={st.pulseLabel}>safe to spend today</Text>
+          <ChevronUp size={18} color="rgba(255,255,255,0.7)" strokeWidth={2.4} />
+        </PressableScale>
+      </Animated.View>
       <Animated.ScrollView
+        ref={listRef}
         style={st.scroll}
         contentContainerStyle={[
           st.content,
@@ -602,6 +647,31 @@ const makeStyles = (
       right: 0,
       zIndex: 10,
       backgroundColor: brand.ink,
+    },
+    pulseBar: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      zIndex: 9,
+      height: 56,
+      backgroundColor: brand.ink,
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20,
+    },
+    pulseInner: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 24,
+    },
+    pulseNumber: { fontSize: 20, lineHeight: 28, fontFamily: 'Satoshi-Black', color: brand.signal },
+    pulseLabel: {
+      flex: 1,
+      fontSize: 14,
+      lineHeight: 20,
+      fontFamily: 'Satoshi-Medium',
+      color: 'rgba(255,255,255,0.72)',
     },
     stage: {
       backgroundColor: brand.ink,

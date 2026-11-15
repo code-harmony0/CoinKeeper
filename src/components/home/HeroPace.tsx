@@ -12,7 +12,7 @@ import {
 } from 'lucide-react-native';
 import { brand } from '../../theme/specTheme';
 import { EXPRESSIVE } from '../../theme/motion';
-import { CountUp } from '../anim';
+import { RollingNumber } from '../anim/RollingNumber';
 import { Money } from '../../utils/money';
 import { PaceChart } from './PaceChart';
 import type { MonthLedger } from '../../hooks/useMonthLedger';
@@ -74,12 +74,13 @@ export const HeroPace: React.FC<Props> = ({
   return (
     <View>
       <Text style={[styles.label, { color: MUTED }]}>Safe to spend today</Text>
-      <CountUp
-        value={safeTodayPaise}
-        isPaise
-        prefix="₹"
-        duration={900}
-        style={styles.number}
+      <RollingNumber
+        valuePaise={safeTodayPaise}
+        fontSize={64}
+        lineHeight={68}
+        letterSpacing={-2}
+        color={brand.signal}
+        replayToken={replayToken}
       />
 
       <View style={styles.delta}>

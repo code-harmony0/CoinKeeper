@@ -472,6 +472,8 @@ Replaces the grey/pastel feed and the orbit dial, both rejected. Lesson from rea
 
 Top: a full-bleed black band (with a solid black status strip, light status bar) holds only the greeting, "Safe to spend today", the number in yellow, one line, one status pill (yellow outline when something needs attention) and the pace chart with a tag in words ("₹X under pace"; outlined instead of filled when over). Below, on the light canvas, flat `HomeSection`s: This month, Upcoming (bills as a plain list with a black icon square; OVERDUE and TODAY are yellow labels, so urgency is a word), Goals (ink progress rings), Income health, Insights, Where it went, Chits. Components: `HeroPace`, `PaceChart`, `HomeSection`, `UpcomingList`, `GoalRings`.
 
+Motion (researched: Coinbase RollingNumber, balance-first collapsing headers, light-haptic chart scrubbing): (1) the safe-to-spend number rolls in digit by digit, leftmost first, ones digit last (`anim/RollingNumber.tsx`, transform only, announced once to screen readers); (2) after the hero scrolls away it collapses into a slim black bar with the number, tap to return to top; (3) the pace chart can be dragged sideways to read any day, with a light haptic tick per day and a tag ("14 Nov · ₹X spent"); (4) a "TODAY" bill label has a slow live dot. All of it is transform/opacity, stops or jumps to the final value under reduce-motion.
+
 Rules: yellow never sits on white; no pastel rainbow on Home; urgency by label and form, not colour alone.
 
 ### Rollout order and status
