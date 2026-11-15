@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
@@ -10,8 +10,8 @@ import { UserDashboardScreen, TransactionsScreen, SettingsScreen } from '../scre
 import { AddScreen } from '../screens/user/AddScreen';
 import { KazaScreen } from '../screens/user/KazaScreen';
 import { CHITFUND_ENABLED, ISLAMIC_ENABLED } from '../config/buildFlags';
-import { getPreference } from '../store/database';
-import { getUserTabs, TabDef, KAZA_PINNED_KEY } from './userTabs';
+import { getUserTabs, TabDef } from './userTabs';
+import { useKazaReminders } from '../hooks/useKazaReminders';
 import { fabSize } from '../theme/specTheme';
 
 const Tab = createNativeBottomTabNavigator();
@@ -53,17 +53,10 @@ const FabAccessory: React.FC = () => {
 };
 
 export const UserTabNavigator: React.FC = () => {
-  const [kazaPinned, setKazaPinned] = useState(false);
-
-  useEffect(() => {
-    if (!ISLAMIC_ENABLED) return;
-    getPreference(KAZA_PINNED_KEY).then(v => setKazaPinned(v === 'true'));
-  }, []);
-
+  useKazaReminders();
   const tabs = getUserTabs({
     chitFund: CHITFUND_ENABLED,
     islamic: ISLAMIC_ENABLED,
-    kazaPinned,
   });
 
   return (

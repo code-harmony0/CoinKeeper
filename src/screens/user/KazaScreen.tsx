@@ -1,50 +1,93 @@
 /**
  * KazaScreen - Kaza (قضاء) Prayer Tracker
- * Spec Theme
+ * Kaza theme ("Dawn to Night") — see theme/kazaTheme.ts and DESIGN.md §11.
+ *
+ * Flow: see how much is left → log what you made up (one tap, or several at
+ * once) → watch the streak, history and milestones build. Streak rules live in
+ * services/kazaStreak, preferences in hooks/useKazaPrefs, and every sheet is
+ * its own component; this file only composes them.
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Pressable,
-  Text,
-  Switch,
-  Alert,
-  Modal,
-  TextInput,
-} from 'react-native';
-import Animated, { FadeInDown, useAnimatedScrollHandler } from 'react-native-reanimated';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { View, StyleSheet, Text } from 'react-native';
+import Animated, { useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useTabBarScroll } from '../../context/TabBarScrollContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle } from 'react-native-svg';
 import {
-  Info,
-  Minus,
-  Plus,
-  CircleCheck,
   AlarmClockOff,
   Calculator,
-  Clock,
-  Bell,
-  X,
+  ListPlus,
+  Settings,
 } from 'lucide-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import { useSpecTheme } from '../../theme/specTheme';
-import { useKazaStore, KazaPrayer } from '../../store/kazaStore';
-import { getPreference, setPreference } from '../../store/database';
-import { PressableScale, CountUp } from '../../components/anim';
+import { useKazaTheme } from '../../theme/kazaTheme';
+import { useKazaStore, MakeUpEntry } from '../../store/kazaStore';
+import { setPreference } from '../../store/database';
+import { useKazaPrefs } from '../../hooks/useKazaPrefs';
+import { PressableScale, BadgeCelebration } from '../../components/anim';
+import { daysToFinish } from '../../services/kazaPlan';
+import {
+  chapterProgress,
+  groupActivity,
+  pickReflection,
+  weekStats,
+} from '../../services/kazaInsights';
+import {
+  buildHeatmap,
+  buildMilestones,
+  dayKey,
+  finishDate,
+  nextPrayerInOrder,
+} from '../../services/kazaStreak';
+import { KazaStreakCard } from '../../components/kaza/KazaStreakCard';
+import { KazaHeatmap } from '../../components/kaza/KazaHeatmap';
+import { KazaMilestones } from '../../components/kaza/KazaMilestones';
+import { KazaLogSheet } from '../../components/kaza/KazaLogSheet';
+import { KazaRestSheet } from '../../components/kaza/KazaRestSheet';
+import { KazaPrayerRow } from '../../components/kaza/KazaPrayerRow';
+import { KazaHero } from '../../components/kaza/KazaHero';
+import { KazaReflection } from '../../components/kaza/KazaReflection';
+import { KazaStats } from '../../components/kaza/KazaStats';
+import { KazaJourney } from '../../components/kaza/KazaJourney';
+import { KazaPlanSheet } from '../../components/kaza/KazaPlanSheet';
+import { KazaAdjustSheet } from '../../components/kaza/KazaAdjustSheet';
+import { KazaSettingsSheet } from '../../components/kaza/KazaSettingsSheet';
+import { KazaCalculatorSheet } from '../../components/kaza/KazaCalculatorSheet';
+import { KazaTimeSheet } from '../../components/kaza/KazaTimeSheet';
+import { KazaMissedSheet } from '../../components/kaza/KazaMissedSheet';
+import { KazaAboutSheet } from '../../components/kaza/KazaAboutSheet';
 
-const RING_SIZE = 168;
-const RING_STROKE = 14;
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+type Sheet =
+  | 'log'
+  | 'missed'
+  | 'rest'
+  | 'calculator'
+  | 'time'
+  | 'plan'
+  | 'adjust'
+  | 'settings'
+  | 'about'
+  | null;
 
-type QuickAction = 'missed' | 'madeUp' | null;
-type SettingsModal = 'initial' | 'time' | null;
+type Celebration = {
+  label: string;
+  earnedFor: string;
+  icon: 'Flame' | 'Trophy' | 'Medal';
+};
 
-const pad2 = (n: number) => n.toString().padStart(2, '0');
+const celebrationIcon = (id: string): Celebration['icon'] =>
+  id.startsWith('streak')
+    ? 'Flame'
+    : id.startsWith('count')
+    ? 'Medal'
+    : 'Trophy';
 
-export const KazaScreen: React.FC<any> = () => {
+export const KazaScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   // Feeds the shared scroll offset the tab bar reads to auto-hide.
   const { scrollY } = useTabBarScroll();
@@ -53,55 +96,148 @@ export const KazaScreen: React.FC<any> = () => {
       scrollY.value = event.contentOffset.y;
     },
   });
-  const { colors, cardRadius, cardShadow, iconShadow } = useSpecTheme();
-  const { prayers, weeklyMadeUp, loadKaza, missedPrayer, makeUpPrayer, undoMakeUp, setInitialPending } =
-    useKazaStore();
+  const { colors, cardRadius, cardShadow } = useKazaTheme();
+  const {
+    prayers: allPrayers,
+    loading,
+    madeUpToday,
+    totalMadeUp,
+    dailyCounts,
+    restDays,
+    streak,
+    recent,
+    lastLogged,
+    loadKaza,
+    missedPrayer,
+    makeUpPrayer,
+    logMakeUp,
+    undoMakeUp,
+    setEstimate,
+    setPending,
+    takeRestDays,
+    endRest,
+  } = useKazaStore();
+  const prefs = useKazaPrefs();
+  const { dailyGoal, hydrated, seenMilestones } = prefs;
 
-  const [quickAction, setQuickAction] = useState<QuickAction>(null);
-  const [settingsModal, setSettingsModal] = useState<SettingsModal>(null);
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderTime, setReminderTime] = useState('07:30');
-  const [initialYears, setInitialYears] = useState('');
+  const [sheet, setSheet] = useState<Sheet>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [celebration, setCelebration] = useState<Celebration | null>(null);
+  // Editing counts (Adjust) is not an achievement: no celebration for it.
+  const suppressCelebrationUntil = useRef(0);
+
+  // Witr is wajib in the Hanafi school only, so it stays out of every count
+  // until the user opts in.
+  const prayers = useMemo(
+    () => allPrayers.filter(p => prefs.includeWitr || p.name !== 'Witr'),
+    [allPrayers, prefs.includeWitr],
+  );
 
   useEffect(() => {
     loadKaza();
   }, [loadKaza]);
 
-  useEffect(() => {
-    const hydrate = async () => {
-      const enabled = await getPreference('kazaReminderEnabled');
-      if (enabled !== null) setReminderEnabled(enabled === 'on');
-      const time = await getPreference('kazaReminderTime');
-      if (time !== null) setReminderTime(time);
-    };
-    hydrate();
-  }, []);
-
   const totals = useMemo(() => {
     const completed = prayers.reduce((sum, p) => sum + p.completed, 0);
     const pending = prayers.reduce((sum, p) => sum + p.pending, 0);
     const total = completed + pending;
-    const progress = total > 0 ? completed / total : 0;
-    return { completed, pending, total, progress };
+    return {
+      completed,
+      pending,
+      total,
+      finishInDays: daysToFinish(pending, dailyGoal),
+    };
+  }, [prayers, dailyGoal]);
+
+  const finishOn = useMemo(
+    () => finishDate(totals.pending, dailyGoal),
+    [totals.pending, dailyGoal],
+  );
+  const heatmap = useMemo(
+    () => buildHeatmap(dailyCounts, restDays, dailyGoal),
+    [dailyCounts, restDays, dailyGoal],
+  );
+  const milestones = useMemo(
+    () =>
+      buildMilestones({ longestStreak: streak.longest, totalMadeUp, prayers }),
+    [streak.longest, totalMadeUp, prayers],
+  );
+  const chapter = useMemo(
+    () =>
+      chapterProgress(
+        totals.completed,
+        totals.total,
+        Math.max(1, prayers.length),
+      ),
+    [totals.completed, totals.total, prayers.length],
+  );
+  const stats = useMemo(() => weekStats(dailyCounts), [dailyCounts]);
+  const activity = useMemo(() => groupActivity(recent), [recent]);
+  const reflection = useMemo(
+    () =>
+      pickReflection({
+        streakBroken: streak.broken,
+        streakAtRisk: streak.atRisk,
+        pending: totals.pending,
+        hasStarted: totalMadeUp > 0,
+      }),
+    [streak.broken, streak.atRisk, totals.pending, totalMadeUp],
+  );
+  // The prayer with the most left — only named when it clearly stands apart.
+  const mostBehind = useMemo(() => {
+    const byLeft = [...prayers].sort((a, b) => b.pending - a.pending);
+    return byLeft.length > 1 && byLeft[0].pending > byLeft[1].pending
+      ? byLeft[0].name
+      : null;
   }, [prayers]);
+  const suggested = useMemo(
+    () => nextPrayerInOrder(lastLogged, prayers),
+    [lastLogged, prayers],
+  );
+  const resting = restDays.includes(dayKey(new Date()));
 
-  const st = useMemo(() => makeStyles(colors, cardRadius, cardShadow), [colors, cardRadius, cardShadow]);
+  // One quiet celebration per newly earned milestone. The first run seeds the
+  // seen-set silently, so an existing backlog never fires a pile of badges.
+  useEffect(() => {
+    if (loading || !hydrated) return;
+    const achieved = milestones.filter(m => m.achieved);
+    const persist = (ids: string[]) =>
+      setPreference('kazaMilestonesSeen', JSON.stringify(ids)).catch(() => {});
 
-  const handleInfo = useCallback(() => {
-    Alert.alert(
-      'What is Kaza?',
-      'Kaza (قضاء) means making up prayers that were missed. This tracker helps you count pending prayers per salah and log each one you make up.',
-    );
-  }, []);
+    if (seenMilestones.current === null) {
+      seenMilestones.current = new Set(achieved.map(m => m.id));
+      persist([...seenMilestones.current]);
+      return;
+    }
+    const fresh = achieved.filter(m => !seenMilestones.current!.has(m.id));
+    if (fresh.length === 0) return;
+    if (Date.now() < suppressCelebrationUntil.current) {
+      fresh.forEach(m => seenMilestones.current!.add(m.id));
+      persist([...seenMilestones.current]);
+      return;
+    }
+
+    // The list runs counts → streaks → cleared, so the last is the biggest.
+    const top = fresh[fresh.length - 1];
+    achieved.forEach(m => seenMilestones.current!.add(m.id));
+    persist([...seenMilestones.current]);
+    setCelebration({
+      label: top.title,
+      earnedFor: top.detail,
+      icon: celebrationIcon(top.id),
+    });
+  }, [milestones, loading, hydrated, seenMilestones]);
+
+  const closeSheet = useCallback(() => setSheet(null), []);
 
   const handleMakeUp = useCallback(
     (name: string) => {
       const prayer = prayers.find(p => p.name === name);
       if (!prayer || prayer.pending <= 0) return;
+      ReactNativeHapticFeedback.trigger(
+        prayer.pending === 1 ? 'notificationSuccess' : 'impactLight',
+      );
       makeUpPrayer(name);
-      if (prayer.pending - 1 === 0) {
-        ReactNativeHapticFeedback.trigger('notificationSuccess');
-      }
     },
     [prayers, makeUpPrayer],
   );
@@ -115,599 +251,401 @@ export const KazaScreen: React.FC<any> = () => {
     [prayers, undoMakeUp],
   );
 
+  const handleLogConfirm = useCallback(
+    async (entries: MakeUpEntry[], daysAgo: number) => {
+      setSheet(null);
+      ReactNativeHapticFeedback.trigger('notificationSuccess');
+      await logMakeUp(entries, daysAgo);
+    },
+    [logMakeUp],
+  );
+
   const handleMissed = useCallback(
     (name: string) => {
+      setSheet(null);
       missedPrayer(name);
     },
     [missedPrayer],
   );
 
-  const handleQuickActionSelect = useCallback(
-    (name: string) => {
-      if (quickAction === 'missed') {
-        handleMissed(name);
-      } else if (quickAction === 'madeUp') {
-        handleMakeUp(name);
-      }
-      setQuickAction(null);
+  const handleRest = useCallback(
+    async (days: number) => {
+      setSheet(null);
+      ReactNativeHapticFeedback.trigger('impactMedium');
+      await takeRestDays(days);
     },
-    [quickAction, handleMissed, handleMakeUp],
+    [takeRestDays],
   );
 
-  const handleToggleReminder = useCallback(async (val: boolean) => {
-    ReactNativeHapticFeedback.trigger('impactLight');
-    setReminderEnabled(val);
-    try {
-      await setPreference('kazaReminderEnabled', val ? 'on' : 'off');
-    } catch (error) {
-      console.error('[KazaScreen] Error saving reminder preference:', error);
-    }
-  }, []);
+  const handleEstimate = useCallback(
+    async (missedDays: number) => {
+      setSheet(null);
+      if (missedDays <= 0) return;
+      ReactNativeHapticFeedback.trigger('impactMedium');
+      await setEstimate(
+        missedDays,
+        prayers.map(p => p.name),
+      );
+    },
+    [prayers, setEstimate],
+  );
 
-  const openInitialModal = useCallback(() => {
-    setInitialYears('');
-    setSettingsModal('initial');
-  }, []);
+  const handlePickPace = useCallback(
+    (perDay: number) => {
+      ReactNativeHapticFeedback.trigger('impactMedium');
+      prefs.setGoal(perDay);
+      setSheet(null);
+    },
+    [prefs],
+  );
 
-  const openTimeModal = useCallback(() => {
-    setSettingsModal('time');
-  }, []);
+  const handleAdjust = useCallback(
+    async (entries: { name: string; pending: number }[]) => {
+      setSheet(null);
+      ReactNativeHapticFeedback.trigger('impactMedium');
+      suppressCelebrationUntil.current = Date.now() + 3000;
+      for (const entry of entries) await setPending(entry.name, entry.pending);
+    },
+    [setPending],
+  );
 
-  const saveInitialPending = useCallback(async () => {
-    const years = parseFloat(initialYears);
-    if (!Number.isFinite(years) || years <= 0) {
-      setSettingsModal(null);
-      return;
-    }
-    ReactNativeHapticFeedback.trigger('impactMedium');
-    await setInitialPending(years);
-    setSettingsModal(null);
-  }, [initialYears, setInitialPending]);
-
-  const saveReminderTime = useCallback(async () => {
-    ReactNativeHapticFeedback.trigger('impactMedium');
-    try {
-      await setPreference('kazaReminderTime', reminderTime);
-    } catch (error) {
-      console.error('[KazaScreen] Error saving reminder time:', error);
-    }
-    setSettingsModal(null);
-  }, [reminderTime]);
-
-  const adjustTime = useCallback((unit: 'hour' | 'minute', delta: number) => {
-    setReminderTime(prev => {
-      const [h, m] = prev.split(':').map(Number);
-      let hour = h;
-      let minute = m;
-      if (unit === 'hour') {
-        hour = (hour + delta + 24) % 24;
-      } else {
-        minute = (minute + delta + 60) % 60;
-      }
-      return `${pad2(hour)}:${pad2(minute)}`;
-    });
-  }, []);
-
-  const yearsNum = parseFloat(initialYears) || 0;
+  const st = useMemo(
+    () => makeStyles(colors, cardRadius, cardShadow),
+    [colors, cardRadius, cardShadow],
+  );
+  const hasKaza = totals.total > 0;
 
   return (
     <View style={st.root}>
       <Animated.ScrollView
         style={st.scroll}
-        contentContainerStyle={[st.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 144 }]}
+        contentContainerStyle={[
+          st.content,
+          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 144 },
+        ]}
         showsVerticalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
       >
-        {/* ═══════════════════ HEADER ═══════════════════ */}
-        <Animated.View entering={FadeInDown.delay(20).springify()} style={st.header}>
-          <Text style={st.title}>Kaza Tracker</Text>
-          <View>
-            <PressableScale onPress={handleInfo} hitSlop={8} style={[st.infoButton, iconShadow]}>
-              <Info size={20} color={colors.textSecondary} strokeWidth={2} />
-            </PressableScale>
-          </View>
-        </Animated.View>
-
-        {/* ═══════════════════ PROGRESS RING CARD ═══════════════════ */}
-        <Animated.View entering={FadeInDown.delay(60).springify()} style={st.ringCard}>
-          <View style={st.ringWrap}>
-            <Svg width={RING_SIZE} height={RING_SIZE}>
-              <Circle
-                cx={RING_SIZE / 2}
-                cy={RING_SIZE / 2}
-                r={RING_RADIUS}
-                stroke={colors.chipBg}
-                strokeWidth={RING_STROKE}
-                fill="none"
-              />
-              <Circle
-                cx={RING_SIZE / 2}
-                cy={RING_SIZE / 2}
-                r={RING_RADIUS}
-                stroke={colors.primaryAccent}
-                strokeWidth={RING_STROKE}
-                strokeLinecap="round"
-                fill="none"
-                strokeDasharray={`${RING_CIRCUMFERENCE}, ${RING_CIRCUMFERENCE}`}
-                strokeDashoffset={RING_CIRCUMFERENCE * (1 - totals.progress)}
-                rotation="-90"
-                origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
-              />
-            </Svg>
-            <View style={st.ringCenter}>
-              <Text style={st.ringCenterValue}>
-                <CountUp value={totals.completed} /> of {totals.total}
-              </Text>
-              <Text style={st.ringCenterLabel}>prayers completed</Text>
-            </View>
-          </View>
-
-          <Text style={[st.weeklyText, { color: weeklyMadeUp > 0 ? colors.success : colors.textSecondary }]}>
-            {weeklyMadeUp > 0
-              ? `You've made up ${weeklyMadeUp} prayers this week`
-              : "Log your first make-up prayer this week"}
+        <View style={st.header}>
+          <Text style={st.title} accessibilityRole="header">
+            Kaza
           </Text>
-        </Animated.View>
-
-        {/* ═══════════════════ PRAYER LIST ═══════════════════ */}
-        <View style={st.section}>
-          <View style={st.prayerCard}>
-            {prayers.map((prayer, i) => (
-              <PrayerRow
-                key={prayer.name}
-                prayer={prayer}
-                isLast={i === prayers.length - 1}
-                colors={colors}
-                iconShadow={iconShadow}
-                onPlus={() => handleMakeUp(prayer.name)}
-                onMinus={() => handleUndo(prayer.name)}
-              />
-            ))}
-          </View>
+          <PressableScale
+            onPress={() => setSheet('settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Kaza settings"
+            style={st.headerButton}
+          >
+            <Settings size={20} color={colors.textPrimary} strokeWidth={2} />
+          </PressableScale>
         </View>
 
-        {/* ═══════════════════ QUICK ACTIONS ═══════════════════ */}
-        <View style={st.section}>
-          <View style={st.prayerCard}>
-            <PressableScale
-              onPress={() => setQuickAction('missed')}
-              style={[styles.settingItem, styles.settingItemBorder(colors)]}
-            >
-              <View style={[styles.settingIcon, { backgroundColor: `${colors.danger}1F` }, iconShadow]}>
-                <AlarmClockOff size={18} color={colors.danger} strokeWidth={2} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>I missed a prayer today</Text>
-            </PressableScale>
-            <PressableScale
-              onPress={() => setQuickAction('madeUp')}
-              style={styles.settingItem}
-            >
-              <View style={[styles.settingIcon, { backgroundColor: `${colors.success}1F` }, iconShadow]}>
-                <CircleCheck size={18} color={colors.success} strokeWidth={2} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>I made up a prayer</Text>
-            </PressableScale>
-          </View>
-        </View>
-
-        {/* ═══════════════════ SETTINGS ═══════════════════ */}
-        <Animated.View entering={FadeInDown.delay(220).springify()}>
-          <Text style={st.groupTitle}>KAZA SETTINGS</Text>
-          <View style={st.prayerCard}>
-            <PressableScale onPress={openInitialModal} style={[styles.settingItem, styles.settingItemBorder(colors)]}>
-              <View style={[styles.settingIcon, { backgroundColor: colors.chipBg }, iconShadow]}>
-                <Calculator size={18} color={colors.textSecondary} strokeWidth={2} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Set Initial Pending</Text>
-            </PressableScale>
-
-            <PressableScale onPress={openTimeModal} style={[styles.settingItem, styles.settingItemBorder(colors)]}>
-              <View style={[styles.settingIcon, { backgroundColor: colors.chipBg }, iconShadow]}>
-                <Clock size={18} color={colors.textSecondary} strokeWidth={2} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Daily Reminder Time</Text>
-              <Text style={[st.settingValue]}>{reminderTime}</Text>
-            </PressableScale>
-
-            <View style={styles.settingItem}>
-              <View style={[styles.settingIcon, { backgroundColor: colors.chipBg }, iconShadow]}>
-                <Bell size={18} color={colors.textSecondary} strokeWidth={2} />
-              </View>
-              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Remind me to make up Kaza</Text>
-              <Switch
-                value={reminderEnabled}
-                onValueChange={handleToggleReminder}
-                trackColor={{ false: colors.inputBg, true: colors.success }}
-                thumbColor="#FFFFFF"
-              />
+        {hasKaza ? (
+          <KazaHero
+            pending={totals.pending}
+            completed={totals.completed}
+            total={totals.total}
+            chapter={chapter}
+            dailyGoal={dailyGoal}
+            finishOn={finishOn}
+            onPlan={() => setSheet('plan')}
+          />
+        ) : loading ? null : (
+          <View style={st.emptyCard}>
+            <View style={st.emptyIcon}>
+              <Calculator size={22} color={colors.onAccent} strokeWidth={2} />
             </View>
+            <Text style={st.emptyTitle}>Start with an estimate</Text>
+            <Text style={st.helperText}>
+              Tell us when you started praying regularly and we&apos;ll work out
+              how many to make up. You can adjust it any time.
+            </Text>
+            <PressableScale
+              onPress={() => setSheet('calculator')}
+              haptic="none"
+              accessibilityRole="button"
+              style={st.emptyButton}
+            >
+              <Text style={st.emptyButtonText}>Calculate my Kaza</Text>
+            </PressableScale>
           </View>
-        </Animated.View>
+        )}
+
+        {hasKaza && (
+          <>
+            <View style={st.actions}>
+              <PressableScale
+                onPress={() => setSheet('log')}
+                haptic="none"
+                accessibilityRole="button"
+                style={st.primaryAction}
+                testID="kaza-log"
+              >
+                <ListPlus size={18} color={colors.onAccent} strokeWidth={2.2} />
+                <Text style={st.primaryActionText}>Log made-up prayers</Text>
+              </PressableScale>
+              <PressableScale
+                onPress={() => setSheet('missed')}
+                accessibilityRole="button"
+                style={st.secondaryAction}
+                testID="kaza-missed"
+              >
+                <AlarmClockOff
+                  size={18}
+                  color={colors.textPrimary}
+                  strokeWidth={2}
+                />
+                <Text style={st.secondaryActionText}>I missed one</Text>
+              </PressableScale>
+            </View>
+
+            <Text style={st.sectionTitle} accessibilityRole="header">
+              Prayers
+            </Text>
+            <View style={st.prayerCard}>
+              {prayers.map((prayer, i) => (
+                <KazaPrayerRow
+                  key={prayer.name}
+                  prayer={prayer}
+                  isLast={i === prayers.length - 1}
+                  isNext={suggested === prayer.name}
+                  isMostBehind={mostBehind === prayer.name}
+                  onPlus={() => handleMakeUp(prayer.name)}
+                  onMinus={() => handleUndo(prayer.name)}
+                />
+              ))}
+            </View>
+
+            <KazaStreakCard
+              streak={streak}
+              madeUpToday={madeUpToday}
+              dailyGoal={dailyGoal}
+              resting={resting}
+              onRest={() => setSheet('rest')}
+              onEndRest={endRest}
+            />
+
+            <KazaReflection reflection={reflection} />
+
+            <Text style={st.sectionTitle} accessibilityRole="header">
+              Your progress
+            </Text>
+            <KazaStats
+              stats={stats}
+              expanded={showHistory}
+              onToggle={() => setShowHistory(v => !v)}
+            />
+            {showHistory && <KazaHeatmap weeks={heatmap} />}
+            {showHistory && <KazaMilestones milestones={milestones} />}
+            {showHistory && <KazaJourney days={activity} />}
+          </>
+        )}
       </Animated.ScrollView>
 
-      {/* Quick action selector modal */}
-      <Modal visible={quickAction !== null} transparent animationType="slide" onRequestClose={() => setQuickAction(null)}>
-        <Pressable style={st.modalOverlay} onPress={() => setQuickAction(null)}>
-          <Pressable style={st.sheet} onPress={e => e.stopPropagation()}>
-            <Text style={st.sheetTitle}>
-              {quickAction === 'missed' ? 'Which prayer did you miss?' : 'Which prayer did you make up?'}
-            </Text>
-            {prayers.map(prayer => (
-              <PressableScale
-                key={prayer.name}
-                onPress={() => handleQuickActionSelect(prayer.name)}
-                style={[styles.settingItem, styles.settingItemBorder(colors)]}
-              >
-                <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>{prayer.name}</Text>
-                <Text style={st.sheetArabic}>{prayer.arabic}</Text>
-              </PressableScale>
-            ))}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <KazaSettingsSheet
+        visible={sheet === 'settings'}
+        dailyGoal={dailyGoal}
+        includeWitr={prefs.includeWitr}
+        reminderEnabled={prefs.reminderEnabled}
+        reminderTime={prefs.reminderTime}
+        onClose={closeSheet}
+        onChangeGoal={prefs.changeGoal}
+        onToggleWitr={prefs.toggleWitr}
+        onToggleReminder={prefs.toggleReminder}
+        onOpenCalculator={() => setSheet('calculator')}
+        onOpenAdjust={() => setSheet('adjust')}
+        onOpenTime={() => setSheet('time')}
+        onOpenAbout={() => setSheet('about')}
+      />
 
-      {/* Set Initial Pending modal */}
-      <Modal
-        visible={settingsModal === 'initial'}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSettingsModal(null)}
-      >
-        <Pressable style={st.modalOverlay} onPress={() => setSettingsModal(null)}>
-          <Pressable style={st.sheet} onPress={e => e.stopPropagation()}>
-            <View style={st.sheetHeaderRow}>
-              <Text style={st.sheetTitle}>Set Initial Pending</Text>
-              <PressableScale onPress={() => setSettingsModal(null)} hitSlop={8}>
-                <X size={20} color={colors.textSecondary} strokeWidth={2} />
-              </PressableScale>
-            </View>
-            <Text style={st.inputLabel}>Years of missed prayers</Text>
-            <TextInput
-              value={initialYears}
-              onChangeText={setInitialYears}
-              placeholder="e.g. 2"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="numeric"
-              style={st.textInput}
-            />
-            <Text style={st.helperText}>
-              ≈ {Math.round(yearsNum * 365)} per prayer · {Math.round(yearsNum * 5 * 365)} total
-            </Text>
-            <PressableScale onPress={saveInitialPending} haptic="none" style={st.saveButton}>
-              <Text style={st.saveButtonText}>Save</Text>
-            </PressableScale>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <KazaLogSheet
+        visible={sheet === 'log'}
+        prayers={prayers}
+        suggested={suggested}
+        onClose={closeSheet}
+        onConfirm={handleLogConfirm}
+      />
 
-      {/* Daily Reminder Time modal */}
-      <Modal
-        visible={settingsModal === 'time'}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSettingsModal(null)}
-      >
-        <Pressable style={st.modalOverlay} onPress={() => setSettingsModal(null)}>
-          <Pressable style={st.sheet} onPress={e => e.stopPropagation()}>
-            <View style={st.sheetHeaderRow}>
-              <Text style={st.sheetTitle}>Daily Reminder Time</Text>
-              <PressableScale onPress={() => setSettingsModal(null)} hitSlop={8}>
-                <X size={20} color={colors.textSecondary} strokeWidth={2} />
-              </PressableScale>
-            </View>
+      <KazaPlanSheet
+        visible={sheet === 'plan'}
+        pending={totals.pending}
+        prayers={prayers}
+        prayersPerDay={Math.max(1, prayers.length)}
+        currentGoal={dailyGoal}
+        recentAverage={stats.averagePerDay}
+        onClose={closeSheet}
+        onPick={handlePickPace}
+      />
 
-            <View style={st.stepperRow}>
-              <View style={st.stepperGroup}>
-                <PressableScale onPress={() => adjustTime('hour', -1)} style={[st.stepperButton, iconShadow]}>
-                  <Minus size={18} color={colors.textSecondary} strokeWidth={2} />
-                </PressableScale>
-                <Text style={st.stepperValue}>{reminderTime.split(':')[0]}</Text>
-                <PressableScale onPress={() => adjustTime('hour', 1)} style={[st.stepperButton, iconShadow]}>
-                  <Plus size={18} color={colors.textSecondary} strokeWidth={2} />
-                </PressableScale>
-              </View>
-              <Text style={st.stepperColon}>:</Text>
-              <View style={st.stepperGroup}>
-                <PressableScale onPress={() => adjustTime('minute', -5)} style={[st.stepperButton, iconShadow]}>
-                  <Minus size={18} color={colors.textSecondary} strokeWidth={2} />
-                </PressableScale>
-                <Text style={st.stepperValue}>{reminderTime.split(':')[1]}</Text>
-                <PressableScale onPress={() => adjustTime('minute', 5)} style={[st.stepperButton, iconShadow]}>
-                  <Plus size={18} color={colors.textSecondary} strokeWidth={2} />
-                </PressableScale>
-              </View>
-            </View>
+      <KazaAdjustSheet
+        visible={sheet === 'adjust'}
+        prayers={prayers}
+        onClose={closeSheet}
+        onSave={handleAdjust}
+      />
 
-            <PressableScale onPress={saveReminderTime} haptic="none" style={st.saveButton}>
-              <Text style={st.saveButtonText}>Save</Text>
-            </PressableScale>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <KazaRestSheet
+        visible={sheet === 'rest'}
+        onClose={closeSheet}
+        onConfirm={handleRest}
+      />
+
+      <KazaMissedSheet
+        visible={sheet === 'missed'}
+        prayers={prayers}
+        onClose={closeSheet}
+        onPick={handleMissed}
+      />
+
+      <KazaCalculatorSheet
+        visible={sheet === 'calculator'}
+        prayersPerDay={Math.max(1, prayers.length)}
+        onClose={closeSheet}
+        onSave={handleEstimate}
+      />
+
+      <KazaTimeSheet
+        visible={sheet === 'time'}
+        value={prefs.reminderTime}
+        onClose={closeSheet}
+        onSave={prefs.saveReminderTime}
+      />
+
+      <KazaAboutSheet visible={sheet === 'about'} onClose={closeSheet} />
+
+      <BadgeCelebration
+        badge={celebration}
+        onDismiss={() => setCelebration(null)}
+      />
     </View>
   );
 };
 
-/* ── Prayer Row ── */
-const PrayerRow: React.FC<{
-  prayer: KazaPrayer;
-  isLast: boolean;
-  colors: any;
-  iconShadow: any;
-  onPlus: () => void;
-  onMinus: () => void;
-}> = ({ prayer, isLast, colors, iconShadow, onPlus, onMinus }) => {
-  const isComplete = prayer.pending === 0 && prayer.completed > 0;
-  const nameColor = isComplete ? colors.success : colors.textPrimary;
-
-  return (
-    <View style={[rowStyles.row, !isLast && rowStyles.rowBorder(colors)]}>
-      <View style={rowStyles.left}>
-        <View style={rowStyles.nameRow}>
-          {isComplete && <CircleCheck size={15} color={colors.success} strokeWidth={2} style={rowStyles.checkIcon} />}
-          <Text style={[rowStyles.name, { color: nameColor }]} numberOfLines={1}>
-            {prayer.name}
-          </Text>
-        </View>
-        <Text style={[rowStyles.arabic, { color: colors.textSecondary }]}>{prayer.arabic}</Text>
-        <Text style={[rowStyles.counts, { color: colors.textSecondary }]}>
-          Completed: {prayer.completed} · Pending: {prayer.pending}
-        </Text>
-      </View>
-
-      <View style={rowStyles.actions}>
-        <PressableScale
-          onPress={onMinus}
-          disabled={prayer.completed === 0}
-          style={[
-            rowStyles.actionButton,
-            { backgroundColor: colors.chipBg },
-            iconShadow,
-            prayer.completed === 0 && rowStyles.disabled,
-          ]}
-        >
-          <Minus size={16} color={colors.textSecondary} strokeWidth={2} />
-        </PressableScale>
-        <PressableScale
-          onPress={onPlus}
-          disabled={prayer.pending === 0}
-          style={[
-            rowStyles.actionButton,
-            { backgroundColor: colors.primaryAccent },
-            iconShadow,
-            prayer.pending === 0 && rowStyles.disabled,
-          ]}
-        >
-          <Plus size={16} color="#FFFFFF" strokeWidth={2} />
-        </PressableScale>
-      </View>
-    </View>
-  );
-};
-
-/* ── Static styles ── */
-const styles = {
-  settingItem: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    padding: 16,
-  },
-  settingItemBorder: (colors: any) => ({
-    borderBottomWidth: 1,
-    borderBottomColor: colors.inputBg,
-  }),
-  settingIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    marginRight: 12,
-  },
-  settingLabel: {
-    fontSize: 15,
-    fontFamily: 'Satoshi-Medium',
-    flex: 1,
-  },
-};
-
-const rowStyles = {
-  row: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingVertical: 16,
-  },
-  rowBorder: (colors: any) => ({
-    borderBottomWidth: 1,
-    borderBottomColor: colors.inputBg,
-  }),
-  left: { flex: 1, marginRight: 12 },
-  nameRow: { flexDirection: 'row' as const, alignItems: 'center' as const },
-  checkIcon: { marginRight: 6 },
-  name: { fontSize: 15, fontFamily: 'Satoshi-Bold' },
-  arabic: { fontSize: 13, fontFamily: 'Satoshi-Regular', marginTop: 2 },
-  counts: { fontSize: 12, fontFamily: 'Satoshi-Regular', marginTop: 6 },
-  actions: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
-  disabled: { opacity: 0.4 },
-};
-
-const makeStyles = (colors: any, cardRadius: number, cardShadow: any) =>
+const makeStyles = (
+  colors: ReturnType<typeof useKazaTheme>['colors'],
+  cardRadius: number,
+  cardShadow: object,
+) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.background },
     scroll: { flex: 1 },
-    content: { paddingHorizontal: 24 },
+    // One rhythm: 16 between cards, 32 between groups (a section title adds the other 16).
+    content: { paddingHorizontal: 24, gap: 16 },
 
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 32,
+      marginBottom: 8,
     },
-    title: { fontSize: 26, fontFamily: 'Satoshi-Black', color: colors.textPrimary },
-    infoButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.chipBg,
+    title: {
+      fontSize: 32,
+      fontFamily: 'Satoshi-Black',
+      letterSpacing: -0.4,
+      color: colors.textPrimary,
+    },
+    headerButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
       justifyContent: 'center',
       alignItems: 'center',
     },
 
-    ringCard: {
+    emptyCard: {
       backgroundColor: colors.card,
       borderRadius: cardRadius,
-      padding: 20,
-      marginBottom: 32,
-      alignItems: 'center',
+      padding: 24,
       ...cardShadow,
     },
-    ringWrap: {
-      width: RING_SIZE,
-      height: RING_SIZE,
+    emptyIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.primaryAccent,
+      alignItems: 'center',
       justifyContent: 'center',
-      alignItems: 'center',
+      marginBottom: 16,
     },
-    ringCenter: {
-      position: 'absolute',
-      alignItems: 'center',
+    emptyTitle: {
+      fontSize: 22,
+      fontFamily: 'Satoshi-Black',
+      color: colors.textPrimary,
+      marginBottom: 8,
     },
-    ringCenterValue: { fontSize: 28, fontFamily: 'Satoshi-Black', color: colors.textPrimary },
-    ringCenterLabel: { fontSize: 12, fontFamily: 'Satoshi-Regular', color: colors.textSecondary, marginTop: 2 },
-    weeklyText: {
-      fontSize: 13,
+    helperText: {
+      fontSize: 14,
+      lineHeight: 21,
+      fontFamily: 'Satoshi-Regular',
+      color: colors.textSecondary,
+      marginBottom: 24,
+    },
+    emptyButton: {
+      backgroundColor: colors.primaryAccent,
+      borderRadius: 999,
+      minHeight: 56,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyButtonText: {
+      fontSize: 16,
       fontFamily: 'Satoshi-Bold',
-      marginTop: 16,
-      textAlign: 'center',
+      color: colors.onAccent,
     },
 
-    section: { marginBottom: 32 },
+    // Primary = the one action that matters (pill, accent fill). Secondary = a quiet chip.
+    actions: { flexDirection: 'row', gap: 8 },
+    primaryAction: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.primaryAccent,
+      borderRadius: 999,
+      minHeight: 56,
+      paddingHorizontal: 16,
+    },
+    primaryActionText: {
+      fontSize: 16,
+      fontFamily: 'Satoshi-Bold',
+      color: colors.onAccent,
+    },
+    secondaryAction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 999,
+      minHeight: 56,
+      paddingHorizontal: 16,
+    },
+    secondaryActionText: {
+      fontSize: 14,
+      fontFamily: 'Satoshi-Bold',
+      color: colors.textPrimary,
+    },
+
+    // A group break is 32: the 16 content gap plus this title's 16 above.
+    sectionTitle: {
+      fontSize: 20,
+      fontFamily: 'Satoshi-Bold',
+      color: colors.textPrimary,
+      marginTop: 16,
+    },
     prayerCard: {
       backgroundColor: colors.card,
       borderRadius: cardRadius,
       overflow: 'hidden',
       paddingHorizontal: 16,
       ...cardShadow,
-    },
-
-    groupTitle: {
-      fontSize: 13,
-      fontFamily: 'Satoshi-Bold',
-      textTransform: 'uppercase',
-      letterSpacing: 0.8,
-      color: colors.textSecondary,
-      marginBottom: 8,
-      marginLeft: 4,
-    },
-    settingValue: {
-      fontSize: 13,
-      fontFamily: 'Satoshi-Regular',
-      color: colors.textSecondary,
-    },
-
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      justifyContent: 'flex-end',
-    },
-    sheet: {
-      backgroundColor: colors.card,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      paddingHorizontal: 24,
-      paddingTop: 20,
-      paddingBottom: 32,
-    },
-    sheetHeaderRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 16,
-    },
-    sheetTitle: {
-      fontSize: 17,
-      fontFamily: 'Satoshi-Bold',
-      color: colors.textPrimary,
-      marginBottom: 8,
-    },
-    sheetArabic: {
-      fontSize: 13,
-      fontFamily: 'Satoshi-Regular',
-      color: colors.textSecondary,
-    },
-
-    inputLabel: {
-      fontSize: 13,
-      fontFamily: 'Satoshi-Medium',
-      color: colors.textSecondary,
-      marginBottom: 8,
-    },
-    textInput: {
-      backgroundColor: colors.inputBg,
-      borderRadius: 14,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 16,
-      fontFamily: 'Satoshi-Bold',
-      color: colors.textPrimary,
-      marginBottom: 8,
-    },
-    helperText: {
-      fontSize: 12,
-      fontFamily: 'Satoshi-Regular',
-      color: colors.textSecondary,
-      marginBottom: 20,
-    },
-    saveButton: {
-      backgroundColor: colors.primaryAccent,
-      borderRadius: 14,
-      paddingVertical: 14,
-      alignItems: 'center',
-    },
-    saveButtonText: {
-      fontSize: 15,
-      fontFamily: 'Satoshi-Bold',
-      color: '#FFFFFF',
-    },
-
-    stepperRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 32,
-    },
-    stepperGroup: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    stepperButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: colors.chipBg,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    stepperValue: {
-      fontSize: 24,
-      fontFamily: 'Satoshi-Black',
-      color: colors.textPrimary,
-      minWidth: 40,
-      textAlign: 'center',
-    },
-    stepperColon: {
-      fontSize: 24,
-      fontFamily: 'Satoshi-Black',
-      color: colors.textPrimary,
-      marginHorizontal: 12,
     },
   });
 

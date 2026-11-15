@@ -41,7 +41,9 @@ const PARTICLES = 12;
 const VISIBLE_MS = 3200;
 
 interface Props {
-  badge: Badge | null;
+  // Only what the card draws, so non-money modules (Kaza milestones) can
+  // celebrate through the same moment without faking a BadgeId.
+  badge: Pick<Badge, 'label' | 'earnedFor' | 'icon'> | null;
   onDismiss: () => void;
 }
 
@@ -98,10 +100,6 @@ export const BadgeCelebration: React.FC<Props> = ({ badge, onDismiss }) => {
 
     ReactNativeHapticFeedback.trigger('notificationSuccess');
 
-    opacity.value = withTiming(1, {
-      duration: 180,
-      reduceMotion: ReduceMotion.System,
-    });
     scale.value = withSequence(
       withSpring(1.06, {
         damping: 11,
@@ -115,15 +113,20 @@ export const BadgeCelebration: React.FC<Props> = ({ badge, onDismiss }) => {
       }),
     );
 
-    // Auto-dismiss, so a celebration never becomes something to clear.
-    opacity.value = withDelay(
-      VISIBLE_MS,
-      withTiming(
-        0,
-        { duration: 260, reduceMotion: ReduceMotion.System },
-        finished => {
-          if (finished) runOnJS(onDismiss)();
-        },
+    // Fade in, hold, fade out — one sequence. Assigned as separate statements
+    // the later one replaced the fade-in, so opacity never left 0 and the
+    // celebration was invisible. Auto-dismisses so it never becomes a chore.
+    opacity.value = withSequence(
+      withTiming(1, { duration: 180, reduceMotion: ReduceMotion.System }),
+      withDelay(
+        VISIBLE_MS,
+        withTiming(
+          0,
+          { duration: 260, reduceMotion: ReduceMotion.System },
+          finished => {
+            if (finished) runOnJS(onDismiss)();
+          },
+        ),
       ),
     );
   }, [badge, onDismiss, opacity, scale]);

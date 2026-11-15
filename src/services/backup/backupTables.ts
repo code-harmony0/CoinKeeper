@@ -26,6 +26,7 @@ export const BACKUP_TABLES: readonly string[] = [
   'receipt_history',
   'kaza_prayers',
   'kaza_log',
+  'kaza_rest_days',
 ];
 
 /** Documented so a future reader knows these were considered and rejected. */

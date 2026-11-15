@@ -1,16 +1,12 @@
-export const KAZA_PINNED_KEY = 'kazaPinned';
-
 export type ModuleFlags = {
   /** Chit fund module — pro flavor only. */
   chitFund: boolean;
-  /** Kaza (missed-prayer) tracker. Flavor-independent, ships in both. */
-  islamic: boolean;
   /**
-   * Whether the user promoted Kaza to a tab. Reads from the `preferences`
-   * table, default false — Kaza is always reachable from Settings when the
-   * islamic module is on, but it does not take a tab slot unless asked for.
+   * Kaza (missed-prayer) tracker. Flavor-independent, ships in both. When on,
+   * Kaza is a permanent tab: a daily tracker has to be one tap away, and an
+   * opt-in pin nothing in the app ever offered left it unreachable.
    */
-  kazaPinned: boolean;
+  islamic: boolean;
 };
 
 export type TabDef = {
@@ -26,7 +22,7 @@ export const getUserTabs = (flags: ModuleFlags): TabDef[] => {
     { name: 'Add', label: 'Add', icon: 'add' },
   ];
 
-  if (flags.islamic && flags.kazaPinned) {
+  if (flags.islamic) {
     tabs.push({ name: 'Kaza', label: 'Kaza', icon: 'kaza' });
   }
   if (flags.chitFund) {
